@@ -1,0 +1,8 @@
+# Company Overrides — MovePlnr
+
+Overrides to the general inbox-manager skill, specific to MovePlnr. Everything else comes from the onboarding form and the Assets file.
+
+- Multi-location is a confirmed strength, not an unverified feature: one dispatch board shows every location's crews and trucks at once, switchable to a single location (Sam confirmed). Lead with it for genuinely multi-location operators; never force it on a single-site shop that merely serves several cities.
+- The PlusVibe auto-reply agent is unreliable on logistics here: it offers slots that are not on the real calendar, invents call durations, and verbally locks in bookings it cannot create. Ignore its offered slots, re-verify availability live, and treat any agent booked claim as unconfirmed until the operator says otherwise.
+- Booking source: the demo is a 30-minute Calendly collective event (Sam + Shahar), titled From Email - How Sam and MovePlnr can help your company. Live availability IS queryable through the Calendly connector via list_event_type_available_times (event_type uri e8377c3f-21ef-40fe-89d4-5733306484a7), so pull real open slots there and offer those. The zero-events-via-API issue only affects reading already-booked events (still confirm existing bookings and no-shows with the operator). Returned availability already reflects the Sam-and-Shahar overlap, so trust those slots rather than assuming ET mornings are blocked.
+- Use the onboarding-form numbers, not the published case study (which uses different truck and city counts and no revenue figure).

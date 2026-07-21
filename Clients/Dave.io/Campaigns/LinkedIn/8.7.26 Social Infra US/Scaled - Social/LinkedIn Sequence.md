@@ -1,73 +1,72 @@
 ---
-Type: LinkedIn Campaign
+Type: Campaign Sequence
 client: Dave.io
 segment: Scaled - Social
-channel: LinkedIn (Alta)
-date: 2026-07-08
+channel: LinkedIn + Email (Alta)
+updated: 2026-07-13
 ---
 
-# Scaled - Social (LinkedIn)
+# Scaled · Social — Sequence (LinkedIn + Email)
 
-**Audience:** VP Engineering / Head of Infrastructure / Director of DevOps at larger, growth-stage US companies with a stretched infra team, sourced from engaging with infra content on LinkedIn. Full ICP in `ICP.md`.
+**Audience:** VP Engineering / Head of Infrastructure / Director of DevOps at larger US companies with a stretched infra team, sourced from engaging with infra / DevOps content on LinkedIn. Source + wiring in `Intent Trigger.md`.
 
+**Copy rules (locked):** concrete templates, no AI generation. Sentence case. Fields `{{firstName}}`, `{{company}}`. Signal = generic topic engagement ("the infra conversation"); NEVER name a creator. No "capacity". "human in the loop". No read-only. This segment DOES use "scale output without adding headcount". "cut costs" (plural). CTA = a teardown (take load off). No em dashes.
 
-## Flow (touchpoints)
+## Flow & schedule
 
-No hiring gate, the topic engagement is the signal. No AI conditions.
-1. View profile
-2. Connection request (blank note)
-3. Condition: is connected? No -> end
-4. Like a recent post
-5. Opener message (step 5) - 0 days after accept
-6. wait 2 days | replied? -> stop + route to us
-7. Follow-up 1 (step 7)
-8. wait 2 days | replied? -> stop + route to us
-9. Follow-up 2 (step 9, templated)
-10. End
+```
+LinkedIn: view -> connection request (blank)
+Email 1        day 0
+LinkedIn 1     opener (after connection accepted)
+Email 2        day 2
+LinkedIn 2     +1 day after LinkedIn 1
+Email 3        day 4
+LinkedIn 3     +2 days after LinkedIn 2
+reply on either channel -> stop -> route to inbox-manager
+```
 
-## Step 5 - Opener (AI prompt)
+## LinkedIn
 
-You are {{repName}}, messaging a prospect you just connected with on LinkedIn.
+**Connection request:** blank.
 
+**1 — opener**
+Hey {{firstName}}, been seeing you around the infra/devops conversation lately. Curious, how's the infra team keeping up as {{company}} grows, or is it a couple of people carrying the whole platform for everyone?
 
-They recently engaged with a post about infrastructure, DevOps, cloud, or platform engineering. That is why they matter now.
+**2 — value (no ask; built to pull a "what do you mean?")**
+The real bottleneck on most infra teams isn't headcount. It's that every deploy and every fire still routes through the one or two people who actually know the setup. Another hire just joins that same queue months later. Hard thing to hire your way out of.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Peer to peer, not a salesperson, not pitching.
+**3 — breakup**
+Last one from me {{firstName}}.
 
-Greet them with their name, ALWAYS, and open with one warm, genuinely personal line about {{firstName}}, pulled from their headline, about, recent activity or posts, or the post they engaged with. Then close with one curious question that pokes the bottleneck pain, how the infra or DevOps team is keeping up as the engineering org grows, or whether a couple of people are carrying the whole platform for everyone else.
+I want to tell you about Dave, our AI agent that handles infra alongside your team, with a human in the loop, so you scale output without adding headcount.
 
-two or three very short messages, lowercase, casual, no sign-off, no pitch, no price, no call, no corporate filler, no em dash, about 5 out of 10 enthusiasm. The only goal is a reply.
+Teams that switched cut infra costs by about 45% and freed up 8x their engineering time.
 
+Want me to map where it'd take load off {{company}}'s team? No worries either way.
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- Headline: {{headline}}
-- About them: {{description}}
-- Recent activity: {{socialActivity}}
-- Recent posts: {{companyPosts}}
-- What the company does: {{companySummary}}
-- Engaged with: {{linkedinEngagement}}
+## Email
 
-## Step 7 - Follow-up 1 (AI prompt)
+**1 — Subject: Infra load at {{company}}?**
+Hey {{firstName}},
 
-You are {{repName}}, following up after your opener got no reply.
+Been seeing you around the infra conversation lately. At a lot of growing teams, one or two engineers end up carrying the whole platform for everyone else.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Still a peer, still not selling.
+Dave handles infra alongside your team, so you scale output without adding headcount and your people stay on the roadmap.
 
-Give {{firstName}} one genuinely useful thought, offered not sold: another DevOps hire is months of ramp and cost before it actually relieves the bottleneck, so some teams add senior capacity a different way in the meantime and keep their own people on the roadmap. Name the idea so {{firstName}} wants to ask how others handle it, and end with one light open question, never a repeat of the opener.
+Want me to put together a short teardown of where Dave would take load off {{company}}'s team and send it over?
 
-One short message, lowercase, casual, no sign-off, no pitch, no price, no call, never "just checking in" or "following up" or "circling back" or "not a priority", non-needy, no em dash, one idea. Try to make it personalized, and short and sweet.
+**2 (day 2)**
+Hey {{firstName}},
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- What the company does: {{companySummary}}
+Quick context on how it works: Dave is an AI agent that handles infra with a human in the loop. It maps your whole setup and takes the day-to-day load off your engineers.
 
-## Step 9 - Follow-up 2 (templated)
+The teams that switched cut infra costs by about 45% and freed up 8x their engineering time, for a fraction of another hire.
 
-{{firstName}}, quick one on dave: senior infra capacity that plugs into your team and takes the load off.
+Mind if I send more info?
 
-it runs your infra (a real engineer approves every change), and teams using it cut costs around 45% and freed up 8x the engineering time.
+**3 (day 4, breakup)**
+Hey {{firstName}},
 
-i'll put together a quick breakdown of where dave would take load off {{company}}'s team, want me to send it over?
+Last one from me. If the platform's still routing through a couple of people, worth seeing what Dave takes off the team so your engineers stay on the roadmap.
+
+Want me to map where it'd take load off {{company}}?

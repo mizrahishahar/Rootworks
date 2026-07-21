@@ -1,78 +1,72 @@
 ---
-Type: LinkedIn Campaign
+Type: Campaign Sequence
 client: Dave.io
 segment: Scaled - Hiring (Manual)
-channel: LinkedIn (Alta)
-date: 2026-07-09
+channel: LinkedIn + Email (Alta)
+updated: 2026-07-13
 ---
 
-# Scaled - Hiring (Manual) (LinkedIn)
+# Scaled · Hiring — Sequence (LinkedIn + Email)
 
-**Audience:** hand-verified hiring companies (larger, growth-stage US, stretched infra team), imported by CSV. Identical to Scaled - Hiring but sourced manually, with NO AI qualification gate. Buyers in `import - manual buyers.csv`.
+**Audience:** VP Engineering / Head of Infrastructure / Director of DevOps at larger US companies with a stretched infra team, hiring on the infra side. Source + wiring in `Intent Trigger.md`.
 
+**Copy rules (locked):** concrete templates, no AI generation. Sentence case. Fields `{{firstName}}`, `{{company}}`. Generic signal ("hiring on the infra side"). No "capacity". "human in the loop" (never "small team behind it" or "real engineer"). No read-only. This segment DOES use "scale output without adding headcount". "cut costs" (plural). CTA = a teardown (take load off). No em dashes.
 
-## Flow (touchpoints)
+## Flow & schedule
 
-No AI conditions. Audience is pre-verified hiring, imported by CSV.
-1. View profile
-2. Connection request (blank note)
-3. Condition: is connected? No -> end
-4. Like a recent post
-5. Opener message (step 5) - 0 days after accept
-6. wait 2 days | replied? -> stop + route to us
-7. Follow-up 1 (step 7)
-8. wait 2 days | replied? -> stop + route to us
-9. Follow-up 2 (step 9, templated)
-10. End
+```
+LinkedIn: view -> connection request (blank)
+Email 1        day 0
+LinkedIn 1     opener (after connection accepted)
+Email 2        day 2
+LinkedIn 2     +1 day after LinkedIn 1
+Email 3        day 4
+LinkedIn 3     +2 days after LinkedIn 2
+reply on either channel -> stop -> route to inbox-manager
+```
 
-## Step 5 - Opener (AI prompt)
+## LinkedIn
 
-You are {{repName}}, messaging a prospect you just connected with on LinkedIn.
+**Connection request:** blank.
 
+**1 — opener**
+Hey {{firstName}}, saw {{company}} is hiring on the infra side. Curious, is that to get ahead of the load, or is it more that a couple of people are carrying the whole platform for everyone right now?
 
-The company is hiring an infrastructure, DevOps, SRE, or platform engineer onto a team that is already stretched. That is why they matter now, but they do not know you know it.
+**2 — value (no ask; built to pull a "what do you mean?")**
+The real bottleneck on most infra teams isn't headcount. It's that every deploy and every fire still routes through the one or two people who actually know the setup. Another hire just joins that same queue months later. Hard thing to hire your way out of.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Peer to peer, not a salesperson, not pitching.
+**3 — breakup**
+Last one from me {{firstName}}.
 
-Greet them with their name, ALWAYS, and Open with one warm, genuinely personal line about the fact we saw them hiring for infra. Then close with one curious question that pokes the bottleneck pain, how the infra or DevOps team is keeping up as the engineering org grows, or whether a couple of people are carrying the whole platform for everyone else.
+I want to tell you about Dave, our AI agent that handles infra alongside your team, with a human in the loop, so you scale output without adding headcount.
 
-two or three very short messages, lowercase, casual, no sign-off, no pitch, no price, no call, no corporate filler, no em dash, about 5 out of 10 enthusiasm. The only goal is a reply.
+Teams that switched cut infra costs by about 45% and freed up 8x their engineering time.
 
+Want me to map where it'd take load off {{company}}'s team? No worries either way.
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- Headline: {{headline}}
-- About them: {{description}}
-- Recent activity: {{socialActivity}}
-- Recent posts: {{companyPosts}}
-- What the company does: {{companySummary}}
-- Hiring signal: {{hiring}}
+## Email
 
-## Step 7 - Follow-up 1 (AI prompt)
+**1 — Subject: Infra load at {{company}}?**
+Hey {{firstName}},
 
-You are {{repName}}, following up after your opener got no reply.
+Saw you're hiring on the infra side. Usually that means the team's already stretched, tickets are piling up, and the bigger projects keep slipping.
 
-They are hiring onto an already-stretched infra or DevOps team.
+Dave handles infra alongside your team, so you scale output without adding headcount and your people stay on the roadmap.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Still a peer, still not selling.
+Want me to put together a short teardown of where Dave would take load off {{company}}'s team and send it over?
 
-Give {{firstName}} one genuinely useful thought, offered not sold: another DevOps hire is months of ramp and cost before it actually relieves the bottleneck, so some teams add senior capacity a different way in the meantime and keep their own people on the roadmap. Say it in plain language so {{firstName}} wants to ask how, then end with one light open question, never a repeat of the opener.
+**2 (day 2)**
+Hey {{firstName}},
 
-Do NOT invent product names, proprietary terms, or coined phrases. The only real Dave term you may use is "context lake". The curiosity must come from a true, specific idea in plain words, never from made-up jargon.
+Quick context on how it works: Dave is an AI agent that handles infra with a human in the loop. It maps your whole setup and takes the day-to-day load off your engineers.
 
-One short message, lowercase, casual, no sign-off, no pitch, no price, no call, never "just checking in" or "following up" or "circling back" or "not a priority", non-needy, no em dash, one idea.
+The teams that switched cut infra costs by about 45% and freed up 8x their engineering time, for a fraction of another hire.
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- What the company does: {{companySummary}}
-- Hiring signal: {{hiring}}
+Mind if I send more info?
 
-## Step 9 - Follow-up 2 (templated)
+**3 (day 4, breakup)**
+Hey {{firstName}},
 
-{{firstName}}, before you add another devops hire, worth seeing dave: senior infra capacity that plugs into your team today, not in six months.
+Last one from me. If you're still adding infra headcount, worth seeing what Dave takes off the team first, so your engineers stay on the roadmap instead of clearing the backlog.
 
-it runs your infra (a real engineer approves every change), and teams using it cut costs around 45% and freed up 8x the engineering time.
-
-want me to pull a quick read on where dave would take load off {{company}}'s team?
+Want me to map where it'd take load off {{company}} before you close the role?

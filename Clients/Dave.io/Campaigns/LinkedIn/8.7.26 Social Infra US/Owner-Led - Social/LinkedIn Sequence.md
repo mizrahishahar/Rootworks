@@ -1,73 +1,72 @@
 ---
-Type: LinkedIn Campaign
+Type: Campaign Sequence
 client: Dave.io
 segment: Owner-Led - Social
-channel: LinkedIn (Alta)
-date: 2026-07-08
+channel: LinkedIn + Email (Alta)
+updated: 2026-07-13
 ---
 
-# Owner-Led - Social (LinkedIn)
+# Owner-Led · Social — Sequence (LinkedIn + Email)
 
-**Audience:** founder / CTO at small, early-stage US companies on the cloud, sourced from engaging with infra content on LinkedIn. Full ICP in `ICP.md`.
+**Audience:** founder / CTO at small US companies with no infra owner, sourced from engaging with infra / DevOps content on LinkedIn. Source + wiring in `Intent Trigger.md`.
 
+**Copy rules (locked):** concrete templates, no AI generation. Sentence case. Fields `{{firstName}}`, `{{company}}`. Signal = generic topic engagement ("the infra conversation"); NEVER name a creator. No "capacity". "human in the loop". No read-only. No "scale without headcount" here (Scaled only). "cut costs" (plural). CTA = a teardown. No em dashes.
 
-## Flow (touchpoints)
+## Flow & schedule
 
-No hiring gate, the topic engagement is the signal.
-1. View profile
-2. Connection request (blank note)
-3. Condition: is connected? No -> end
-4. Like a recent post
-5. Opener message (step 5) - 0 days after accept
-6. wait 2 days | replied? -> stop + route to us
-7. Follow-up 1 (step 7)
-8. wait 2 days | replied? -> stop + route to us
-9. Follow-up 2 (step 9, templated)
-10. End
+```
+LinkedIn: view -> connection request (blank)
+Email 1        day 0
+LinkedIn 1     opener (after connection accepted)
+Email 2        day 2
+LinkedIn 2     +1 day after LinkedIn 1
+Email 3        day 4
+LinkedIn 3     +2 days after LinkedIn 2
+reply on either channel -> stop -> route to inbox-manager
+```
 
-## Step 5 - Opener (AI prompt)
+## LinkedIn
 
-You are {{repName}}, messaging a prospect you just connected with on LinkedIn.
+**Connection request:** blank.
 
+**1 — opener**
+Hey {{firstName}}, been seeing you around the infra/devops conversation lately. Curious, at {{company}} does infra actually have an owner, or is it landing on you and the engineers when something breaks?
 
-They recently engaged with a post about infrastructure, DevOps, cloud, or platform engineering. That is why they matter now.
+**2 — value (no ask; built to pull a "what do you mean?")**
+At most small teams, infra isn't broken because of the tools. It's broken because it's landing on a developer who was hired to build product, not run infrastructure. Two totally different skill sets, so it stays in firefighting mode until someone actually owns it.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Peer to peer, not a salesperson, not pitching.
+**3 — breakup**
+Last one from me {{firstName}}.
 
-Greet them with their name, ALWAYS, and open with one warm, genuinely personal line about {{firstName}}, pulled from their headline, about, recent activity or posts, or the post they engaged with. Then close with one curious question that pokes the pain of nobody owning infra at a small team, whether infra has a real owner there or whether it just lands on them and the engineers.
+I want to tell you about Dave, our AI agent that handles your infra with a human in the loop, so your team stays on the product instead of firefighting.
 
-two or three very short messages, lowercase, casual, no sign-off, no pitch, no price, no call, no corporate filler, no em dash, about 5 out of 10 enthusiasm. The only goal is a reply.
+Teams that switched cut infra costs by about 45% and freed up 8x their engineering time, for a fraction of a hire.
 
+Want me to map where it'd cut costs for {{company}}? No worries either way.
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- Headline: {{headline}}
-- About them: {{description}}
-- Recent activity: {{socialActivity}}
-- Recent posts: {{companyPosts}}
-- What the company does: {{companySummary}}
-- Engaged with: {{linkedinEngagement}}
+## Email
 
-## Step 7 - Follow-up 1 (AI prompt)
+**1 — Subject: Who owns infra at {{company}}?**
+Hey {{firstName}},
 
-You are {{repName}}, following up after your opener got no reply.
+Been seeing you around the infra conversation lately. At a lot of smaller teams, infra just lands on whoever's closest when something breaks, with no real owner.
 
-Follow the Ty Frankel method and the non-needy voice in the knowledge base. Still a peer, still not selling.
+Dave handles it instead, from day one, so your engineers stay on the product.
 
-Give {{firstName}} one genuinely useful thought, offered not sold: at a small team infra usually lands on the engineers or the founder because nobody owns it, which quietly pulls them off the product. Name the idea so {{firstName}} wants to ask how others handle it, and end with one light open question, never a repeat of the opener.
+Want me to put together a short teardown of where Dave would cut costs in {{company}}'s setup and send it over?
 
-One short message, lowercase, casual, no sign-off, no pitch, no price, no call, never "just checking in" or "following up" or "circling back" or "not a priority", non-needy, no em dash, one idea. Try to make it personalized, and short and sweet.
+**2 (day 2)**
+Hey {{firstName}},
 
-Prospect:
-- Name: {{firstName}}
-- Role: {{jobTitle}} at {{company}}
-- What the company does: {{companySummary}}
+Quick context on how it works: Dave is an AI agent that becomes your infra owner, with a human in the loop. It maps your whole setup and takes infra off your plate from day one.
 
-## Step 9 - Follow-up 2 (templated)
+The teams that switched cut infra costs by about 45% and freed up 8x their engineering time, for a fraction of what a hire runs.
 
-{{firstName}}, quick one on dave: a senior devops team in your stack, without building one yourself.
+Mind if I send more info?
 
-it runs your infra (a real engineer approves every change), and teams using it cut costs around 45% and freed up 8x the engineering time.
+**3 (day 4, breakup)**
+Hey {{firstName}},
 
-i'll put together a quick breakdown of where dave would cut costs for {{company}}, want me to send it over?
+Last one from me. If nobody really owns infra at {{company}} yet, Dave can take it from day one, so your engineers stay on the product instead of firefighting.
+
+Want me to map where it'd cut costs for {{company}}?

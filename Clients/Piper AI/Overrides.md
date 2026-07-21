@@ -14,6 +14,8 @@
 
 ## Sequencer
 
+- Sending window: **07:00-14:00, Monday to Friday, America/New_York** (not the standard full day).
+
 ## Copy
 
 ## Scheduler

@@ -101,9 +101,9 @@ Approve the plan as a batch before any prose is written.
 
 ### STEP 7 — Write the sequence
 
-**Owner:** CLAUDE · **Skill:** cold-email-copywriter
+**Owner:** CLAUDE · **Skill:** cold-email-copywriter, conventions-manager
 
-Write to the playbook's templates and examples: clean copy and personalization placeholders only, built on the vars the leads actually carry. Save to `Clients/{client}/Campaigns/Email/{campaign}/{segment}/Email Sequence.md` - no signature, spintax, or sending mechanics (those belong to deploy). A rewrite replaces the file in place; no version numbers.
+Write to the playbook's templates and examples: clean copy and personalization placeholders only, built on the vars the leads actually carry. Save the sequence into the campaign folder per conventions-manager (it owns the path and naming) - no signature, spintax, or sending mechanics (those belong to deploy). A rewrite replaces the file in place; no version numbers.
 
 - **Header** - one line: the Audience, the exact segment.
 - **Body** - touches in order, variants labeled by number + letter. Email 1: `1A`, `1B` (subject + body each). Follow-ups: `2A`, `3A` (body only, threaded, no new subject).

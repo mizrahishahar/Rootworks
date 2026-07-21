@@ -12,7 +12,7 @@ Our own Clay, multi-tenant: one Airtable base per client, driven by one shared s
 
 The control plane. Every automation resolves its client here at runtime; nothing is hardcoded per client.
 
-- **Clients registry** (`tblK0nCoNVvFf5SPa`) - one row per client: Clayroots Base ID, PlusVibe Workspace ID, Slack Channel ID, driveMainFolderID. The first read of any build.
+- **Clients registry** (`tblK0nCoNVvFf5SPa`) - one row per client: Clayroots Base ID, PlusVibe Workspace ID, Slack Channel ID, driveMainFolderID, Close Smart View ID, and the Qualification Prompt (the client's ICP rubric, read by the qualifier clone at runtime). The first read of any build. The Onboard Client automation writes the row; a client without one is invisible to the machine.
 - **CONTROL PANEL** - one row per operation with its form URL.
 - **AUTOMATIONS RUNS** (`tbli7rV6Qf3sLpV6R`) - the central log, cross-client. Every run writes one row: counts in and out, errors, credits, duration, Status, and a rich per-run Description. Read the log row to know what a run did.
 
@@ -21,7 +21,7 @@ The control plane. Every automation resolves its client here at runtime; nothing
 Resolved from the registry, never assumed. Inside it, two kinds of tables:
 
 - **Build tables** - born by a waterfall, one list one table, disposable after its campaign loads: `{Build} - Contacts - {date}` and `{Build} - Domains - {date}`.
-- **Standing tables** - permanent: the Intent tables (per the intent flows), and DNC Domains (planned; ingest will drop matches).
+- **Standing tables** - permanent: the Intent tables (per the intent flows), and DNC Domains (born with the base at onboarding, loaded from the client's form, pushed into every sender the Overrides name; ingest dropping matches is still to build).
 
 ## The contract
 

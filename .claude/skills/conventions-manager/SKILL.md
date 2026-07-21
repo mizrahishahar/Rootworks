@@ -26,23 +26,27 @@ Clients/{Client}/
 - **Assets/** holds the ammo the inbox-manager and copywriters deploy: proof numbers, testimonials, case studies, Looms, sendable links, the DNC CSV, and any per-sender knowledge base (e.g. an Alta KB). Flat, no required sub-structure.
 
 ## Campaign folder structure
-A date-stamped parent per market, one subfolder per campaign named for its audience, no date or index on the subfolder.
+Channel first, then a date-stamped parent per market, then one subfolder per campaign named for its audience.
 
 ```
-{Campaigns root}/
-  {D.M.YY} {Market / Niche}/       parent, date-stamped
-    {Segment descriptor}/          one per campaign; no date, no index
-      {exported lead list}.csv
+Clients/{Client}/Campaigns/
+  {Email | LinkedIn}/                 channel
+    {YYYY-MM-DD} {Market / Niche}/    parent, date-stamped
+      {Segment descriptor}/          one per campaign; no date, no index
+        {exported lead list}.csv
 ```
+
+**Dates are always `YYYY-MM-DD`** - the Obsidian date format the vault already uses (daily notes, meeting notes). It sorts chronologically, so the folders read in order. Never `D.M.YY`.
 
 ## Naming
 
 | Artifact | Convention | Example |
 |---|---|---|
-| Parent campaign folder | `{D.M.YY} {Market / Niche}` | `7.7.26 Moving Companies US CA` |
+| Channel folder | `Email` / `LinkedIn` | `Email` |
+| Parent campaign folder | `{YYYY-MM-DD} {Market / Niche}` | `2026-07-07 Moving Companies US CA` |
 | Campaign subfolder | `{Segment descriptor}` | `Home Movers - Owner-Operators - Direct Contact` |
-| Per-pull CSV | `{Niche} - {pull descriptor} - {date}` | `Movers - Residential Named - 2026-07-07` |
-| Sending-tool campaign | `{D.M.YY} - {Segment descriptor}` | `7.7.26 - Home Movers - Owner-Operators - Direct Contact` |
+| Per-pull CSV | `{Niche} - {pull descriptor} - {YYYY-MM-DD}` | `Movers - Residential Named - 2026-07-07` |
+| Sending-tool campaign | `{YYYY-MM-DD} - {Segment descriptor}` | `2026-07-07 - Home Movers - Owner-Operators - Direct Contact` |
 
 ## Lead source: ready list or live intent
 
@@ -53,5 +57,5 @@ A campaign subfolder is fed one of two ways, and it carries the artifact that na
 
 | Artifact | Convention | Example |
 |---|---|---|
-| Ready-list export | `{Niche} - {pull descriptor} - {date}.csv` | `Movers - Residential Named - 2026-07-07` |
+| Ready-list export | `{Niche} - {pull descriptor} - {YYYY-MM-DD}.csv` | `Movers - Residential Named - 2026-07-07` |
 | Live-intent descriptor | `Intent Trigger.md` in the campaign subfolder | names the Trigify search, relay, gate, and campaign id |

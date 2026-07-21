@@ -9,8 +9,6 @@ description: The inbox manager's run for today. Ready up on the skill, list ever
 
 > Run through the **sop-runner** skill - load it first (with obsidian-cli), one step at a time, never run ahead. Each step names its owner; in Co-op only the Operator advances the run.
 
-> **Unattended (scheduled) run:** pull and present the worklist, the Lead Cards, and the drafted messages as the run output, then stop. Do not write to the vault. Sending and logging (Step 5) belong to the Operator - nothing goes out or gets written without approval. This stays a Co-op run; a missing Operator does not make it autonomous.
-
 ## When to do it
 Every day, once per active client. The whole inbox, not just positive replies - every conversation that needs a move today, from a fresh yes to a no-show to a lead gone cold.
 
@@ -66,7 +64,7 @@ The tiers, highest-value first, and the default move each one carries:
 | No Show | booked and missed | rebook, two times |
 | Holding / Cold | quiet or stalled | a human re-open, no ask |
 
-For each lead, mark its channel; for email leads name the reply play from `tools/email-replies/` (LinkedIn leads carry no play - the move is derived live from linkedin-setter). Group by tier, and say which lead we start with and why.
+For each lead, mark its channel; for email leads name the reply play from Rootworks/tools/email-replies/` (LinkedIn leads carry no play - the move is derived live from linkedin-setter). Group by tier, and say which lead we start with and why.
 
 **Output:** the leads table, grouped by tier. Then wait for the go on scope.
 
@@ -93,7 +91,7 @@ For each lead, mark its channel; for email leads name the reply play from `tools
 
 ### STEP 4 — Work each lead, one at a time
 
-**Owner:** CLAUDE · **Skill:** inbox-manager (email) or linkedin-setter (LinkedIn), by the lead's channel · **Tool:** for email, the reply play in `tools/email-replies/` + the client's email sender (PlusVibe by default); for LinkedIn, linkedin-setter's principles (no play file - the move is derived live) + the client's LinkedIn sender (HeyReach by default); the client's scheduler (Calendly by default) for both
+**Owner:** CLAUDE · **Skill:** inbox-manager (email) or linkedin-setter (LinkedIn), by the lead's channel · **Tool:** for email, the reply play in Rootworks/tools/email-replies/` + the client's email sender (PlusVibe by default); for LinkedIn, linkedin-setter's principles (no play file - the move is derived live) + the client's LinkedIn sender (HeyReach by default); the client's scheduler (Calendly by default) for both
 
 Top tier first, **one lead at a time, a hold between each - never a batch.** Route the lead by its channel: an email thread runs through inbox-manager and its reply play, a LinkedIn thread through linkedin-setter, principle-derived. For the current lead: read the thread in full, then show the **Lead Card**, then the drafted **Message**. On a booking, pull real slots from the client's scheduler (Calendly by default, unless the Overrides say otherwise), or ask the Operator if no connector is wired. Never invent a slot or a duration.
 
@@ -113,7 +111,7 @@ Top tier first, **one lead at a time, a hold between each - never a batch.** Rou
 
 **Thread:** {touches, chronological} → {latest inbound, dated and marked}: "{...}"
 
-**Read:** {email: the named play from tools/email-replies/ · LinkedIn: the live read} — {the one-line judgment that sets the move}
+**Read:** {email: the named play fromRootworks/tools/email-replies/ · LinkedIn: the live read} — {the one-line judgment that sets the move}
 
 ---
 

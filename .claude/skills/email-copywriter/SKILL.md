@@ -23,7 +23,7 @@ The offer is built upstream. You frame it, never invent it: surface the number, 
 
 ## Run a playbook
 
-You do not write from a single framework. The playbooks live in `tools/email-playbooks/` (the cold plays) and `tools/intent-playbooks/` (the signal-triggered ones) - each a way to write or an intent play, carrying its angle, subject lines, plan, and examples. You name the one a campaign calls for and write to its parts; variants may run different playbooks to test angles against the same audience.
+You do not write from a single framework. The playbooks live in Rootworks/tools/email-playbooks/` (the cold plays) and Rootworks/tools/intent-playbooks/` (the signal-triggered ones) - each a way to write or an intent play, carrying its angle, subject lines, plan, and examples. You name the one a campaign calls for and write to its parts; variants may run different playbooks to test angles against the same audience.
 
 ## Output
 

@@ -29,17 +29,17 @@ Execute vault operations — reading notes, creating files, appending content, s
 
 **Filesystem access never overrides this.** Being able to `cat`, `grep`, `sed`, or loop over a vault file does not make it allowed - that convenience is the exact temptation this rule exists to kill. Every vault read goes through `obsidian read`, one path per call, even inside `.claude/`. Never batch reads with a shell loop; seven files is seven `obsidian read` calls, not one `for ... cat`.
 
-**Writing content — the instrument matters**
+**Writing content — obsidian CLI, always**
 
-| What you are doing | Use |
+| What you are doing | How |
 |---|---|
-| Read, search, properties, tasks, a one-line append | the `obsidian` CLI |
-| Create or overwrite a note with real content — frontmatter, headings, a sequence, a log, a brief, anything multi-line | the **`Write` tool** |
-| Targeted edit to an existing file — change a line, remove a section | the **`Edit` tool** |
+| Read, search, properties, a one-line append | the `obsidian` CLI directly |
+| Create or overwrite a note with real multi-line content | `obsidian eval`: stage the body in a scratch file, then `const c = require('fs').readFileSync(scratchPath, 'utf8'); await app.vault.adapter.write(vaultPath, c)` |
+| Targeted edit — change a line, remove a section | `obsidian eval`: `adapter.read(path)`, replace the string, `adapter.write(path, ...)` |
 
-**Never push a real file through `content=`.** A newline followed by `#` inside a quoted shell argument trips path validation: it prompts every single time and can mangle the content. Markdown is nothing but newlines and `#` headings, so `content=` is the wrong instrument for a real note — it is only for a short, single-line value.
+**Never push a multi-line note through `content=`.** A newline followed by `#` inside a quoted shell argument trips path validation: it prompts every time and can mangle content. So `content=` is only for a short, single-line value; anything with newlines is written through `obsidian eval`. There is no `content-from` flag — do not invent one.
 
-This is sanctioned, not a silent fallback. Obsidian-CLI-only means you never read vault content with `cat` / `grep` / `sed`; it never meant forcing a whole markdown file through a shell argument. There is no `content-from` flag — do not invent one.
+**The `Write` and `Edit` tools are for NON-vault files only** — settings.json, scratch files, memory. A vault `.md` is always written through the obsidian CLI (`obsidian eval`), never the Write tool.
 
 **Core commands**
 
@@ -47,7 +47,7 @@ This is sanctioned, not a silent fallback. Obsidian-CLI-only means you never rea
 # Read a note
 obsidian vault="The Vault" read path="Prospects/Blueprint MCAT/Reports/ICP.md"
 
-# Create a note — ONLY for short, single-line content. A real file uses the Write tool.
+# Create a note — ONLY for short, single-line content. A multi-line note goes through obsidian eval.
 obsidian vault="The Vault" create path="Prospects/Blueprint MCAT/Campaigns/Campaign Brief.md" content="# Campaign Brief" silent
 
 # Append to a note
@@ -84,7 +84,7 @@ Full command reference: run `obsidian help` or see https://help.obsidian.md/cli
 1. Always check: does this path have spaces? → quote it
 2. Always include `vault="The Vault"` as the first parameter
 3. Always use `path=` with `.md` extension
-4. Creating or overwriting a note with real content → the `Write` tool. Never `content=`.
+4. Creating or overwriting a note with real content → `obsidian eval` (stage the body in a scratch file, then adapter.write). Never `content=`, never the Write tool.
 5. For targeted edits to existing files → `Edit` tool is simpler than `create --overwrite`
 6. If the CLI returns an error → stop and report it. Do not retry in a loop. Do not fall back to raw file system reads.
 

@@ -30,7 +30,7 @@ The component read against how it should work, the fault named, the fix applied 
 
 ### STEP 1 — Gather the context
 
-**Owner:** CLAUDE · **Tool:** the client vault + `tools/infrastructure`
+**Owner:** CLAUDE · **Tool:** the client vault + Rootworks/tools/infrastructure`
 
 Establish the run: which single component this is, where it lives (which client, or the shared machine), what it is supposed to do, and the symptom that opened this. Read the component's tool file and any Overrides that bend it. Read only to know what we are fixing - do not touch it yet.
 

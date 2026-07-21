@@ -25,9 +25,9 @@ process.stdin.on("end", () => {
   }
 
   // 2. Never push a multi-line note through obsidian content= (trips path
-  //    validation, prompts every time). Content goes through the Write tool.
+  //    validation, prompts every time). Content is written with obsidian eval (stage the body in a scratch file, then fs.readFileSync it and call app.vault.adapter.write).
   if (/\bobsidian\b[\s\S]*\bcreate\b[\s\S]*\bcontent=/.test(cmd) && /\n/.test(cmd)) {
-    deny("Vault note content goes through the Write tool, never `obsidian create … content=`. A newline followed by # trips path validation and prompts every time. Use Write for the file body; obsidian content= is only for a single-line value.");
+    deny("Vault note content is written with obsidian eval (stage the body in a scratch file, then fs.readFileSync it and call app.vault.adapter.write), never `obsidian create … content=`. A newline followed by # trips path validation and prompts every time. content= is only for a single-line value.");
   }
 
   process.exit(0);

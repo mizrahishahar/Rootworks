@@ -19,7 +19,7 @@ Read the campaign and the market as any copy, but weight the profile and the sig
 
 ## Run a playbook
 
-The playbooks live in `tools/playbooks/`; you name the one a campaign calls for and write to it. The connection-gated arc is the default spine: a blank connection request (out-accepts a pitched note and is safer on the platform), a question opener off the freshest signal, value-or-exit follow-ups, a warm breakup. A playbook can reshape it, the Ty Frankel play runs a multi-thread conversation rather than a fixed sequence.
+You pick the playbook a campaign calls for and write to it. The connection-gated arc is the default spine: a blank connection request (out-accepts a pitched note and is safer on the platform), a question opener off the freshest signal, value-or-exit follow-ups, a warm breakup. A playbook can reshape it, the Ty Frankel play runs a multi-thread conversation rather than a fixed sequence.
 
 ## The numbers
 

@@ -71,7 +71,7 @@ Optional. Read the workspace's past campaigns and surface what they say to run -
 
 ### STEP 4 — Choose the playbook
 
-**Owner:** OPERATOR · **Tool:** `tools/email-playbooks`
+**Owner:** OPERATOR · **Tool:** Rootworks/tools/email-playbooks`
 
 The Operator names the email playbook the campaign runs on. Claude reads it in full - its angle, plan, and examples.
 

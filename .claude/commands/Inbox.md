@@ -9,6 +9,8 @@ description: The inbox manager's run for today. Ready up on the skill, list ever
 
 > Run through the **sop-runner** skill - load it first (with obsidian-cli), one step at a time, never run ahead. Each step names its owner; in Co-op only the Operator advances the run.
 
+> The senders and scheduler are the client's own, per the Overrides - PlusVibe (email), HeyReach (LinkedIn), Calendly (slots) by default.
+
 ## When to do it
 Every day, once per active client. The whole inbox, not just positive replies - every conversation that needs a move today, from a fresh yes to a no-show to a lead gone cold.
 
@@ -40,12 +42,12 @@ First, ready up on the reply skills for the channels this client runs (the Overr
 
 ### STEP 2 — List everyone we work
 
-**Owner:** CLAUDE · **Tool:** the client's senders (PlusVibe for email, HeyReach for LinkedIn, per the Overrides) + Close
+**Owner:** CLAUDE · **Tool:** Close + the client's senders
 
-Pull every lead from a positive reply upward - the floor - across every channel the client runs. Read the live threads from each channel's sender and reconcile them against Close: every positive-reply-and-up lead is a Close record, and its stage is the tier. Where a live thread has no record, create one; where a record's stage no longer matches the thread, correct it.
+First, pull the client's worklist out of Close through their `{Client} — Prospects` smart view - its ID sits on the client's row in the Hub Clients registry - every lead from a positive reply upward, the floor. Then check them against the client's live threads in the senders and reconcile: correct any record whose stage no longer matches its thread, and create one for any live thread that has none.
 
 > [!warning] If a sender does not load, stop.
-> The email sender is PlusVibe and the LinkedIn sender is HeyReach by default; the Overrides say otherwise. The moment the sender MCP errors or fails to load on any call - even the first - halt the run right there. Do not retry in a loop, do not work around it, do not proceed on stale state, do not fabricate the worklist from memory or a prior log. Flag it and wait for the Operator to reload / reconnect the sender before pulling live. Do not log anything to the vault - a sender that needs a refresh is not a run worth recording.
+> The moment a sender errors or fails to load on any call - even the first - halt the run right there. Do not retry in a loop, do not work around it, do not proceed on stale state, do not fabricate the worklist from memory or a prior log. Flag it and wait for the Operator to reload / reconnect the sender before pulling live. Do not log anything to the vault - a sender that needs a refresh is not a run worth recording.
 
 **Output:** the reconciled worklist - every lead pulled and its stage lined up with the thread. Then wait for the go.
 
@@ -57,14 +59,15 @@ Pull every lead from a positive reply upward - the floor - across every channel 
 
 The tiers, highest-value first, and the default move each one carries:
 
-| Tier (Close stage) | What it is | Default move |
-|--------------------|------------|--------------|
-| Meeting Booked | booked, not yet shown | protect the show - pre-call asset, confirm |
-| Positive Reply | interested, not booked | fulfill the ask, offer two times |
-| No Show | booked and missed | rebook, two times |
-| Holding / Cold | quiet or stalled | a human re-open, no ask |
+| Tier (Close stage) | What it is             | Default move                               |
+| ------------------ | ---------------------- | ------------------------------------------ |
+| Meeting Booked     | booked, not yet shown  | protect the show - pre-call asset, confirm |
+| Hot List           | strong-fit interested, not booked | first of the unbooked - fulfill the ask, offer two times |
+| Positive Reply     | interested, not booked | fulfill the ask, offer two times           |
+| No Show            | booked and missed      | rebook, two times                          |
+| Holding / Cold     | quiet or stalled       | a human re-open, no ask                    |
 
-For each lead, mark its channel; for email leads name the reply play from Rootworks/tools/email-replies/` (LinkedIn leads carry no play - the move is derived live from linkedin-setter). Group by tier, and say which lead we start with and why.
+For each lead, mark its channel; for email leads name the reply play from `tools/email-replies/` (LinkedIn leads carry no play - the move is derived live from linkedin-setter). Group by tier, and say which lead we start with and why.
 
 **Output:** the leads table, grouped by tier. Then wait for the go on scope.
 
@@ -91,7 +94,7 @@ For each lead, mark its channel; for email leads name the reply play from Rootwo
 
 ### STEP 4 — Work each lead, one at a time
 
-**Owner:** CLAUDE · **Skill:** inbox-manager (email) or linkedin-setter (LinkedIn), by the lead's channel · **Tool:** for email, the reply play in Rootworks/tools/email-replies/` + the client's email sender (PlusVibe by default); for LinkedIn, linkedin-setter's principles (no play file - the move is derived live) + the client's LinkedIn sender (HeyReach by default); the client's scheduler (Calendly by default) for both
+**Owner:** CLAUDE · **Skill:** inbox-manager (email) or linkedin-setter (LinkedIn), by channel · **Tool:** the client's sender + scheduler; email also the reply play in `tools/email-replies/`
 
 Top tier first, **one lead at a time, a hold between each - never a batch.** Route the lead by its channel: an email thread runs through inbox-manager and its reply play, a LinkedIn thread through linkedin-setter, principle-derived. For the current lead: read the thread in full, then show the **Lead Card**, then the drafted **Message**. On a booking, pull real slots from the client's scheduler (Calendly by default, unless the Overrides say otherwise), or ask the Operator if no connector is wired. Never invent a slot or a duration.
 
@@ -107,11 +110,11 @@ Top tier first, **one lead at a time, a hold between each - never a batch.** Rou
 - **Location / size:** {location} · {size} · **ICP: {score}**
 - **Timezone:** {tz} · now {local hour} local
 - **Persona / subject:** {persona} ({persona email}) · "{subject}"
-- **Qualification (verbatim):** *"{the lead's stored qualification, word for word}"*
+- **Qualification (verbatim):** *"{the Qualification Brief note stored on the Close lead, word for word}"*
 
 **Thread:** {touches, chronological} → {latest inbound, dated and marked}: "{...}"
 
-**Read:** {email: the named play fromRootworks/tools/email-replies/ · LinkedIn: the live read} — {the one-line judgment that sets the move}
+**Read:** {email: the named play from `tools/email-replies/` · LinkedIn: the live read} — {the one-line judgment that sets the move}
 
 ---
 

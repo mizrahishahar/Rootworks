@@ -32,15 +32,15 @@ A clean email sequence, deployed live through the client's sender - the approved
 | 11 | Upload the leads | OPERATOR | Leads loaded |
 | 12 | Validate personalization | CLAUDE | Validation report |
 | 13 | Launch | OPERATOR | Campaign live |
-| 14 | Verify and log | CLAUDE | Launch verified, logged |
+| 14 | Verify and log the session | CLAUDE | Launch verified, session logged |
 
 ## Process
 
 ### STEP 1 — Gather the brief and context
 
-**Owner:** OPERATOR + CLAUDE · **Tool:** the client vault
+**Owner:** OPERATOR + CLAUDE · **Tool:** the client vault + [[clayroots]]
 
-The Operator hands the brief: the campaign folder, the segment, the offer, the context (new or evergreen, which pass, past results). Claude reads the folder - the leads loaded into it and the real vars they carry - and the client Overrides, which name the client's email sender and any deltas from the defaults. Then Claude plays back what this campaign actually is.
+The Operator hands the brief: the campaign folder, the segment, the offer, the context (new or evergreen, which pass, past results). Claude reads the folder - the leads loaded into it and the real vars they carry - and the client Overrides, which name the client's email sender and any deltas from the defaults. Claude also reads the client's recent campaign sessions and automation runs in the Hub SESSIONS and AUTOMATIONS tables - what shipped before, on which segments, and how the list behind this folder was built. Then Claude plays back what this campaign actually is.
 
 **Output:** the context read - the campaign, the segment, the offer, the leads and their real vars, the sender named in Overrides. Then wait for the go and any context you want to add.
 
@@ -173,10 +173,10 @@ Claude presents readiness with honest flags. The Operator flips the campaign liv
 
 ---
 
-### STEP 14 — Verify and log
+### STEP 14 — Verify and log the session
 
-**Owner:** CLAUDE · **Skill:** email-deployer · **Tool:** the client's email sender
+**Owner:** CLAUDE · **Skill:** email-deployer · **Tool:** the client's email sender, [[clayroots]]
 
-Read the campaign back and confirm it is live - status and settings by read-back, never the response code. Log the deploy to `Clients/{client}/Logs`.
+Read the campaign back and confirm it is live - status and settings by read-back, never the response code. Then log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - {campaign}"), Type "Email Campaign", Client (linked), Date, Log, Deliverables (the campaign folder, the client-review export, the live campaign). The Log carries the deploy record: the segment and its size, the playbook and the variant plan shape, the sender and the campaign built on it, the validation result, and the launch state.
 
-**Output:** the launch verified and logged. This closes the run.
+**Output:** the launch verified and the session logged. This closes the run.

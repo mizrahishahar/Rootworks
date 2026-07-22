@@ -32,9 +32,9 @@ Every lead worked one at a time - Lead Card then message - to its drafted next m
 
 ### STEP 1 — Ready up on the skill, then load the client
 
-**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + Close
+**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + Close + [[clayroots]]
 
-First, ready up on the reply skills for the channels this client runs (the Overrides name them): `inbox-manager` for email, `linkedin-setter` for LinkedIn. Invoke each that applies and read it in full - the skill, its knowledge base, its interfaces - fresh every run. Then load the context: the session logs newest-first, the client's inbox Overrides and Assets, the onboarding form.
+First, ready up on the reply skills for the channels this client runs (the Overrides name them): `inbox-manager` for email, `linkedin-setter` for LinkedIn. Invoke each that applies and read it in full - the skill, its knowledge base, its interfaces - fresh every run. Then load the context: the session logs newest-first, the client's inbox Overrides and Assets, the onboarding form, and the client's recent sessions and automation runs in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]) - which campaigns and builds went live lately is the backdrop the replies arrive against.
 
 **Output:** the context read - skill-ready and context-aware, where the inbox stands. Then wait for the go and any context you want to add.
 

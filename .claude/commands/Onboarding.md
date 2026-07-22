@@ -33,6 +33,7 @@ A client fully stood up: the Drive workspace shared to their team, the Slack cha
 | 12  | Clone the client automations       | CLAUDE            | Clones live                 |
 | 13  | Design the sending workspace + DNC | CLAUDE            | Workspace configured        |
 | 14  | Hand off the first campaign        | CLAUDE            | Handoff brief               |
+| 15  | Log the session                    | CLAUDE            | Session logged              |
 
 ## Process
 
@@ -42,7 +43,7 @@ A client fully stood up: the Drive workspace shared to their team, the Slack cha
 
 **Purpose:** know exactly which client this is and where onboarding already stands, so we start at the right step and never redo a done one.
 
-Read the Close lead: the signed deal, the contacts, the team. Check what already exists: a client folder, a channel, a Clients registry row, infra. Establish the situation: a fresh signup, or a jump in partway through. Read only what tells you where we are - not the form, not any later step's material.
+Read the Close lead: the signed deal, the contacts, the team. Check what already exists: a client folder, a channel, a Clients registry row, infra - and any prior sessions or automation runs for this client in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]), which tell you exactly what already ran. Establish the situation: a fresh signup, or a jump in partway through. Read only what tells you where we are - not the form, not any later step's material.
 
 **Output:** the context read - client, deal terms, what already exists, the step we start from. Then wait for the go.
 
@@ -54,7 +55,7 @@ Read the Close lead: the signed deal, the contacts, the team. Check what already
 
 **Purpose:** lay the client down across every system in one run: the folder anatomy, the bare channel, the Close configuration, the ClayRoots base, and the registry row every automation resolves from.
 
-Fire the Onboard Client automation with the Close lead id. It creates `Clients/{Client}/` with the full anatomy (Overrides.md stub, Reports, Content, Campaigns/Email, Campaigns/LinkedIn, Logs, Assets, Shared), shares Shared with the lead's contacts, opens the private `{slug}-private` channel and invites the Operator, appends the client to the Close `Client` field choices, clones the client's Prospects smart view, creates the `{Client} Clayroots` base with its DNC Domains table, and writes the Hub Clients row: Client, driveMainFolderID, Slack Channel ID, Clayroots Base ID, Close Smart View ID.
+Fire the Onboard Client automation with the Close lead id. It creates `Clients/{Client}/` with the full anatomy (Overrides.md stub, Reports with its Leads Overflow subfolder, Content, Campaigns/Email, Campaigns/LinkedIn, Logs, Assets, Shared), shares Shared with the lead's contacts, opens the private `{slug}-private` channel and invites the Operator, appends the client to the Close `Client` field choices, clones the client's Prospects smart view, creates the `{Client} Clayroots` base with its DNC Domains table, and writes the Hub Clients row: Client, driveMainFolderID, Slack Channel ID, Clayroots Base ID, Close Smart View ID.
 
 **Output:** the scaffold checklist - every artifact confirmed against the live systems, the registry row shown. If the ClayRoots base failed on scope, flag it for hand-creation before any list build. Then wait for confirm.
 
@@ -201,3 +202,15 @@ Per email-deployer's workspace design: tag the inboxes into waves, set the signa
 Write the handoff brief: what we learned about their operation, the first lead list to build (source, segment, filters), and what the onboarding call still needs to settle. Save it to `Clients/{Client}/Logs/{date} - Onboarding.md`. This is the brief the first List and Campaign runs open from.
 
 **Output:** the handoff brief. Then wait for confirm.
+
+---
+
+### STEP 15 - Log the session
+
+**Owner:** CLAUDE · **Tool:** [[clayroots]]
+
+**Purpose:** the onboarding record every later session reads - what was stood up, and what stayed open.
+
+Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - onboarding"), Type "Onboarding", Client (linked), Date, Log, Deliverables (the registry row, the workspace, the clones, the handoff brief). The Log carries what was stood up and confirmed live, the ids that matter, any deltas from the standard anatomy, and what remains open for the first build.
+
+**Output:** the session logged. This closes the run.

@@ -9,7 +9,7 @@ description: The daily client run. Establish where the client stands, run the ca
 
 > Run through the **sop-runner** skill - load it first (with obsidian-cli), one step at a time, never run ahead. Each step names its owner; in Co-op only the Operator advances the run.
 
-> **Unattended (scheduled) run:** produce the audit card (Steps 1-2) and present it as the run output, then stop. Do not write to the vault - deciding the missions (Step 3) and logging the run (Step 4) belong to the Operator, in an attended run. This stays a Co-op run; a missing Operator does not make it autonomous.
+> **Unattended (scheduled) run:** produce the audit card (Steps 1-2) and present it as the run output, then stop. Do not write anywhere - deciding the missions (Step 3) and logging the run (Step 4) belong to the Operator, in an attended run. This stays a Co-op run; a missing Operator does not make it autonomous.
 
 ## When to do it
 Every morning, once per active client: the standing run that turns "where does this client stand" into today's missions.
@@ -24,15 +24,15 @@ A clear read of where the client stands, and today's missions decided and handed
 | 1 | Gather the context | CLAUDE | Context read |
 | 2 | Run the audit | CLAUDE | Audit card |
 | 3 | Investigate and decide | OPERATOR | Next Steps block |
-| 4 | Log the run | CLAUDE | Run logged |
+| 4 | Log the session | CLAUDE | Session logged |
 
 ## Process
 
 ### STEP 1 — Gather the context
 
-**Owner:** CLAUDE · **Tool:** the client vault + Close (CRM)
+**Owner:** CLAUDE · **Tool:** the client vault + Close (CRM) + [[clayroots]]
 
-Load the recent context: the session logs newest-first until continuity is clear, the recent campaign folders, the CRM record for where the relationship stands, anything else recent in the folder. Read only to know where the client stands - do not pull the sender or start the audit; that is Step 2.
+Load the recent context: the client's recent sessions in the Hub SESSIONS table (the last analysis, builds, and campaigns) and its recent AUTOMATIONS runs - especially anything Failed - then the client's Logs for the human side, the recent campaign folders, the CRM record for where the relationship stands. Read only to know where the client stands - do not pull the sender or start the audit; that is Step 2.
 
 **Output:** the context read - where the client stands and what is unusual about this run. Then wait for the go and any context you want to add.
 
@@ -45,7 +45,7 @@ Load the recent context: the session logs newest-first until continuity is clear
 For each channel the client runs, pull the live numbers from its sender tool and run the workspace audit. If the workspace has not started sending, say so and stop - onboarding is not this run.
 
 > [!warning] If a sender does not load, stop.
-> The moment a sender MCP errors on any call, halt and flag it to the Operator. Do not retry in a loop, do not work around it, do not audit on stale numbers. Wait for the Operator to reload / reconnect the sender before pulling live. Do not log anything to the vault - a sender that needs a refresh is not a run worth recording.
+> The moment a sender MCP errors on any call, halt and flag it to the Operator. Do not retry in a loop, do not work around it, do not audit on stale numbers. Wait for the Operator to reload / reconnect the sender before pulling live. Do not log anything - a sender that needs a refresh is not a run worth recording.
 
 **Output:** the audit card - live markdown, no code box, set off like this:
 
@@ -95,10 +95,10 @@ Only after discussion.
 
 ---
 
-### STEP 4 — Log the run
+### STEP 4 — Log the session
 
-**Owner:** CLAUDE · **Tool:** the client vault
+**Owner:** CLAUDE · **Tool:** [[clayroots]]
 
-Log the run into the client's Logs.
+Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - daily analysis"), Type "Analysis / Strategy", Client (linked), Date, Log, Deliverables (empty - this run executes nothing). The Log carries what future audits read: the six audit verdicts with their numbers, the missions decided and the SOP each was handed to, and the open threads for tomorrow.
 
-**Output:** the run logged - both artifacts (the audit card is the trend history future audits read; the Next Steps block is what each handoff session opens with), the missions and the SOP each was handed to, and the open threads for tomorrow.
+**Output:** the session logged. This closes the run.

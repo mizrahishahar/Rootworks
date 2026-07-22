@@ -24,7 +24,7 @@ The component read against how it should work, the fault named, the fix applied 
 | 3 | Diagnose | CLAUDE | Diagnosis table |
 | 4 | Fix | CLAUDE or OPERATOR | Change applied |
 | 5 | Verify | CLAUDE | Verification |
-| 6 | Log | CLAUDE | Fix logged |
+| 6 | Log the session | CLAUDE | Session logged |
 
 ## Process
 
@@ -32,7 +32,7 @@ The component read against how it should work, the fault named, the fix applied 
 
 **Owner:** CLAUDE · **Tool:** the client vault + Rootworks/tools/infrastructure`
 
-Establish the run: which single component this is, where it lives (which client, or the shared machine), what it is supposed to do, and the symptom that opened this. Read the component's tool file and any Overrides that bend it. Read only to know what we are fixing - do not touch it yet.
+Establish the run: which single component this is, where it lives (which client, or the shared machine), what it is supposed to do, and the symptom that opened this. Read the component's tool file and any Overrides that bend it. Read the component's recent runs in the Hub AUTOMATIONS table and the last Infra Plumbing sessions in SESSIONS ([[clayroots]]) - what ran, what Failed, what was already fixed. Read only to know what we are fixing - do not touch it yet.
 
 **Output:** the context read - the component, its owner (client or machine), its job, the symptom. Then wait for the go and any context you want to add.
 
@@ -99,10 +99,10 @@ Re-run or test the component and confirm the symptom is gone, not just the code 
 
 ---
 
-### STEP 6 — Log
+### STEP 6 — Log the session
 
-**Owner:** CLAUDE · **Tool:** the vault (`Clients/{client}/Logs` for a client component, the machine's infra log otherwise)
+**Owner:** CLAUDE · **Tool:** [[clayroots]]
 
-Log the fix: the symptom, the fault, the change, and the verification.
+Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client or Machine} - {component} fix"), Type "Infra Plumbing", Client (linked; empty for machine-scoped work), Date, Log, Deliverables (only when the fix produced an artifact). The Log carries the fix record: the symptom, the fault and its root cause, the change applied and by whom, and the verification result.
 
-**Output:** the fix logged. This closes the run.
+**Output:** the session logged. This closes the run.

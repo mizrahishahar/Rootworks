@@ -28,9 +28,9 @@ The week's report in the fixed schema, framed against the baseline, approved and
 
 ### STEP 1 — Gather the context
 
-**Owner:** CLAUDE · **Tool:** the client vault
+**Owner:** CLAUDE · **Tool:** the client vault + [[clayroots]]
 
-Establish the run: which client this report is for, where their baseline and KPI commitments live, and anything unusual about the week the numbers alone will not show (a paused campaign, an infra fix, a conversation already had).
+Establish the run: which client this report is for, where their baseline and KPI commitments live, and anything unusual about the week the numbers alone will not show (a paused campaign, an infra fix, a conversation already had). The client's recent SESSIONS and AUTOMATIONS rows in the Hub ([[clayroots]]) carry exactly that: the builds, campaigns, fixes, and Failed runs of the week.
 
 **Output:** the context read - which client, and what the week's numbers will need framing against. Ask for what is missing, then wait for the go.
 

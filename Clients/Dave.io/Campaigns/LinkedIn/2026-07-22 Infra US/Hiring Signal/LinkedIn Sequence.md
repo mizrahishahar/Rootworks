@@ -21,13 +21,13 @@ updated: 2026-07-22
 **Connection request:** blank.
 
 **A1 — opener (on accept)**
-Hey {{first_name}}, saw you're hiring on the infra side. How much of your engineers' week is actually going to infra right now instead of shipping?
+Hey {{firstName}}, saw you're hiring on the infra side. How much of your engineers' week is actually going to infra right now instead of shipping?
 
 **A2 — follow-up**
 The deploys, the pipeline, the random fires, guessing it's piling up on the people you'd rather have building?
 
 **A3 — breakup**
-If it's handled, ignore me {{first_name}}. If not, we help you scale without adding DevOps headcount, so your engineers stay on product. Want me to map where it'd help most at {{company_name}}?
+If it's handled, ignore me {{firstName}}. If not, we help you scale without adding DevOps headcount, so your engineers stay on product. Want me to map where it'd help most at {{companyName}}?
 
 ---
 
@@ -36,10 +36,10 @@ If it's handled, ignore me {{first_name}}. If not, we help you scale without add
 **Connection request:** blank.
 
 **B1 — opener (on accept)**
-Hey {{first_name}}, saw you're hiring on the infra side. Might be off, but is that because infra keeps pulling your devs off actually building the product?
+Hey {{firstName}}, saw you're hiring on the infra side. Might be off, but is that because infra keeps pulling your devs off actually building the product?
 
 **B2 — follow-up**
 Guessing the deploys and the random fires mostly land on whoever's closest right now?
 
 **B3 — breakup**
-All good if it's sorted {{first_name}}. If not, we help you cover infra without the DevOps hire, so your devs stay on product. Worth a quick look at where it'd save you?
+All good if it's sorted {{firstName}}. If not, we help you cover infra without the DevOps hire, so your devs stay on product. Worth a quick look at where it'd save you?

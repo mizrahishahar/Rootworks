@@ -28,9 +28,9 @@ The message read the right way and drafted in the client's channel voice, the ch
 
 ### STEP 1 — Gather the context
 
-**Owner:** CLAUDE · **Tool:** the client vault + Close (CRM)
+**Owner:** CLAUDE · **Tool:** the client vault + Close (CRM) + [[clayroots]]
 
-Establish the run: which client, what exactly has to be communicated and why now, what already went out (the last report, the last conversation, the open threads), and where the relationship stands in Close. `$ARGUMENTS` names what we are communicating, and where this run opens from an `Analysis` handoff, that context paragraph is the brief.
+Establish the run: which client, what exactly has to be communicated and why now, what already went out (the last report, the last conversation, the open threads), and where the relationship stands in Close. Read the client's recent sessions and automation runs in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]) - what we did for them lately is often the substance of what has to be said. `$ARGUMENTS` names what we are communicating, and where this run opens from an `Analysis` handoff, that context paragraph is the brief.
 
 **Output:** the context read - what has to reach the client and what the last touch was. Ask for what is missing, then wait for the go.
 

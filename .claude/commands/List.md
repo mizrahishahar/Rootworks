@@ -28,6 +28,7 @@ A segmented, verified list in the client [[clayroots]] base with a view per camp
 | 7 | Specialized passes (optional) | CLAUDE | Derived fields on the rows |
 | 8 | Segment | CLAUDE | Segmentation preview table |
 | 9 | Cut, export, hand off | OPERATOR + CLAUDE | Folders + handoff |
+| 10 | Log the session | CLAUDE | Session logged |
 
 ## Process
 
@@ -35,7 +36,7 @@ A segmented, verified list in the client [[clayroots]] base with a view per camp
 
 **Owner:** OPERATOR + CLAUDE · **Tool:** [[clayroots]], the client vault
 
-The Operator hands the brief: the client, who to reach, the campaign this feeds. Claude resolves the client row in the Hub Clients registry and reads the client base as it stands, then plays the build back.
+The Operator hands the brief: the client, who to reach, the campaign this feeds. Claude resolves the client row in the Hub Clients registry, reads the client base as it stands, and reads the client's recent List sessions and waterfall runs in the Hub SESSIONS and AUTOMATIONS tables - what was built before, how the runs went, what failed. Then plays the build back.
 
 **Output:** the context read, closed by the base as it stands:
 
@@ -73,7 +74,7 @@ Run the waterfall file Before the form. Then read the live form per [[n8n]] and 
 
 **Owner:** CLAUDE + OPERATOR · **Tool:** the chosen waterfall and its sources
 
-Claude estimates the cost of the prepared run through each source Spend gate and states the ceiling. On the yes, the Operator submits the form. When the run lands, Claude reads its Hub AUTOMATIONS RUNS row and reports what actually happened.
+Claude estimates the cost of the prepared run through each source Spend gate and states the ceiling. On the yes, the Operator submits the form. When the run lands, Claude reads its Hub AUTOMATIONS row and reports what actually happened.
 
 > [!warning] Nothing paid runs without a yes.
 > State the ceiling plainly and get an explicit approval before firing. Never call the spend small.
@@ -137,3 +138,13 @@ Then wait for approval of the segmentation.
 The Operator cuts a view per approved segment - the segment filters composed with campaign-ready and the per-company cap - and exports the CSVs. Claude builds the campaign folders under the naming conventions, places each list, and writes the handoff to copy: the segmentation and why, the true personalisation per segment, the context the copywriter needs.
 
 **Output:** the campaign folders + the handoff to copy, shown before it goes. Then wait for approval.
+
+---
+
+### STEP 10 — Log the session
+
+**Owner:** CLAUDE · **Tool:** [[clayroots]]
+
+Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - {build}"), Type "List Build", Client (linked), Date, Log, Deliverables (the build tables, the cut views, the exported campaign folders). The Log carries the build record: the waterfall fired and its counts from the AUTOMATIONS row, the title cuts, the segments and their sizes, and what was exported where.
+
+**Output:** the session logged. This closes the run.

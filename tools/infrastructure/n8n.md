@@ -21,7 +21,7 @@ Every automation meets one contract, on-demand and event-driven alike:
 
 - **One run record in the Hub runs table ([[clayroots]]), and the record is the lifecycle:** Running, then Succeeded or Failed. On-demand runs are born from the Airtable creation form - the automation fires off the new record and reads every parameter, attachments included, from it. Event-driven flows create their own record at start, already stamped Running, which is also what keeps them out of the launcher lane.
 - **The finish stamps the log on the same record:** counts in and out, credits, duration, Status, and the per-run Description.
-- **Failure stamps too.** The shared `Error Logger` is attached to every workflow; a crash stamps Failed with the error on the run record and pings Slack. No run vanishes without a row.
+- **Failure stamps too.** The shared `Error Logger` is every workflow's Error Workflow; a crash stamps Failed with the error on the run record and pings Slack. No run vanishes without a row.
 - **The client is resolved from the registry, never hardcoded,** and artifacts land with the client: sheet outputs carry only what did not enter the base, into the client Reports folder.
 
 ## What lives here
@@ -32,7 +32,7 @@ Every automation meets one contract, on-demand and event-driven alike:
 ## Conventions
 
 - httpRequest node is typeVersion `4.4`. Generic (httpBasicAuth) credentials cannot be attached over the MCP - a human clicks each node once.
-- Every workflow routes failures to the shared `Error Logger`.
+- **Every workflow names `Error Logger` as its Error Workflow** (workflow Settings -> Error workflow). The MCP cannot set this property, so it is a mandatory manual click when a workflow is created or cloned - a workflow without it does not ship. Set on the `[template]` workflows too, so clones inherit it.
 - Name per-client flows `{purpose} for {client}`; keep the ID out of the vault, the name and the client variable are enough.
 - PlusVibe calls in templated flows authenticate with the shared `Plusvibe Admin` credential and pass the client's `workspace_id` from the registry row - never a per-client credential.
 - Lead state lives in Close, not in sender variables: the qualifier writes the verdict, brief, and opportunity to Close, and downstream flows gate off Close.

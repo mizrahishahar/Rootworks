@@ -15,6 +15,15 @@ The automation platform: every pipe in Rootworks runs here - the list-building i
 - **Build:** read the SDK reference first, then `search_nodes` and `get_node_types` for exact params, `validate_workflow`, `create_workflow_from_code`, `publish_workflow`. Never guess node params.
 - **Clone per client:** standing flows are cloned from the `[template]`-prefixed workflows. A clone carries exactly one hardcoded value - the client's record ID in the Hub Clients table (plus its own webhook path where the template names one). Every other client value (PV workspace, Slack channel, Drive folder, Close tag, qualification prompt) resolves from the registry row at runtime. Never rebuild from stored JSON.
 
+## The standardized automation
+
+Every automation meets one contract, on-demand and event-driven alike:
+
+- **One run record in the Hub runs table ([[clayroots]]), and the record is the lifecycle:** Running, then Succeeded or Failed. On-demand runs are born from the Airtable creation form - the automation fires off the new record and reads every parameter, attachments included, from it. Event-driven flows create their own record at start, already stamped Running, which is also what keeps them out of the launcher lane.
+- **The finish stamps the log on the same record:** counts in and out, credits, duration, Status, and the per-run Description.
+- **Failure stamps too.** The shared `Error Logger` is attached to every workflow; a crash stamps Failed with the error on the run record and pings Slack. No run vanishes without a row.
+- **The client is resolved from the registry, never hardcoded,** and artifacts land with the client: sheet outputs carry only what did not enter the base, into the client Reports folder.
+
 ## What lives here
 
 - **List-building** (owned by the ClayRoots tool): the waterfalls.

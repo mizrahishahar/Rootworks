@@ -67,7 +67,7 @@ Fire the Onboard Client automation with the Close lead id. It creates `Clients/{
 
 **Purpose:** the automation opens a bare channel; the template (Launch Checklist, General Resources) can only be applied by hand, and the invite is a human moment.
 
-Apply the channel template and invite the client into the channel. The Operator does this and marks it done.
+Apply the channel template and invite the client into the channel. If the channel was made by hand rather than by the automation, also `/invite @Marvin` - the bot posts every lead card and can only post into private channels it is a member of (automation-created channels carry it from birth). The Operator does this and marks it done.
 
 **Output:** channel ready.
 

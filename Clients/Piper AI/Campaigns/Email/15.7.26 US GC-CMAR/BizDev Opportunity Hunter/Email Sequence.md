@@ -42,7 +42,7 @@ We can help you stop finding the right ones late. The watching runs on its own, 
 
 One BD team was spending 50 hours a month hunting across 40-50 portals by hand.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 
@@ -56,7 +56,7 @@ We can help you stop finding the right ones late. The watching runs on its own, 
 
 One BD team was spending 50 hours a month hunting across 40-50 portals by hand.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 

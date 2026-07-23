@@ -12,7 +12,7 @@ How many people at {{company_name}} can put out a proposal you would bet the job
 
 We can help the rest of the team get as specific as your best estimator, without adding headcount. Every package gets read against how you have bid jobs like it before, so the judgment that sits in a couple of heads shows up in everyone's work.
 
-An estimating lead took a full day of bid leveling down to minutes.
+An estimating lead took bid leveling from a full day to minutes, with every gap between the sub bids flagged.
 
 Worth a short walkthrough?
 
@@ -26,7 +26,7 @@ How many people at {{company_name}} can put out a proposal you would bet the job
 
 We can help the rest of the team get as specific as your best estimator, without adding headcount. Every package gets read against how you have bid jobs like it before, so the judgment that sits in a couple of heads shows up in everyone's work.
 
-An estimating lead took a full day of bid leveling down to minutes.
+An estimating lead took bid leveling from a full day to minutes, with every gap between the sub bids flagged.
 
 Worth a short walkthrough?
 
@@ -38,11 +38,11 @@ Hey {{first_name}},
 
 What is capping how much work {{company_name}} can go after next year, the market or the team?
 
-We can help you get more specific under pressure without adding headcount, so the team stops being the ceiling on what you chase. Your own history, the industry standards, and every page of the live job sit in one place, with each call traced back to where it came from.
+We can help you get more specific under pressure without adding headcount, so the team stops being the ceiling on what you chase. Your own history, the industry standards, and every page of the live job sit in one place, with every number traced back to the page it came from.
 
-A VP of business development took a full day of go/no-go across 14 pursuits down to a cited summary in under 30 minutes.
+A VP of business development cleared go/no-go on 14 pursuits in under 30 minutes instead of a full day, every risk cited to the page.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 
@@ -52,11 +52,11 @@ Hey {{first_name}},
 
 What is capping how much work {{company_name}} can go after next year, the market or the team?
 
-We can help you get more specific under pressure without adding headcount, so the team stops being the ceiling on what you chase. Your own history, the industry standards, and every page of the live job sit in one place, with each call traced back to where it came from.
+We can help you get more specific under pressure without adding headcount, so the team stops being the ceiling on what you chase. Your own history, the industry standards, and every page of the live job sit in one place, with every number traced back to the page it came from.
 
-A VP of business development took a full day of go/no-go across 14 pursuits down to a cited summary in under 30 minutes.
+A VP of business development cleared go/no-go on 14 pursuits in under 30 minutes instead of a full day, every risk cited to the page.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 

@@ -12,7 +12,7 @@ When a package lands with two weeks on the clock, how much of the proposal ends 
 
 We can help the team get more specific under pressure without adding headcount, with a precon operating system that proactively drives your entire process using an evolving AI brain that unifies your history, industry standards, and live context.
 
-An estimating lead doing K-12 work took a full day of bid leveling down to minutes.
+An estimating lead took bid leveling from a full day to minutes, with every scope gap between the sub bids flagged.
 
 Worth a short walkthrough?
 
@@ -26,7 +26,7 @@ When a package lands with two weeks on the clock, how much of the proposal ends 
 
 We can help the team get more specific under pressure without adding headcount, with a precon operating system that proactively drives your entire process using an evolving AI brain that unifies your history, industry standards, and live context.
 
-An estimating lead doing K-12 work took a full day of bid leveling down to minutes.
+An estimating lead took bid leveling from a full day to minutes, with every scope gap between the sub bids flagged.
 
 Worth a short walkthrough?
 
@@ -40,9 +40,9 @@ Is the team pasting bid pages into a general AI tool and re-explaining the job e
 
 We can help you get specific without starting over. Your own history, the industry standards, and every page of the live job stay in one place, so nothing gets re-explained and nothing slips.
 
-A VP of business development took a full day of go/no-go across 14 pursuits down to a cited summary in under 30 minutes.
+A VP of business development took go/no-go on 14 pursuits from a full day to under 30 minutes, every risk cited to the exact page.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 
@@ -54,9 +54,9 @@ Is the team pasting bid pages into a general AI tool and re-explaining the job e
 
 We can help you get specific without starting over. Your own history, the industry standards, and every page of the live job stay in one place, so nothing gets re-explained and nothing slips.
 
-A VP of business development took a full day of go/no-go across 14 pursuits down to a cited summary in under 30 minutes.
+A VP of business development took go/no-go on 14 pursuits from a full day to under 30 minutes, every risk cited to the exact page.
 
-Worth a quick look?
+Want me to send over a quick breakdown?
 
 ---
 

@@ -151,7 +151,7 @@ Fill the Overrides stub from the intake, sectioned by job (sequencer, inbox, sch
 
 **Purpose:** the client's sending workspace is the container every campaign runs in, and its ID makes the client resolvable to the qualifier.
 
-Create the client's workspace on the email sender the Overrides name. Connect the warmed inboxes into it. Then write the workspace ID onto the Hub Clients row.
+The Operator creates the client's workspace on the email sender the Overrides name and connects the warmed inboxes into it. Claude then writes the workspace ID onto the Hub Clients row.
 
 **Output:** workspace live, inboxes attached, PlusVibe Workspace ID on the registry row. Then wait for confirm.
 

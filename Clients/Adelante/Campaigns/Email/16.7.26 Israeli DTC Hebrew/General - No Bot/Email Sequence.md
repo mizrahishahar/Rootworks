@@ -2,7 +2,7 @@
 
 **Deployed:** PlusVibe `20.7.26 - General - No Bot` (Flowroots X Adelante). Segment: IL DTC ecommerce (base `General` bucket) on Shopify, `bot_status = no-bot`.
 **Tokens:** `{{hebrew_first_name}}`, `{{company_name}}` (native). Platform hardcoded (Shopify). Sign-off `{{sender_first_name}}` renders תמיר / עדי per inbox. Vertical-agnostic.
-**Revised 24.7.26** per Tamir meeting (23.7): נציג not סוכן, no "אני מניח" opener, שלומית אופיר %-proof replaces Papaya, demo explained + WhatsApp CTA, urgency + flat $800 in Email 2.
+**Revised 24.7.26** per Tamir meeting (23.7): נציג not סוכן, no assumption opener, מקצה-לקצה explained, Modibodi %-proof replaces Papaya, demo explained + WhatsApp CTA, urgency + flat $800 in Email 2.
 
 ---
 
@@ -11,11 +11,11 @@
 
 היי {{hebrew_first_name}},
 
-אם רוב הפניות של {{company_name}} חוזרות על עצמן — סטטוס הזמנה, החזרות, זמינות — זה בטח מציף אתכם.
+אם רוב הפניות של {{company_name}} חוזרות על עצמן: סטטוס הזמנה, החזרות, זמינות, זה בטח מציף אתכם.
 
-בנינו נציג AI שסוגר את הפניות האלה מקצה לקצה: קורא את הנתונים מה-Shopify שלכם וגם מבצע פעולות — בדיקת סטטוס, החזר, החלפה.
+בנינו נציג AI שסוגר את הפניות האלה מקצה לקצה: קורא את הנתונים מה-Shopify שלכם וגם מבצע פעולות אמיתיות כמו בדיקת סטטוס, החזר והחלפה.
 
-אצל שלומית אופיר הוא סוגר כ-75% מהפניות בלי נציג אנושי.
+אצל Modibodi הנציג סוגר כ-70% מהפניות בלי נציג אנושי.
 
 רוצים נציג שעובד על האתר שלכם ולפי הנהלים שלכם? השיבו ״כן״ ואשלח לכם מספר וואטסאפ לנסות אותו.
 
@@ -26,7 +26,7 @@
 
 ## Email 2 (threads Email 1)
 
-{{hebrew_first_name}}, עוד רגע חגים, ואחריהם נובמבר. מה שלא עולה עכשיו כבר לא יעלה לפני הפיק — ותוך שבוע הנציג שלכם באוויר.
+{{hebrew_first_name}}, עוד רגע חגים, ואחריהם נובמבר. מה שלא עולה עכשיו כבר לא יעלה לפני הפיק, ותוך שבוע הנציג שלכם באוויר.
 
 במקום לגייס נציג תמיכה ב-8 עד 10 אלף שקל בחודש, זה עולה $800 בחודש, בלי שתתחזקו כלום: אנחנו מפעילים ומשפרים את הנציג בשבילכם כל שבוע.
 

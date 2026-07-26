@@ -2,7 +2,7 @@
 type: SOP
 vertical: [inbox-management]
 mode: Co-op
-description: The inbox manager's run for today. Ready up on the skill, list every lead we work from a positive reply up, reconcile them with Close, present them by tier and use-case, then work each one - one at a time, Lead Card then message, a gate between each - to its next move toward a booked-and-shown meeting. Draft-and-ask on every send.
+description: The inbox manager's run for today. Ready up on the skill, list every lead we work from a positive reply up, reconcile them with the Hub, present them by tier and use-case, then work each one - one at a time, Lead Card then message, a gate between each - to its next move toward a booked-and-shown meeting. Draft-and-ask on every send.
 ---
 
 # Inbox
@@ -15,7 +15,7 @@ description: The inbox manager's run for today. Ready up on the skill, list ever
 Every day, once per active client. The whole inbox, not just positive replies - every conversation that needs a move today, from a fresh yes to a no-show to a lead gone cold.
 
 ## What we get
-Every lead worked one at a time - Lead Card then message - to its drafted next move; each send approved and out; Close and the logs updated; durables promoted into the client's Overrides.
+Every lead worked one at a time - Lead Card then message - to its drafted next move; each send approved and out; the Hub and the logs updated; durables promoted into the client's Overrides.
 
 ## Process at a glance
 
@@ -25,14 +25,14 @@ Every lead worked one at a time - Lead Card then message - to its drafted next m
 | 2 | List everyone we work | CLAUDE | Reconciled worklist |
 | 3 | Present the leads table | CLAUDE | Leads table by tier |
 | 4 | Work each lead, one at a time | CLAUDE | Lead Card + Message, per lead |
-| 5 | Approve, send, next | OPERATOR + CLAUDE | Sent + Close moved, loop to 4 |
+| 5 | Approve, send, next | OPERATOR + CLAUDE | Sent + Hub moved, loop to 4 |
 | 6 | Close the run | CLAUDE | Run logged + durables promoted |
 
 ## Process
 
 ### STEP 1 — Ready up on the skill, then load the client
 
-**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + Close + [[clayroots]]
+**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + [[flowroots-hub]] + [[clayroots]]
 
 First, ready up on the reply skills for the channels this client runs (the Overrides name them): `inbox-manager` for email, `linkedin-setter` for LinkedIn. Invoke each that applies and read it in full - the skill, its knowledge base, its interfaces - fresh every run. Then load the context: the session logs newest-first, the client's inbox Overrides and Assets, the onboarding form, and the client's recent sessions and automation runs in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]) - which campaigns and builds went live lately is the backdrop the replies arrive against.
 
@@ -42,14 +42,14 @@ First, ready up on the reply skills for the channels this client runs (the Overr
 
 ### STEP 2 — List everyone we work
 
-**Owner:** CLAUDE · **Tool:** Close + the client's senders
+**Owner:** CLAUDE · **Tool:** [[flowroots-hub]] + the client's senders
 
-First, pull the client's worklist out of Close through their `{Client} — Prospects` smart view - its ID sits on the client's row in the Hub Clients registry - every lead from a positive reply upward, the floor. Then check them against the client's live threads in the senders and reconcile: correct any record whose stage no longer matches its thread, and create one for any live thread that has none.
+First, pull the client's worklist out of the Prospects table in the Flowroots Hub through the client's filtered view - the Prospects table filtered by the `Client` link to their registry row - every lead from a positive reply upward, the floor. Then check them against the client's live threads in the senders and reconcile: correct any record whose status no longer matches its thread, and create one for any live thread that has none.
 
 > [!warning] If a sender does not load, stop.
 > The moment a sender errors or fails to load on any call - even the first - halt the run right there. Do not retry in a loop, do not work around it, do not proceed on stale state, do not fabricate the worklist from memory or a prior log. Flag it and wait for the Operator to reload / reconnect the sender before pulling live. Do not log anything to the vault - a sender that needs a refresh is not a run worth recording.
 
-**Output:** the reconciled worklist - every lead pulled and its stage lined up with the thread. Then wait for the go.
+**Output:** the reconciled worklist - every lead pulled and its status lined up with the thread. Then wait for the go.
 
 ---
 
@@ -57,15 +57,15 @@ First, pull the client's worklist out of Close through their `{Client} — Prosp
 
 **Owner:** CLAUDE · **Skill:** inbox-manager
 
-The tiers, highest-value first, and the default move each one carries:
+The tiers, highest-value first, and the default move each one carries. The tier is the row's `PipelineStatus`. Per the status law, a client's prospects live only in the pre-booking band plus terminals (Positive Reply, Scheduled Call, Call Completed, No Show, Disqualified); the Hot List and Holding tiers exist only on Flowroots' own pipeline, so they appear only when the client being run is Flowroots itself:
 
-| Tier (Close stage) | What it is             | Default move                               |
-| ------------------ | ---------------------- | ------------------------------------------ |
-| Meeting Booked     | booked, not yet shown  | protect the show - pre-call asset, confirm |
-| Hot List           | strong-fit interested, not booked | first of the unbooked - fulfill the ask, offer two times |
-| Positive Reply     | interested, not booked | fulfill the ask, offer two times           |
-| No Show            | booked and missed      | rebook, two times                          |
-| Holding / Cold     | quiet or stalled       | a human re-open, no ask                    |
+| Tier (PipelineStatus) | What it is             | Default move                               |
+| --------------------- | ---------------------- | ------------------------------------------ |
+| Scheduled Call        | booked, not yet shown  | protect the show - pre-call asset, confirm |
+| Hot List (Flowroots only) | strong-fit interested, not booked | first of the unbooked - fulfill the ask, offer two times |
+| Positive Reply        | interested, not booked | fulfill the ask, offer two times           |
+| No Show               | booked and missed      | rebook, two times                          |
+| Holding / Cold (Flowroots only) | quiet or stalled | a human re-open, no ask                    |
 
 For each lead, mark its channel; for email leads name the reply play from `tools/email-replies/` (LinkedIn leads carry no play - the move is derived live from linkedin-setter). Group by tier, and say which lead we start with and why.
 
@@ -74,7 +74,7 @@ For each lead, mark its channel; for email leads name the reply play from `tools
 ```
 # {Client} - Inbox - {date}
 
-## Meeting Booked ({n})
+## Scheduled Call ({n})
 | Lead | Company | Channel · play | Last touch | The move |
 |------|---------|-----------|------------|----------|
 | {name} | {co} | Email · Pre-call asset | 2d to call | deploy the case study |
@@ -96,7 +96,7 @@ For each lead, mark its channel; for email leads name the reply play from `tools
 
 **Owner:** CLAUDE · **Skill:** inbox-manager (email) or linkedin-setter (LinkedIn), by channel · **Tool:** the client's sender + scheduler; email also the reply play in `tools/email-replies/`
 
-Top tier first, **one lead at a time, a hold between each - never a batch.** Route the lead by its channel: an email thread runs through inbox-manager and its reply play, a LinkedIn thread through linkedin-setter, principle-derived. For the current lead: read the thread in full, then show the **Lead Card**, then the drafted **Message**. On a booking, pull real slots from the client's scheduler (Calendly by default, unless the Overrides say otherwise), or ask the Operator if no connector is wired. Never invent a slot or a duration.
+Top tier first, **one lead at a time, a hold between each - never a batch.** Route the lead by its channel: an email thread runs through inbox-manager and its reply play, a LinkedIn thread through linkedin-setter, principle-derived. For the current lead: read the thread in full - the Prospect row's `contextNotes` and its record comments (BDR call updates land there) included - then show the **Lead Card**, then the drafted **Message**. On a booking, pull real slots from the client's scheduler (Calendly by default, unless the Overrides say otherwise), or ask the Operator if no connector is wired. Never invent a slot or a duration.
 
 **Output — the Lead Card**, one per lead, same field order every time: bold each field label, the verbatim qualification in italics, Thread and Read on their own lines. Clean markdown, never a code box. On LinkedIn there is no subject line, and the persona is the sending profile:
 
@@ -110,7 +110,7 @@ Top tier first, **one lead at a time, a hold between each - never a batch.** Rou
 - **Location / size:** {location} · {size} · **ICP: {score}**
 - **Timezone:** {tz} · now {local hour} local
 - **Persona / subject:** {persona} ({persona email}) · "{subject}"
-- **Qualification (verbatim):** *"{the Qualification Brief note stored on the Close lead, word for word}"*
+- **Qualification (verbatim):** *"{the Qualification Brief field on the Prospect row, word for word}"*
 
 **Thread:** {touches, chronological} → {latest inbound, dated and marked}: "{...}"
 
@@ -129,11 +129,11 @@ No invented duration and no calendar link, either channel. Then hold for the go 
 
 ### STEP 5 — Approve, send, next
 
-**Owner:** OPERATOR + CLAUDE · **Tool:** the sender + Close + the vault
+**Owner:** OPERATOR + CLAUDE · **Tool:** the sender + [[flowroots-hub]] + the vault
 
-The Operator reviews the Lead Card and the message, refines, approves. Then Claude sends it, moves the Close stage when a use-case resolves (booked, no-show, held), and logs the touch on the record.
+The Operator reviews the Lead Card and the message, refines, approves. Then Claude sends it, moves the `PipelineStatus` on the Prospect row when a use-case resolves (booked, no-show, held), and logs the touch on the record.
 
-**Output:** sent + Close moved (if needed). Then return to Step 4 for the next lead. Repeat until the worklist is empty.
+**Output:** sent + Hub moved (if needed). Then return to Step 4 for the next lead. Repeat until the worklist is empty.
 
 ---
 

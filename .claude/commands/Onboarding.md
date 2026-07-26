@@ -2,7 +2,7 @@
 type: SOP
 vertical: [onboarding]
 mode: Co-op
-description: Stand up a signed client for live outreach on the Hub registry model. The automation scaffolds Drive, Slack, Close, ClayRoots, and the Clients registry row; the Operator dresses the channel and starts warmup; the form is read into Assets, Overrides, the Qualification Prompt, the email workspace, the DNC, and the client's automation clones; ends in a handoff the first list and campaign run off. Contract signed and first invoice paid is the trigger.
+description: Stand up a signed client for live outreach on the Hub registry model. The automation scaffolds Drive, Slack, ClayRoots, and the Clients registry row; the Operator dresses the channel and starts warmup; the form is read into Assets, Overrides, the Qualification Prompt, the email workspace, the DNC, and the client's automation clones; ends in a handoff the first list and campaign run off. Contract signed and first invoice paid is the trigger.
 ---
 
 # Onboarding
@@ -13,7 +13,7 @@ description: Stand up a signed client for live outreach on the Hub registry mode
 The moment a prospect becomes a client: contract signed and first invoice paid.
 
 ## What we get
-A client fully stood up: the Drive workspace shared to their team, the Slack channel live and dressed, warmup running, the Hub Clients row complete (Drive, Slack, ClayRoots, Close view, PlusVibe, Qualification Prompt), Close configured for the client, Assets and Overrides populated, the DNC loaded everywhere it protects, the two automation clones live off the registry row, and a handoff the first list build and first campaign run off. Nothing invented, nothing left half open.
+A client fully stood up: the Drive workspace shared to their team, the Slack channel live and dressed, warmup running, the Hub Clients row complete (Drive, Slack, ClayRoots, PlusVibe, Qualification Prompt), Assets and Overrides populated, the DNC loaded everywhere it protects, the two automation clones live off the registry row, and a handoff the first list build and first campaign run off. Nothing invented, nothing left half open.
 
 ## Process at a glance
 
@@ -39,11 +39,11 @@ A client fully stood up: the Drive workspace shared to their team, the Slack cha
 
 ### STEP 1 - Gather the context
 
-**Owner:** CLAUDE · **Tool:** close, the Hub Clients registry, `Rootworks/Clients`
+**Owner:** CLAUDE · **Tool:** [[flowroots-hub]], the Hub Clients registry, `Rootworks/Clients`
 
 **Purpose:** know exactly which client this is and where onboarding already stands, so we start at the right step and never redo a done one.
 
-Read the Close lead: the signed deal, the contacts, the team. Check what already exists: a client folder, a channel, a Clients registry row, infra - and any prior sessions or automation runs for this client in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]), which tell you exactly what already ran. Establish the situation: a fresh signup, or a jump in partway through. Read only what tells you where we are - not the form, not any later step's material.
+Read the client's Prospect row in the Hub: the signed deal, the contacts, the team. Check what already exists: a client folder, a channel, a Clients registry row, infra - and any prior sessions or automation runs for this client in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]), which tell you exactly what already ran. Establish the situation: a fresh signup, or a jump in partway through. Read only what tells you where we are - not the form, not any later step's material.
 
 **Output:** the context read - client, deal terms, what already exists, the step we start from. Then wait for the go.
 
@@ -53,9 +53,9 @@ Read the Close lead: the signed deal, the contacts, the team. Check what already
 
 **Owner:** CLAUDE · **Tool:** n8n (Onboard Client automation)
 
-**Purpose:** lay the client down across every system in one run: the folder anatomy, the bare channel, the Close configuration, the ClayRoots base, and the registry row every automation resolves from.
+**Purpose:** lay the client down across every system in one run: the folder anatomy, the bare channel, the ClayRoots base, and the registry row every automation resolves from.
 
-Fire the Onboard Client automation with the Close lead id. It creates `Clients/{Client}/` with the full anatomy (Overrides.md stub, Reports with its Leads Overflow subfolder, Content, Campaigns/Email, Campaigns/LinkedIn, Logs, Assets, Shared), shares Shared with the lead's contacts, opens the private `{slug}-private` channel and invites the Operator, appends the client to the Close `Client` field choices, clones the client's Prospects smart view, creates the `{Client} Clayroots` base with its DNC Domains table, and writes the Hub Clients row: Client, driveMainFolderID, Slack Channel ID, Clayroots Base ID, Close Smart View ID.
+Fire the Onboard Client automation with `?recordId=` set to the client's Prospects record id. It creates `Clients/{Client}/` with the full anatomy (Overrides.md stub, Reports with its Leads Overflow subfolder, Content, Campaigns/Email, Campaigns/LinkedIn, Logs, Assets, Shared), shares Shared with the client's contacts, opens the private `{slug}-private` channel and invites the Operator, creates the `{Client} Clayroots` base with its DNC Domains table, and writes the Hub Clients row: Client, driveMainFolderID, Slack Channel ID, Clayroots Base ID. Pipeline reads need no per-client artifact - the client's pipeline is the Prospects table filtered by their `Client` link.
 
 **Output:** the scaffold checklist - every artifact confirmed against the live systems, the registry row shown. If the ClayRoots base failed on scope, flag it for hand-creation before any list build. Then wait for confirm.
 

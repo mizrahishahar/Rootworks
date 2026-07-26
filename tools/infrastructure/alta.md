@@ -49,7 +49,7 @@ Feeds the `linkedin-analyzer` cascade (send pulse -> account health -> audience 
 ## DNC, the three-way (MCP + native)
 The decision logic lives in the n8n automation; these are the Alta actions per branch:
 - **Said no / unsubscribed** -> `add_communication_opt_outs([{identifier, identifierType: email|linkedin|phone|domain}], pauseActiveProspects: true)`. Domain-level kills the whole company; the opt-out is global, so Alta suppresses across every campaign. Do not add.
-- **In a live conversation / booked** -> do not touch; ping the Operator in Slack. Detect via `search_prospects` + `list_*_messages` on the Alta side and Close for the cross-channel truth. `assign_tags` for a visual flag.
+- **In a live conversation / booked** -> do not touch; ping the Operator in Slack. Detect via `search_prospects` + `list_*_messages` on the Alta side and the Hub Prospects table ([[flowroots-hub]]) for the cross-channel truth. `assign_tags` for a visual flag.
 - **Nobody talking** -> add to the segment's campaign (Path A, by ID). Alta enriches and sequences.
 `list_communication_opt_outs` reads the list (search by email/linkedin/domain). Belt-and-suspenders: skip-already-in-campaign on every campaign.
 

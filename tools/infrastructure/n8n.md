@@ -13,7 +13,7 @@ The automation platform: every pipe in Rootworks runs here - the list-building i
 - **Read:** `search_workflows` to find one by name, `get_workflow_details` for its trigger and nodes, `search_executions` / `get_execution` to see a run.
 - **Read a live form:** a form-triggered workflow declares its current fields in `get_workflow_details` trigger info; read them fresh each run instead of trusting a cached field list, since forms change.
 - **Build:** read the SDK reference first, then `search_nodes` and `get_node_types` for exact params, `validate_workflow`, `create_workflow_from_code`, `publish_workflow`. Never guess node params.
-- **Clone per client:** standing flows are cloned from the `[template]`-prefixed workflows. A clone carries exactly one hardcoded value - the client's record ID in the Hub Clients table (plus its own webhook path where the template names one). Every other client value (PV workspace, Slack channel, Drive folder, Close tag, qualification prompt) resolves from the registry row at runtime. Never rebuild from stored JSON.
+- **Clone per client:** standing flows are cloned from the `[template]`-prefixed workflows. A clone carries exactly one hardcoded value - the client's record ID in the Hub Clients table (plus its own webhook path where the template names one). Every other client value (PV workspace, Slack channel, Drive folder, qualification prompt) resolves from the registry row at runtime. Never rebuild from stored JSON.
 
 ## The standardized automation
 
@@ -35,4 +35,4 @@ Every automation meets one contract, on-demand and event-driven alike:
 - **Every workflow names `Error Logger` as its Error Workflow** (workflow Settings -> Error workflow). The MCP cannot set this property, so it is a mandatory manual click when a workflow is created or cloned - a workflow without it does not ship. Set on the `[template]` workflows too, so clones inherit it.
 - Name per-client flows `{purpose} for {client}`; keep the ID out of the vault, the name and the client variable are enough.
 - PlusVibe calls in templated flows authenticate with the shared `Plusvibe Admin` credential and pass the client's `workspace_id` from the registry row - never a per-client credential.
-- Lead state lives in Close, not in sender variables: the qualifier writes the verdict, brief, and opportunity to Close, and downstream flows gate off Close.
+- Lead state lives in the Hub, not in sender variables: the qualifier writes the status, the qualification, and the brief onto the Prospect row in the Hub Prospects table ([[flowroots-hub]]), and downstream flows gate off the Hub.

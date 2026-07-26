@@ -10,7 +10,7 @@ description: Fix one piece of infrastructure. Point at a single component that l
 > Run through the **sop-runner** skill - load it first (with obsidian-cli), one step at a time, never run ahead. Each step names its owner; in Co-op only the Operator advances the run.
 
 ## When to do it
-One infrastructure component is broken, suspect, or needs a change: an n8n automation, the sending infrastructure, a webhook, a ClayRoots waterfall, the Close sync. Not a whole rebuild - one piece, worked to a clean fix.
+One infrastructure component is broken, suspect, or needs a change: an n8n automation, the sending infrastructure, a webhook, a ClayRoots waterfall, the Hub sync. Not a whole rebuild - one piece, worked to a clean fix.
 
 ## What we get
 The component read against how it should work, the fault named, the fix applied and verified, and the change logged - the symptom gone, nothing else disturbed.

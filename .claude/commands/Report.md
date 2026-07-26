@@ -38,9 +38,9 @@ Establish the run: which client this report is for, where their baseline and KPI
 
 ### STEP 2 — Pull the week
 
-**Owner:** CLAUDE · **Tool:** the client's sender + Close (CRM)
+**Owner:** CLAUDE · **Tool:** the client's sender + [[flowroots-hub]] (CRM)
 
-Pull the week's real numbers: positive replies, calls booked, conversion against the KPI set at onboarding, and the booked-meeting movement in Close. Pull the baseline and KPI commitments from the client's onboarding form, and last week's report from the logs for the trend.
+Pull the week's real numbers: positive replies, calls booked, conversion against the KPI set at onboarding, and the booked-meeting movement in the Hub - the client's Prospects view, filtered by their `Client` link. Pull the baseline and KPI commitments from the client's onboarding form, and last week's report from the logs for the trend.
 
 > [!warning] If a sender does not load, stop.
 > The moment a sender MCP errors on any call, halt and flag it to the Operator. Do not retry in a loop and do not report on stale numbers. Wait for the Operator to reload the sender before pulling live.

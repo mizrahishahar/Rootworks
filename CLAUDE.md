@@ -76,7 +76,7 @@ The names behind the systems above.
 - **ClayRoots** (the list-building base: our own Clay, built in Airtable, where sourced leads are ingested, enriched through the waterfall, segmented, and exported to campaigns)
 - **PlusVibe** (email sender)
 - **HeyReach** (LinkedIn sender)
-- **Close** (the CRM)
+- **The Flowroots Hub** (the CRM: the Prospects table in the Hub Airtable base, read per client through filtered views)
 - **Cal.com / Calendly** (scheduler)
 - **Slack** (client channel)
 - **n8n** (automations: the list-building waterfalls and each client's standing flows; never touch a live workflow unless asked)

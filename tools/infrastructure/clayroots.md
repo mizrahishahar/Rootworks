@@ -12,7 +12,7 @@ Our own Clay, multi-tenant: one Airtable base per client, driven by one shared s
 
 The control plane. Every automation resolves its client here at runtime; nothing is hardcoded per client.
 
-- **Clients registry** (`tblK0nCoNVvFf5SPa`) - one row per client: Clayroots Base ID, PlusVibe Workspace ID, Slack Channel ID, driveMainFolderID, Close Smart View ID, Qualification Prompt. The first read of any build.
+- **Clients registry** (`tblK0nCoNVvFf5SPa`) - one row per client: Clayroots Base ID, PlusVibe Workspace ID, Slack Channel ID, driveMainFolderID, Qualification Prompt. The first read of any build. The client's pipeline itself lives in the Hub Prospects table ([[flowroots-hub]]), tied back here by the `Client` link.
 - **AUTOMATIONS** (`tbli7rV6Qf3sLpV6R`) - one row per run of every automation, the launcher and the log in one object. On-demand runs are born by a creation form (one form view per automation, prefilled links in CONTROL PANEL); event-driven flows create their own row already stamped Running. Lifecycle: Running, then Succeeded or Failed. Each row carries the params it launched with, the Client link, counts in and out, credits, duration, and a rich per-run Description. Read the row, not the n8n canvas, to know what a run did.
 - **SESSIONS** (`tbl3c80o7QlZ4VByU`) - selected operational session logs, one record per run of a logging SOP: Session, Type (Email Campaign, Linkedin Campaign, Onboarding, List Build, Infra Plumbing, Analysis / Strategy), Client, Date, Log, Deliverables. Human-to-human communication stays in the vault Logs folder.
 - **CONTROL PANEL** - one row per operation with its launch form link.

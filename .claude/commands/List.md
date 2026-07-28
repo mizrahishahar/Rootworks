@@ -2,7 +2,7 @@
 type: SOP
 vertical: [list-building]
 mode: Co-op
-description: Build the lead side of a campaign through the waterfalls - load the client and the base, pick the waterfall, prepare and fire it, validate titles before enrichment, enrich, run any specialized passes, segment, and export into campaign folders. Operator owns the pick, the spend, the forms, and the exports; Claude owns the preparation, the validation, the passes, and the segmentation.
+description: Build the lead side of a campaign through the waterfalls - load the client and the base, define the list(s), pick the waterfall, prepare and fire it, filter to relevant before enrichment, enrich, run any specialized process, segment, and export into campaign folders. Operator owns the pick, the spend, the forms, and the exports; Claude owns the preparation, the filtering, the process, and the segmentation.
 ---
 
 # List
@@ -20,15 +20,16 @@ A segmented, verified list in the client [[clayroots]] base with a view per camp
 | # | Step | Owner | Output |
 |---|------|-------|--------|
 | 1 | Gather the brief and context | OPERATOR + CLAUDE | The context read |
-| 2 | Pick the waterfall | OPERATOR | The chosen waterfall |
-| 3 | Prepare the waterfall | CLAUDE | The form values |
-| 4 | Spend gate and fire | CLAUDE + OPERATOR | Build tables in the base |
-| 5 | Validate the titles | CLAUDE | Keep / cut / review as view filters |
-| 6 | Enrich | OPERATOR | Campaign-ready rows |
-| 7 | Specialized passes (optional) | CLAUDE | Derived fields on the rows |
-| 8 | Segment | CLAUDE | Segmentation preview table |
-| 9 | Cut, export, hand off | OPERATOR + CLAUDE | Folders + handoff |
-| 10 | Log the session | CLAUDE | Session logged |
+| 2 | Define the list(s) | OPERATOR + CLAUDE | The list(s) for this build |
+| 3 | Pick the waterfall | OPERATOR | The chosen waterfall |
+| 4 | Prepare the waterfall | CLAUDE | The form values |
+| 5 | Spend gate and fire | CLAUDE + OPERATOR | Build tables in the base |
+| 6 | Filter to relevant | CLAUDE | The Relevant view |
+| 7 | Enrich | OPERATOR | The Relevant + Found view |
+| 8 | Specialized process (optional) | CLAUDE | Derived fields on the rows |
+| 9 | Segment | CLAUDE | The segment set |
+| 10 | Cut, export, hand off | OPERATOR + CLAUDE | Folders + handoff |
+| 11 | Log the session | CLAUDE | Session logged |
 
 ## Process
 
@@ -50,7 +51,17 @@ Then wait for the go and any context you want to add.
 
 ---
 
-### STEP 2 — Pick the waterfall
+### STEP 2 — Define the list(s)
+
+**Owner:** OPERATOR + CLAUDE · **Skill:** list-builder · **Tool:** the client vault
+
+Read the brief and name the list(s) this build pulls.
+
+**Output:** the list(s) for this build, named and sized per `scoping`. Then wait for the go.
+
+---
+
+### STEP 3 — Pick the waterfall
 
 **Owner:** OPERATOR · **Tool:** the `waterfall` tools
 
@@ -60,17 +71,17 @@ The Operator picks the waterfall for this build; its file is the operating manua
 
 ---
 
-### STEP 3 — Prepare the waterfall
+### STEP 4 — Prepare the waterfall
 
 **Owner:** CLAUDE · **Skill:** list-builder · **Tool:** the chosen waterfall
 
-Run the waterfall file Before the form. Then read the live form per [[n8n]] and write every form value.
+Run the waterfall file Before the form. Then read the live form per [[n8n]] and write every form value, one query per list from Step 2.
 
 **Output:** the pre-work deliverables and the form values, field by field. Then wait for the go.
 
 ---
 
-### STEP 4 — Spend gate and fire
+### STEP 5 — Spend gate and fire
 
 **Owner:** CLAUDE + OPERATOR · **Tool:** the chosen waterfall and its sources
 
@@ -83,68 +94,60 @@ Claude estimates the cost of the prepared run through each source Spend gate and
 
 ---
 
-### STEP 5 — Validate the titles
+### STEP 6 — Filter to relevant
 
-**Owner:** CLAUDE · **Skill:** title-validator · **Tool:** [[clayroots]]
+**Owner:** CLAUDE · **Skill:** list-builder + views-poweruser · **Tool:** [[clayroots]]
 
-Before anything is spent on enrichment, run the Contacts table through title-validator: keep the real decision-makers, cut the noise, flag the borderline for a human call.
+Before anything is spent on enrichment, decide who's worth reaching (list-builder) and turn that into one verified filter (views-poweruser).
 
-**Output:** keep / cut / review, the cut and review as their exact view filters. Then wait for the verdict on the flagged and the go.
+**Output:** the Relevant view, presented per views-poweruser's format. Cut is its plain complement, never built or held separately. Then wait for the go.
 
 ---
 
-### STEP 6 — Enrich
+### STEP 7 — Enrich
 
 **Owner:** OPERATOR · **Tool:** [[clayroots]]
 
-The Operator runs the email waterfall on the kept rows, in chunks. Nothing past this runs until rows are campaign-ready: Status done and Final Email populated; catch-alls resolve on their own.
+The Operator runs the email waterfall on the Relevant view, in chunks. Nothing past this runs until rows are found: Status done and Final Email populated; catch-alls resolve on their own.
 
-**Output:** campaign-ready rows. The Operator confirms and hands it forward.
+**Output:** the Relevant + Found view. The Operator confirms and hands it forward.
 
 ---
 
-### STEP 7 — Specialized passes
+### STEP 8 — Specialized process
 
-**Owner:** CLAUDE · **Skill:** the specialized skill the build calls for · **Tool:** [[clayroots]]
+**Owner:** CLAUDE · **Skill:** discogen-prompter, or a ClayRoots automation for anything standing (an AI field, an n8n pass) · **Tool:** [[clayroots]]
 
-Optional; skip when the build needs none. When the market or the copy calls for it, deploy the specialized skills that derive what the rows are missing - a greeting token, a classification, a written variable - each working through the base. New fields land here, before the segments are drawn.
+Optional; skip when the build needs none. When the market or the copy calls for a variable the rows don't carry yet, either write the research prompt through discogen-prompter, or hand it to a standing automation when the derivation should run on its own from here on. Prefer whichever touches every row on its own over live row-by-row judgment in the session; when a classification applies at the company level, verify it landed on every contact row at that company before calling it done.
 
 **Output:** the derived fields on the rows, with anything flagged for review. Then wait for the go.
 
 ---
 
-### STEP 8 — Segment
+### STEP 9 — Segment
 
-**Owner:** CLAUDE · **Skill:** segmentor · **Tool:** [[clayroots]]
+**Owner:** CLAUDE · **Skill:** list-builder + views-poweruser · **Tool:** [[clayroots]]
 
-Read the real distribution of the done rows and draw the segment set.
+Off the Relevant + Found view, list-builder reads the real distribution and draws the segment set; views-poweruser composes and verifies each one's filter.
 
-**Output:** the segmentation preview table, so every segment proves its size before a view is cut:
-
-```
-| Segment (campaign) | Airtable filters | Size | Notes |
-|--------------------|------------------|------|-------|
-| {audience} | {field = value, AND/OR ...} | ~{done rows} | personalisation available, cautions |
-```
-
-Then wait for approval of the segmentation.
+**Output:** the segment set, presented per views-poweruser's format, reconciled to sum exactly to Relevant + Found. Then wait for approval of the segmentation.
 
 ---
 
-### STEP 9 — Cut, export, hand off
+### STEP 10 — Cut, export, hand off
 
 **Owner:** OPERATOR + CLAUDE · **Skill:** conventions-manager · **Tool:** [[clayroots]]
 
-The Operator cuts a view per approved segment - the segment filters composed with campaign-ready and the per-company cap - and exports the CSVs. Claude builds the campaign folders under the naming conventions, places each list, and writes the handoff to copy: the segmentation and why, the true personalisation per segment, the context the copywriter needs.
+The Operator cuts a view per approved segment - the segment filters composed with Relevant + Found and the per-company cap - and exports the CSVs. Claude builds the campaign folders under the naming conventions, places each list, and writes the handoff to copy: the segmentation and why, the true personalisation per segment, the context the copywriter needs.
 
 **Output:** the campaign folders + the handoff to copy, shown before it goes. Then wait for approval.
 
 ---
 
-### STEP 10 — Log the session
+### STEP 11 — Log the session
 
 **Owner:** CLAUDE · **Tool:** [[clayroots]]
 
-Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - {build}"), Type "List Build", Client (linked), Date, Log, Deliverables (the build tables, the cut views, the exported campaign folders). The Log carries the build record: the waterfall fired and its counts from the AUTOMATIONS row, the title cuts, the segments and their sizes, and what was exported where.
+Log the session to the Flowroots Hub SESSIONS table, one record, fields in this order: Session ("{Client} - {build}"), Type "List Build", Client (linked), Date, Log, Deliverables (the build tables, the cut views, the exported campaign folders). The Log carries the build record: the waterfall fired and its counts from the AUTOMATIONS row, the relevance filter, the segments and their sizes, and what was exported where.
 
 **Output:** the session logged. This closes the run.

@@ -1,6 +1,6 @@
 ---
 name: conventions-manager
-description: The folder and naming conventions for fulfillment - the client folder itself and the campaign artifacts inside it (campaign folders, lead lists, sending-tool campaigns). Use when scaffolding a client folder or naming any campaign folder, exported list, or sender campaign.
+description: The folder and naming conventions for fulfillment - the client folder itself and the campaign artifacts inside it (campaign folders, lead lists, sending-tool campaigns), plus the Airtable view chain every build table carries. Use when scaffolding a client folder or naming any campaign folder, exported list, sender campaign, or Airtable view.
 type: skill
 vertical: [list-building, copy, inbox-management]
 ---
@@ -47,6 +47,19 @@ Clients/{Client}/Campaigns/
 | Campaign subfolder | `{Segment descriptor}` | `Home Movers - Owner-Operators - Direct Contact` |
 | Per-pull CSV | `{Niche} - {pull descriptor} - {YYYY-MM-DD}` | `Movers - Residential Named - 2026-07-07` |
 | Sending-tool campaign | `{YYYY-MM-DD} - {Segment descriptor}` | `2026-07-07 - Home Movers - Owner-Operators - Direct Contact` |
+
+## View naming
+
+Every build table carries the same working chain of views, always named the same way, so any build reads identically regardless of client or vertical:
+
+| View | Name | Filter |
+|---|---|---|
+| Default | `Grid view` | none |
+| Relevant | `Relevant` | the title (+ description) filter, composed by [[views-poweruser]] |
+| Found | `Relevant + Found` | Relevant AND `Status` done AND `Final Email` set |
+| Segment | `{Segment descriptor}` - matches the campaign subfolder name it feeds | Relevant + Found's filters, plus the segment's own |
+
+No `Cut` view and no `Review` view get built or named - Cut is the plain complement of Relevant and is never held as its own object.
 
 ## Lead source: ready list or live intent
 

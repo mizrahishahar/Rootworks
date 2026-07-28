@@ -12,7 +12,7 @@ How many people at {{company_name}} can put out a proposal you would bet the job
 
 We can help the rest of the team get as specific as your best estimator, without adding headcount. Every package gets read against how you have bid jobs like it before, so the judgment that sits in a couple of heads shows up in everyone's work.
 
-An estimating lead took bid leveling from a full day to minutes, with every gap between the sub bids flagged.
+An estimating lead caught every scope gap in a package in minutes, work that used to take a full day.
 
 Worth a short walkthrough?
 
@@ -26,7 +26,7 @@ How many people at {{company_name}} can put out a proposal you would bet the job
 
 We can help the rest of the team get as specific as your best estimator, without adding headcount. Every package gets read against how you have bid jobs like it before, so the judgment that sits in a couple of heads shows up in everyone's work.
 
-An estimating lead took bid leveling from a full day to minutes, with every gap between the sub bids flagged.
+An estimating lead caught every scope gap in a package in minutes, work that used to take a full day.
 
 Worth a short walkthrough?
 

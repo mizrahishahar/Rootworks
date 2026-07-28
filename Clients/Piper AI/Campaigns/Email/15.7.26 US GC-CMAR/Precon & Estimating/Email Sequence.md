@@ -12,7 +12,7 @@ When a package lands with two weeks on the clock, how much of the proposal ends 
 
 We can help the team get more specific under pressure without adding headcount, with a precon operating system that proactively drives your entire process using an evolving AI brain that unifies your history, industry standards, and live context.
 
-An estimating lead took bid leveling from a full day to minutes, with every scope gap between the sub bids flagged.
+An estimating lead got through a full package in minutes instead of a day, with nothing slipping past the deadline.
 
 Worth a short walkthrough?
 
@@ -26,7 +26,7 @@ When a package lands with two weeks on the clock, how much of the proposal ends 
 
 We can help the team get more specific under pressure without adding headcount, with a precon operating system that proactively drives your entire process using an evolving AI brain that unifies your history, industry standards, and live context.
 
-An estimating lead took bid leveling from a full day to minutes, with every scope gap between the sub bids flagged.
+An estimating lead got through a full package in minutes instead of a day, with nothing slipping past the deadline.
 
 Worth a short walkthrough?
 

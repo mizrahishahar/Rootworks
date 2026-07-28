@@ -59,3 +59,15 @@ A campaign subfolder is fed one of two ways, and it carries the artifact that na
 |---|---|---|
 | Ready-list export | `{Niche} - {pull descriptor} - {YYYY-MM-DD}.csv` | `Movers - Residential Named - 2026-07-07` |
 | Live-intent descriptor | `Intent Trigger.md` in the campaign subfolder | names the Trigify search, relay, gate, and campaign id |
+
+## Shared/ lead-list mirror
+
+When a build's lead lists need a client-facing surface (not every build does), mirror the Campaigns date-stamped parent under `Shared/`, one level up from segment - a single dated folder per build, not one per segment.
+
+```
+Clients/{Client}/Shared/
+  Lead Lists/
+    {YYYY-MM-DD} {Market / Niche}/    same date + descriptor as the Campaigns parent, one folder per build
+```
+
+Example: `Shared/Lead Lists/2026-07-28 UK DTC/` mirrors `Campaigns/Email/2026-07-28 UK DTC/`. This sits inside `Shared/`, so the same rule applies - don't restructure or rename it once share links point at it.

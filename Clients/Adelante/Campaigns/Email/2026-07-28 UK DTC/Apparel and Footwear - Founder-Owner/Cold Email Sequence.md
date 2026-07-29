@@ -26,9 +26,9 @@ Hey {{first_name}},
 
 Q4 is close, and order questions double right when you have the least time to answer them.
 
-We build autonomous agents that resolve half a store's inbox on their own, live within a week. If it isn't resolving 50% of your inquiries within 10 days, you don't pay.
+Fold, a UK brand doing 100+ inquiries a day, got every first response handled autonomously inside five weeks. We can have yours live in one.
 
-Want one built for {{company_name}}?
+If it isn't resolving 50% of your inquiries within 10 days, you don't pay. Want one built for {{company_name}}?
 
 ### 1C — Guarantee-led · CTA: more info
 
@@ -38,7 +38,7 @@ Hey {{first_name}},
 
 Straight reason for writing: we take half of {{company_name}}'s support inquiries off your plate, handled end to end by an agent that checks orders, processes returns and answers like your team would.
 
-It gets there within 10 days, or you don't pay.
+Same setup we run for Fold here in the UK. It gets there within 10 days, or you don't pay.
 
 Want more info?
 

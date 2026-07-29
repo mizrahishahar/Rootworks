@@ -66,7 +66,7 @@ Tell me what you're already covering and I'll see what's missing.
 
 Easier version, {{first_name}}.
 
-Want me to send over the 57 projects we pulled for the GC in Houston? You'd see which districts they came from and how relevant they actually were.
+Want me to send over the 57 projects we pulled for the GC in Houston? You'd see which portals they came from and how relevant they actually were.
 
 ---
 
@@ -94,6 +94,6 @@ Let me know what you can share and I'll see what I can do.
 
 Most GCs don't lose the K-12 bids they chased. They lose the ones they saw too late to put any real attention behind.
 
-Piper is a preconstruction operating system, a new category in this space. It carries the finding, the estimate and the schedule end to end, which is how a $3B contractor protects margin without growing precon.
+Finding them is half of it. The other half is being able to bid them properly, which is why Piper covers the estimate and the schedule too. One two-person precon team was out-resourced ten to one on $50M jobs and now matches that depth in minutes.
 
 If you're finding enough K-12 projects, no worries. If not, let me know what you can share and I'll take it from there.

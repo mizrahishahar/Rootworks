@@ -73,14 +73,20 @@ A campaign subfolder is fed one of two ways, and it carries the artifact that na
 | Ready-list export | `{Niche} - {pull descriptor} - {YYYY-MM-DD}.csv` | `Movers - Residential Named - 2026-07-07` |
 | Live-intent descriptor | `Intent Trigger.md` in the campaign subfolder | names the Trigify search, relay, gate, and campaign id |
 
-## Shared/ lead-list mirror
+## Shared/ mirrors
 
-When a build's lead lists need a client-facing surface (not every build does), mirror the Campaigns date-stamped parent under `Shared/`, one level up from segment - a single dated folder per build, not one per segment.
+When a build's lead lists or email sequences need a client-facing surface (not every build does), mirror the Campaigns date-stamped parent under `Shared/`, one level up from segment - a single dated folder per build, not one per segment. Both `Lead Lists/` and `Email Sequences/` follow the identical dated-folder pattern; a build with both gets a matching folder in each.
 
 ```
 Clients/{Client}/Shared/
   Lead Lists/
     {YYYY-MM-DD} {Market / Niche}/    same date + descriptor as the Campaigns parent, one folder per build
+      {exported lead list}.csv       every list from that build's segments, flat inside the dated folder
+  Email Sequences/
+    {YYYY-MM-DD} {Market / Niche}/    same date + descriptor, mirrors the same build
+      {Sequence}.docx                one per campaign in the build
 ```
 
-Example: `Shared/Lead Lists/2026-07-28 UK DTC/` mirrors `Campaigns/Email/2026-07-28 UK DTC/`. This sits inside `Shared/`, so the same rule applies - don't restructure or rename it once share links point at it.
+Example: `Shared/Lead Lists/2026-07-15 US GC-CMAR/` and `Shared/Email Sequences/2026-07-15 US GC-CMAR/` both mirror `Campaigns/Email/2026-07-15 US GC-CMAR/`.
+
+**Dates here are `YYYY-MM-DD` too, same as Campaigns - never `D.M.YY`.** This sits inside `Shared/`, so normally don't restructure or rename once share links point at it; only fix a pre-existing violation (wrong date format, or files never sorted into their build folder) with the client's explicit go-ahead, since files may already be linked from wherever they currently sit.

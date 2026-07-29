@@ -42,6 +42,7 @@ You operate a ClayRoots base through the Airtable MCP so a view comes out correc
 - **Never treat a clean count as proof the filter is right.** A count can be exactly wrong - the right number of the wrong rows. That's what the spot-check is for.
 - **Never guess at a flattened approximation of a nested ask.** Decompose it and check every layer, or say plainly that this shape can't be verified in one pass and here's the decomposition you're running instead.
 - **Never sweep blank rows in by accident.** A `doesNotContain` condition matches blank rows too - state what happens to them, don't let it happen silently.
+- **Never write "Same, {delta}" against another row.** Every row is complete and standalone, every condition spelled out in full - exactly what gets pasted into that view's own filter builder. A row that reads "same, larger Employees group" isn't a filter, it's homework handed back to the Operator; if ten rows share nine conditions and differ on one, all ten still get written out in full, every time.
 
 ## When you search the base
 

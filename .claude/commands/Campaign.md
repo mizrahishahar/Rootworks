@@ -2,7 +2,7 @@
 type: SOP
 vertical: [copywriting]
 mode: Co-op
-description: Write and deploy the copy for a cold email campaign. Take a ready campaign folder - the leads and the vars they carry - present the offer, choose the email playbook, write a clean sequence, export it for client review, and take it live through the client's email sender. Email only; intent-signal campaigns and other channels are their own commands.
+description: Write and deploy the copy for a cold email campaign. Take a ready campaign folder - the vars the leads carry - present the offer, choose the email playbook, write a clean sequence, export it for client review, and take it live through the client's email sender. Email only, the LinkedIn channel is its own command. The playbook's sources decides standard-list from intent-fed; an intent source hands the deployed campaign to Intent for its feed.
 ---
 
 # Campaign
@@ -10,7 +10,7 @@ description: Write and deploy the copy for a cold email campaign. Take a ready c
 > Run through the **sop-runner** skill - load it first (with obsidian-cli), one step at a time, never run ahead. Each step names its owner; in Co-op only the Operator advances the run.
 
 ## When to do it
-A cold email campaign folder is ready: the leads loaded into it and the vars they carry, the offer defined, and the campaign context in hand. Copy through launch happens here; intent-signal campaigns and non-email channels run their own commands.
+A cold email campaign is ready to write and deploy: the campaign folder with its vars, the offer defined, and the context in hand. For a standard-list playbook the leads are already in the folder; for an intent-list playbook the campaign will be fed by an `Intent` play. Copy through launch happens here; the LinkedIn channel runs its own command.
 
 ## What we get
 A clean email sequence, deployed live through the client's sender - the approved offer and variant plan behind it, the copy exported for client review, every var registered, personalization validated, the launch verified and logged. Nothing invented ships, nothing unapproved goes live.
@@ -22,14 +22,14 @@ A clean email sequence, deployed live through the client's sender - the approved
 | 1 | Gather the brief and context | OPERATOR + CLAUDE | Context read |
 | 2 | The offer table | CLAUDE | Offer table |
 | 3 | Recommend from history (optional) | CLAUDE | History recommendation |
-| 4 | Choose the playbook | OPERATOR | Playbook named |
+| 4 | Choose the playbook | OPERATOR | Playbook named, source path noted |
 | 5 | Lock the plan | CLAUDE | Variant plan |
 | 6 | Approve the plan | OPERATOR | Plan approved |
 | 7 | Write the sequence | CLAUDE | Sequence file |
 | 8 | Approve the copy | OPERATOR | Copy approved |
 | 9 | Export for client review | CLAUDE | Client-review export |
 | 10 | Deploy | CLAUDE | Draft campaign built |
-| 11 | Upload the leads | OPERATOR | Leads loaded |
+| 11 | Provision the audience | OPERATOR + CLAUDE | Leads loaded, or Target Campaign handed to Intent |
 | 12 | Validate personalization | CLAUDE | Validation report |
 | 13 | Launch | OPERATOR | Campaign live |
 | 14 | Verify and log the session | CLAUDE | Launch verified, session logged |
@@ -71,11 +71,11 @@ Optional. Read the workspace's past campaigns and surface what they say to run -
 
 ### STEP 4 — Choose the playbook
 
-**Owner:** OPERATOR · **Tool:** Rootworks/tools/email-playbooks`
+**Owner:** OPERATOR · **Tool:** `Rootworks/tools/email-playbooks`
 
-The Operator names the email playbook the campaign runs on. Claude reads it in full - its angle, plan, and examples.
+The Operator names the email playbook the campaign runs on. Claude reads it in full - its angle, plan, and examples - and notes its `sources`: **standard list** or **intent list**. That property sets how the audience is provisioned at step 11 - an upload of a pre-built list, or an `Intent` play feeding the deployed campaign.
 
-**Output:** the playbook named and read. Then wait for the go.
+**Output:** the playbook named and read, its source path noted. Then wait for the go.
 
 ---
 
@@ -143,13 +143,16 @@ Take the approved sequence live as a draft through the sender named in Overrides
 
 ---
 
-### STEP 11 — Upload the leads
+### STEP 11 — Provision the audience
 
-**Owner:** OPERATOR · **Tool:** the client's email sender
+**Owner:** OPERATOR + CLAUDE · **Tool:** the client's email sender
 
-The Operator loads the leads into the draft campaign.
+The playbook's `sources`, noted at step 4, decides this:
 
-**Output:** leads loaded.
+- **Standard list** - the Operator uploads the pre-built list from the campaign folder into the draft campaign.
+- **Intent list** - nothing to upload. Claude reads the deployed campaign and hands the Operator its **Target Campaign** (the campaign ID) - the value `Intent` needs at its step 1. The Operator runs `Intent` to wire the signal feed, and the machine enrolls verified contacts on its own from there.
+
+**Output:** for a standard list, the leads loaded; for an intent list, the Target Campaign given and handed to `Intent`. Then wait for the go.
 
 ---
 
@@ -157,9 +160,9 @@ The Operator loads the leads into the draft campaign.
 
 **Owner:** CLAUDE · **Skill:** personalization-validator
 
-Read every loaded lead and check each token against its real value: mapped, populated, true, no literal tag left to render. Clean what is broken in place.
+**Standard list only.** Read every loaded lead and check each token against its real value: mapped, populated, true, no literal tag left to render. Clean what is broken in place. On an intent list there is nothing to validate here - the waterfall clears each row as it lands and the enroller pushes only what cleared.
 
-**Output:** the validation report - every token OK or fixed. Then wait for the go.
+**Output:** the validation report - every token OK or fixed; skipped on an intent list. Then wait for the go.
 
 ---
 
@@ -167,7 +170,7 @@ Read every loaded lead and check each token against its real value: mapped, popu
 
 **Owner:** OPERATOR · **Tool:** the client's email sender
 
-Claude presents readiness with honest flags. The Operator flips the campaign live.
+Claude presents readiness with honest flags. The Operator flips the campaign live - with the leads in on a standard list, or empty on an intent list, where it fills as the play enrolls.
 
 **Output:** the campaign live.
 

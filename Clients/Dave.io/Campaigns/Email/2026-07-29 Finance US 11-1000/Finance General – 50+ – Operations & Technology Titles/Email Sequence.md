@@ -2,7 +2,7 @@
 
 **Audience:** US finance companies, 51+ employees, operations and technology titles — ClayRoots view `Finance General – 50+ – Operations & Technology Titles`, capped at 3 contacts per company.
 
-**Playbook:** `default`
+**Playbook:** `question-led`
 
 ---
 
@@ -10,27 +10,27 @@
 
 ### 1A
 
-**Subject:** one or two people gating everyone
+**Subject:** who owns the systems side at {{company_name}}?
 
 Hey {{first_name}},
 
-At {{company_name}}'s size, infrastructure usually routes through one or two people, and everyone else waits on them.
+Who actually owns the systems side at {{company_name}}, is it someone's job or everyone's problem?
 
-We add infrastructure capacity without adding headcount. One team freed roughly eight times the developer time they had been spending on it.
+At your size it is usually one or two people carrying it for everybody else, and the queue behind them never clears. We add that capacity without the headcount.
 
-Want the breakdown of how that was measured?
+Want the breakdown?
 
 ### 1B
 
-**Subject:** the cloud spend nobody owns
+**Subject:** what does the after hours cover cost?
 
 Hey {{first_name}},
 
-Two costs usually sit unowned at this size: cloud spend nobody has the hours to optimise, and the on call rotation you pay premiums for.
+What does the nights and weekends coverage actually cost at {{company_name}}, once you count what you pay for it and the mornings you lose after?
 
-We take both. One team's infrastructure cost came down about 45 percent.
+Most finance teams your size pay for it twice. We take the rotation off you.
 
-Want the cost teardown?
+Want the comparison?
 
 ---
 
@@ -40,12 +40,12 @@ Want the cost teardown?
 
 ### 2A
 
-The part people ask about most, {{first_name}}: what happens at 2am.
+Following up on the coverage question {{first_name}}. When teams add up what the after hours cover actually costs them, it usually surprises them.
 
-Someone picks it up, and it is not whoever on your team happens to be awake. Happy to send how the coverage works, if useful.
+Happy to send what that looks like against our number, if it is useful.
 
 ### 2B
 
-One more {{first_name}}. One team had to get off a corporate AWS setup before it was deprecated, with no one inside to run it. We did the migration.
+Different angle {{first_name}}: how much of your team's month goes to keeping things running rather than moving anything forward?
 
-Want that one written up?
+That is the number most finance companies have never put a figure on. Happy to send how others measured it.

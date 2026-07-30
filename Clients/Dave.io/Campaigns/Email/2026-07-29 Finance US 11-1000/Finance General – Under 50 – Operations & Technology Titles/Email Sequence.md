@@ -10,27 +10,27 @@
 
 ### 1A
 
-**Subject:** still handling deploys in house?
+**Subject:** who picks it up when it breaks?
 
 Hey {{first_name}},
 
-Still handling deploys and infrastructure in house, on top of everything else on your plate?
+When something goes down at {{company_name}}, who actually picks it up?
 
-We take the infrastructure half off your desk for about $2,500 a month, and you are up inside weeks, not the three to six months a hire takes.
+At most finance companies your size it is whoever is closest, on top of their real job. We take that off the team completely, from about $2,500 a month.
 
-Want to see how the split works?
+Want the breakdown?
 
 ### 1B
 
-**Subject:** who gets pulled in when infra breaks?
+**Subject:** still running it all in house?
 
 Hey {{first_name}},
 
-When infrastructure breaks at {{company_name}}, who gets pulled in?
+Still running the systems side in house, on top of everything else on your plate?
 
-Usually it is whoever is closest, and it keeps pulling them off what they were hired to do. We own it instead, for about $2,500 a month.
+That is normal at your size, and it is also the thing that quietly eats the week. We take that half off your desk, and you are up inside weeks rather than the months a hire takes.
 
-Want the breakdown?
+Want to see how the split works?
 
 ---
 
@@ -40,12 +40,12 @@ Want the breakdown?
 
 ### 2A
 
-The version of this that costs the most, {{first_name}}: the 2am fire, and the morning after it takes out.
+The version of this that costs the most, {{first_name}}: the thing that breaks at 2am, and the morning it takes out afterwards.
 
 That is what we take off you. Happy to send what the coverage looks like, if it is useful.
 
 ### 2B
 
-Different angle {{first_name}}. Cloud spend at most teams your size has never been properly optimised, because nobody has the hours for it.
+Different angle {{first_name}}. What most finance companies pay every month to run their systems has never been properly looked at, because nobody has the hours for it.
 
-We took about 45 percent out of one team's infrastructure cost. Want the teardown?
+We took about 45 percent out of one company's bill. Want the teardown?

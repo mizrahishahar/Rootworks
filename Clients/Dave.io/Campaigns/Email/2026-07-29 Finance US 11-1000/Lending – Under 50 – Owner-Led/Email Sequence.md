@@ -2,7 +2,7 @@
 
 **Audience:** US lending companies (loan / lending), 11-50 employees, owner-led decision makers (Founder, CEO, President, C-Suite) — ClayRoots view `Lending – Under 50 – Owner-Led`, capped at 3 contacts per company.
 
-**Playbook:** `default`
+**Playbook:** `feedback-led`
 
 ---
 
@@ -10,27 +10,23 @@
 
 ### 1A
 
-**Subject:** infra without the $200k hire
+**Subject:** your take {{first_name}}?
 
-Hey {{first_name}},
+{{first_name}}, at most lenders your size everything technical sits with one or two people, and when they are out, it waits.
 
-Teams like {{company_name}} rarely hire a dedicated infrastructure engineer. It ends up on whoever sits closest to the cloud.
+I built something that takes that off them. You are the one who carries both sides of it, what it costs to fix and what it costs to leave alone, which is why your read is worth more to me than an IT director's.
 
-We become that owner for about $2,500 a month. The hire is $200,000 to $250,000 a year and takes three to six months to ramp.
-
-Want the cost breakdown for a team your size?
+Would appreciate your blunt take if you are open to it.
 
 ### 1B
 
-**Subject:** when it breaks after hours
+**Subject:** built something for lenders
 
-Hey {{first_name}},
+{{first_name}}, I built something that takes the systems side off the one or two technical people at a lender, including the access and audit questions that come with it.
 
-When something breaks on the infrastructure side at {{company_name}} outside hours, who actually picks it up?
+You would know in about ten seconds whether that is a real problem at {{company_name}} or one I invented, because you are the one who hears about it when it is.
 
-We do, so it stops landing on whoever was hired to build product.
-
-Want the one pager on what we cover?
+Open to giving me your honest take?
 
 ---
 
@@ -40,12 +36,12 @@ Want the one pager on what we cover?
 
 ### 2A
 
-One more thing {{first_name}}. At most lenders your size, the person handling deploys is also the person answering the audit questions. That is a lot to sit on one desk.
+One number {{first_name}}: one company cut what they were paying to run their systems by about 45 percent, and got roughly eight times the time back from the people who had been babysitting them.
 
-Happy to send how a few teams split it off, if useful.
+Happy to just send it over if that is easier than replying.
 
 ### 2B
 
-The number that usually lands, {{first_name}}: one team we took infrastructure off freed roughly eight times the developer time they had been spending on it.
+No pressure either way {{first_name}}. The question most people ask first is what happens at 2am when something breaks, so that is the part I would want you to poke at.
 
-Want me to send how that was measured?
+Want me to send it?

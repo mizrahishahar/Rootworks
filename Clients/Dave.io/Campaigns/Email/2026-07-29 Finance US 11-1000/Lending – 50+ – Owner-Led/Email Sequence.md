@@ -2,7 +2,7 @@
 
 **Audience:** US lending companies (loan / lending), 51+ employees, owner-led decision makers (Founder, CEO, President, C-Suite) — ClayRoots view `Lending – 50+ – Owner-Led`, capped at 3 contacts per company.
 
-**Playbook:** `question-led`
+**Playbook:** `feedback-led`
 
 ---
 
@@ -10,27 +10,23 @@
 
 ### 1A
 
-**Subject:** who owns infra at {{company_name}}?
+**Subject:** your take {{first_name}}?
 
-Hey {{first_name}},
+{{first_name}}, at a lender {{company_name}}'s size the technical side usually grows slower than everything asking things of it, and the queue just gets longer.
 
-Who actually owns infrastructure at {{company_name}}, is it someone's job or everyone's problem?
+I built something that adds that capacity without another hire. You are the one signing off on both the headcount and the cost of not adding it, so your read is the one I want.
 
-At your size it is usually one or two people carrying it for everyone else. We become that owner instead, for about $2,500 a month.
-
-Want the breakdown?
+Would appreciate your blunt take if you are open to it.
 
 ### 1B
 
-**Subject:** who is the call after hours?
+**Subject:** built something for lenders
 
-Hey {{first_name}},
+{{first_name}}, I built something that takes what a lender pays every month to run its systems, and the nights and weekends coverage, off the team entirely.
 
-When something breaks after hours, who is the call at {{company_name}}?
+At your size you are the only one who sees both those numbers sitting next to each other. That is why I am asking you.
 
-Most teams your size run a rotation and pay for it twice, once in premiums and once in the mornings after. We take the rotation off you.
-
-Want the on call comparison?
+Open to giving me your honest take?
 
 ---
 
@@ -40,12 +36,12 @@ Want the on call comparison?
 
 ### 2A
 
-Following up on the on call question, {{first_name}}. When teams actually add up what the rotation costs them in premiums, it usually surprises them.
+One number {{first_name}}: one company came down about 45 percent on what they were spending to run their systems after we took it over.
 
-Happy to send what that looks like against our number, if it is useful.
+Happy to just send what that looked like, if that is easier than replying.
 
 ### 2B
 
-Different angle {{first_name}}: how much product time does the firefighting actually eat at {{company_name}} in a normal month?
+No pressure either way {{first_name}}. The part people push back on hardest is the nights and weekends side, so that is the bit I would most want you to pick apart.
 
-That is the number most teams have never put a figure on. Happy to send how others measured it.
+Want me to send it?

@@ -16,7 +16,7 @@ Hey {{first_name}},
 
 Still handling deploys and infrastructure in house, on top of everything else on your plate?
 
-We take the infrastructure half. Our AI maps your cloud in minutes, a real engineer signs off every change, and you approve in about a minute.
+We take the infrastructure half off your desk for about $2,500 a month, and you are up inside weeks, not the three to six months a hire takes.
 
 Want to see how the split works?
 
@@ -40,9 +40,9 @@ Want the breakdown?
 
 ### 2A
 
-The version of this that costs the most, {{first_name}}: the 2am fire that needs an actual person, not an agent.
+The version of this that costs the most, {{first_name}}: the 2am fire, and the morning after it takes out.
 
-That is what we cover. Happy to send how it works, if it is useful.
+That is what we take off you. Happy to send what the coverage looks like, if it is useful.
 
 ### 2B
 

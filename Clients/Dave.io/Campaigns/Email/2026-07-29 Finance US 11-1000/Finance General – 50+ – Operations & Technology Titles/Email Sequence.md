@@ -40,12 +40,12 @@ Want the cost teardown?
 
 ### 2A
 
-The part people ask about most, {{first_name}}: at 2am you get a real engineer, not an agent.
+The part people ask about most, {{first_name}}: what happens at 2am.
 
-Happy to send how the coverage actually works, if useful.
+Someone picks it up, and it is not whoever on your team happens to be awake. Happy to send how the coverage works, if useful.
 
 ### 2B
 
-One more, {{first_name}}. Our AI reads your cloud and never writes to it. A real engineer signs off every change, and your approver gives a final ok in about a minute.
+One more {{first_name}}. One team had to get off a corporate AWS setup before it was deprecated, with no one inside to run it. We did the migration.
 
-Nothing moves on autopilot. Want the one pager?
+Want that one written up?

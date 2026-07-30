@@ -28,7 +28,7 @@ Hey {{first_name}},
 
 When something breaks after hours, who is the call at {{company_name}}?
 
-Most teams your size run a rotation and pay for it twice, once in premiums and once in the mornings after. We put a real engineer on it, not an agent.
+Most teams your size run a rotation and pay for it twice, once in premiums and once in the mornings after. We take the rotation off you.
 
 Want the on call comparison?
 

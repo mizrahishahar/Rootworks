@@ -28,9 +28,9 @@ Hey {{first_name}},
 
 When something breaks on the infrastructure side at {{company_name}} outside hours, who actually picks it up?
 
-We cover that. Our AI reads your cloud and never writes to it, and a real engineer signs off every change before it ships. You approve in about a minute.
+We do, so it stops landing on whoever was hired to build product.
 
-Want the one pager on how the sign off works?
+Want the one pager on what we cover?
 
 ---
 

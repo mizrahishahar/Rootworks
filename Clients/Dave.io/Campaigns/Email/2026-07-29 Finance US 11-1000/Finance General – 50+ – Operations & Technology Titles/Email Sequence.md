@@ -10,27 +10,27 @@
 
 ### 1A
 
-**Subject:** who owns the systems side at {{company_name}}?
+**Subject:** does the queue ever clear?
 
 Hey {{first_name}},
 
-Who actually owns the systems side at {{company_name}}, is it someone's job or everyone's problem?
+Does the technical queue at {{company_name}} ever actually clear, or does it just get reprioritised?
 
-At your size it is usually one or two people carrying it for everybody else, and the queue behind them never clears. We add that capacity without the headcount.
+At your size everything routes through one or two people, and you are probably one of them. We take the running and the fixing off that queue, so what is left is work you chose.
 
-Want the breakdown?
+Want to see what that looks like on a team your size?
 
 ### 1B
 
-**Subject:** what does the after hours cover cost?
+**Subject:** what would you do with the week back?
 
 Hey {{first_name}},
 
-What does the nights and weekends coverage actually cost at {{company_name}}, once you count what you pay for it and the mornings you lose after?
+If keeping things running stopped being your problem, what would you actually do with that week?
 
-Most finance teams your size pay for it twice. We take the rotation off you.
+Most people in your seat have an answer ready, and have had it for a while. We take that half, nights and weekends included.
 
-Want the comparison?
+Want me to send how the split works in practice?
 
 ---
 
@@ -40,12 +40,12 @@ Want the comparison?
 
 ### 2A
 
-Following up on the coverage question {{first_name}}. When teams add up what the after hours cover actually costs them, it usually surprises them.
+Following up {{first_name}}. Most teams have never put a number on how much of the month goes to keeping things running rather than moving anything forward.
 
-Happy to send what that looks like against our number, if it is useful.
+One company got roughly eight times that time back once we took it over. Happy to send how they measured it.
 
 ### 2B
 
-Different angle {{first_name}}: how much of your team's month goes to keeping things running rather than moving anything forward?
+Last one {{first_name}}. When something goes down at 2am, is it you, or is there someone else?
 
-That is the number most finance companies have never put a figure on. Happy to send how others measured it.
+That answer is usually the whole story. Happy to send what our coverage actually looks like.

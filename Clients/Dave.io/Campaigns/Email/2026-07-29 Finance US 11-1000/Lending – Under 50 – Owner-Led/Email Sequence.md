@@ -36,12 +36,12 @@ Open to giving me your honest take?
 
 ### 2A
 
-One number {{first_name}}: one company cut what they were paying to run their systems by about 45 percent, and got roughly eight times the time back from the people who had been babysitting them.
+One number {{first_name}}: one company cut what they were paying to run their systems by about 45 percent once we took it over.
 
-Happy to just send it over if that is easier than replying.
+Happy to send you that one written up, if that is easier than replying.
 
 ### 2B
 
 No pressure either way {{first_name}}. The question most people ask first is what happens at 2am when something breaks, so that is the part I would want you to poke at.
 
-Want me to send it?
+Want me to send how we cover it?

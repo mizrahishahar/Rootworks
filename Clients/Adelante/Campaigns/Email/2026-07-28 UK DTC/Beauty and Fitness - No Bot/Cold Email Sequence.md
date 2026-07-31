@@ -11,11 +11,11 @@
 
 **Subject:** no way to ask you anything
 
-Every wrong-product return costs you the shipping twice, and most of them start as a question about which one to buy that nobody answered in time.
+Every return costs you the shipping twice and product you can't resell once it's opened, and most of them start as a question about which formula that nobody answered in time.
 
 There's nothing on your site to catch them. No chat, nowhere to ask. So they all land in your inbox, and half are the same three questions.
 
-The agent we build reads your live product and order data. It answers, points them at the right product, and pauses the subscription itself.
+The agent we build reads your live product and order data. It answers, points them at the right formula for their type, and sorts the return if it is not right.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -27,11 +27,11 @@ Reply yes and I'll build an initial version on {{company_name}} and send you a W
 
 **Subject:** you're (no longer) the support team
 
-You didn't build this brand to spend your evenings telling people which one they should be using.
+You didn't build a beauty brand to spend your evenings telling people which formula suits them.
 
 But there's no chat on your site, so every one of those questions comes straight to you, and the pile doubles between now and Black Friday.
 
-So I've built an initial version for {{company_name}}. It pulls the tracking, says exactly where the order is, points people at the right product, and pauses the subscription when they ask.
+So I've built an initial version for {{company_name}}. It pulls the tracking, says exactly where the order is, points people at the right formula, and sorts the return when it isn't right.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -47,15 +47,15 @@ Reply yes and I'll send you the WhatsApp number to try it.
 
 Between now and November there's no time left to put anything new in. Your agent goes live within a week.
 
-So pick the one that costs you the most right now. Where's my order, which product is right for me, or subscription changes.
+So pick the one that costs you the most right now. Where's my order, which formula is right for me, or returns.
 
 Reply with it and that's the first thing we'll solve, right here in this thread.
 
 ### 2B
 
-A question about which one to buy that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
+A question about which formula to buy that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
 
-Which one hurts the most? Where's my order, product questions, subscriptions, or something else entirely.
+Which one hurts the most? Where's my order, which formula, returns, or something else entirely.
 
 Name it and we'll have yours answering that one, right here in this thread.
 

@@ -11,13 +11,13 @@
 
 **Subject:** none of the buttons helped
 
-I wanted to know which one I should be using, and whether I could pause my subscription this month.
+I wanted to know which formula was right for me, and whether I could return it once it had been opened.
 
 Your chat wouldn't let me ask. It gave me buttons, and none of them was that.
 
 So I left, and bought it from whoever answered.
 
-The agent we build reads your live product and order data. Ask it that same question and it answers, points you at the right product, and pauses the subscription itself.
+The agent we build reads your live product and order data. Ask it that same question and it answers, points you at the right formula for your type, and sorts the return if it is not right.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -35,7 +35,7 @@ That was a week ago.
 
 Every question your chat can't take becomes a ticket somebody answers by hand, hours later. That's the volume you're carrying right now, and it climbs every week to Black Friday.
 
-I've built an initial version for {{company_name}}. Ask it the same thing and it pulls the order, says exactly where it is, and handles the swap when it's the wrong one.
+I've built an initial version for {{company_name}}. Ask it the same thing and it pulls the order, says exactly where it is, and sorts the return when the formula isn't right.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -51,15 +51,15 @@ Reply yes and I'll send you the WhatsApp number to try it.
 
 Between now and November there's no time left to put anything new in. Your agent goes live within a week.
 
-So pick the one that costs you the most right now. Where's my order, which product is right for me, or subscription changes.
+So pick the one that costs you the most right now. Where's my order, which formula is right for me, or returns.
 
 Reply with it and that's the first thing we'll solve, right here in this thread.
 
 ### 2B
 
-A question about which one to buy that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
+A question about which formula to buy that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
 
-Which one hurts the most? Where's my order, product questions, subscriptions, or something else entirely.
+Which one hurts the most? Where's my order, which formula, returns, or something else entirely.
 
 Name it and we'll have yours answering that one, right here in this thread.
 

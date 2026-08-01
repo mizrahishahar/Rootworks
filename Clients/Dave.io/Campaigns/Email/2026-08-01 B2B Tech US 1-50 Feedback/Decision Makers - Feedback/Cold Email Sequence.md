@@ -1,14 +1,14 @@
 ---
 Type: Campaign Sequence
 client: Dave.io
-segment: Founder-CEO & CTO - Feedback
+segment: Decision Makers - Feedback
 channel: Email (PlusVibe)
 updated: 2026-08-01
 ---
 
-# Founder-CEO & CTO - Feedback - Sequence (Email)
+# Decision Makers - Feedback - Sequence (Email)
 
-**Audience:** Founder-CEOs and CTOs/eng leaders at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led` (2 touches). Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaign: 2026-08-01 - Founder-CEO - Feedback (6a6e2d3dabf8c14b8a8aae1d).
+**Audience:** infra decision makers (founders, CEOs, CTOs, Heads/VPs of Eng) at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led` (2 touches). Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaign: 2026-08-01 - Decision Makers - Feedback (6a6e2d3dabf8c14b8a8aae1d).
 
 **Vars:** {{first_name}}, {{authority_line}}. The authority line is a per-lead clause derived from the company Description - completes "Given the fact that ...", lowercase, 12 words max, names what they actually run, no compliment. Examples: "you're the one keeping the payments API up at Lumen", "your team runs a real-time classifier on two engineers".
 

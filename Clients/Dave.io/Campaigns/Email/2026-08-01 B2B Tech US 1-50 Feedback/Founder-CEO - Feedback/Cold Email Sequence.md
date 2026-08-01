@@ -1,40 +1,42 @@
 ---
 Type: Campaign Sequence
 client: Dave.io
-segment: Founder-CEO - Feedback
+segment: Founder-CEO & CTO - Feedback
 channel: Email (PlusVibe)
 updated: 2026-08-01
 ---
 
-# Founder-CEO - Feedback - Sequence (Email)
+# Founder-CEO & CTO - Feedback - Sequence (Email)
 
-**Audience:** Founder-CEOs at US B2B tech companies, 1-50 employees, software product on cloud infra, no infra owner - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Playbook: `feedback-led`. Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set).
+**Audience:** Founder-CEOs and CTOs/eng leaders at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led` (2 touches). Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaign: 2026-08-01 - Founder-CEO - Feedback (6a6e2d3dabf8c14b8a8aae1d).
 
-**Vars:** {{first_name}}, {{company_name}}, {{authority_line}} - the authority line is derived per lead from the company Description (one line, names what they built, no flattery). Fallback where Description is blank: "You're running a lean team at {{company_name}} yourself, so you'd know fast whether this is useful or nonsense."
+**Vars:** {{first_name}}, {{authority_line}}. The authority line is a per-lead clause derived from the company Description - completes "Given the fact that ...", lowercase, 12 words max, names what they actually run, no compliment. Examples: "you're the one keeping the payments API up at Lumen", "your team runs a real-time classifier on two engineers".
 
-**Touch 1** - variant A - subject: your take {{first_name}}?
+**Touch 1 - variant A** (no greeting) - subject: your take {{first_name}}?
 
-{{first_name}}, I just built an AI agent that becomes a small team's infrastructure owner from day one - the cloud, the deploys, the fires - so the engineers stay on the product.
+{{first_name}}, my co-founders and I left Monday.com to build an autonomous cloud infrastructure that becomes a lean team's infra owner, so the engineers stay on the product.
 
-{{authority_line}}
+Given the fact that {{authority_line}}, you'd know fast whether this is useful or nonsense.
 
-Would appreciate your blunt take if you're open to it.
+Would appreciate your honest take. Happy to share more if you want.
 
-**Touch 1** - variant B - subject: built something for lean eng teams
+**Touch 1 - variant B** (with greeting) - subject: built something for lean eng teams
 
-{{first_name}}, I just built a system that takes real ownership of a startup's infrastructure - no hire, no agency, it just runs it.
+Hey {{first_name}},
 
-{{authority_line}}
+Three of us left Monday.com to build a system that runs a company's cloud infrastructure end to end. No hire, no agency.
 
-Open to giving me your honest take?
+Given the fact that {{authority_line}}, you'd know better than most whether it's real.
 
-**Touch 2** - variant A - threaded, body only
+Open to giving me your honest take? Happy to share more.
 
-The short version of how: it plugs into the cloud and Git and maps the whole setup in minutes. Already running with a few teams your size. Happy to just send over a short demo if that's easier.
+**Touch 2 - single variant** - threaded, +2 days
 
-**Touch 2** - variant B - threaded, body only
+Quick follow-up. The teams already running it cut cloud costs around 45% and got their engineers back on the product instead of handling fires.
 
-No pitch here - it's live with a handful of teams and I'm collecting honest reads before we push it wider. Can send a 2-minute Loom if that's easier than a reply.
+I'm pretty sure it'll blow your mind. Best case I save you $200K a year on an infra hire, worst case I owe you twenty minutes and a $50 Amazon gift card.
+
+Can I show you what we built?
 
 ## Question history
 

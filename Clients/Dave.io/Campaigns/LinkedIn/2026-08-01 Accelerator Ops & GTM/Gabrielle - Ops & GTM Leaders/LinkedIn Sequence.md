@@ -13,7 +13,7 @@ updated: 2026-08-01
 **Connection request:** blank
 
 **Message 1 (on accept)**
-Hey {{firstName}}, thanks for connecting! Been seeing so many cool teams come out of this year's batches. What are you guys building?
+Hey {{firstName}}, thanks for connecting! Been seeing so many cool teams come out of the recent batches. What's the problem you're obsessed with right now?
 
 No scheduled follow-ups. Replies and quiet threads are worked manually - the follow-up angle stays non-technical and curiosity-led; the infra conversation only happens if they open the door.
 

@@ -15,8 +15,3 @@ updated: 2026-07-26
 **Message 1 (on accept)**
 Hey {{firstName}}, guessing infra at {{real_company_name}} basically falls on you on top of everything else you're building. Am I right?
 
-**Message 2 (follow-up)**
-Yeah, that's how it usually goes, whoever's closest ends up owning it. We work with founding engineers a lot just to take that off your plate.
-
-**Message 3 (follow-up)**
-No stress if you've got it handled. If it ever gets old, happy to take a look together.

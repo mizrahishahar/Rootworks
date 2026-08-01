@@ -15,8 +15,3 @@ updated: 2026-07-26
 **Message 1 (on accept)**
 Hey {{firstName}}, saw {{real_company_name}} has one person carrying infra right now. How's that going for them, drowning or manageable?
 
-**Message 2 (follow-up)**
-Makes sense to keep it lean early on. We usually jump in next to that person so it's not all on them as things pick up.
-
-**Message 3 (follow-up)**
-No worries if they're handling it fine. If it ever gets heavier, happy to take some of it off their hands.

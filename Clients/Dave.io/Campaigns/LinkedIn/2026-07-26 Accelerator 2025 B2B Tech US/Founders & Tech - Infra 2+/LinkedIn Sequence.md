@@ -15,8 +15,3 @@ updated: 2026-07-26
 **Message 1 (on accept)**
 Hey {{firstName}}, saw {{real_company_name}} already has a small infra team, which is rare this early. How are you thinking about growing that as the rest of the team scales?
 
-**Message 2 (follow-up)**
-Having people dedicated to it already puts you ahead of most. We usually plug in alongside teams like that so it doesn't have to grow 1:1 with headcount.
-
-**Message 3 (follow-up)**
-No pressure either way. If extra hands would help down the line, happy to chat.

@@ -25,8 +25,8 @@
 
 ## Inbox management
 
-- Possible future co-op with the cold-calling agency to call the leads we generate.
 - We manage inbox replies in Alta for LinkedIn (and the intent-based email outreach, as above), not in HeyReach.
+- LinkedIn engagement runs off `Assets/INBOX-MANAGEMENT/How to Engage on LinkedIn.md`. Read it before working any LinkedIn thread. Every inbox run also works the non-repliers by hand, not just the replies.
 
 ## Automations
 

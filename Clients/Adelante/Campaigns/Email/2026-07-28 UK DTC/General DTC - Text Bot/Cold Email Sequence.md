@@ -1,7 +1,7 @@
 # Cold Email Sequence
 
-**Audience:** UK DTC General DTC (incl. Sports) — Text Bot (live free-text chat that deflects) · ~37 leads
-**Shape:** 2 / 2 / 1 · **Tokens:** {{company_name}}
+**Audience:** UK DTC General DTC (incl. Sports) — Text Bot (live free-text chat that deflects) · ~33 leads
+**Shape:** 2 / 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}
 
 ---
 
@@ -17,9 +17,9 @@
 
 "That's not what I asked."
 
-That's how your chat answers. It deflects the two questions that decide whether someone buys.
+{{first_name}}, that's how your chat answers. It deflects the two questions that decide whether someone buys.
 
-The agent we build reads your live stock and order data. It answers, confirms what's in stock, and sets up the return itself.
+The agent we build reads your live stock and delivery data. It answers, confirms what's in stock, and sets up the return itself.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -31,13 +31,13 @@ Reply yes and I'll build an initial version on {{company_name}} and send you a W
 
 **Subject:** no one is answering me
 
-"Where's my order? I ordered nine days ago."
+"Where's my parcel? I bought it nine days ago."
 
 "Thanks for reaching out! Please allow 5-7 working days for delivery."
 
 "It's been nine."
 
-That's how your chat answers. It can't see the order, so it guesses. She's already writing the review.
+{{first_name}}, that's how your chat answers. It has no idea, so it guesses. She's already writing the review.
 
 I've built an initial version for {{company_name}}. It pulls the tracking, tells her exactly where it is, and handles the return when it turns up wrong.
 
@@ -55,15 +55,15 @@ Reply yes and I'll send you the WhatsApp number to try it.
 
 Between now and November there's no time left to put anything new in. Your agent goes live within a week.
 
-So pick the one that costs you the most right now. Where's my order, stock and product questions, or returns.
+So pick the one that costs you the most right now. Where's my parcel, stock and product questions, or returns.
 
 Reply with it and that's the first thing we'll solve, right here in this thread.
 
 ### 2B
 
-A product question that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
+A product question that waits six hours goes to whoever answered in six seconds, and that only gets worse from here to Black Friday.
 
-Which one hurts the most? Where's my order, stock, returns, or something else entirely.
+Which one hurts the most? Where's my parcel, stock, returns, or something else entirely.
 
 Name it and we'll have yours answering that one, right here in this thread.
 

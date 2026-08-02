@@ -1,7 +1,7 @@
 # Cold Email Sequence
 
-**Audience:** UK DTC Home & Garden — No Bot (no storefront chat detected) · ~360 leads
-**Shape:** 2 / 2 / 1 · **Tokens:** {{company_name}}
+**Audience:** UK DTC Home & Garden — No Bot (no storefront chat detected) · ~333 leads
+**Shape:** 2 / 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}
 
 ---
 
@@ -11,11 +11,9 @@
 
 **Subject:** no way to ask you anything
 
-Every damaged delivery costs you the collection and the replacement, and most of them start as a question about size or delivery that nobody answered in time.
+{{first_name}}, every damaged delivery costs you the collection and the replacement, and there is nothing on your site to catch the question that starts it.
 
-There's nothing on your site to catch them. No chat, nowhere to ask. So they all land in your inbox, and half are the same three questions.
-
-The agent we build reads your live product and order data. It answers, confirms the dimensions, and books the delivery slot itself.
+The agent we build reads your live product and delivery data. It answers, confirms the dimensions, and books the delivery slot itself.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -27,9 +25,7 @@ Reply yes and I'll build an initial version on {{company_name}} and send you a W
 
 **Subject:** you're (no longer) the support team
 
-You didn't build a homeware brand to spend your evenings telling people whether the table fits through the door.
-
-But there's no chat on your site, so every one of those questions comes straight to you, and the pile doubles between now and Black Friday.
+{{first_name}}, you didn't start this brand to spend your evenings answering "where's my table". With no chat on your site, every one lands on you personally.
 
 So I've built an initial version for {{company_name}}. It pulls the tracking, says exactly where the delivery is, confirms the dimensions, and opens the damage claim when it turns up chipped.
 
@@ -53,7 +49,7 @@ Reply with it and that's the first thing we'll solve, right here in this thread.
 
 ### 2B
 
-A question about whether it fits that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
+A question about whether it fits that waits six hours goes to whoever answered in six seconds, and that only gets worse from here to Black Friday.
 
 Which one hurts the most? Delivery slots, dimensions, damage claims, or something else entirely.
 

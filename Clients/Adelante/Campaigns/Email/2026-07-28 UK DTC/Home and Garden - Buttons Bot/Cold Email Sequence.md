@@ -1,7 +1,7 @@
 # Cold Email Sequence
 
-**Audience:** UK DTC Home & Garden — Buttons Bot (menu-only, email-gated or form-gated chat) · ~40 leads
-**Shape:** 2 / 2 / 1 · **Tokens:** {{company_name}}
+**Audience:** UK DTC Home & Garden — Buttons Bot (menu-only, email-gated or form-gated chat) · ~36 leads
+**Shape:** 2 / 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}
 
 ---
 
@@ -11,13 +11,11 @@
 
 **Subject:** none of the buttons helped
 
-I wanted to know if the 3-seater fits through a 76cm door, and when you could deliver it.
+"I wanted to know if the 3-seater fits through a 76cm door and when you could deliver it. Your chat wouldn't let me ask, just buttons, and none of them was that. So I left and bought it from whoever answered."
 
-Your chat wouldn't let me ask. It gave me buttons, and none of them was that.
+{{first_name}}, that's what a shopper hits on {{company_name}}.
 
-So I left, and bought it from whoever answered.
-
-The agent we build reads your live product and order data. Ask it that same question and it answers, confirms the dimensions, and books the delivery slot itself.
+The agent we build reads your live product and delivery data. Ask it that same question and it answers, confirms the dimensions, and books the delivery slot itself.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -29,13 +27,11 @@ Reply yes and I'll build an initial version on {{company_name}} and send you a W
 
 **Subject:** your chat support sent me away
 
-Your chat gave me buttons. None of them was "where's my table", so I emailed you instead.
+"Your chat gave me buttons. None of them was where's my table, so I emailed you instead. That was a week ago."
 
-That was a week ago.
+{{first_name}}, every question your chat can't take becomes a ticket somebody answers by hand, hours later.
 
-Every question your chat can't take becomes a ticket somebody answers by hand, hours later. That's the volume you're carrying right now, and it climbs every week to Black Friday.
-
-I've built an initial version for {{company_name}}. Ask it the same thing and it pulls the order, says exactly where it is, and opens the damage claim when it turns up chipped.
+I've built an initial version for {{company_name}}. Ask it the same thing and it pulls the tracking, says exactly where it is, and opens the damage claim when it turns up chipped.
 
 Fold, a UK brand on 100+ inquiries a day, now has 100% of initial responses handled by the agent we built them.
 
@@ -57,7 +53,7 @@ Reply with it and that's the first thing we'll solve, right here in this thread.
 
 ### 2B
 
-A question about whether it fits that waits six hours is a sale that went to whoever answered in six seconds, and that only gets worse from here to Black Friday.
+A question about whether it fits that waits six hours goes to whoever answered in six seconds, and that only gets worse from here to Black Friday.
 
 Which one hurts the most? Delivery slots, dimensions, damage claims, or something else entirely.
 

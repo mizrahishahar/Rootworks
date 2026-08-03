@@ -46,7 +46,7 @@ Clients/{Client}/Campaigns/
 | Parent campaign folder | `{YYYY-MM-DD} {Market / Niche}` | `2026-07-07 Moving Companies US CA` |
 | Campaign subfolder | `{Segment descriptor}` | `Home Movers - Owner-Operators - Direct Contact` |
 | Per-pull CSV | `{Niche} - {pull descriptor} - {YYYY-MM-DD}` | `Movers - Residential Named - 2026-07-07` |
-| Sending-tool campaign | `{YYYY-MM-DD} - {Segment descriptor}` | `2026-07-07 - Home Movers - Owner-Operators - Direct Contact` |
+| Sending-tool campaign | `{YYYY-MM-DD} - {Market / Niche} - {Segment descriptor}` - the parent folder and subfolder joined, so the campaign name alone says which build and which segment | `2026-07-07 - Moving Companies US CA - Home Movers - Owner-Operators` |
 
 ## View naming
 

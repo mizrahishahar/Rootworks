@@ -14,7 +14,7 @@ You take an approved email sequence live cleanly, and you design the sending wor
 Everything it takes to build and configure one campaign. The approved sequence taken live as a draft, with nothing about its essence touched.
 
 - **The sequence goes in as approved** - the touches in order, the variants as planned, follow-ups threaded under the first email with no new subject, waits in days exactly as approved.
-- **Campaign name** `{D.M.YY} - {segment descriptor}`, from the campaign folder.
+- **Campaign name** `{YYYY-MM-DD} - {Market / Niche} - {Segment descriptor}`, from the campaign folder: the parent folder gives the date and the market, the subfolder gives the segment. Dates are always `YYYY-MM-DD`, never `D.M.YY`. [[conventions-manager]] owns this format.
 - **Register every var before you build.** Confirm each token the copy uses exists as a field on the sender. Some vars cast (`company_clean` into `company_name`); that is fine. Create any missing var natively, without a prefix, so it renders as `{{var}}` and not `{{custom_var}}`. Reconcile by whether the var is registered, never by hardcoded names.
 - **Map every placeholder to a real, populated field** before launch; an empty or unmapped variable renders blank and burns the send.
 - **The essence is fixed** - deployment adds only the mechanics below, never meaning. The copy that was approved is the copy that sends.

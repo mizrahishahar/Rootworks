@@ -55,11 +55,12 @@ Every build table carries the same working chain of views, always named the same
 | View | Name | Filter |
 |---|---|---|
 | Default | `Grid view` | none |
-| Relevant | `Relevant` | the title (+ description) filter, composed by [[views-poweruser]] |
+| Relevant | `Relevant` | the relevance conditions, OR `manually_approved` is checked - composed by [[views-poweruser]] |
+| Cut review | `Cut review` | the exact complement of Relevant: every relevance condition negated, AND `manually_approved` unchecked |
 | Found | `Relevant + Found` | Relevant AND `Status` done AND `Final Email` set |
 | Segment | `{Segment descriptor}` - matches the campaign subfolder name it feeds | Relevant + Found's filters, plus the segment's own |
 
-No `Cut` view and no `Review` view get built or named - Cut is the plain complement of Relevant and is never held as its own object.
+The chain reads top to bottom and each view narrows the one above it. `Relevant` and `Cut review` are exact complements and together they are the whole table - that is what makes the cut reviewable rather than invisible, and rescuing a row through `manually_approved` moves it from one to the other. Every segment view sits on top of `Relevant + Found` and only splits it, per [[segmentor]]; the segments must sum back to it exactly.
 
 ## Lead source: ready list or live intent
 

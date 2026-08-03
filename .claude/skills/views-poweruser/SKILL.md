@@ -32,7 +32,7 @@ You operate a ClayRoots base through the Airtable MCP so a view comes out correc
 1. `get_table_schema` - once per table, for every select field the filter will touch, to pull real choice IDs.
 2. `list_records_for_table`, small `pageSize`, real fields only - sample actual Title/Description text before writing a single condition. A keyword list drafted from what titles "usually look like" is exactly how industry noise (a law society, a university, a forklift-parts supplier) gets through a title-only filter untouched.
 3. Draft the filter as its real nested shape.
-4. Decompose it: the filter tool holds exactly one level of AND/OR across a flat list of conditions - it cannot run a nested `(A OR B) AND (C OR D)` in one call, even though Airtable's own UI can hold that shape once built. Run each flat layer through `list_records_for_table` + `pageSize: 1`, check every layer's count makes sense before trusting the whole.
+4. Decompose it FOR VERIFICATION ONLY. The filter you hand over is nested, freely - `Where All of` wrapping `Any of`, as deep as the logic needs; Airtable's builder holds that shape and it is the correct deliverable. The flat limit is the query tool's alone: it runs one level of AND/OR, so run each flat layer through `list_records_for_table` + `pageSize: 1` and check every layer's count before trusting the whole. When an OR-group's exact count cannot be reached that way, count its COMPLEMENT instead - a flat AND of every condition negated - and subtract from the parent.
 5. `list_records_for_table` again, unfiltered by count this time - pull 5-10 rows the filter would keep and 5-10 it would drop, read them for real.
 6. If this is a segment, sum every segment's exact count and check it equals the parent view's exact count precisely.
 7. Hand over the finished nested filter, in the format below, with its verified count stated alongside it.
@@ -40,6 +40,7 @@ You operate a ClayRoots base through the Airtable MCP so a view comes out correc
 ## How you don't do it
 
 - **Never match a select-field condition on typed text.** The real stored value, pulled from `get_table_schema`, is what gets matched - exactly as it's written, whatever it contains. Typing what a label "should" say instead of what's actually stored is how a filter silently returns zero rows with no error.
+- **Never quote a count without naming the scope it was computed under.** The same slice measured against the whole table, against `Status` done, and against the view's real filter gives three different correct answers - and offering one of them against a view that filters on something else entirely is how a number becomes a lie without anyone lying. Read the view's actual conditions before comparing.
 - **Never treat a clean count as proof the filter is right.** A count can be exactly wrong - the right number of the wrong rows. That's what the spot-check is for.
 - **Never guess at a flattened approximation of a nested ask.** Decompose it and check every layer, or say plainly that this shape can't be verified in one pass and here's the decomposition you're running instead.
 - **Never sweep blank rows in by accident.** A `doesNotContain` condition matches blank rows too - state what happens to them, don't let it happen silently.

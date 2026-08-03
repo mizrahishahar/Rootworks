@@ -33,6 +33,14 @@ No fixed set; read which axes actually separate this market into groups that nee
 - **Language**, a real axis in non-English markets; the contact name, not the company location, tells you who speaks it.
 - **Deliverability (MX)**, the one axis that is not about copy: it splits by where a send can safely go, not by what the message says. The signal is the `MX Provider` column where the source carries it. Three classes: **sendable** - the normal inboxes (google, microsoft, zoho, self-hosted mail); **gateway** - a secure email gateway fronts the mailbox (Mimecast, Proofpoint, Barracuda, Cisco/IronPort, Sophos and kin), corporate filters that eat or bounce cold email in bulk; **dead** - `no_mx`, `errdomain`, invalid MX, no mailbox exists, a guaranteed bounce that never exports. The doctrine is Nick Abraham's two-phase rule: in a bounce spike, stop sending to gateways entirely; in steady state, segregate them into their own campaign per segment, same copy, so their bounce behavior reads in isolation and only that campaign gets paused when its bounce rate climbs. Gateways are fenced, not excluded, and a gateway split never changes the copy; different copy for a gateway slice means a deliverability fence has been confused with an audience.
 
+## Applying the deliverability fence
+
+The fence is drawn per segment, not once for the pool: every segment gets the gateway filter and its exact complement, same copy on both sides. A gateway slice is a different place to send, never a different thing to say.
+
+Providers verified in real data: `proofpoint`, `barracuda`, `mimecast`, `sophos`, `mailroute`, `spamhero`, `appriver`, `spamexperts`. Match on `contains`. Always define sendable as NOT-gateway, never as an allow-list of known-good providers - `office365.us`, `amazon`, `fastmail`, `infomaniak`, `netcore`, `stackcp`, `hostinger` and self-hosted MX are all real sendable values, and an allow-list silently drops every provider it has not heard of.
+
+When a segment's gateway slice is negligible - roughly 2-5% or less - raise it rather than cutting it. A campaign too thin to read a bounce signal in isolation earns nothing, and whether it is worth the split is the Operator's call.
+
 ## The brake, and its asymmetry
 
 The drive is maximum specificity; the brake is volume. The grid of company axis against persona axis shows which cells stand and which merge. Watch the depth asymmetry: some roles are structurally scarce per company, so a thin persona grows only by net-new companies, not by pulling deeper.

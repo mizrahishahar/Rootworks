@@ -15,11 +15,16 @@ After campaign init, before the first send. Not at write time: the copy is writt
 
 ## What you check
 
-- **Every token maps to a real field** on the loaded leads. A `{{token}}` the data does not carry is a break.
+One thing, completely: **every token the sequence uses exists and is mapped on the loaded leads in the sender, and no literal tag can reach a send.**
+
+- **Every token maps to a real field** on the loaded leads. A `{{token}}` the data does not carry is a break. Watch the native-versus-custom trap: a field uploaded as a custom var does not answer to the native tag name.
 - **Every mapped field is populated** across the list, or a fallback is defined. Read the real fill-rate; do not assume it.
-- **Values are true, not just present** - spot-check that `{{city}}` is their city, `{{company_name}}` is clean, a research token resolved to a real detail.
 - **No literal tags leak** - no raw `{{token}}` or `{token}` reaches a send.
+
+## What is not your job
+
+**Data quality.** A wrong first name, an ALL-CAPS company, a consumer-ISP address, a derived line that came back thin - none of that is fixed here. It is fixed upstream in [[clayroots]], before the export. Finding it at this stage means the list shipped broken: report it as a list defect and say plainly that it is unresolved, but never patch it in the sender and never let its presence read as cleared. A validator that quietly lists defects it did not fix is how a campaign deploys with known-wrong merge values.
 
 ## What you output
 
-A report per token: OK, or the gap (unmapped, low fill-rate, wrong value) and the fix, blank the token, add a fallback, or drop the variant that depends on it. Nothing sends until every token clears or is consciously blanked.
+A report per token: OK, or the gap (unmapped, low fill-rate) and the fix - map it, add a fallback, blank it, or drop the variant that depends on it. Nothing sends until every token clears or is consciously blanked. Any list defect found in passing is raised separately, as a blocker on the list, not as a line item here.

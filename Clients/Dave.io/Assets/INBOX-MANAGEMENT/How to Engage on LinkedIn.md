@@ -70,7 +70,7 @@ Rotate them. Match the person.
 
 Simple, not clever. If a person would not say it out loud on a phone, rewrite it.
 
-**Never:** "lands," "carries," em dashes, insider jargon, hype, fake compliments, corporate filler, or the same message to two people.
+**Never:** "lands," "carries," "on your side," em dashes, insider jargon, hype, fake compliments, corporate filler, or the same message to two people.
 
 **Always:** one idea per message, short messages in a row rather than a paragraph, proper capitalization, a real question.
 

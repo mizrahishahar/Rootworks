@@ -4,7 +4,7 @@ type: knowledge
 
 # Relevance
 
-Every pull carries everyone the query could plausibly return; this is the judgment that decides who's actually worth reaching. The verdict is one filter, not three - an earlier draft of this split contacts into keep/cut/review, but cut is never built or held separately: it is the plain complement of relevant, `NOT(Relevant)`. Composing and verifying that filter is [[views-poweruser]]'s job; this is the judgment about who belongs on the relevant side.
+Every pull carries everyone the query could plausibly return; this is the judgment that decides who's actually worth reaching. The verdict is two views that are exact complements: relevant, and the cut you can still rescue from. Composing and verifying both is [[views-poweruser]]'s job; this is the judgment about who belongs on the relevant side.
 
 ## Score each contact
 
@@ -15,6 +15,23 @@ Every pull carries everyone the query could plausibly return; this is the judgme
 ## Overshoot, then cut cheaply
 
 Same law as the pull itself: broad in, narrow in the base. A borderline contact belongs on the relevant side by default - the cost of one irrelevant row in a segment is far lower than the cost of losing a real target to an over-tight filter.
+
+## The rescue lane
+
+Judgment on native fields is never perfect, and an over-tight filter loses real buyers silently - the failure you cannot see, because the row simply is not there. So the table carries a `manually_approved` checkbox, and it enters the relevance filter as an extra OR: a checked row is relevant whatever its title says.
+
+It only ever widens. A hand-stamped field used to NARROW makes every future row arrive blank and vanish from the view; this one leaves the native conditions doing the work and only adds to them, so nothing silently disappears. That asymmetry is the whole reason it is allowed.
+
+## The two views
+
+Relevance lands as two views, exact complements of each other:
+
+- **Relevant** - the relevance conditions, OR `manually_approved` is checked.
+- **Cut review** - every relevance condition negated, AND `manually_approved` is unchecked.
+
+`Cut review` exists so the cut can be read and rescued from, not archived. Ticking a row moves it out of `Cut review` and into `Relevant`, so the queue drains as it is worked and the Operator can stop when the remainder stops paying. It is a working view for the relevance pass, not part of the table's standing chain.
+
+This reverses an earlier rule that the cut is never built. That held while the cut was a dead artifact; with a rescue lane it is a two-way surface, and nobody can rescue what they cannot see.
 
 ## When a cut genuinely can't be expressed
 

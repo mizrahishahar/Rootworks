@@ -98,9 +98,9 @@ Claude estimates the cost of the prepared run through each source Spend gate and
 
 **Owner:** CLAUDE · **Skill:** list-builder + views-poweruser · **Tool:** [[clayroots]]
 
-Before anything is spent on enrichment, decide who's worth reaching (list-builder) and turn that into one verified filter (views-poweruser).
+Before anything is spent on enrichment, decide who's worth reaching (list-builder) and turn that into verified filters (views-poweruser).
 
-**Output:** the Relevant view, presented per views-poweruser's format. Cut is its plain complement, never built or held separately. Then wait for the go.
+**Output:** the `Relevant` and `Cut review` views, presented per views-poweruser's format. Then wait for the go.
 
 ---
 
@@ -116,9 +116,9 @@ The Operator runs the email waterfall on the Relevant view, in chunks. Nothing p
 
 ### STEP 8 — Specialized process
 
-**Owner:** CLAUDE · **Skill:** discogen-prompter, or a ClayRoots automation for anything standing (an AI field, an n8n pass) · **Tool:** [[clayroots]]
+**Owner:** CLAUDE · **Skill:** airtable-ai-prompter or discogen-prompter, or a ClayRoots automation for anything standing (an n8n pass) · **Tool:** [[clayroots]]
 
-Optional; skip when the build needs none. When the market or the copy calls for a variable the rows don't carry yet, either write the research prompt through discogen-prompter, or hand it to a standing automation when the derivation should run on its own from here on. Prefer whichever touches every row on its own over live row-by-row judgment in the session; when a classification applies at the company level, verify it landed on every contact row at that company before calling it done.
+Optional; skip when the build needs none. When the market or the copy calls for a variable the rows don't carry yet, pick by what the derivation actually needs: if it can be read off the row's own cells, it is an Airtable AI field (airtable-ai-prompter); if it needs the web, it is DiscoGen (discogen-prompter). Or hand it to a standing automation when the derivation should run on its own from here on. Prefer whichever touches every row on its own over live row-by-row judgment in the session; when a classification applies at the company level, verify it landed on every contact row at that company before calling it done.
 
 **Output:** the derived fields on the rows, with anything flagged for review. Then wait for the go.
 
@@ -130,7 +130,7 @@ Optional; skip when the build needs none. When the market or the copy calls for 
 
 Off the Relevant + Found view, list-builder reads the real distribution and draws the segment set; views-poweruser composes and verifies each one's filter.
 
-**Output:** the segment set, presented per views-poweruser's format, reconciled to sum exactly to Relevant + Found. Then wait for approval of the segmentation.
+**Output:** the segment set including its deliverability fence, presented per views-poweruser's format, reconciled to sum exactly to Relevant + Found. Then wait for approval of the segmentation.
 
 ---
 

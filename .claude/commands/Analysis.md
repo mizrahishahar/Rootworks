@@ -55,14 +55,14 @@ For each channel the client runs, pull the live numbers from its sender tool and
 
 **Summary:** two to four sentences on the problem areas only; if all six are OK, one sentence saying so.
 
-| # | Audit | Verdict | The numbers |
-|---|-------|---------|-------------|
-| 1 | Sending Pulse | OK / WARN / ERROR | last day {n} · queued ~{n} · runway ~{n} days |
-| 2 | Deliverability | {verdict} | reply {x}% · OOO {x}% · bounce {x}% |
-| 3 | List | {verdict} / GATED ({x} of 5k) | positive {x}% |
-| 4 | Copy & Offer | {verdict} / GATED ({x} of 10k) | {winners and laggards vs avg} |
-| 5 | Booking | {verdict} | {booked} / {positives} ({x}%) |
-| 6 | Show | {verdict} | {completed} / {completed + no-show} ({x}%) |
+| #   | Audit          | Verdict                        | The numbers                                   |
+| --- | -------------- | ------------------------------ | --------------------------------------------- |
+| 1   | Sending Pulse  | OK / WARN / ERROR              | last day {n} · queued ~{n} · runway ~{n} days |
+| 2   | Deliverability | {verdict}                      | reply {x}% · OOO {x}% · bounce {x}%           |
+| 3   | List           | {verdict} / GATED ({x} of 5k)  | positive {x}%                                 |
+| 4   | Copy & Offer   | {verdict} / GATED ({x} of 10k) | {winners and laggards vs avg}                 |
+| 5   | Booking        | {verdict}                      | {booked} / {positives} ({x}%)                 |
+| 6   | Show           | {verdict}                      | {completed} / {completed + no-show} ({x}%)    |
 
 Each **ERROR** row is followed by an `Investigate:` line naming the concrete findings; each **WARN** row by an `Optional:` line.
 

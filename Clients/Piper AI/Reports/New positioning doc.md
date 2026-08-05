@@ -169,7 +169,7 @@ A GC currently relying on manual process, tribal knowledge, fragmented tools, or
 SEGMENT A — Offense-Driven (PRIMARY BEACHHEAD)  
 Anchor accounts: Electra, Dunhill
 
-- Trigger: A growth or efficiency mandate — leadership or champion wants to scale bid volume, cut manual rework, raise win rate, or break into new bid sources / see more of the right opportunities, all without adding headcount
+	- Trigger: A growth or efficiency mandate — leadership or champion wants to scale bid volume, cut manual rework, raise win rate, or break into new bid sources / see more of the right opportunities, all without adding headcount
     
 - Champion: Tech-forward Chief Estimator/Director, or a growth-focused leadership sponsor (e.g., Electra's efficiency mandate)
     

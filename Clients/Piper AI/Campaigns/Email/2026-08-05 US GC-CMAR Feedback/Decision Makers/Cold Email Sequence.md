@@ -14,6 +14,10 @@ updated: 2026-08-05
 
 **Vars:** `{{first_name}}`, `{{authority_line}}`. The authority line is a per-lead clause derived from Title + company_clean + Description - completes "Given the fact that ...", lowercase, 10 words max, points at where work gets won and planned, and names the company where it reads naturally. Example: "you and your team shape which facility projects Kroeschell pursues". **A blank authority line breaks every touch-1 variant mid-sentence - those leads are held back, not sent.**
 
+**Deployed.** PlusVibe drafts `2026-08-05 - US GC-CMAR Feedback - Decision Makers` (6a735d24d80eb8df867e8829) and `... - Gateway` (6a735d25ca6ae58fa0b77abb). Mon-Fri 03:00-11:00 America/Los_Angeles, 39 inboxes, daily limit 5000, stop-on-reply at the domain, bounce auto-pause 5%, tracking off, priority 0.5, 2-day gap between touches. Spintax on greeting and every CTA, three options each, meaning-neutral; never on the offer, the funding line or the proof.
+
+**One folder, two sending campaigns.** A SEG split is a deliverability fence, not an audience, so it does not earn its own campaign folder - both lead lists live flat here. See conventions-manager.
+
 **The test.** Two bodies x two subject lines, crossed. Body A carries the "get more specific" one-liner and says "AI operating system". Body B carries "supercharges your estimating team" and says "operating system", no AI. Subject A is "your take {{first_name}}", subject B is "built something for precon teams".
 
 **Touch 1 - variant 1A** - body A, subject: your take {{first_name}}

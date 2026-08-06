@@ -12,6 +12,7 @@ updated: 2026-08-06
 **Audience:** UK DTC, the whole list. This lane does not use the Trustpilot rating, so it runs on brands the Default lane cannot use.
 **Shape:** 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
+**Live campaign:** `6a748fc20beeb7c5646381da` — built as a draft 2026-08-06.
 
 **Build notes.** Second cut of the UK DTC build, written after the 2026-07-28 campaigns returned 4 positive replies on 2,705 contacted, and after François Bonja's feedback on 2026-08-04.
 

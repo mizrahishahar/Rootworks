@@ -12,6 +12,7 @@ updated: 2026-08-06
 **Audience:** UK DTC brands rated under 4.2 on Trustpilot.
 **Shape:** 4 / 1 · **Tokens:** {{first_name}}, {{company_name}}, {{trustpilot_rating}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
+**Live campaign:** `6a748fbe78b225f68c366604` — built as a draft 2026-08-06.
 
 **Build notes.** Second cut of the UK DTC build, written after the 2026-07-28 campaigns returned 4 positive replies on 2,705 contacted, and after François Bonja's feedback on 2026-08-04: copy too long, lead with outcome not mechanism, kill the WhatsApp-number CTA, soft ask.
 
@@ -36,7 +37,7 @@ Hey {{first_name}},
 
 I saw {{company_name}} is rated {{trustpilot_rating}} on Trustpilot, which usually means you are losing sales to questions nobody answered in time.
 
-We fix that with a proactive AI agent, just like we did for Fold, where it plugs into their systems and answers all 100+ daily inquiries instantly. People buy instead of leaving.
+We fix that with a proactive AI agent, just like we did for Fold, where it plugs into their systems and answers all of their 100+ daily inquiries instantly. People buy instead of leaving.
 
 If it does not resolve half your inquiries from day one, you do not pay.
 

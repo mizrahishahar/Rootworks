@@ -19,7 +19,9 @@ Everything it takes to build and configure one campaign. The approved sequence t
 - **Map every placeholder to a real, populated field** before launch; an empty or unmapped variable renders blank and burns the send.
 - **The essence is fixed** - deployment adds only the mechanics below, never meaning. The copy that was approved is the copy that sends.
 - **Signature inserted** from the sending inbox, `{{sender_signature}}`, with a blank line between the body and the sign-off. You insert the signature the inbox already carries; the format is a workspace matter, below.
+- **A P.S. goes after the signature, never before it.** That is where a P.S. sits in a real email, and it is the only line that still gets read once the eye has hit the sign-off. So the order is body, blank line, signature, blank line, P.S. If the copy has a P.S., it is the last thing in the body field.
 - **Spintax** - function words only, three options to a spin, never two (`{{random|Hey|Hi|Hello}}`). Never the offer, the proof, or the CTA; a spin that shifts meaning is worse than none.
+- **Spin several slots per email, not one.** A spun greeting alone is decoration, not variation: the body still lands byte-identical across every send. Aim for four to six spins in a touch - the greeting, the connectives, the verbs, the soft phrasings around the ask. What stays fixed is the substance: every number, every name, the guarantee sentence, and the meaning of the CTA.
 - **Schedule** - Monday to Friday, 07:00 to 14:00 in the client's timezone.
 - **Limits are set by inbox rate, never by the campaign.** The per-inbox daily limit (warmed range, ramped) is the only real throttle; the campaign-level daily limit is set high (5000) so it never binds. A campaign cap fights the inbox ramp and hides the true capacity.
 - **Stop on reply at the domain**, not just the lead. A "no" belongs to the company; the email that gets reported is the one their colleague gets next week.

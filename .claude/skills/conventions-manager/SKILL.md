@@ -101,3 +101,72 @@ Clients/{Client}/Shared/
 Example: `Shared/Lead Lists/2026-07-15 US GC-CMAR/` and `Shared/Email Sequences/2026-07-15 US GC-CMAR/` both mirror `Campaigns/Email/2026-07-15 US GC-CMAR/`.
 
 **Dates here are `YYYY-MM-DD` too, same as Campaigns - never `D.M.YY`.** This sits inside `Shared/`, so normally don't restructure or rename once share links point at it; only fix a pre-existing violation (wrong date format, or files never sorted into their build folder) with the client's explicit go-ahead, since files may already be linked from wherever they currently sit.
+
+## Campaign copy
+
+Every campaign's copy lives in exactly two places, and they say the same thing in the same order.
+
+- **The vault sequence file** is where copy is written, reviewed, and revised. It is the source.
+- **The `Campaign Copy` field** on the Hub Campaigns row is the client-facing mirror of it, filled per campaign.
+
+### The sequence file
+
+One per campaign subfolder, named for the channel it runs on.
+
+| Channel | File |
+|---|---|
+| Email | `Cold Email Sequence.md` |
+| LinkedIn | `LinkedIn Sequence.md` |
+
+It carries frontmatter (`Type`, `client`, `segment`, `channel`, `playbook`, `updated`), then an audience and deployment paragraph, then the copy itself under one heading per step. Everything above the first step heading is build context, not copy: audience, token list, sender, playbook, revision notes, and the live campaign ids the copy is deployed to.
+
+Retired copy stays in the file under a trailing `## Previous messages` heading, dated. It is history, never the live sequence.
+
+### The Campaign Copy field
+
+The field carries **only what the prospect reads**. Strip everything else: audience lines, shape and token headers, deploy notes, sender name, sign-offs, opt-out postscripts, and the whole `Previous messages` block.
+
+Airtable rich text is markdown-backed. Three levels, always these:
+
+```
+### Email 1
+
+**Variant A**  ·  *Subject:* gave up trying to order
+
+> Body line.
+>
+> Body line.
+
+**Variant B**  ·  *Subject:* no one is answering me
+
+> Body line.
+
+---
+
+### Email 2
+
+*Threaded, no new subject*
+
+**Variant A**
+
+> Body line.
+```
+
+| Level | Markup | Carries |
+|---|---|---|
+| Step | `### Email 1` / `### Touch 1` / `### Message 1` | the step, numbered, named for what the sequencer calls it |
+| Step note | `*italic*` under the heading | threading, delay, or `single variant` - only when true |
+| Variant | `**Variant A**` | the variant letter, then any qualifier and the subject, `·`-separated, italic |
+| Body | `>` blockquote | the copy, one `>` per line including the blank ones |
+| Step break | `---` | between steps, never between variants |
+
+- **Subject lines sit on the variant line**, never in the body, so the body is purely what the reader reads.
+- **A step with one variant** drops the `**Variant A**` line and notes `single variant` in the step note.
+- **A LinkedIn connection request** is a step like any other, `### Connection request`, with `*Blank, no note*` when there is no note.
+- **Where follow-ups are worked by hand**, close the field with one italic line saying so, so an empty tail does not read as missing copy.
+- **Underline does not exist** in Airtable markdown. Weight comes from heading, bold, and italic only.
+- **Merge tokens keep the sequencer's own spelling** - `{{first_name}}`, `{{firstName}}`, `{{authority_line}}`. Airtable stores the underscore escaped (`{{first\_name}}`); it renders correctly in the cell and only shows up if the raw value is copied back out.
+
+### One copy, two campaigns
+
+A SEG gateway split is one sequence sent from two sending-tool campaigns, so **both Campaign rows carry the same copy, verbatim**. Same for any other fence that splits sending without changing the message. If the two ever diverge, it stopped being a fence and became a segment.

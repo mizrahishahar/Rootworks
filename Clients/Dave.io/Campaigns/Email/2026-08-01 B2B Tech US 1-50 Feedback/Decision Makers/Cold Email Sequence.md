@@ -42,7 +42,7 @@ P.S. Best case I save you $200K a year on an infra role. Worst case I owe you tw
 
 FYI, I'm only asking teams running real production infra without a real team dedicated to it. That's why you came up.
 
-We ran a pilot with one of them and cut their cloud costs around 45%, and freed up 8x of their engineering time.
+8 teams are already running it in production. We cut their cloud costs around 45%, and freed up 8x of their engineering time.
 
 I'm pretty sure it'll blow your mind, and might save you $200K a year on an infra role. If not, a $50 Amazon gift card, on me.
 
@@ -72,10 +72,11 @@ Can I show you what we built?
 | the build | the first ever autonomous cloud infrastructure | the first autonomous cloud infrastructure there has ever been | the first ever autonomous cloud infra |
 | the ask | I'm looking to get your honest feedback on what we've built. | I'd really like your honest feedback on what we've built. | I'm after your honest feedback on what we've built. |
 
-**2A - 5 slots** (eligibility opener fixed, no spin)
+**2A - 6 slots** (eligibility opener fixed, no spin)
 
 | Slot | Option 1 (base) | Option 2 | Option 3 |
 |---|---|---|---|
+| the proof | 8 teams are already running it in production | 8 teams have it in production right now | It's in production at 8 teams already |
 | the cost result | cut their cloud costs around 45% | took around 45% off their cloud bill | brought their cloud costs down around 45% |
 | the time result | freed up 8x of their engineering time | gave them back 8x of their engineering time | put 8x of their engineering time back on the roadmap |
 | the upside | and might save you | and could well save you | and it might save you |

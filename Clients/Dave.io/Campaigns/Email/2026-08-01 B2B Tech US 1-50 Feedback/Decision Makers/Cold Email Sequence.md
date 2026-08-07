@@ -48,6 +48,8 @@ I'm pretty sure it'll blow your mind, and might save you $200K a year on an infr
 
 Can I show you what we built?
 
+P.S. not relevant? just reply "no thanks"
+
 ### What the variant pair tests
 
 1A opens on us and puts their authority mid-email. 1B opens on them, leading with the authority line, and puts the credential second. One variable: the entry point.

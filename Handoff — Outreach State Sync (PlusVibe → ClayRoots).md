@@ -44,17 +44,17 @@ The one-off fix for Dave (export the 2,307, stamp them by hand) works exactly on
 
 ### Fields written on every contact row (added to the waterfall's standard template so new build tables inherit them)
 
-| Field | Type | Computed as |
-|---|---|---|
-| Campaigns | linked → "Campaigns [Synced]" (fallback: text of Campaign IDs) | all campaigns this email appears in |
-| Campaigns Count | number | count(lead records) |
-| Messages Sent | number | Σ sent_step across lead records |
-| Last Contacted | date | max(last_sent_at) |
-| Last Campaign | text | camp_name of that max |
-| Outreach Status | single select | precedence: UNSUBSCRIBED > BOUNCED > REPLIED > IN_SEQUENCE > COMPLETED > NEVER_CONTACTED |
-| Replied | checkbox | any record with replied_count > 0 |
-| Bounce Reason | text | latest non-empty bounce_msg |
-| Synced At | date | run timestamp |
+| Field           | Type                                                           | Computed as                                                                              |
+| --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Campaigns       | linked → "Campaigns [Synced]" (fallback: text of Campaign IDs) | all campaigns this email appears in                                                      |
+| Campaigns Count | number                                                         | count(lead records)                                                                      |
+| Messages Sent   | number                                                         | Σ sent_step across lead records                                                          |
+| Last Contacted  | date                                                           | max(last_sent_at)                                                                        |
+| Last Campaign   | text                                                           | camp_name of that max                                                                    |
+| Outreach Status | single select                                                  | precedence: UNSUBSCRIBED > BOUNCED > REPLIED > IN_SEQUENCE > COMPLETED > NEVER_CONTACTED |
+| Replied         | checkbox                                                       | any record with replied_count > 0                                                        |
+| Bounce Reason   | text                                                           | latest non-empty bounce_msg                                                              |
+| Synced At       | date                                                           | run timestamp                                                                            |
 
 Deliberately NOT stored: current_step, next_email_time, per-inbox detail — hourly-changing state lives in the sender (CLAUDE.md: state lives in the tools).
 

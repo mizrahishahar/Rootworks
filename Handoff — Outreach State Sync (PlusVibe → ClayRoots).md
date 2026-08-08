@@ -124,3 +124,48 @@ Cost is O(touched set), never O(table size). Airtable: 5 req/s per base, reads 1
 ## 8. Relationship to in-flight Dave work (do not collide)
 
 The Dave session is executing, separately: export + delete of the 2,307 NOT_CONTACTED from Founder-CEO, manual stamp on ClayRoots, placement test, Feedback campaign load. The manual stamp must write the SAME fields this sync owns (one-writer rule: stamp once, then the sync takes over). If the sync ships first, the stamp becomes unnecessary — the backfill covers it.
+
+
+---
+
+## 9. Planning session 2026-08-08 - estate verified, decisions locked
+
+Full-estate recon (Airtable, PlusVibe, external docs) run this session. This section supersedes earlier numbers where they conflict.
+
+### Corrections to the snapshot above
+
+- **Five clients, not four.** Moveplnr is a live fifth workspace (~12,020 leads, ~15 campaigns, 14-table ClayRoots base with 12 date-suffixed vintages of one list) absent from the original scope.
+- **Backfill is ~37,700 leads machine-wide**, not 6,439 (that was Dave alone). Per workspace: Moveplnr ~12,020, Piper ~14,765, Dave ~8,172, Adelante ~2,710, Flowroots 0 (empty shell workspace).
+- **V1 RESOLVED.** list_all_leads per campaign with sort=modified_at desc works (verified live in Dave). No updated-since filter exists; the watermark is implemented as sort-desc-and-page-until-past-watermark. Email-only lookup also worked in this probe (treat as workable, unproven at scale).
+- **V4 RESOLVED.** Plan upgraded; Airtable Sync available. Business tier: 125k records/base, 20 synced tables/base. Airtable Sync is base-to-base only (no API/CSV source): it is the distribution layer for the Campaigns mirror, never the PlusVibe transport. n8n remains the ingestion engine.
+- **PlusVibe = Pipl.ai rebranded.** API: x-api-key, 5 req/s, Business plan required. Webhook events that exist: ALL_EMAIL_REPLIES, FIRST_EMAIL_REPLIES, ALL_POSITIVE_REPLIES, EMAIL_SENT, LEAD_MARKED_AS_{LABEL}, SYSTEM_ALERT. **No bounce or unsubscribe webhook exists**; those states are poll-only. PlusVibe auto-disables a webhook after ~50 failed retries (already happened to the Adelante and old Moveplnr reply hooks).
+- No synced tables exist anywhere yet; no contact table anywhere has standing outreach fields. Clean ground.
+
+### Operator decisions locked 2026-08-08
+
+1. **Scope: ClayRoots-only.** Fields on contact rows in client bases, per the original design. A Hub person-level rollup (cross-client 'has anyone emailed this person') is explicitly deferred to a future phase, decided after the sync is proven.
+2. **Freshness: nightly only.** No webhook fast lane. One workflow, one writer. Replies reach rows up to 24h late; live reply handling stays in the sender where it already lives.
+3. **Campaign linkage: Airtable Sync mirror.** Hub Campaigns mirrored into each ClayRoots base as 'Campaigns [Synced]'; contacts get a real linked Campaigns field. Text-ID fallback retired.
+4. **Rollout: Dave pilot, then registry fan-out.** Prove the invariant on Dave, backfill Dave, then flip clients in one at a time via a Clients-registry checkbox (mirror the Slack Sync pattern). Moveplnr joins only after its vintage-table cleanup; Flowroots base only after its corrupted table is fixed.
+
+### Pre-build hygiene (found in recon, required before the relevant step)
+
+- **Webhook graveyard**: dead 404 n8n endpoints, auto-disabled reply hooks (Adelante, old Moveplnr), and hooks in Piper/Flowroots pointing at other workspaces' campaign IDs. Clean-up pass regardless of the nightly-only decision.
+- **Flowroots ClayRoots 'B2B Tech 11-50 US - Contacts' is a corrupted CSV clone** (Final Email typed multilineText, BOM in primary field name). Breaks the every-table-with-Final-Email discovery rule. Fix or exclude before Flowroots joins the fan-out.
+- **Intent-table schema drift**: Enroll Confirmed / Enroll Error exist only on Dave's intent table; Flowroots' intent table has Email not Final Email.
+- list_campaigns returns full sequence bodies (~10k chars/campaign, no field selection): campaign metadata pulls are expensive, lead pulls are cheap. Design the nightly around lead pulls.
+
+### Remaining validation gates (read-only, ~1 hour, first build step)
+
+- **V2** - modified_at bump on replies, bounces, unsubscribes, manual status changes (verified for sends only).
+- **V3** - does a bounced step increment sent_step.
+- **V5** - one lead per (campaign x email) dedupe assumption.
+
+### Build sequence
+
+1. V2/V3/V5 probes (read-only).
+2. Airtable Sync mirror: Hub Campaigns view into Dave ClayRoots; add the 9 fields to Dave's contact tables (waterfall template edit follows at fan-out).
+3. n8n 'Sync PV Leads' nightly (sibling of Sync PlusVibe Campaigns): registry-gated to Dave, nomination via sort=modified_at desc + watermark, full-history recompute, upsert by lower(trim(Final Email)), invariant check, Hub AUTOMATIONS log.
+4. Dave backfill (no-watermark full pass, ~8,172 leads) - makes the in-flight 2,307 manual stamp unnecessary if it has not run yet.
+5. Observe nightly + invariant for a few days.
+6. Fan out per client via registry checkbox: Piper, Adelante, then Moveplnr (post-cleanup) and Flowroots (post-fix, when its workspace is non-empty). Waterfall template gains the 9 fields; onboarding SOP gains mirror + checkbox steps.

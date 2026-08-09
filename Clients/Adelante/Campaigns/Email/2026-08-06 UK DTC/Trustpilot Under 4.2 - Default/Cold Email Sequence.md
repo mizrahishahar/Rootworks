@@ -42,6 +42,8 @@ You will get half of your inquiries solved from day one, or you pay nothing.
 
 I can build you a first version to try, right here over email. Want me to?
 
+P.S. not relevant? just reply “no thanks”
+
 ### Variant B — online reputation
 
 **Subject:** {{company_name}} online reputation
@@ -58,6 +60,8 @@ You will get half of your inquiries solved from day one, or you pay nothing.
 
 Mind if I share more info?
 
+P.S. not relevant? just reply “no thanks”
+
 ---
 
 ## Email 2 — threaded, no new subject
@@ -71,6 +75,8 @@ It is the same reason we guarantee it: half your inquiries resolved from day one
 We can make it live before Black Friday, when these inquiries are worth the most revenue.
 
 I can build you the initial version now, over email. Want to see it?
+
+P.S. not relevant? just reply “no thanks”
 
 ---
 

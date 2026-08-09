@@ -170,8 +170,56 @@ Contagen `Format ContaGen` to `Upsert Source 1`, `Format Supersoniq` to `Upsert 
 
 **CURRENT STATE, IMPORTANT.** Tables still carry the old writable `Build Date`, so **new rows now land with it blank**. This is expected and self-heals: the formula is retroactive, so converting a table gives every row, including the blank ones, its correct date. No data is lost in the meantime.
 
+**SWEEP STARTED, 6 tables converted 2026-08-09.** Each got `Build Date` renamed to `Build Date (legacy)` and a new formula `Build Date` = `CREATED_TIME()`.
+
+| Base | Table | New field |
+|---|---|---|
+| Piper `appR7aGJohe6xrPCv` | `tblfTVVwSjlMr6A8K` GCs / CMAR Contacts | `fldL7ixyaxuSehMn6` |
+| Adelante `appmOqpv7dedSA9RA` | `tbljW1ipeQhFMXi4b` Israeli DTC Woocomerce Domains | `fldVS8DYsLdIsSPAK` |
+| Adelante | `tbliVsCA0k24Bg48e` Israeli DTC Shopify Domains | `fld3mHBh5MqOVDTec` |
+| Adelante | `tbliCAOKPGPkfdzs7` UK DTC Shopify+Woo Domains | `fldStMTY23eTI3Ejh` |
+| Adelante | `tbl3Ssn5hW27P2sTP` Israeli DTC Shopify Contacts | `fldaq9AZZdYxAVSwQ` |
+| Adelante | `tblf9LAJQKZwt339z` UK DTC Shopify+Woo Contacts | `fldZsBSPfpGH82hIc` |
+| Flowroots `app9FDblMeiv6Ijbj` | `tblzV47wAwdN1QlzX` General Recruiting US Contacts | `fldUbdldSdgdLZdJ1` |
+| Flowroots | `tblry6Fz9gsWP34EJ` Employee Benefits Brokers Contacts | `fldmcJpiNuY9sz4kh` |
+| Flowroots | `tbl2vGReBhaWllVw1` Israeli B2B SaaS Leaders Contacts | `fldkzKJkyN2koTa8T` |
+| Flowroots | `tblVNCFafQJ3XZexH` B2B Tech 11-50 US Contacts | `fldBwDC1bIKbMcko8` |
+
+| Dave.io `appyhuYMwaGUdIs3z` | `tbl9SgBj5owhlS8BS` Accelerator 2025+ Domains | `fld7Ayaqwq8EsEYCi` |
+
+| Dave.io | `tblMZ6xsl3g2x2JgU` B2B Tech 11-50 US Contacts | `fldzGYLXCxd0tmJE8` |
+| Dave.io | `tbljfdFME6bmI1KoB` Calialfa & Manifold lookalikes Contacts | `fldDZjHJBqJbqBOSF` |
+| Dave.io | `tblizSes8vC88IfS4` Xpand Marketing Lookalikes Contacts | `fldY6tbRuGtDFe015` |
+| Dave.io | `tblifFRX1krtbZDyq` Accelerator 2025+ US Contacts | `fld8CYNNsV70xbsS9` |
+| Dave.io | `tblqNUxMvrK8H78m1` Finance US 11-1000 Contacts | `fldR7A04PFNAR8Mai` |
+
+**Dave.io base complete (6 tables).** Its other tables need nothing: `US Tech - Infra Hiring (Intent)` `tblzDWfqe02Eny5QC`, `DNC` `tblVvTum8G2rE0D75`, and `Dave` (campaigns) `tblIpPEkBe57LmA0P` have no `Build Date`.
+
+| Piper | `tblgHYt0oh2abEuG5` GCs / CMAR firms US CA Contacts | `fldRi4zQG02fjokEv` |
+| Piper | `tblgl8p6L5Eee2HM0` GC-CMAR BizDev Opportunity Hunter Contacts | `fldKGR4WXoD9aj6e7` |
+| Piper | `tblwm8Dwgwt3u2X40` GC-CMAR 30M+ Sales & Marketing Contacts | `fldXrxKPVYL2gAcMW` |
+| Piper | `tbl2xPG9kXSWbWGiE` GC-CMAR Precon & Estimating Contacts | `fldW6raZXHpyP2Wme` |
+| Piper | `tbllKqXTuHvt3BIGQ` GC-CMAR Business Leaders C-Suite Contacts | `fldCoJnOGtDIx6FDX` |
+
+**Piper base complete (6 tables).** `Piper Campaigns` `tblxHh5uS81EqJVrQ` has no `Build Date`.
+
+| Move PLNR `appSTTKOc9Afqer9d` | `tblOcYcAxem05XbqY` General Moving Companies Contacts | `fldDki4xt5OflR0h2` |
+| Move PLNR | `tblep7rO3kakcGXgz` General Moving Companies Domains | `fldMNwQdv6ItK8WFg` |
+
+**SWEEP COMPLETE. 23 tables across all five bases.** Move PLNR only had two tables carrying `Build Date`; its 11 dated legacy source tables never had the field (they are the ones already slated for deletion), and `Intent for Move PLNR`, `DNC` and `Moveplnr Campaigns` do not carry it either.
+
+**Every ClayRoots build table in the estate now has an immutable `Build Date`.** Nothing can overwrite it. Past values are corrected. `Build Date (legacy)` sits beside each one holding the old values; delete those whenever.
+
+**Cheap trick for a known table:** `list_records_for_table` with `fieldIds: ["Build Date"]` and `pageSize: 1` returns `cellValuesByFieldId` keyed by the field ID, so you get the field ID without pulling the base schema. Only use `list_tables_for_base` when you need to discover which tables exist.
+
+**11 tables done.** Flowroots base is complete: its other tables (`Intent for Flowroots`, `Flowroots Campaigns`) have no `Build Date` and need nothing. `ZZ Build Date Test` (`tbll6ScG0igQdFT5t`) is the scratch table from section 3, safe to delete.
+
+**Remaining bases:** Piper `appR7aGJohe6xrPCv` (other tables), Dave.io `appyhuYMwaGUdIs3z`, Move PLNR. Enumerate one base at a time with `list_tables_for_base`, pick every table having a `Build Date` of type `date`, then rename plus create per the recipe above.
+
+**Repair proven by cell values.** The 731 corrupted rows in `tblfTVVwSjlMr6A8K` now read `Build Date` 2026-06-14 (correct, matching `createdTime` and `ingested_at`) while `Build Date (legacy)` still shows the wrong 2026-08-04. Past and future are both correct on every converted table.
+
 **NEXT, in order:**
-1. **The table sweep (section 7).** Now unblocked and safe, since nothing writes the field. This is the priority.
+1. **Finish the sweep.** Remaining: Piper's other tables, Dave.io `appyhuYMwaGUdIs3z`, Move PLNR, Flowroots `app9FDblMeiv6Ijbj`. Roughly 19 tables. Get table and field IDs per base first; `list_tables_for_base` returns full schemas and is large, so pull one base at a time.
 2. **Pre-flight item 1 is now urgent, and the news is bad.** Discolike's own run log from 2026-08-01 (execution 2879) reads: `Warning: the Created formula field could not be added`. So the builders' post-creation formula-field step **already fails**. The Airtable API accepts formula fields fine (proven in section 3), so their implementation is broken, not the capability. Fix this before relying on it for new tables.
 3. Section 5 edits 1 to 3 in each parent (contract to `formulaFields`, guard `EXEMPT`, create path), so new tables get the formula field automatically. Blocked on item 2.
 4. Pre-flight item 3: who downstream reads `Build Date` and would choke on a timestamp.

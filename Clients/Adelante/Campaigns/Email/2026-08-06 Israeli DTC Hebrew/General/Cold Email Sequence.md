@@ -25,7 +25,7 @@ updated: 2026-08-09
 | Proof | Modibodi at 70% | Papaya, 200 to 400 of every 1,000 closing with no human |
 | Guarantee | none | חצי מהפניות מהיום הראשון, או שלא משלמים |
 | CTA | reply yes and I send a WhatsApp number | a first version built here over email |
-| Opt-out | `נ.ב. השיבו הסר` in the body | dropped, the inbox signature already carries one |
+| Opt-out | `נ.ב. השיבו הסר` in the body | still in the body. The Hebrew signature was rebuilt 2026-08-09 and deliberately carries no P.S., so the opt-out lives in the copy |
 
 The 70% was the reason for the swap as much as the angle: the case study page says 50%, the onboarding form says 70%, and the asset note says use 50. Papaya replaces it because the demand-gen frame needs a number phrased as closing, and Papaya's is the only one we have.
 
@@ -54,7 +54,9 @@ Two variants, identical body. Subject line is the only difference.
 
 אני יכול לבנות לכם גרסה ראשונית לנסות, כאן במייל, רוצים?
 
-{{sender_first_name}}
+*[signature]*
+
+נ.ב. אין התחייבות כמובן. פשוט תנסו ותגידו לי מה דעתכם
 
 ---
 
@@ -68,4 +70,6 @@ Two variants, identical body. Subject line is the only difference.
 
 מה סוג הפנייה שהכי מציפה אתכם כרגע? אני אמקד בה את הגרסה הראשונית ואשלח לכם אותה כאן.
 
-{{sender_first_name}}
+*[signature]*
+
+נ.ב. אם זה לא רלוונטי כרגע, אפשר להגיד לנו.

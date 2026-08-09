@@ -39,6 +39,10 @@ More staff, templates and their helpdesk's own AI had all failed first. It now c
 
 Mind if I share it?
 
+P.S. No pitch in it, just what they changed and what it did.
+
+P.S. not relevant? just reply “no thanks”
+
 ---
 
 ## On reply
@@ -61,8 +65,12 @@ They gave the agent 10% of their tickets at first, then raised it to 80%. It rea
 
 Still happy to send it over.
 
+P.S. not relevant? just reply “no thanks”
+
 ### 2B — eligibility
 
 For context, we only send this to stores already handling real support volume, since that is where it shows up in sales. That is why {{company_name}} came up.
 
 Still happy to send it.
+
+P.S. not relevant? just reply “no thanks”

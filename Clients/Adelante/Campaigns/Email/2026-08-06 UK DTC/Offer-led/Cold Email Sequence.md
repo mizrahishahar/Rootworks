@@ -59,3 +59,5 @@ Single variant.
 For context, we only do this for stores already handling real support volume, since that is where it actually shows up in sales. That is why {{company_name}} came up.
 
 I can build you an initial version here, over email. Worth doing?
+
+P.S. not relevant? just reply “no thanks”

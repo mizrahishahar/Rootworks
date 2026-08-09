@@ -10,7 +10,7 @@ updated: 2026-08-09
 # Cold Email Sequence
 
 **Audience:** Israeli DTC ecommerce, general. Bot-agnostic and vertical-agnostic by design.
-**Shape:** 2 / 1 · **Tokens:** {{hebrew_first_name}}, {{company_name}}, {{sender_first_name}}
+**Shape:** 2 / 1 · **Tokens:** {{first_name_he}}, {{company_name}}, {{sender_first_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a785c53e6166f464988819f` — built as a draft 2026-08-09.
 
@@ -40,9 +40,9 @@ The 70% was the reason for the swap as much as the angle: the case study page sa
 Two variants, identical body. Subject line is the only difference.
 
 - **1A** subject: הפניות שחוזרות על עצמן ב{{company_name}}
-- **1B** subject: שאלה {{hebrew_first_name}}
+- **1B** subject: שאלה {{first_name_he}}
 
-היי {{hebrew_first_name}},
+היי {{first_name_he}},
 
 אם רוב הפניות של {{company_name}} חוזרות על עצמן: סטטוס הזמנה, החזרות וזמינות - זה בטח מציף אתכם, וכתוצאה מכך רוכשים מחכים לתשובה, ובינתיים סוגרים במקום אחר.
 
@@ -60,7 +60,7 @@ Two variants, identical body. Subject line is the only difference.
 
 ## Email 2 — threaded, no new subject
 
-{{hebrew_first_name}}, אנחנו מציעים את זה רק לחנויות עם נפח פניות אמיתי, כי שם זה מורגש בהכנסות.
+{{first_name_he}}, אנחנו מציעים את זה רק לחנויות עם נפח פניות אמיתי, כי שם זה מורגש בהכנסות.
 
 מאותה סיבה אנחנו גם מתחייבים: חצי מהפניות נסגרות מהיום הראשון, או שלא משלמים.
 

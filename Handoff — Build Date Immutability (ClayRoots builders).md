@@ -154,13 +154,30 @@ Note the architecture: `Storeleads Domains -> Clayroots` (`UYGZblamekkSgat4`) is
 
 **Also established:** the transitional gap is free. Because the formula computes retroactively from creation time, rows created between a builder fix and its table conversion get the correct date the moment the field flips. Builders-first ordering carries no data cost.
 
-**NEXT, in order:**
-1. Same payload edit on the other three builders: `jJTD9xgbA0kKYqna` (Contagen), `7jqOsQh43ODQWQZ9` (Storeleads to Supersoniq, check whether it shares `SL Batch Pull`), `vTMckuoU61r9GXfa` (Discolike Domains). Locate each row builder first; do not assume the node name.
-2. Pre-flight items 1 and 3 (missing-field creator honors `type`; who downstream reads `Build Date`).
-3. Section 5 edits 1 to 3 in each parent, so new tables get the formula field.
-4. Only then the table sweep, section 7.
+**ALL FOUR WRITE PATHS DONE AND PUBLISHED, 2026-08-09.** No builder writes `Build Date` or `Run ID` any more.
 
-**Do not convert any table yet.** Three builders still write `Build Date`; converting a table they touch kills those builds with the 422.
+| Workflow | Method | Active version |
+|---|---|---|
+| `SL Batch Pull` `3r2DqbY2IAapeehX` | two keys removed from `Process Batch` jsCode | `b8f607e5-d9ae-460e-8d66-6766f58be95f` |
+| Contagen `jJTD9xgbA0kKYqna` | `Strip Immutable (S1)` after `Format ContaGen`, `Strip Immutable (S2)` after `Format Supersoniq` | `ad45ffc4-5eb8-4a82-bc22-55535f5f74f9` |
+| Storeleads to Supersoniq `7jqOsQh43ODQWQZ9` | `Strip Immutable` between `Format Supersoniq` and `Upsert Contacts` | `530ad8c4-4823-4a1f-963c-7684c2f6fb7d` |
+| Discolike Domains `vTMckuoU61r9GXfa` | `Strip Immutable` between `AT Emit Companies` and `AT Insert Companies` | `2cdee769-b24d-46eb-88f3-1331560a8ce9` |
+
+The three big builders could not be read (45k-token single-line dumps, Chrome unavailable), so instead of editing unseen formatter code a **strip node** was inserted at the write boundary in each. It deletes both keys from every item. This needs no knowledge of upstream code, is self-documenting via node notes, and is reverted by deleting the node and restoring one connection. Arguably the better design regardless: the rule now lives at the write boundary rather than duplicated in every formatter.
+
+Write-node map, discovered by reading `source.previousNode` on a successful execution (chain backwards from `Build Log` or `Resolve Client`):
+Contagen `Format ContaGen` to `Upsert Source 1`, `Format Supersoniq` to `Upsert Source 2`. Storeleads to Supersoniq: `Format Supersoniq` to `Upsert Contacts`. Discolike: `AT Emit Companies` to `AT Insert Companies`.
+
+**CURRENT STATE, IMPORTANT.** Tables still carry the old writable `Build Date`, so **new rows now land with it blank**. This is expected and self-heals: the formula is retroactive, so converting a table gives every row, including the blank ones, its correct date. No data is lost in the meantime.
+
+**NEXT, in order:**
+1. **The table sweep (section 7).** Now unblocked and safe, since nothing writes the field. This is the priority.
+2. **Pre-flight item 1 is now urgent, and the news is bad.** Discolike's own run log from 2026-08-01 (execution 2879) reads: `Warning: the Created formula field could not be added`. So the builders' post-creation formula-field step **already fails**. The Airtable API accepts formula fields fine (proven in section 3), so their implementation is broken, not the capability. Fix this before relying on it for new tables.
+3. Section 5 edits 1 to 3 in each parent (contract to `formulaFields`, guard `EXEMPT`, create path), so new tables get the formula field automatically. Blocked on item 2.
+4. Pre-flight item 3: who downstream reads `Build Date` and would choke on a timestamp.
+5. Retire `Backfill Build Date (one-off)` `M0IvVrjXaGT1K6Fs`.
+
+**Not yet proven by a live run.** All four are config-level confirmed only. The next real build of each is the proof: new rows carry no `Build Date`, existing rows keep theirs.
 
 ## 12. Related
 

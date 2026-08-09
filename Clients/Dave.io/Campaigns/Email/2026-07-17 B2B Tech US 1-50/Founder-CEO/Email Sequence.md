@@ -3,7 +3,7 @@ Type: Cold Email Sequence
 client: Dave.io
 segment: Founder-CEO
 channel: Email (PlusVibe)
-playbook: direct
+playbook: pitch-led
 date: 2026-07-18
 ---
 

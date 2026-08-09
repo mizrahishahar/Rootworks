@@ -3,7 +3,7 @@ Type: Sequence
 client: Adelante
 segment: UK DTC - Shopify Plus - Trustpilot Under 4.2
 channel: email
-playbook: default
+playbook: pitch-led
 updated: 2026-08-06
 ---
 

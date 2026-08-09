@@ -5,9 +5,9 @@ channel: [email]
 sources: standard list
 ---
 
-# Default
+# Pitch-led
 
-The pitch, said well. Every email that asks them to consider the offer runs on this one. Touch 1 always has the same shape, and all the variation lives in the opener: here is the outcome, here is why you should believe it, here is something you can have.
+The pitch, said well. Every email that asks them to consider the offer runs on this one. (Formerly named `default`; renamed 2026-08-09 when campaign names started carrying their playbook.) Touch 1 always has the same shape, and all the variation lives in the opener: here is the outcome, here is why you should believe it, here is something you can have.
 
 ## The play
 

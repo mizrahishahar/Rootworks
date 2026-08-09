@@ -3,14 +3,14 @@ Type: Sequence
 client: Adelante
 segment: Israeli DTC Hebrew - General - No Name
 channel: email
-playbook: default
+playbook: pitch-led
 updated: 2026-08-09
 ---
 
 # Cold Email Sequence
 
 **Audience:** Israeli DTC ecommerce, general, **leads with no first name**. Role inboxes (`info@`, `hello@`) and any row where the name did not resolve. Bot-agnostic and vertical-agnostic.
-**Shape:** 2 / 1 · **Tokens:** {{company_name}}, {{sender_first_name}}
+**Shape:** 4 / 1 · **Tokens:** {{company_name}}, {{sender_first_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a787b4db887ba6d86d59e4d` — built as a draft 2026-08-09.
 
@@ -30,16 +30,20 @@ The onboarding notes say role inboxes **do** respond in this market and are wort
 
 ## Email 1
 
-Two variants, identical body. Subject line is the only difference.
+Four variants: two subjects crossed with the proof line, testing whether the 1,500-inquiry volume helps or hurts. Papaya was removed on 2026-08-09 per Tamir on the 2026-07-23 call; Modibodi at 75% on ~1,500 inquiries a month replaces it.
 
-- **1A** subject: הפניות שחוזרות על עצמן ב{{company_name}}
-- **1B** subject: שאלה על {{company_name}}
+- **1A** הפניות שחוזרות על עצמן ב{{company_name}} · with volume
+- **1B** שאלה על {{company_name}} · with volume
+- **1C** הפניות שחוזרות על עצמן ב{{company_name}} · percentage only
+- **1D** שאלה על {{company_name}} · percentage only
 
 אם רוב הפניות של {{company_name}} חוזרות על עצמן: סטטוס הזמנה, החזרות וזמינות - זה בטח מציף אתכם, וכתוצאה מכך רוכשים מחכים לתשובה, ובינתיים סוגרים במקום אחר.
 
 בנינו נציג AI שסוגר את הפניות האלה מקצה לקצה: קורא את הנתונים מהחנות שלכם וגם מבצע פעולות אמיתיות כמו בדיקת סטטוס, החזרה והחלפה.
 
-אצל פפאיה זה סוגר 200 עד 400 מכל 1,000 פניות בלי בן אדם, ובלי שאף רוכש מחכה.
+אצל Modibodi, על כ-1,500 פניות בחודש, הנציג סוגר 75% מהן בלי נציג אנושי.
+
+*(Variants C and D drop the volume and read: אצל Modibodi הנציג סוגר 75% מהפניות בלי נציג אנושי.)*
 
 אני מספיק בטוח בו כדי להתחייב: חצי מהפניות שלכם ייסגרו החל מהיום הראשון, או שאתם לא משלמים.
 

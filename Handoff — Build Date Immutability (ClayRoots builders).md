@@ -59,6 +59,16 @@ Two caveats found by the test:
 1. **Display format defaults to US (`M/D/YYYY`), not ISO.** `create_field` and `update_field` accept only `{ formula }` in options, so the display format cannot be set through the API. Getting `YYYY-MM-DD` is one UI click per table (Edit field, formatting, ISO). Cosmetic only. It does not change the field type, so it cannot affect the guard, and it can be done lazily at any time.
 2. **The API returns the raw value as a full ISO timestamp** (`2026-08-09T11:02:03.000Z`) even though the field displays date-only. Today the field returns `"2026-08-04"`. Anything downstream reading `Build Date` and expecting `YYYY-MM-DD` must slice the first 10 characters.
 
+## 3a. Display shows a time, and that is accepted
+
+The cells render as `11:40am 7/28/2026`. The API response advertises `result.type: "date"` with a date format and no time format, which is misleading: the UI still shows a time. Verified visually 2026-08-09.
+
+**Operator ruling: leave it. Do not "fix" this.**
+
+The only API-reachable way to remove the time is `DATETIME_FORMAT(CREATED_TIME(),'YYYY-MM-DD')`, which returns **text** and therefore kills date-range filtering (`isWithin`, before/after). Filtering is a hard requirement, so that swap is forbidden. This is the same trap the old Discolike node had fallen into.
+
+The only way to get date-only display AND keep filtering is a per-field UI toggle (field header, Formatting, turn off "Include time"), 23 tables. Available any time, purely cosmetic, does not change the field type and so cannot affect the type-clash guard.
+
 ## 4. Pre-flight, must be answered before any builder is touched
 
 Read with the cheap method in section 8. Do not guess any of these.
@@ -209,6 +219,63 @@ Contagen `Format ContaGen` to `Upsert Source 1`, `Format Supersoniq` to `Upsert 
 **SWEEP COMPLETE. 23 tables across all five bases.** Move PLNR only had two tables carrying `Build Date`; its 11 dated legacy source tables never had the field (they are the ones already slated for deletion), and `Intent for Move PLNR`, `DNC` and `Moveplnr Campaigns` do not carry it either.
 
 **Every ClayRoots build table in the estate now has an immutable `Build Date`.** Nothing can overwrite it. Past values are corrected. `Build Date (legacy)` sits beside each one holding the old values; delete those whenever.
+
+## 11b. Create-path contracts and guards, 2026-08-09
+
+**All four builders now declare `Build Date` as a computed field and drop `Run ID`.** Final published versions:
+
+| Workflow | Active version |
+|---|---|
+| `SL Batch Pull` `3r2DqbY2IAapeehX` | `b8f607e5` |
+| Discolike `vTMckuoU61r9GXfa` | `b752d9c4` |
+| Storeleads Domains `UYGZblamekkSgat4` | `d1ad2686` (unblock was `43c5c203`) |
+| Storeleads to Supersoniq `7jqOsQh43ODQWQZ9` | `963bffd5` (unblock was `ea6b9823`) |
+| Contagen `jJTD9xgbA0kKYqna` | `e11e4cf4` |
+
+**The outage this caused, and the lesson.** Converting the 23 tables BEFORE fixing the contracts guaranteed a window where every append into a converted table was refused: contract said `type: date`, table was `formula`, guard threw `Type clash ... Nothing was written.` A live Storeleads-to-Supersoniq build hit it on `UK DTC Shopify+Woo - Contacts`. No data was harmed, the guard failed closed. **Correct order is always guards first, then tables.**
+
+**The canonical guard rule, now in all four.** Not a blanket exemption. The computed set is derived from `spec.formulaFields`, never hardcoded, so future computed fields are covered automatically:
+
+- absent (case-insensitive lookup) → push to `missing`, created as the formula
+- present and `type === 'formula'` → skip, idempotent across re-runs
+- present and any other type → **throw**, naming table, id and actual type, ending "Nothing was written."
+
+A blanket exempt would have skipped the type check too, letting a stale writable `Build Date` survive silently forever. That was the trap.
+
+**Case-insensitivity is scoped to computed fields only.** Plain fields keep exact matching; widening it would change clash detection for every column. Note the companion requirement: any downstream verify node must normalise both sides, or a table carrying `build date` passes the router then false-fails verification.
+
+**The "formula field could not be added" defect, root-caused.** Three faults, present in every builder, all copy-paste siblings:
+1. The `AT Add Created Formula` HTTP node was `"disabled": true` and never fired. The Airtable API was never the problem.
+2. It targeted a field named `Created`, which appears nowhere in any contract.
+3. Its formula was `DATETIME_FORMAT(CREATED_TIME(),'YYYY-MM-DD')`, which returns **text** and would have broken date filtering. See section 3a.
+
+All now enabled, retargeted at `Build Date` / `CREATED_TIME()`, and made to fail loudly instead of warn.
+
+**Verified live:** the missing-field creator honours `type` and `options`. Execution 3097 shows `AT Create Field` posting the whole contract entry verbatim, no text coercion. So an append into a table lacking `Build Date` creates it correctly as a formula.
+
+### Known divergences, all deliberate, none blocking
+
+**RESOLVED 2026-08-09, items 0 and 1 below are both closed.** The Operator pasted `Companies Schema`'s source from the UI, which unblocked the proper fix. Final version on `UYGZblamekkSgat4`: **`066cd2f4`**. `Companies Schema` now drops `Run ID` and `Build Date` from `fields` (28 entries) and declares `formulaFields = [{name:'Build Date', type:'formula', options:{formula:'CREATED_TIME()'}}]`; the compensating filter was removed from `Table Router` in the SAME atomic write, so `Build Date` appears exactly once in the effective contract and `Run ID` zero times. All four builders are now structurally identical, not merely behaviourally equivalent.
+
+Note the duplicate hazard that made atomicity mandatory: fixing `Companies Schema` alone, while `Table Router` still appended `Build Date` to `formulaFields`, would have produced two entries, two create attempts, and a 422 on the next create-mode build. Never split those two edits.
+
+Also learned from the Operator's paste: this workflow's launch node is `Launch Guard`, not `Storeleads Launch` as inferred from the sibling builder. `Table Router` separately references `$('Storeleads Launch')` for `baseId`; both nodes exist. Treat sibling-matched inferences in this estate with suspicion.
+
+Item 0 is moot: `AT Create Companies Table` was never read, but whether it reads the router's fields or the schema node's, both now carry the same 28 entries with neither field present.
+
+The two items below are kept for the record.
+
+0. ~~**OPEN, needs 30 seconds of UI time.**~~ CLOSED, see above. On `UYGZblamekkSgat4`, one node could not be read: `AT Create Companies Table`, the create-table HTTP call. If it reads `$('Companies Schema')` directly rather than `Table Router`'s output, the normalisation in item 1 does not reach it. Evidence says it reads the router (it is fed by `Is Append?` output 1; the router's create branch would otherwise be dead code; in execution 3084 the created table's fields matched the router's list exactly and in order) but this is circumstantial. **To close it: open the workflow in the n8n UI and Ctrl-F for `Companies Schema`. If `Table Router` is the only hit, this is resolved.** If wrong, the failure is LOUD not silent: a new table gets a writable `Build Date` plus `Run ID`, then `AT Add Build Date Formula` 422s on duplicate field name and, with `neverError: false` and `onError: stopWorkflow`, the create run halts. Append mode is unaffected either way. Latest version after the protective-notes pass: `f7dc1bd4`.
+
+1. **`UYGZblamekkSgat4` has its contract normalisation in `Table Router`, not in `Companies Schema`.** The schema node could not be read (94,002-char overflow, Read exceeds its token limit on a single-line file, Bash blocked on the cache). Rather than write unread code, the filter-and-move was placed in the sole consumer of the contract. Behaviour matches the other three; file shape does not. **Someone with UI access should move the entries in `Companies Schema` proper and delete the dead node.**
+2. **Create paths add formula fields via two dedicated HTTP nodes, not by looping `formulaFields`.** Works for `Build Date` and `Seniority Rank`. **A third computed field would be silently skipped on new tables.** Closing this generically needs new nodes in the create chain.
+3. **Contagen's `Contacts Table Guard` lacks the fail-closed Build Date assertion** its sibling got, same unreadable-code reason. Partly covered: its formula-add node has no `neverError`, so an Airtable rejection halts the run.
+4. **Error wording is byte-identical across builders** for consistency, so a non-formula `Seniority Rank` in Contagen would also read "Convert it to a CREATED_TIME() formula field".
+5. **Some nodes were reconstructed rather than read verbatim**, specified in full against verified wiring and sibling sources. Low risk, not zero.
+
+### Still unproven
+
+**No live run has exercised any of this.** All config-level. The proof is the next real build of each builder: an append into a converted table must pass the guard, and a new table must come out with a formula `Build Date` and no `Run ID` column. The stale-`date` throw has never executed anywhere, since every table is already formula.
 
 **Cheap trick for a known table:** `list_records_for_table` with `fieldIds: ["Build Date"]` and `pageSize: 1` returns `cellValuesByFieldId` keyed by the field ID, so you get the field ID without pulling the base schema. Only use `list_tables_for_base` when you need to discover which tables exist.
 

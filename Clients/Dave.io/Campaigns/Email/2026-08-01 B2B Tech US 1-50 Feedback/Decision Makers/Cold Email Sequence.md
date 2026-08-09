@@ -8,7 +8,7 @@ updated: 2026-08-07
 
 # Decision Makers - Feedback - Sequence (Email)
 
-**Audience:** infra decision makers (founders, CEOs, CTOs, Heads/VPs of Eng) at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led`, follow-up rebuilt on `default`. Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaigns: 2026-08-01 - B2B Tech US 1-50 - Infra Decision Makers (6a6e2d3dabf8c14b8a8aae1d) and - Gateway (6a7088afeba0a1d3e31819b2).
+**Audience:** infra decision makers (founders, CEOs, CTOs, Heads/VPs of Eng) at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led`, follow-up rebuilt on `pitch-led`. Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaigns: 2026-08-01 - B2B Tech US 1-50 - Infra Decision Makers - feedback-led (6a6e2d3dabf8c14b8a8aae1d) and - feedback-led - Gateway (6a7088afeba0a1d3e31819b2).
 
 **Vars:** {{first_name}}, {{authority_line}}. The authority line is a per-lead clause derived from the company Description - completes "Given the fact that ..." in 1A and "I'm writing because ..." in 1B, lowercase, 12 words max, names what they actually run, no compliment. Examples: "you're the one keeping the payments API up at Lumen", "your team runs a real-time classifier on two engineers".
 
@@ -139,4 +139,4 @@ When judging v2, the number to trust is replies from leads first contacted on or
 ## Question history
 
 v1 (2026-08-01): first campaign on the feedback-led playbook for Dave.
-v2 (2026-08-07): CTA de-pitched, bet moved to a touch-1 P.S., follow-up rebuilt on `default` (eligibility -> pilot result -> bet -> CTA), both proof numbers carried, spintax rebuilt to 3 options per slot.
+v2 (2026-08-07): CTA de-pitched, bet moved to a touch-1 P.S., follow-up rebuilt on `pitch-led` (eligibility -> pilot result -> bet -> CTA), both proof numbers carried, spintax rebuilt to 3 options per slot.

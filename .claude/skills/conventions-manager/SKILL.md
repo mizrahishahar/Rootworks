@@ -46,7 +46,7 @@ Clients/{Client}/Campaigns/
 | Parent campaign folder | `{YYYY-MM-DD} {Market / Niche}` | `2026-07-07 Moving Companies US CA` |
 | Campaign subfolder | `{Segment descriptor}` | `Home Movers - Owner-Operators - Direct Contact` |
 | Per-pull CSV | `{Niche} - {pull descriptor} - {YYYY-MM-DD}` | `Movers - Residential Named - 2026-07-07` |
-| Sending-tool campaign | `{YYYY-MM-DD} - {Market / Niche} - {Segment descriptor}` - the parent folder and subfolder joined, so the campaign name alone says which build and which segment | `2026-07-07 - Moving Companies US CA - Home Movers - Owner-Operators` |
+| Sending-tool campaign | `{YYYY-MM-DD} - {Market / Niche} - {Segment descriptor} - {playbook}` - the parent folder and subfolder joined, closed by the playbook the copy runs on, spelled exactly as the playbook file names it (e.g. `feedback-led`, `offer-led`), so the campaign name alone says which build, which segment, and which play. The playbook token is what keeps two campaigns on the same audience distinguishable | `2026-08-07 - B2B Tech US 1-50 - Infra Decision Makers - offer-led` |
 
 ## View naming
 
@@ -66,7 +66,7 @@ The chain reads top to bottom and each view narrows the one above it. `Relevant`
 
 A secure-email-gateway split (Proofpoint, Mimecast, Barracuda and kin) is a deliverability fence, not an audience: same copy, same offer, same people, only a different place to send. So **a Gateway split never earns its own campaign folder.** One folder, one sequence, one lead list - and the gateway slice is cut as a view off that same segment and loaded into its own sending-tool campaign, so its bounce rate reads in isolation.
 
-- **Gateway alone** -> one campaign subfolder. Two sending-tool campaigns hang off it, named `{...} - {Segment}` and `{...} - {Segment} - Gateway`. This is the one place the 1:1 between subfolder and sending-tool campaign is deliberately broken.
+- **Gateway alone** -> one campaign subfolder. Two sending-tool campaigns hang off it, named `{...} - {Segment} - {playbook}` and `{...} - {Segment} - {playbook} - Gateway` - the Gateway suffix always comes last, after the playbook. This is the one place the 1:1 between subfolder and sending-tool campaign is deliberately broken.
 - **Gateway alongside real segments** -> a folder per real segment, exactly as normal, and the gateway fence is drawn inside each one. Never a `Gateway` folder of its own.
 - The exports still split: `{Niche} - {pull descriptor} - {YYYY-MM-DD}.csv` and `{Niche} - {pull descriptor} Gateway - {YYYY-MM-DD}.csv`, both flat in the one folder.
 

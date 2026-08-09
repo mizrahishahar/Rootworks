@@ -10,7 +10,7 @@ updated: 2026-08-06
 # Cold Email Sequence
 
 **Audience:** UK DTC, the whole list.
-**Shape:** 3 / 2 · **Tokens:** {{first_name}}, {{company_name}}
+**Shape:** 2 / 2 · **Tokens:** {{first_name}}, {{company_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a749011d162725bb09e3ed0` — built as a draft 2026-08-06.
 **The asset:** the Outlier Group / The Scent Reserve case study, `getadelante.com/case-study/outlier-group`.
@@ -28,11 +28,10 @@ The brand is never named in the body. Fold is the only cleared name and Fold is 
 
 ## Email 1
 
-Three variants, identical body. Subject line is the only difference.
+Two variants, identical body. Subject line is the only difference. `1,200 orders a day` and `sales from support` were dropped on 2026-08-06: the first spent a number the body already opens on, the second states the sell-from-support angle Tamir warned against.
 
-- **1A** subject: 1,200 orders a day
-- **1B** subject: sales from support
-- **1C** subject: quick question {{first_name}}
+- **1A** subject: a breakdown
+- **1B** subject: quick question {{first_name}}
 
 {{first_name}}, I put together a breakdown on how a UK beauty brand on 1,200 orders a day grew sales by handing their support inbox to an agent that resolves orders instead of replying about them.
 
@@ -64,6 +63,6 @@ Still happy to send it over.
 
 ### 2B — eligibility
 
-For context, we only send this to stores already handling real support volume, since that is where it shows up in the sales. That is why {{company_name}} came up.
+For context, we only send this to stores already handling real support volume, since that is where it shows up in sales. That is why {{company_name}} came up.
 
 Still happy to send it.

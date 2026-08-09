@@ -8,7 +8,7 @@ updated: 2026-08-07
 
 # Decision Makers - Feedback - Sequence (Email)
 
-**Audience:** infra decision makers (founders, CEOs, CTOs, Heads/VPs of Eng) at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led`, follow-up rebuilt on `default`. Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaigns: 2026-08-01 - B2B Tech US 1-50 - Infra Decision Makers (6a6e2d3dabf8c14b8a8aae1d) and - SEG (6a7088afeba0a1d3e31819b2).
+**Audience:** infra decision makers (founders, CEOs, CTOs, Heads/VPs of Eng) at US B2B tech companies, 1-50 employees, software product on cloud infra - fresh leads never contacted by us (deduped vs the 17.7 sends and the DNC). Seat is carried by the authority line, one campaign. Playbook: `feedback-led`, follow-up rebuilt on `default`. Sender: PlusVibe (Flowroots X Dave.io, Dave-1 inbox set). Live campaigns: 2026-08-01 - B2B Tech US 1-50 - Infra Decision Makers (6a6e2d3dabf8c14b8a8aae1d) and - Gateway (6a7088afeba0a1d3e31819b2).
 
 **Vars:** {{first_name}}, {{authority_line}}. The authority line is a per-lead clause derived from the company Description - completes "Given the fact that ..." in 1A and "I'm writing because ..." in 1B, lowercase, 12 words max, names what they actually run, no compliment. Examples: "you're the one keeping the payments API up at Lumen", "your team runs a real-time classifier on two engineers".
 
@@ -91,7 +91,7 @@ P.S. not relevant? just reply "no thanks"
 
 ## v1 - RETIRED (2026-08-01 to 2026-08-07)
 
-**Result:** 0.2% reply on 1,237 contacted (main), 0.6% on 167 (SEG). Under every band, and under the direct 4/2/2 it replaced (0.7-1.3%).
+**Result:** 0.2% reply on 1,237 contacted (main), 0.6% on 167 (Gateway). Under every band, and under the direct 4/2/2 it replaced (0.7-1.3%).
 
 **Why it was retired:**
 - Touch 1 closed on "Would it make sense to present it to you?" - a demo request inside a feedback ask, which collapses the disarm the playbook rests on.

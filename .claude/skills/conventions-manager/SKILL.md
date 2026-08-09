@@ -62,12 +62,12 @@ Every build table carries the same working chain of views, always named the same
 
 The chain reads top to bottom and each view narrows the one above it. `Relevant` and `Cut review` are exact complements and together they are the whole table - that is what makes the cut reviewable rather than invisible, and rescuing a row through `manually_approved` moves it from one to the other. Every segment view sits on top of `Relevant + Found` and only splits it, per [[segmentor]]; the segments must sum back to it exactly.
 
-## The SEG fence is not a segment
+## The Gateway fence is not a segment
 
-A secure-email-gateway split (Proofpoint, Mimecast, Barracuda and kin) is a deliverability fence, not an audience: same copy, same offer, same people, only a different place to send. So **a SEG split never earns its own campaign folder.** One folder, one sequence, one lead list - and the gateway slice is cut as a view off that same segment and loaded into its own sending-tool campaign, so its bounce rate reads in isolation.
+A secure-email-gateway split (Proofpoint, Mimecast, Barracuda and kin) is a deliverability fence, not an audience: same copy, same offer, same people, only a different place to send. So **a Gateway split never earns its own campaign folder.** One folder, one sequence, one lead list - and the gateway slice is cut as a view off that same segment and loaded into its own sending-tool campaign, so its bounce rate reads in isolation.
 
-- **SEG alone** -> one campaign subfolder. Two sending-tool campaigns hang off it, named `{...} - {Segment}` and `{...} - {Segment} - Gateway`. This is the one place the 1:1 between subfolder and sending-tool campaign is deliberately broken.
-- **SEG alongside real segments** -> a folder per real segment, exactly as normal, and the gateway fence is drawn inside each one. Never a `Gateway` folder of its own.
+- **Gateway alone** -> one campaign subfolder. Two sending-tool campaigns hang off it, named `{...} - {Segment}` and `{...} - {Segment} - Gateway`. This is the one place the 1:1 between subfolder and sending-tool campaign is deliberately broken.
+- **Gateway alongside real segments** -> a folder per real segment, exactly as normal, and the gateway fence is drawn inside each one. Never a `Gateway` folder of its own.
 - The exports still split: `{Niche} - {pull descriptor} - {YYYY-MM-DD}.csv` and `{Niche} - {pull descriptor} Gateway - {YYYY-MM-DD}.csv`, both flat in the one folder.
 
 If a gateway slice ever gets different copy, it has stopped being a fence and become an audience - and that is a segmentation decision, not a deliverability one.
@@ -169,4 +169,4 @@ Airtable rich text is markdown-backed. Three levels, always these:
 
 ### One copy, two campaigns
 
-A SEG gateway split is one sequence sent from two sending-tool campaigns, so **both Campaign rows carry the same copy, verbatim**. Same for any other fence that splits sending without changing the message. If the two ever diverge, it stopped being a fence and became a segment.
+A Gateway split is one sequence sent from two sending-tool campaigns, so **both Campaign rows carry the same copy, verbatim**. Same for any other fence that splits sending without changing the message. If the two ever diverge, it stopped being a fence and became a segment.

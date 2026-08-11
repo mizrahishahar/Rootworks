@@ -1,7 +1,7 @@
 ---
 Type: Sequence
 client: Adelante
-segment: UK DTC - Shopify Plus - Trustpilot Under 4.2
+segment: UK DTC - Trustpilot Under 4.2 - Pitch-led
 channel: email
 playbook: pitch-led
 updated: 2026-08-06
@@ -9,7 +9,7 @@ updated: 2026-08-06
 
 # Cold Email Sequence
 
-**Audience:** UK DTC, Shopify Plus, rated under 4.2 on Trustpilot.
+**Audience:** UK DTC, rated under 4.2 on Trustpilot, with at least 3 reviews. Fed by ClayRoots view `9-10/8/26 A - Trustpilot Rating < 4.2` on `UK DTC Shopify+Woo - Contacts` (tblf9LAJQKZwt339z). ~812 leads. The only one of the three whose leads carry a rating, so the only one that may reference Trustpilot.
 **Shape:** 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}, {{trustpilot_rating}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a748fbe78b225f68c366604` — built as a draft 2026-08-06.

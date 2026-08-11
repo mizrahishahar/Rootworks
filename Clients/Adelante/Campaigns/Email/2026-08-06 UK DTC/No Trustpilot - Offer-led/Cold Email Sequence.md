@@ -1,7 +1,7 @@
 ---
 Type: Sequence
 client: Adelante
-segment: UK DTC - Offer-led
+segment: UK DTC - No Trustpilot - Offer-led
 channel: email
 playbook: offer-led
 updated: 2026-08-06
@@ -9,7 +9,7 @@ updated: 2026-08-06
 
 # Cold Email Sequence
 
-**Audience:** UK DTC, the whole list. This lane does not use the Trustpilot rating, so it runs on brands the Default lane cannot use.
+**Audience:** UK DTC with no Trustpilot presence, plus thin-rating rows. Fed by ClayRoots view `9-10/8/26 C - No Trustpilot Rating`. ~1,576 leads. No rating exists for these leads, so nothing here may reference one.
 **Shape:** 2 / 1 · **Tokens:** {{first_name}}, {{company_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a748fc20beeb7c5646381da` — built as a draft 2026-08-06.

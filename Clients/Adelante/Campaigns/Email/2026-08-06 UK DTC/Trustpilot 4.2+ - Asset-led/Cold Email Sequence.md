@@ -1,7 +1,7 @@
 ---
 Type: Sequence
 client: Adelante
-segment: UK DTC - Asset-led
+segment: UK DTC - Trustpilot 4.2+ - Asset-led
 channel: email
 playbook: asset-led
 updated: 2026-08-06
@@ -9,7 +9,7 @@ updated: 2026-08-06
 
 # Cold Email Sequence
 
-**Audience:** UK DTC, the whole list.
+**Audience:** UK DTC rated 4.2 or above on Trustpilot. Fed by ClayRoots view `9-10/8/26 B - Trustpilot Rating >= 4.2`. ~1,248 leads. These brands have good ratings, so nothing here may imply a reputation problem.
 **Shape:** 2 / 2 · **Tokens:** {{first_name}}, {{company_name}}
 **Sender:** PlusVibe, workspace Flowroots X Adelante.
 **Live campaign:** `6a749011d162725bb09e3ed0` — built as a draft 2026-08-06.
@@ -39,9 +39,9 @@ More staff, templates and their helpdesk's own AI had all failed first. It now c
 
 Mind if I share it?
 
-P.S. No pitch in it, just what they changed and what it did.
+*[signature]*
 
-P.S. not relevant? just reply “no thanks”
+P.S. No pitch in it, just what they changed and what it did.
 
 ---
 

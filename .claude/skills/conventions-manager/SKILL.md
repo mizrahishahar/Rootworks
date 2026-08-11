@@ -161,6 +161,14 @@ Airtable rich text is markdown-backed. Three levels, always these:
 | Step break | `---` | between steps, never between variants |
 
 - **Subject lines sit on the variant line**, never in the body, so the body is purely what the reader reads.
+- **One body, several subjects: name the grid.** When the same body is tested against more than one subject, each pairing is its own variant and each gets its own line, stacked above the body they share. The body is written out once, never repeated per subject.
+
+	```
+	**Variant A**  ·  *body A*  ·  *Subject:* your cloud costs
+	**Variant C**  ·  *body A*  ·  *Subject:* {{first_name}} <> Sean
+
+	> Body line.
+	```
 - **A step with one variant** drops the `**Variant A**` line and notes `single variant` in the step note.
 - **A LinkedIn connection request** is a step like any other, `### Connection request`, with `*Blank, no note*` when there is no note.
 - **Where follow-ups are worked by hand**, close the field with one italic line saying so, so an empty tail does not read as missing copy.

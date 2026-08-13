@@ -54,7 +54,7 @@ Signal: Plain no. Their filter tagged the mail "First-Time Sender, Spam Content"
 **8. IMC Construction** — Maria Cecere, Director of Marketing
 Malvern, PA | 08-05 | 29.7 K-12
 Reply: "No thanks."
-Signal: Wrong persona (marketing, not a bid owner)
+Signal: Plain no
 
 **9. Gardner Builders** — Emily Eckl
 Minneapolis, MN | 08-05 | 29.7 Healthcare
@@ -81,12 +81,12 @@ Signal: In-persona (COO), still no
 **13. Lexicon Inc.** — Bill Fitzgerald, VP Marketing & Communications
 Little Rock, AR | 07-31 | 29.7 Other Public Sector
 Reply: "No thanks."
-Signal: Wrong persona (marketing). Mimecast-gated inbox
+Signal: Plain no. Mimecast-gated inbox
 
 **14. Marksmen General Contractors** — Garrett McCullough, Director of Marketing & BD
 San Antonio, TX | 07-30 | 29.7 TX All Verticals
 Reply: "No thanks"
-Signal: Half-in-persona (marketing/BD blend)
+Signal: Plain no
 
 **15. Edifice Construction** — Brittian Blaylock, Director of Construction Technology
 Charlotte, NC | 07-29 | 15.7 Precon & Estimating
@@ -232,10 +232,10 @@ Signal: Plain no
 Reply: "No"
 Signal: Plain no, go/no-go owner
 
-**43. Burton Construction, Inc.** — Josh Trueman, Project Manager (answering for Jeff Lynch)
+**43. Burton Construction, Inc.** — Josh Trueman (answering for Jeff Lynch)
 Spokane, WA | 06-30 | 23.6 Business Leaders
 Reply: "No thanks"
-Signal: Wrong recipient (addressed to Jeff Lynch) and wrong persona (a project manager answered)
+Signal: Wrong recipient — addressed to Jeff Lynch
 
 **44. Trumbull-Nelson Construction** — Cliff Saunders
 NH | 06-30 | 23.6 Precon Operators
@@ -289,7 +289,7 @@ Across 20,915 sends, two people engaged with the substance. That is not a positi
 
 **Wrong first name (4):** Clune ("my name is NOT Matt so I assume you are not a real person"), Pogue ("Hey Penny" → Paul), BHI ("Hey John" → Jake), La Macchia ("Hi Charles" → Charlie), plus Espace's broken casing ("Charles-henri").
 
-**Wrong recipient (1):** Burton Construction's mail was addressed to Jeff Lynch and answered by a project manager.
+**Wrong recipient (1):** Burton Construction's mail was addressed to Jeff Lynch and answered by a colleague.
 
 **Stale contact:** Roger Hickel had retired.
 

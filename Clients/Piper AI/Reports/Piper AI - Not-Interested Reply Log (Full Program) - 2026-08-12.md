@@ -1,14 +1,11 @@
-# Piper AI — "No Thanks" / Not-Interested Reply Log (Full Program)
+
 
 **Prepared for:** Nikol Roitman (Piper AI)
 **Prepared by:** Flowroots
 **Date:** 2026-08-12
 **Scope:** Every Piper GC-CMAR cold-email campaign, 2026-06-24 to 2026-08-12
-**Method:** Full pull of every reply labelled not-interested in the sending platform, paginated to the end of the label, deduped by thread, isolated to Piper's 15 GC-CMAR campaigns. Flowroots' own campaigns sharing the workspace are excluded.
 
 **Total: 50 unique not-interested replies, against 20,915 emails sent and 12,047 people contacted.**
-
-This supersedes `Piper AI - Not-Interested Reply Log with Company Profiles - 2026-07-09.md` (06-24 to 07-08), which is now the first third of this record.
 
 ---
 
@@ -54,7 +51,7 @@ Signal: Plain no. Their filter tagged the mail "First-Time Sender, Spam Content"
 **8. IMC Construction** — Maria Cecere, Director of Marketing
 Malvern, PA | 08-05 | 29.7 K-12
 Reply: "No thanks."
-Signal: Plain no
+Signal: Wrong persona (marketing, not a bid owner)
 
 **9. Gardner Builders** — Emily Eckl
 Minneapolis, MN | 08-05 | 29.7 Healthcare
@@ -81,12 +78,12 @@ Signal: In-persona (COO), still no
 **13. Lexicon Inc.** — Bill Fitzgerald, VP Marketing & Communications
 Little Rock, AR | 07-31 | 29.7 Other Public Sector
 Reply: "No thanks."
-Signal: Plain no. Mimecast-gated inbox
+Signal: Wrong persona (marketing). Mimecast-gated inbox
 
 **14. Marksmen General Contractors** — Garrett McCullough, Director of Marketing & BD
 San Antonio, TX | 07-30 | 29.7 TX All Verticals
 Reply: "No thanks"
-Signal: Plain no
+Signal: Half-in-persona (marketing/BD blend)
 
 **15. Edifice Construction** — Brittian Blaylock, Director of Construction Technology
 Charlotte, NC | 07-29 | 15.7 Precon & Estimating
@@ -232,10 +229,10 @@ Signal: Plain no
 Reply: "No"
 Signal: Plain no, go/no-go owner
 
-**43. Burton Construction, Inc.** — Josh Trueman (answering for Jeff Lynch)
+**43. Burton Construction, Inc.** — Josh Trueman, Project Manager (answering for Jeff Lynch)
 Spokane, WA | 06-30 | 23.6 Business Leaders
 Reply: "No thanks"
-Signal: Wrong recipient — addressed to Jeff Lynch
+Signal: Wrong recipient (addressed to Jeff Lynch) and wrong persona (a project manager answered)
 
 **44. Trumbull-Nelson Construction** — Cliff Saunders
 NH | 06-30 | 23.6 Precon Operators
@@ -272,57 +269,4 @@ Signal: In-persona (BD Director), still no. Greeted "Hi Charles"
 Reply: "unsubscribe"
 Signal: Opt-out
 
----
 
-## Signal read
-
-### 1. Nobody is arguing with the offer. Almost nobody is engaging with it.
-
-Forty-eight of 50 replies are a one-line refusal. **Two** in the whole program gave a reason:
-
-- **Tony Latoria (Director of Preconstruction, Russell)** — already built contract-review prompts and a risk register on enterprise AI, in shared co-work environments. This is the "just use ChatGPT" objection, from the exact buyer, unprompted. It is the single most useful thing any prospect has told us, and the "evolving brain / persistent context" differentiator exists to answer it: their build resets every session, ours does not.
-- **Sheila Suppes (BD Manager, Clark)** — "we have an estimating team." The "we already do this" objection; answered by velocity and depth, not replacement.
-
-Across 20,915 sends, two people engaged with the substance. That is not a positioning rejection. It is an attention failure — the message is not being read as being about them.
-
-### 2. Personalisation failures are visible in the replies themselves.
-
-**Wrong first name (4):** Clune ("my name is NOT Matt so I assume you are not a real person"), Pogue ("Hey Penny" → Paul), BHI ("Hey John" → Jake), La Macchia ("Hi Charles" → Charlie), plus Espace's broken casing ("Charles-henri").
-
-**Wrong recipient (1):** Burton Construction's mail was addressed to Jeff Lynch and answered by a colleague.
-
-**Stale contact:** Roger Hickel had retired.
-
-The Clune reply is the one to sit with. A wrong merge field did not just lose that lead — it told him the sender was a bot, in writing. Every other lead who spotted the same error and simply deleted the mail is invisible in these numbers.
-
-### 3. The people who are in-persona are saying no too.
-
-Thirteen replies came from precisely the seats we target — Directors of Preconstruction, COOs, Presidents, BD Directors, chief estimators: Latoria (Russell), Shea (OCL), Saunders (Trumbull-Nelson), Clemency (La Macchia), Burnette (Hoar), Brinkman (Sampson), Pfannes (Miller-Davis), Suppes (Clark), Clementi (D&P), Heinen (TerWisscha), Dohn (DOHN), Uffelman (Scott-Long), Allen (CNY).
-
-**This is not a persona problem.** The right people are receiving the mail and declining it. Notably, **Brittian Blaylock, Director of Construction Technology at Edifice** — the exact innovation/tech seat the 08-04 sourcing effort was built to reach — already said no on the old copy, before that build shipped.
-
-### 4. Four people escalated past "no" to "remove me."
-
-Miller-Davis, A-1, Marker ("unsubscribe"), Sampson ("take me off your list"). Roughly one in twelve rejections is an irritation, not a decline.
-
-### 5. Rejections by campaign generation.
-
-| Generation | Not-interested replies | Sent |
-|---|---|---|
-| 23.6 (pitch-led, first launch) | 12 | 4,517 |
-| 1.7 SMB | 10 | 2,778 |
-| 7.7 | 4 | 2,550 |
-| 15.7 (relaunch) | 12 | 7,118 |
-| 29.7 (Opportunity Hunter) | 10 | 2,897 |
-| 2026-08-05 (feedback-led) | 2 | 1,055 |
-
-The feedback campaign is only 5 sending days old and well below the volume at which any of this reads as a verdict. Its one real rejection — Timothy Allen at CNY Group — did read the whole email and declined, which tells us the copy is landing in front of the right human and is not yet the thing that changes the answer.
-
----
-
-## What this points at
-
-The rejections say the break is **upstream of the message**. Before another angle is written:
-
-1. **Gate on name–email corroboration.** Four confirmed wrong-name sends, one of which cost us the sender's credibility in writing.
-2. **Answer Latoria's objection in the copy.** It is the only substantive objection we have received from the exact buyer, and it is exactly what the positioning was rebuilt to counter — it has never actually been put into an email.

@@ -42,7 +42,6 @@ What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.
 | Inbox Manager Routine URL | `fldvyTMsWh10TFAFE` | singleLineText | The full fire URL for this client's EMAIL inbox routine. Handle New Lead from PlusVibe POSTs to this at the end of every run, with Authorization: Bearer {Inbox Manager API Key}. The routine then wakes and works the most recently engaged lead. Empty = this client has no inbox routine and the intake skips the fire step. |
 | LinkedIn Setter API Key | `fldpuAB5jiyBxliuj` | singleLineText |  |
 | LinkedIn Setter Routine URL | `fldOQlJRrYvJMPiyr` | singleLineText | The full fire URL for this client's LINKEDIN routine, a separate session from the email inbox. Handle New Lead from Alta POSTs to this at the end of every run, with Authorization: Bearer {LinkedIn Setter API Key}. Empty = this client has no LinkedIn routine and the intake skips the fire step. |
-| Overrides | `fldxzRsL1Cx0WlBky` | multilineText | Client-specific behavioral deltas the skills read at run time (the old INBOX-MANAGEMENT Overrides file, moved into the database 2026-08-14). Only deltas the doctrine cannot derive: sender quirks, tone constraints, channel rules. Read by mining sessions and routines through the registry, never from files. |
 | Client KB | `fldVBndImTxRl9lSO` | multipleRecordLinks |  |
 | Logs | `fldevnA1BWrHhvfal` | multipleRecordLinks |  |
 | Meetings | `fldx6yapArKEZki0L` | multipleRecordLinks |  |
@@ -58,7 +57,8 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
 | Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
 | Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
-| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, qualification-prompt, product, research, intel |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, qualification-prompt, product, research, intel, asset |
+| Link | `fldZn42JeTlp3amOV` | url | For asset rows: the live URL we actually send (case study page, calculator, video). Content holds the full text behind the link so sessions can read what the prospect will see without fetching. |
 
 ## Messages (`tblh7G8aW63vEg6S3`)
 

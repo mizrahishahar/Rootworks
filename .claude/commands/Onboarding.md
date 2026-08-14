@@ -39,7 +39,7 @@ A client fully stood up: the Drive workspace shared to their team, the Slack cha
 
 ### STEP 1 - Gather the context
 
-**Owner:** CLAUDE · **Tool:** [[flowroots-hub]], the Hub Clients registry, `Rootworks/Clients`
+**Owner:** CLAUDE · **Tool:** [[Readme]], the Hub Clients registry, `Rootworks/Clients`
 
 **Purpose:** know exactly which client this is and where onboarding already stands, so we start at the right step and never redo a done one.
 

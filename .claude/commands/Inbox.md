@@ -32,7 +32,7 @@ Every lead worked one at a time - Lead Card then message - to its drafted next m
 
 ### STEP 1 — Ready up on the skill, then load the client
 
-**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + [[flowroots-hub]] + [[clayroots]]
+**Owner:** CLAUDE · **Skill:** inbox-manager + linkedin-setter · **Tool:** the client vault + [[Readme]] + [[clayroots]]
 
 First, ready up on the reply skills for the channels this client runs (the Overrides name them): `inbox-manager` for email, `linkedin-setter` for LinkedIn. Invoke each that applies and read it in full - the skill, its knowledge base, its interfaces - fresh every run. Then load the context: the session logs newest-first, the client's inbox Overrides and Assets, the onboarding form, and the client's recent sessions and automation runs in the Hub SESSIONS and AUTOMATIONS tables ([[clayroots]]) - which campaigns and builds went live lately is the backdrop the replies arrive against.
 
@@ -42,7 +42,7 @@ First, ready up on the reply skills for the channels this client runs (the Overr
 
 ### STEP 2 — List everyone we work
 
-**Owner:** CLAUDE · **Tool:** [[flowroots-hub]] + the client's senders
+**Owner:** CLAUDE · **Tool:** [[Readme]] + the client's senders
 
 First, pull the client's worklist out of the Prospects table in the Flowroots Hub through the client's filtered view - the Prospects table filtered by the `Client` link to their registry row - every lead from a positive reply upward, the floor. Then check them against the client's live threads in the senders and reconcile: correct any record whose status no longer matches its thread, and create one for any live thread that has none.
 
@@ -129,7 +129,7 @@ No invented duration and no calendar link, either channel. Then hold for the go 
 
 ### STEP 5 — Approve, send, next
 
-**Owner:** OPERATOR + CLAUDE · **Tool:** the sender + [[flowroots-hub]] + the vault
+**Owner:** OPERATOR + CLAUDE · **Tool:** the sender + [[Readme]] + the vault
 
 The Operator reviews the Lead Card and the message, refines, approves. Then Claude sends it, moves the `PipelineStatus` on the Prospect row when a use-case resolves (booked, no-show, held), and logs the touch on the record.
 

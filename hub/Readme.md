@@ -1,8 +1,3 @@
----
-vertical: [list-building, analysis, inbox-management]
-type: infrastructure
-owner: Operator
----
 
 # Flowroots Hub
 

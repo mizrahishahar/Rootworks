@@ -35,4 +35,4 @@ Every automation meets one contract, on-demand and event-driven alike:
 - **Every workflow names `Error Logger` as its Error Workflow** (workflow Settings -> Error workflow). The MCP cannot set this property, so it is a mandatory manual click when a workflow is created or cloned - a workflow without it does not ship. Set on the `[template]` workflows too, so clones inherit it.
 - Name per-client flows `{purpose} for {client}`; keep the ID out of the vault, the name and the client variable are enough.
 - PlusVibe calls in templated flows authenticate with the shared `Plusvibe Admin` credential and pass the client's `workspace_id` from the registry row - never a per-client credential.
-- Lead state lives in the Hub, not in sender variables: the qualifier writes the status, the qualification, and the brief onto the Prospect row in the Hub Prospects table ([[flowroots-hub]]), and downstream flows gate off the Hub.
+- Lead state lives in the Hub, not in sender variables: the qualifier writes the status, the qualification, and the brief onto the Prospect row in the Hub Prospects table ([[Readme]]), and downstream flows gate off the Hub.

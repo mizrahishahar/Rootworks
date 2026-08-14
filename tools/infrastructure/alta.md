@@ -17,7 +17,7 @@ AI-SDR sequencer and inbox, LinkedIn-first with intent email on the side. **For 
 | Owns | Does not own |
 |---|---|
 | Sending the sequence | Sourcing, that is Trigify into n8n |
-| Holding every LinkedIn conversation | CRM truth, that is [[flowroots-hub]] |
+| Holding every LinkedIn conversation | CRM truth, that is [[Readme]] |
 | The client's real LinkedIn accounts and their send limits | Primary email, that is [[plusvibe]] |
 | Global opt-out suppression | |
 

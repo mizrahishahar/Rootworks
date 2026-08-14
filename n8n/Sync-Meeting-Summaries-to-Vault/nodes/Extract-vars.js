@@ -12,4 +12,5 @@ const ext = Array.isArray(body.calendar_invitees) ? (body.calendar_invitees.find
 const extDomain = ((ext.email || '').split('@')[1] || '').toLowerCase();
 const extFirst = (ext.name || '').trim().split(/\s+/)[0] || '';
 const meetingTitle = (body.title || body.meeting_title) || (extFirst ? ('Flowroots Discovery - Shahar X ' + extFirst) : 'Flowroots Meeting');
-return [{ json: { filename, content, externalEmail: (ext.email || ''), extDomain, extFirst, meetingTitle, recording: (body.share_url || body.url || ''), summaryMd: summary, meetingUrl: (body.meeting_url || ''), startTime: (body.recording_start_time || body.created_at || ''), participants: (Array.isArray(body.calendar_invitees) ? body.calendar_invitees.map(i => i.name || i.email).join(', ') : '') } }];
+const summaryFull = summary + (actionItems ? '\n\n## Action items\n\n' + actionItems : '');
+return [{ json: { filename, content, externalEmail: (ext.email || ''), extDomain, extFirst, meetingTitle, recording: (body.share_url || body.url || ''), summaryMd: summary, summaryFull, transcriptMd: transcript, meetingUrl: (body.meeting_url || ''), startTime: (body.recording_start_time || body.created_at || ''), participants: (Array.isArray(body.calendar_invitees) ? body.calendar_invitees.map(i => i.name || i.email).join(', ') : '') } }];

@@ -38,7 +38,7 @@ Establish the run: which client this report is for, where their baseline and KPI
 
 ### STEP 2 — Pull the week
 
-**Owner:** CLAUDE · **Tool:** the client's sender + [[flowroots-hub]] (CRM)
+**Owner:** CLAUDE · **Tool:** the client's sender + [[Readme]] (CRM)
 
 Pull the week's real numbers: positive replies, calls booked, conversion against the KPI set at onboarding, and the booked-meeting movement in the Hub - the client's Prospects view, filtered by their `Client` link. Pull the baseline and KPI commitments from the client's onboarding form, and last week's report from the logs for the trend.
 

@@ -45,6 +45,8 @@ What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.
 | Overrides | `fldxzRsL1Cx0WlBky` | multilineText | Client-specific behavioral deltas the skills read at run time (the old INBOX-MANAGEMENT Overrides file, moved into the database 2026-08-14). Only deltas the doctrine cannot derive: sender quirks, tone constraints, channel rules. Read by mining sessions and routines through the registry, never from files. |
 | Client KB | `fldVBndImTxRl9lSO` | multipleRecordLinks |  |
 | Logs | `fldevnA1BWrHhvfal` | multipleRecordLinks |  |
+| Meetings | `fldx6yapArKEZki0L` | multipleRecordLinks |  |
+| Email Domains | `fldOm4uLCpBFvsgou` | multilineText | The client's own email domains, one per line (e.g. getadelante.com and adelantedesk.com for Adelante). The matcher key that lets the Fathom meeting sync tell a client meeting from a sales meeting. Keep current: a client adding a domain without this list updated leaks their meetings into the sales path. |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -119,6 +121,9 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | domain | `fldlWf4qHKUv6WDaE` | multipleLookupValues |  |
 | LastModified | `fldwzhnSVo1HUkmEu` | lastModifiedTime |  |
 | Additional Notes (Scheduler) | `fldadtz22X1cNBZu7` | multilineText |  |
+| Client | `fldw3B0DOFYnzGGRJ` | multipleRecordLinks | Set = this is a client meeting (check-in, onboarding, working session with a paying client). The client's meeting history hangs off their registry row. Mutually exclusive in practice with the Company prospect link. |
+| Meeting Type | `fldovXZY2n8RRdnkW` | singleSelect | sales = prospect-facing, pre-deal (the Company link points at the Prospects row). client = post-deal meeting with a paying client (the Client link points at the registry). Stamped by the Fathom sync and the backfill. - Choices: sales, client |
+| Transcript | `fld6GvkTVE47Pro74` | richText | Full meeting transcript text when it fits the cell (100k char cap); otherwise blank and the RecordingLink is the source. Filled by the backfill and, where the payload carries it, by the sync. |
 
 ## CONTROL PANEL (`tblLWcSxAPxB7BJzx`)
 

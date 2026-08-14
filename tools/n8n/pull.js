@@ -92,7 +92,9 @@ function decompile(wf) {
   const rows = [];
   for (const wf of workflows) {
     const r = decompile(wf);
-    rows.push({ name: wf.name, id: wf.id, active: wf.active, updatedAt: wf.updatedAt, description: wf.description || DESC[wf.id] || '', ...r });
+    const description = wf.description || DESC[wf.id] || '**MISSING - add to tools/n8n/descriptions.json**';
+    if (description.startsWith('**MISSING')) console.warn(`WARNING: no description for "${wf.name}" (${wf.id})`);
+    rows.push({ name: wf.name, id: wf.id, active: wf.active, updatedAt: wf.updatedAt, description, ...r });
     console.log(`${wf.name}  (${wf.id})  nodes:${r.nodes}  code files:${r.codeFiles}`);
   }
 

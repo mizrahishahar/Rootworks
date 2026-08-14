@@ -23,7 +23,12 @@ This repo is the application's code. Around it sit the database (the Flowroots H
 
 There are three kinds of things, and you connect them:
 
-1. **Records** live in Airtable: the Flowroots Hub (registry, pipeline, campaigns, run logs) and each client's ClayRoots base (lead tables). State lives there and is read live. Never trust a copy in a note.
+1. **Records** live in Airtable: the Flowroots Hub (the database) and each client's ClayRoots base (lead tables, a list-building tool: its patterns live in `tools/infrastructure/clayroots.md`). State is read live. Never trust a copy in a note. The Hub's full field-level schema is compiled into **`hub/SCHEMA.md`**; what the tables mean:
+   - **Clients** - the registry and address book. Every job starts here.
+   - **Prospects** - the CRM. Everyone in play through a held meeting. Upserts merge on `Dedup Key` ({client slug}|{domain}).
+   - **Campaigns** - one row per campaign instance, upserted on Campaign ID by the nightly syncs and the reply intakes. Carries the copy and the agent config.
+   - **Automations** - the run log. Every machine writes its runs here; verify by cell values, never by a run log alone.
+   - **Meetings, Reports, Openers, Lead Lists** - what their names say. **Sessions is deprecated.**
 2. **Machines** live in n8n. Some run alone on schedules; some wait for a button (webhook or form). Their full source is in `n8n/`, compiled from the live instance - **`n8n/INDEX.md` is the catalog and says what each machine does and when to use it.** Read source freely; never edit it here.
 3. **Knowledge** lives in this repo as plain files:
    - `.claude/skills/` and `.claude/commands/`: capabilities. A capability is one useful file, written however makes it work. No format police. If a file makes sessions better, it belongs.

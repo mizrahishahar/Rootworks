@@ -1,7 +1,7 @@
 # Flowroots Hub - schema
 
-Compiled from the live base (`appQG6dK0FIOhTxOl`) by `tools/hub/pull.js`. Do not hand-edit.
-What the tables MEAN is in CLAUDE.md; this file is what they ARE.
+Compiled from the live base (`appQG6dK0FIOhTxOl`) by `scripts/hub-pull.js`. Do not hand-edit.
+What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.
 
 ## Clients (`tblK0nCoNVvFf5SPa`)
 

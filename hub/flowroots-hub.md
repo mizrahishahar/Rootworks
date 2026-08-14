@@ -8,7 +8,7 @@ owner: Operator
 
 The one Airtable base (`appQG6dK0FIOhTxOl`) that is the database of the application: the CRM, the client registry, the client knowledge base, the run log, and the session journal in a single control plane.
 
-**Structure lives in [`hub/SCHEMA.md`](../../hub/SCHEMA.md)**, compiled from the live base; regenerate with `node tools/hub/pull.js`. This file carries only what the schema cannot say.
+**Structure lives in [`SCHEMA.md`](SCHEMA.md)**, compiled from the live base; regenerate with `node scripts/hub-pull.js`. This file carries only what the schema cannot say.
 
 ## The tables, what they mean
 

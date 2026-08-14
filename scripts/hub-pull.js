@@ -3,7 +3,7 @@
 // Compiles the live Flowroots Hub schema (tables, fields, types, select choices,
 // field descriptions) into hub/SCHEMA.md. Generated from truth; never hand-edited.
 //
-// Usage: node tools/hub/pull.js
+// Usage: node scripts/hub-pull.js
 // Auth: AIRTABLE_API_KEY env var, or ~/.config/rootworks/airtable-api-key
 //       (a PAT with scope schema.bases:read on the Flowroots Hub).
 
@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_ID = 'appQG6dK0FIOhTxOl';
-const OUT = path.join(__dirname, '..', '..', 'hub');
+const OUT = path.join(__dirname, '..', 'hub');
 
 function apiKey() {
   if (process.env.AIRTABLE_API_KEY) return process.env.AIRTABLE_API_KEY.trim();
@@ -34,8 +34,8 @@ const clean = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').
   const lines = [
     '# Flowroots Hub - schema',
     '',
-    `Compiled from the live base (\`${BASE_ID}\`) by \`tools/hub/pull.js\`. Do not hand-edit.`,
-    'What the tables MEAN is in CLAUDE.md; this file is what they ARE.',
+    `Compiled from the live base (\`${BASE_ID}\`) by \`scripts/hub-pull.js\`. Do not hand-edit.`,
+    'What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.',
     '',
   ];
 

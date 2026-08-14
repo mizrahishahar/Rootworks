@@ -9,7 +9,7 @@ const name=f['Client']||'';
 // Qualification prompt lives in KB Files (Type=qualification-prompt); the
 // Clients field is the legacy fallback until it is deleted.
 let kbPrompt='';
-try{ const kb=$input.first().json||{}; const kf=kb.fields||kb; kbPrompt=String(kf['Content']||'').trim(); }catch(e){}
+try{ const kb=$input.first().json||{}; const kf=kb.fields||kb; kbPrompt=String(kf['Content']||'').replace(/\\([_*[\]`#|>~-])/g,'$1').trim(); }catch(e){}
 return [{ json: {
   lead_email: lead_email,
   manual: manual,

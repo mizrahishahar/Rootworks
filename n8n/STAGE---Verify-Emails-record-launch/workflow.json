@@ -1,0 +1,898 @@
+{
+  "updatedAt": "2026-07-22T13:20:25.000Z",
+  "createdAt": "2026-07-21T21:11:15.154Z",
+  "id": "A55Q0O3teelogZXN",
+  "name": "STAGE - Verify Emails (record launch)",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "tableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblpfUeg0wy731PYF"
+        },
+        "triggerField": "Created",
+        "additionalFields": {
+          "fields": "Run,Status,Automation,Clayroots Base ID,Table ID,Max Rows,View"
+        }
+      },
+      "id": "d5f8d0d2-2059-41b0-952d-43d820a03b16",
+      "name": "New Run",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Gate.js"
+      },
+      "id": "1f6879ea-b9e0-4e91-9275-324a4b24df61",
+      "name": "Launch Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblpfUeg0wy731PYF"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.recordId }}",
+            "Run": "={{ $json.automation }} - {{ $now.toFormat('yyyy-LL-dd HH:mm') }}",
+            "Status": "Running",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "4fc02460-c551-4cbd-ae5c-01f2ee65d269",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Email-Guard.js"
+      },
+      "id": "4b817e6f-f55f-4b0f-8980-271c3d293898",
+      "name": "Email Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        304
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblpfUeg0wy731PYF"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Launch Gate').first().json.recordId }}",
+            "Status": "Failed",
+            "Description": "=Run FAILED.\n{{ $json.msg }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "63197320-a1d7-48a8-893f-891b6935a544",
+      "name": "Stamp Failed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1328,
+        640
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Field-List.js"
+      },
+      "id": "1729a4fb-4fbe-440e-b4df-079df9094bf2",
+      "name": "Field List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Gate').first().json.baseId }}/tables/{{ $('Launch Gate').first().json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.def }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "bad49c05-b624-42e9-86af-81f2f1798f4e",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1328,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Gate').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Gate').first().json.tableId }}"
+        },
+        "filterByFormula": "NOT({Status} = 'verifying')",
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Launch Gate').first().json.view }}"
+          }
+        }
+      },
+      "id": "8077c529-feb0-4167-8255-a7f30839a21b",
+      "name": "Read Records",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        304
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "36fc2d22-4b3d-4037-85f1-2427e0492b89",
+      "name": "Rows Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": "={{ $('Launch Gate').first().json.maxRows || 100000 }}"
+      },
+      "id": "3d99870d-6873-4f6d-958b-b4f15786b2c4",
+      "name": "Cap Rows",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bc3cc950-9b02-4e2f-b64e-685b298ce5be",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "8028a00b-c175-4acc-9f6a-9906baa22fd7",
+      "name": "MV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2432,
+        112
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Verdict.js"
+      },
+      "id": "ef3ceff8-5f36-43ce-8d58-6c43ea026abb",
+      "name": "Verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        208
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "b0e5a164-463c-4c5d-8154-722394d41072",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        208
+      ],
+      "executeOnce": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/To-Airtable.js"
+      },
+      "id": "672ebc29-21f3-43d4-abec-f87d299a427f",
+      "name": "To Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Gate').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Gate').first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "a2990ce0-982d-4784-aa16-be2250f356b3",
+      "name": "Update Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3088,
+        112
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblpfUeg0wy731PYF"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "643b0e9c-3428-484b-8eca-def2a0f7b2ea",
+      "name": "Stamp Succeeded",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3520,
+        208
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Pending.js"
+      },
+      "id": "51f08be6-f6f5-4376-8e1f-380ae6c8ea97",
+      "name": "Collect Pending",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tllfBn4NycLftdef",
+          "cachedResultName": "BounceBan Poller"
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "ef130f5d-926b-4dfa-8d22-2b10b4fade0a",
+      "name": "Fire Poller",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3088,
+        384
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## STAGING - record-launched automation\nLaunching = creating a record in STAGING - AUTOMATIONS (tblpfUeg0wy731PYF).\nThe Airtable Trigger polls every minute on the Created field, the Launch Gate only lets records with an empty Status through, the run stamps Running on the record, mirrors the Verify Emails chain, and stamps Succeeded (rich log) or Failed (error text) on the same record. Error outputs of every throwing node route to Stamp Failed so no run dies leaving Running.",
+        "height": 200,
+        "width": 520,
+        "color": 4
+      },
+      "id": "d80a1f49-69a0-454d-89c5-3df7a7f85a2c",
+      "name": "Sticky Note 78f58fcd",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "base",
+        "operation": "getSchema",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Gate').first().json.baseId }}"
+        }
+      },
+      "id": "0be5eb96-1c83-43c7-bdc0-5df488f57407",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Fail-Text.js"
+      },
+      "id": "9d344e70-5e6e-4700-a962-504bf5198e71",
+      "name": "Fail Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        640
+      ]
+    }
+  ],
+  "connections": {
+    "New Run": {
+      "main": [
+        [
+          {
+            "node": "Launch Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Gate": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Guard": {
+      "main": [
+        [
+          {
+            "node": "Field List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Field List": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Field": {
+      "main": [
+        [
+          {
+            "node": "Read Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Records": {
+      "main": [
+        [
+          {
+            "node": "Rows Found?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows Found?": {
+      "main": [
+        [
+          {
+            "node": "Cap Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cap Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "MV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "node": "To Airtable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect Pending",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Stamp Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To Airtable": {
+      "main": [
+        [
+          {
+            "node": "Update Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Record": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Pending": {
+      "main": [
+        [
+          {
+            "node": "Fire Poller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Email Guard",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Succeeded": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Fail Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fail Text": {
+      "main": [
+        [
+          {
+            "node": "Stamp Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:New Run": {
+      "lastTimeChecked": "2026-07-22T07:23:10Z"
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "b6a1636a-b6d2-47d6-be1f-f09f64ebf656",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-21T21:11:15.193Z",
+      "createdAt": "2026-07-21T21:11:15.193Z",
+      "role": "workflow:owner",
+      "workflowId": "A55Q0O3teelogZXN",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

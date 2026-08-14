@@ -1,0 +1,794 @@
+{
+  "updatedAt": "2026-07-19T14:25:15.000Z",
+  "createdAt": "2026-07-07T21:42:13.361Z",
+  "id": "PFSOidk2CIiBASi0",
+  "name": "SEGMENT SUPERSONIQ CONTACTS",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Supersoniq Contacts Upload",
+        "formDescription": "Upload a Supersoniq per-pull CSV (with or without Discolike company data joined). Outputs Contacts + Domains-without-contacts into the Leads folder and creates a ClayRoots table.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Query name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "CSV",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "supersoniq-contacts",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            }
+          }
+        }
+      },
+      "id": "e286a788-0c84-401c-8158-2d0e367de79d",
+      "name": "Supersoniq Upload",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        384
+      ],
+      "webhookId": "5f68f72d-497a-4d4b-a21d-2b69596b1968"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "CSV",
+        "options": {
+          "enableBOM": true,
+          "includeEmptyCells": true
+        }
+      },
+      "id": "4d6e3be6-2523-47a5-8986-3e6a9baef08a",
+      "name": "Read CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Supersoniq-Handler.js"
+      },
+      "id": "182381c0-16ff-4be7-bd7c-85eb73cd31ce",
+      "name": "Supersoniq Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Supersoniq Upload').first().json['Query name'] }} - Contacts - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "options": {}
+      },
+      "id": "60d7a2f2-bac4-465b-b212-b709e65d3cbd",
+      "name": "Create Contacts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        96
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheetId || $json.id }}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1Y7t1fmXJme2JGtty0U12e1SfkgBLoc1O"
+        }
+      },
+      "id": "11017c90-57e8-4b60-9979-1f301e5503d9",
+      "name": "Move Contacts",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        896,
+        96
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Rows-Contacts.js"
+      },
+      "id": "1d9b5d72-8c9b-4cc2-b041-50aa1973281b",
+      "name": "Rows Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json._sheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "0ec645a9-ef4c-42c6-b11f-111318eb62ef",
+      "name": "Write Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/AT-Schema-Contacts.js"
+      },
+      "id": "f8cbbf93-949a-438f-892c-09e0c80c1c0f",
+      "name": "AT Schema Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/meta/bases/appSTTKOc9Afqer9d/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"name\": $json.name, \"fields\": $json.fields } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "2b72f558-78d6-4563-9354-f27d0b3eeb6f",
+      "name": "AT Create Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/AT-Emit-Contacts.js"
+      },
+      "id": "8a6b6709-8396-4128-9d30-39456077cc8f",
+      "name": "AT Emit Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSTTKOc9Afqer9d"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('AT Create Contacts').first().json.id }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "e58ccf89-153c-45f6-9f81-3ff2cdb9f1f9",
+      "name": "AT Insert Contacts",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Supersoniq Upload').first().json['Query name'] }} - Domains without contacts - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "options": {}
+      },
+      "id": "35b54d00-6964-449a-b0a6-954ecb4eac5c",
+      "name": "Create NoContacts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        384
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheetId || $json.id }}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1Y7t1fmXJme2JGtty0U12e1SfkgBLoc1O"
+        }
+      },
+      "id": "313475f5-b19c-470a-9179-99696f1c5a53",
+      "name": "Move NoContacts",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        896,
+        384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Rows-NoContacts.js"
+      },
+      "id": "cfb97790-a02f-4057-b175-830768e16925",
+      "name": "Rows NoContacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json._sheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "8328ca27-94e6-4221-9cba-6a9924e3c6bf",
+      "name": "Write NoContacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Seg-Log-Build.js"
+      },
+      "id": "5382bb69-a09e-40cb-95eb-7852df9bba48",
+      "name": "Seg Log Build",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSTTKOc9Afqer9d"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbl0IUwTZtsdyLjDa"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Automation",
+              "displayName": "Automation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Notebook",
+                  "value": "Notebook"
+                },
+                {
+                  "name": "Contacts Upload",
+                  "value": "Contacts Upload"
+                },
+                {
+                  "name": "Companies Upload",
+                  "value": "Companies Upload"
+                },
+                {
+                  "name": "Verification Only",
+                  "value": "Verification Only"
+                },
+                {
+                  "name": "BounceBan Retro Poll",
+                  "value": "BounceBan Retro Poll"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Run at",
+              "displayName": "Run at",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Target",
+              "displayName": "Target",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Records In",
+              "displayName": "Records In",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Records Out",
+              "displayName": "Records Out",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Errors",
+              "displayName": "Errors",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Duration s",
+              "displayName": "Duration s",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Trigger",
+              "displayName": "Trigger",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "button",
+                  "value": "button"
+                },
+                {
+                  "name": "form",
+                  "value": "form"
+                },
+                {
+                  "name": "manual",
+                  "value": "manual"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Execution Link",
+              "displayName": "Execution Link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Execution ID",
+              "displayName": "Execution ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "d2630332-f34a-42e5-8110-70b0ed5db20c",
+      "name": "Seg Log",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        576
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Supersoniq Upload": {
+      "main": [
+        [
+          {
+            "node": "Read CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CSV": {
+      "main": [
+        [
+          {
+            "node": "Supersoniq Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supersoniq Handler": {
+      "main": [
+        [
+          {
+            "node": "Create Contacts Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create NoContacts Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Seg Log Build",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contacts Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Contacts": {
+      "main": [
+        [
+          {
+            "node": "Rows Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows Contacts": {
+      "main": [
+        [
+          {
+            "node": "Write Contacts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AT Schema Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Schema Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Create Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Create Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Emit Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Emit Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Insert Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create NoContacts Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move NoContacts": {
+      "main": [
+        [
+          {
+            "node": "Rows NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows NoContacts": {
+      "main": [
+        [
+          {
+            "node": "Write NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seg Log Build": {
+      "main": [
+        [
+          {
+            "node": "Seg Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "219aa3c8-19d6-4eb9-9c04-763bfd66b4cc",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-07T21:42:13.365Z",
+      "createdAt": "2026-07-07T21:42:13.365Z",
+      "role": "workflow:owner",
+      "workflowId": "PFSOidk2CIiBASi0",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

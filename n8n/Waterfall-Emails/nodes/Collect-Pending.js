@@ -1,0 +1,1 @@
+const r=$('Read Records').first().json; const baseId=r._baseId; const tableId=r._tableId; const out=[]; for(const it of $input.all()){ const v=it.json; if(v.Status==='verifying' && v._pendEmail){ out.push({ json:{ rowId:v.id, email:v._pendEmail, slot:v._pendSlot, tableId, baseId } }); } } return out;

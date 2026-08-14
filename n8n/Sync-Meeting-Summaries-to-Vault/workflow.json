@@ -1,0 +1,891 @@
+{
+  "updatedAt": "2026-08-08T20:32:13.546Z",
+  "createdAt": "2026-06-09T21:52:47.720Z",
+  "id": "KtNxT5zsbNeLL0Vp",
+  "name": "Sync Meeting Summaries to Vault",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e4521a14-e7f8-4b18-844f-2e76a6573931",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "03a1906d-7246-4fb8-80f4-9311ab48e15c",
+      "name": "Get Fathom Meeting",
+      "webhookId": "e4521a14-e7f8-4b18-844f-2e76a6573931"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Extract-vars.js"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6f283336-c001-4fdf-814b-e298025c3ace",
+      "name": "Extract vars"
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $json.content }}",
+        "name": "={{ $json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1u5VD6jC_wwIT1GiBCwBJesPXUJH9sV-g",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6bb7a6f8-1239-4189-9e52-d8a8cc9dbb24",
+      "name": "Create file from text",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "id": "cf7e6275-4349-4b08-bd56-1022039a5660",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        208
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "c95a183a-b6f3-4782-aea7-3a27c001291a",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        208
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow",
+      "executeOnce": true
+    },
+    {
+      "id": "b714c87d-77dc-45ff-86cc-91c28393eded",
+      "name": "Find Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"Flowroots\", ARRAYJOIN({Client})), \"{{ $('Extract vars').item.json.extDomain }}\" != \"\", OR({domain} = \"{{ $('Extract vars').item.json.extDomain }}\", LOWER({Name}) = LOWER(\"{{ $('Extract vars').item.json.extDomain }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "51ea40c7-fba8-4bf3-bd60-07a9516acbe5",
+      "name": "Create Meeting",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblAo6SfTPTOJrnbX"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Title": "={{ $('Extract vars').item.json.meetingTitle }}",
+            "Summary": "={{ $('Extract vars').item.json.summaryMd || null }}",
+            "Date": "={{ $('Extract vars').item.json.startTime }}",
+            "Participants": "={{ $('Extract vars').item.json.participants || null }}",
+            "MeetingLink": "={{ $('Extract vars').item.json.meetingUrl || null }}",
+            "RecordingLink": "={{ $('Extract vars').item.json.recording || null }}",
+            "Company": "={{ (function(){ try { const f = $('Find Prospect').first().json; return (f && f.id) ? [f.id] : []; } catch(e) { return []; } })() }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f1b1fe03-ff6b-4c43-93aa-70b56a295667",
+      "name": "Prospect Matched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pm1",
+              "leftValue": "={{ $('Find Prospect').first().json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b0148453-2642-48d2-8c14-9a3f29d9396d",
+      "name": "Set Call Completed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -96
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Find Prospect').first().json.id }}",
+            "PipelineStatus": "Call Completed"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Get Fathom Meeting": {
+      "main": [
+        [
+          {
+            "node": "Extract vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract vars": {
+      "main": [
+        [
+          {
+            "node": "Create file from text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create file from text": {
+      "main": [
+        [
+          {
+            "node": "Find Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Meeting": {
+      "main": [
+        [
+          {
+            "node": "Prospect Matched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Matched?": {
+      "main": [
+        [
+          {
+            "node": "Set Call Completed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Call Completed": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": {
+    "global": {
+      "runStartedAt": 1786632094747
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {
+    "Get Fathom Meeting": [
+      {
+        "json": {
+          "headers": {
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "recording_id": 98234,
+            "title": "Shahar x Novia101",
+            "meeting_title": "Intro Call - Novia101",
+            "recording_start_time": "2026-05-11T10:00:00.000Z",
+            "recording_end_time": "2026-05-11T10:45:00.000Z",
+            "created_at": "2026-05-11T10:47:00.000Z",
+            "url": "https://fathom.video/calls/98234",
+            "recorded_by": {
+              "name": "Shahar Mizrahi",
+              "email": "shahar@flowroots.com",
+              "team": "Flowroots"
+            },
+            "calendar_invitees": [
+              {
+                "name": "Avi Cohen",
+                "email": "avi@novia101.com",
+                "is_external": true
+              }
+            ],
+            "default_summary": {
+              "template_name": "general",
+              "markdown_formatted": "## Overview\nShahar and Avi discussed Novia101's current lead generation challenges and how Flowroots' pay-per-call cold email model could solve their pipeline problem.\n\n## Key Points\n- Novia101 is targeting mid-market Israeli SaaS companies\n- Current outbound is manual and inconsistent\n- Open to a pilot with 3-month commitment\n\n## Next Steps\n- Shahar to send a proposal by end of week\n- Avi to loop in their head of sales for next call"
+            },
+            "action_items": [
+              {
+                "description": "Send proposal to Avi by end of week",
+                "completed": false,
+                "assignee": {
+                  "name": "Shahar Mizrahi"
+                }
+              },
+              {
+                "description": "Loop in head of sales for next call",
+                "completed": false,
+                "assignee": {
+                  "name": "Avi Cohen"
+                }
+              }
+            ],
+            "transcript": [
+              {
+                "speaker": {
+                  "display_name": "Shahar Mizrahi",
+                  "matched_calendar_invitee_email": "shahar@flowroots.com"
+                },
+                "timestamp": "00:00:12",
+                "text": "Hey Avi, good to connect. Let me give you a quick overview of what we do at Flowroots."
+              },
+              {
+                "speaker": {
+                  "display_name": "Avi Cohen",
+                  "matched_calendar_invitee_email": "avi@novia101.com"
+                },
+                "timestamp": "00:01:05",
+                "text": "Sure, I've been curious about the pay-per-call model. How does that work exactly?"
+              },
+              {
+                "speaker": {
+                  "display_name": "Shahar Mizrahi",
+                  "matched_calendar_invitee_email": "shahar@flowroots.com"
+                },
+                "timestamp": "00:01:22",
+                "text": "So we run cold email on your behalf, and you only pay when a qualified call lands on your calendar. No retainer risk."
+              }
+            ]
+          },
+          "webhookUrl": "https://solutionsatoz.app.n8n.cloud/webhook/e4521a14-e7f8-4b18-844f-2e76a6573931",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "versionId": "c01878ee-8cb8-4e80-a1b5-88e4ee7da9e9",
+  "activeVersionId": "c01878ee-8cb8-4e80-a1b5-88e4ee7da9e9",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-09T21:52:47.723Z",
+      "createdAt": "2026-06-09T21:52:47.723Z",
+      "role": "workflow:owner",
+      "workflowId": "KtNxT5zsbNeLL0Vp",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:32:13.548Z",
+    "createdAt": "2026-08-08T20:32:13.548Z",
+    "versionId": "c01878ee-8cb8-4e80-a1b5-88e4ee7da9e9",
+    "workflowId": "KtNxT5zsbNeLL0Vp",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "e4521a14-e7f8-4b18-844f-2e76a6573931",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "03a1906d-7246-4fb8-80f4-9311ab48e15c",
+        "name": "Get Fathom Meeting",
+        "webhookId": "e4521a14-e7f8-4b18-844f-2e76a6573931"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst body = $json.body;\nconst title = body.title || body.meeting_title || 'Meeting';\nconst date = new Date(body.recording_start_time || body.created_at).toISOString().slice(0, 10);\nconst summary = body.default_summary?.markdown_formatted || '';\nconst actionItems = Array.isArray(body.action_items) ? body.action_items.map(i => `- [${i.completed ? 'x' : ' '}] ${i.description}${i.assignee?.name ? ` *(${i.assignee.name})*` : ''}`).join('\\n') : '';\nconst transcript = Array.isArray(body.transcript) ? body.transcript.map(t => `**${t.speaker?.display_name || 'Unknown'}** [${t.timestamp}]: ${t.text}`).join('\\n\\n') : '';\nconst filename = `${date} - ${title}.md`;\nconst content = `---\\nType: Meeting\\ndate: ${date}\\n---\\n# Summary\\n\\n${summary}\\n\\n# Action Items\\n\\n${actionItems}\\n\\n# Full Transcript\\n\\n${transcript}\\n`;\nconst ext = Array.isArray(body.calendar_invitees) ? (body.calendar_invitees.find(i => i && i.is_external) || {}) : {};\nconst extDomain = ((ext.email || '').split('@')[1] || '').toLowerCase();\nconst extFirst = (ext.name || '').trim().split(/\\s+/)[0] || '';\nconst meetingTitle = (body.title || body.meeting_title) || (extFirst ? ('Flowroots Discovery - Shahar X ' + extFirst) : 'Flowroots Meeting');\nreturn [{ json: { filename, content, externalEmail: (ext.email || ''), extDomain, extFirst, meetingTitle, recording: (body.share_url || body.url || ''), summaryMd: summary, meetingUrl: (body.meeting_url || ''), startTime: (body.recording_start_time || body.created_at || ''), participants: (Array.isArray(body.calendar_invitees) ? body.calendar_invitees.map(i => i.name || i.email).join(', ') : '') } }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          0
+        ],
+        "id": "6f283336-c001-4fdf-814b-e298025c3ace",
+        "name": "Extract vars"
+      },
+      {
+        "parameters": {
+          "operation": "createFromText",
+          "content": "={{ $json.content }}",
+          "name": "={{ $json.filename }}",
+          "driveId": {
+            "__rl": true,
+            "value": "My Drive",
+            "mode": "list",
+            "cachedResultName": "My Drive",
+            "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1u5VD6jC_wwIT1GiBCwBJesPXUJH9sV-g",
+            "mode": "id"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          416,
+          0
+        ],
+        "id": "6bb7a6f8-1239-4189-9e52-d8a8cc9dbb24",
+        "name": "Create file from text",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "5BMl4AGSvtAP9QbV",
+            "name": "Flowroots Drive"
+          }
+        }
+      },
+      {
+        "id": "cf7e6275-4349-4b08-bd56-1022039a5660",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1696,
+          208
+        ],
+        "parameters": {
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nlet v={};\ntry{v=$('Extract vars').first().json||{};}catch(e){}\nlet fileId='';\ntry{fileId=$('Create file from text').first().json.id||'';}catch(e){}\nlet prospectId='';\ntry{const f=$('Find Prospect').first().json; if(f&&f.id)prospectId=f.id;}catch(e){}\nlet meetingId='';\ntry{meetingId=$('Create Meeting').first().json.id||'';}catch(e){}\nlet statusWritten=false;\ntry{const u=$('Set Call Completed').first().json; if(u&&u.id){statusWritten=true;}}catch(e){}\nconst failed=[];\nif(!fileId) failed.push('summary file not created');\nif(!meetingId) failed.push('meeting row not created');\nif(prospectId&&!statusWritten) failed.push('prospect status not written');\nconst status=failed.length?'Succeeded with errors':'Succeeded';\nconst title=v.meetingTitle||(v.filename||'').replace(/\\.md$/,'');\nconst prospectUrl=prospectId?('https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/'+prospectId):'';\nlet desc=[\n'**'+(title||'(unknown meeting)')+'**',\n'',\n'- **Meeting:** '+(title||'(unknown)')+' at '+(v.startTime||'(unknown time)')+' (Fathom -> Drive + Airtable CRM)',\n'- **Participants:** '+(v.participants||'(none listed)'),\n'- **External contact:** '+(v.externalEmail||'(none)'),\n'- **Summary file:** '+(v.filename||'(none)')+(fileId?' (Drive id '+fileId+')':' NOT created')+' in the Flowroots meetings folder',\n'- **Meetings row:** '+(meetingId?'created ('+meetingId+') with Title/Summary/Date/Participants/MeetingLink/RecordingLink':'not created'),\n'- **Prospect:** '+(prospectId?('matched '+prospectUrl+(statusWritten?', PipelineStatus set to Call Completed':', status not written')):'no Flowroots prospect matched by domain, Company left empty'),\n'- **Recording:** '+(v.recording||'(none)')\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:{\n 'Automation':'Sync Meeting Summaries to Vault',\n 'Client': ['recl27rmyOlVg7fxb'],\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Errors': failed.length,\n 'Target': title||v.externalEmail||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+        },
+        "onError": "continueRegularOutput",
+        "executeOnce": true
+      },
+      {
+        "id": "c95a183a-b6f3-4782-aea7-3a27c001291a",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1920,
+          208
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow",
+        "executeOnce": true
+      },
+      {
+        "id": "b714c87d-77dc-45ff-86cc-91c28393eded",
+        "name": "Find Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          640,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=AND(FIND(\"Flowroots\", ARRAYJOIN({Client})), \"{{ $('Extract vars').item.json.extDomain }}\" != \"\", OR({domain} = \"{{ $('Extract vars').item.json.extDomain }}\", LOWER({Name}) = LOWER(\"{{ $('Extract vars').item.json.extDomain }}\")))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "51ea40c7-fba8-4bf3-bd60-07a9516acbe5",
+        "name": "Create Meeting",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          864,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblAo6SfTPTOJrnbX"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Title": "={{ $('Extract vars').item.json.meetingTitle }}",
+              "Summary": "={{ $('Extract vars').item.json.summaryMd || null }}",
+              "Date": "={{ $('Extract vars').item.json.startTime }}",
+              "Participants": "={{ $('Extract vars').item.json.participants || null }}",
+              "MeetingLink": "={{ $('Extract vars').item.json.meetingUrl || null }}",
+              "RecordingLink": "={{ $('Extract vars').item.json.recording || null }}",
+              "Company": "={{ (function(){ try { const f = $('Find Prospect').first().json; return (f && f.id) ? [f.id] : []; } catch(e) { return []; } })() }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "f1b1fe03-ff6b-4c43-93aa-70b56a295667",
+        "name": "Prospect Matched?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1088,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pm1",
+                "leftValue": "={{ $('Find Prospect').first().json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b0148453-2642-48d2-8c14-9a3f29d9396d",
+        "name": "Set Call Completed",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1312,
+          -96
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Find Prospect').first().json.id }}",
+              "PipelineStatus": "Call Completed"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Get Fathom Meeting": {
+        "main": [
+          [
+            {
+              "node": "Extract vars",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract vars": {
+        "main": [
+          [
+            {
+              "node": "Create file from text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create file from text": {
+        "main": [
+          [
+            {
+              "node": "Find Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Prospect": {
+        "main": [
+          [
+            {
+              "node": "Create Meeting",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Meeting": {
+        "main": [
+          [
+            {
+              "node": "Prospect Matched?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospect Matched?": {
+        "main": [
+          [
+            {
+              "node": "Set Call Completed",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Call Completed": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

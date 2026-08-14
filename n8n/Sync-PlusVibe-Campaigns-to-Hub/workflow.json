@@ -1,0 +1,1984 @@
+{
+  "updatedAt": "2026-08-13T12:30:53.258Z",
+  "createdAt": "2026-08-02T14:29:03.492Z",
+  "id": "211QkQG8TUF9ctcO",
+  "name": "Sync PlusVibe Campaigns to Hub",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a9831e54-992a-4aca-a8b9-c88590166dd1",
+      "name": "Every 12h (07+19)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            },
+            {
+              "triggerAtHour": 19
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "482ccfcb-c94e-47d7-a8c1-9f500199549b",
+      "name": "Get PV Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        0
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={PlusVibe Workspace ID} != ''",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "05458fee-51bc-4971-95e4-bb9951d80ccb",
+      "name": "Init Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Results.js"
+      }
+    },
+    {
+      "id": "cb3aa2be-de42-474a-bbcf-dfa47332ecd9",
+      "name": "Find Replied Prospects",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        180,
+        140
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=NOT({Contacts} = BLANK())",
+        "returnAll": true,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "12f1bc2a-a3cb-4cc7-90f0-c683470ab0b4",
+      "name": "Drop Empty",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        140
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Drop-Empty.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "8c03403f-9c0c-42ec-9d6d-b4ae9cd87284",
+      "name": "Any Prospects?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        620,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ap1",
+              "leftValue": "={{ $json._empty ? 'empty' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cd4c3f99-f595-44bd-b923-6a1e747fce9b",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        420
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fef784c4-1cd3-4853-b41b-9d18cc069711",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "f8553ea5-3e11-4fc7-92ac-1adca4746bd9",
+      "name": "Get Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1060,
+        60
+      ],
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "id": "={{ (($json.fields ? $json.fields.Contacts : $json.Contacts) || [''])[0] }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "59886069-6ecd-4a4f-859f-70ee8adc6aef",
+      "name": "Prep Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        60
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Lookup.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "84a449a2-e5dd-468e-a66c-eff21a998aa6",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1500,
+        60
+      ],
+      "parameters": {
+        "url": "={{ $json.pvUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "page_trail",
+                    "value": "={{ $response.body.page_trail }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.page_trail }}",
+              "limitPagesFetched": true,
+              "maxRequests": 8,
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 1500,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "92cd4611-c1e9-43e9-a939-31c918337bd4",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        60
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b0c836b0-504e-4884-83d1-8369720fea60",
+      "name": "Write It?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1940,
+        60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "wi1",
+              "leftValue": "={{ $json._skip ? 'skip' : 'write' }}",
+              "rightValue": "write",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0ea918d4-2fb2-4e3e-9e86-3d88b994fd52",
+      "name": "Update Prospect Thread",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        -20
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.prospectId }}",
+            "Conversation Thread": "={{ $json['Conversation Thread'] }}",
+            "First Engagement": "={{ $json['First Engagement'] }}",
+            "Last Engaged": "={{ $json['Last Engaged'] }}",
+            "Last Touch": "={{ $json['Last Touch'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "466a8579-bf38-4da8-841c-bfd0b0f8f8a8",
+      "name": "Loop Prospects",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        840,
+        140
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "0edd96a1-307b-46f6-b6c5-900cb608d1ff",
+      "name": "Parse Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Parse-Client.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "de6d2a7c-c28d-409f-9971-46cda18d4ccd",
+      "name": "Get Campaign Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        -160
+      ],
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f90d991f-c711-4196-b096-163ccb942756",
+      "name": "Format Campaign Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Campaign-Rows.js"
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "dec2773a-9cb3-42fe-aa81-ef580c58e67f",
+      "name": "Has Campaign?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        840,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json['Campaign ID'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4e2f3ef1-9272-4199-b816-afae0ef789a8",
+      "name": "Upsert Campaigns",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1060,
+        -256
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Campaign ID"
+          ],
+          "schema": [],
+          "value": {
+            "Campaign": "={{ $json.Campaign }}",
+            "Campaign ID": "={{ $json['Campaign ID'] }}",
+            "Client": "={{ $json.Client }}",
+            "Sequencer": "={{ $json.Sequencer }}",
+            "Channel": "={{ $json.Channel }}",
+            "Status": "={{ $json.Status }}",
+            "Leads": "={{ $json.Leads }}",
+            "Contacted": "={{ $json.Contacted }}",
+            "Completed": "={{ $json.Completed }}",
+            "Messages Sent": "={{ $json['Messages Sent'] }}",
+            "Replies": "={{ $json.Replies }}",
+            "Positive Replies (PV)": "={{ $json['Positive Replies (PV)'] }}",
+            "Bounced": "={{ $json.Bounced }}",
+            "Last Sent": "={{ $json['Last Sent'] }}",
+            "Created": "={{ $json.Created }}",
+            "Last Synced": "={{ $json['Last Synced'] }}",
+            "Opens": "={{ $json.Opens }}",
+            "Unique Opens": "={{ $json['Unique Opens'] }}",
+            "Open Tracking": "={{ $json['Open Tracking'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0630e8c5-0221-42ff-a4c3-085b04fa35ca",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5cb32090-7175-4c15-97b7-56ace853e078",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -40,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "71394e88-e0d1-4ff0-bfae-14c77c824587",
+      "name": "Fire Add-on",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1500,
+        -160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.flowroots.com/webhook/addon-pvsync-{{ $('Parse Client').first().json.clientSlug }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recordId",
+              "value": "={{ $('Parse Client').first().json.clientRecId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Fires the client's pvsync add-on. 404 = client has no add-on, run continues.",
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    }
+  ],
+  "connections": {
+    "Get PV Clients": {
+      "main": [
+        [
+          {
+            "node": "Init Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Results": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Replied Prospects": {
+      "main": [
+        [
+          {
+            "node": "Drop Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drop Empty": {
+      "main": [
+        [
+          {
+            "node": "Any Prospects?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Prospects?": {
+      "main": [
+        [
+          {
+            "node": "Loop Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact": {
+      "main": [
+        [
+          {
+            "node": "Prep Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Lookup": {
+      "main": [
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "Write It?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write It?": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect Thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect Thread": {
+      "main": [
+        [
+          {
+            "node": "Loop Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Prospects": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Client": {
+      "main": [
+        [
+          {
+            "node": "Get Campaign Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Campaign Stats": {
+      "main": [
+        [
+          {
+            "node": "Format Campaign Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Campaign Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Campaign?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Campaign?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "Find Replied Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 12h (07+19)": {
+      "main": [
+        [
+          {
+            "node": "Get PV Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Add-on": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Daily 07:00": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "pvSyncResults": [
+        {
+          "client": "Adelante",
+          "clientRecId": "recN79He6wwPKogUR",
+          "campaigns": 25,
+          "written": 25,
+          "sent": 7363,
+          "replies": 67,
+          "positives": 13,
+          "ok": true
+        },
+        {
+          "client": "Piper AI",
+          "clientRecId": "recjK36ixfluCkVHu",
+          "campaigns": 22,
+          "written": 22,
+          "sent": 23214,
+          "replies": 106,
+          "positives": 10,
+          "ok": true
+        },
+        {
+          "client": "Flowroots",
+          "clientRecId": "recl27rmyOlVg7fxb",
+          "campaigns": 0,
+          "written": 22,
+          "sent": 0,
+          "replies": 0,
+          "positives": 0,
+          "ok": true
+        },
+        {
+          "client": "Dave.io",
+          "clientRecId": "reclCOYRBgMowJd8G",
+          "campaigns": 7,
+          "written": 7,
+          "sent": 17800,
+          "replies": 50,
+          "positives": 6,
+          "ok": true
+        },
+        {
+          "client": "Move PLNR",
+          "clientRecId": "recyZTRr7Hb5S6Ozr",
+          "campaigns": 26,
+          "written": 26,
+          "sent": 27599,
+          "replies": 300,
+          "positives": 54,
+          "ok": true
+        }
+      ],
+      "threadStats": {
+        "checked": 121,
+        "updated": 10,
+        "problems": [
+          "The Residency: contact fetch returned no email",
+          "Parasol Solutions: contact fetch returned no email",
+          "goshine.ai: contact fetch returned no email",
+          "The Rogues Creative: contact fetch returned no email",
+          "Endl: contact fetch returned no email",
+          "Silmaril (YC P26): contact fetch returned no email",
+          "Parasol Solutions: contact fetch returned no email",
+          "Novia101: contact fetch returned no email",
+          "Robins Properties: contact fetch returned no email",
+          "xMap: contact fetch returned no email"
+        ]
+      },
+      "clientMap": {
+        "recN79He6wwPKogUR": {
+          "name": "Adelante",
+          "pvWorkspace": "6a58e1dcd210c1eaa39b3ecb"
+        },
+        "recjK36ixfluCkVHu": {
+          "name": "Piper AI",
+          "pvWorkspace": "6a27bb851bffeb09ca749fd9"
+        },
+        "recl27rmyOlVg7fxb": {
+          "name": "Flowroots",
+          "pvWorkspace": "6a4a5a2b74e3c92174e00cc6"
+        },
+        "reclCOYRBgMowJd8G": {
+          "name": "Dave.io",
+          "pvWorkspace": "6a4a3ab6d70a593c3e3b75e5"
+        },
+        "recyZTRr7Hb5S6Ozr": {
+          "name": "Move PLNR",
+          "pvWorkspace": "6a018ddb85c01f5da7906694"
+        }
+      },
+      "runStartedAt": 1786680059756
+    },
+    "node:Every 12h (07+19)": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
+  "activeVersionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-02T14:29:03.500Z",
+      "createdAt": "2026-08-02T14:29:03.500Z",
+      "role": "workflow:owner",
+      "workflowId": "211QkQG8TUF9ctcO",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-13T12:33:49.000Z",
+    "createdAt": "2026-08-13T12:30:53.261Z",
+    "versionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
+    "workflowId": "211QkQG8TUF9ctcO",
+    "nodes": [
+      {
+        "id": "a9831e54-992a-4aca-a8b9-c88590166dd1",
+        "name": "Every 12h (07+19)",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -608,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 7
+              },
+              {
+                "triggerAtHour": 19
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "482ccfcb-c94e-47d7-a8c1-9f500199549b",
+        "name": "Get PV Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -384,
+          0
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={PlusVibe Workspace ID} != ''",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "05458fee-51bc-4971-95e4-bb9951d80ccb",
+        "name": "Init Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -200,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.pvSyncResults=[];\nsd.threadStats={checked:0,updated:0,problems:[]};\nsd.clientMap={};\nfor(const it of $input.all()){ const r=it.json||{}; const f=r.fields||r; if(r.id) sd.clientMap[r.id]={name:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim()}; }\nreturn $input.all();"
+        }
+      },
+      {
+        "id": "cb3aa2be-de42-474a-bbcf-dfa47332ecd9",
+        "name": "Find Replied Prospects",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          180,
+          140
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=NOT({Contacts} = BLANK())",
+          "returnAll": true,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "executeOnce": true
+      },
+      {
+        "id": "12f1bc2a-a3cb-4cc7-90f0-c683470ab0b4",
+        "name": "Drop Empty",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          400,
+          140
+        ],
+        "parameters": {
+          "jsCode": "const items=$input.all().filter(it=>it&&it.json&&it.json.id);\nif(!items.length) return [{ json: { _empty:true } }];\nreturn items;"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "8c03403f-9c0c-42ec-9d6d-b4ae9cd87284",
+        "name": "Any Prospects?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          620,
+          140
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ap1",
+                "leftValue": "={{ $json._empty ? 'empty' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "cd4c3f99-f595-44bd-b923-6a1e747fce9b",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          180,
+          420
+        ],
+        "parameters": {
+          "jsCode": "let results=[]; let t={checked:0,updated:0,problems:[]}; let rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.pvSyncResults||[]; t=sd.threadStats||t; rs=sd.runStartedAt||0; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst totalIn=results.reduce((s,r)=>s+(r.campaigns||0),0);\nconst totalOut=results.reduce((s,r)=>s+(r.written||0),0);\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=results.map(r=> '- **'+r.client+':** '+nf(r.campaigns)+' campaigns · '+nf(r.sent)+' sent · '+nf(r.replies)+' replies'+(r.ok?'':' (FAILED)'));\nconst allProbs=t.problems||[];\nconst skipped=allProbs.filter(p=>String(p).includes('no email'));\nconst probs=allProbs.filter(p=>!String(p).includes('no email'));\nconst skippedNames=skipped.map(p=>String(p).split(':')[0]);\nconst errCount=failed.length+probs.length;\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**'];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+': campaigns seen but none written').join('\\n'));\nif(skipped.length) parts.push('**Skipped ('+skipped.length+', no contact email)**\\n'+skippedNames.join(', '));\nif(probs.length) parts.push('**Thread problems ('+probs.length+')**\\n'+probs.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Sync PlusVibe Campaigns to Hub',\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalIn,\n 'Records Out': totalOut,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "fef784c4-1cd3-4853-b41b-9d18cc069711",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          400,
+          420
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "f8553ea5-3e11-4fc7-92ac-1adca4746bd9",
+        "name": "Get Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1060,
+          60
+        ],
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "id": "={{ (($json.fields ? $json.fields.Contacts : $json.Contacts) || [''])[0] }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "59886069-6ecd-4a4f-859f-70ee8adc6aef",
+        "name": "Prep Lookup",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1280,
+          60
+        ],
+        "parameters": {
+          "jsCode": "const pr=$('Loop Prospects').first().json||{};\nconst prf=pr.fields||pr;\nconst ct=$input.first().json||{};\nconst cf=ct.fields||ct;\nconst sd=$getWorkflowStaticData('global');\nconst clientIds=Array.isArray(prf.Client)?prf.Client:[];\nconst cm=(sd.clientMap||{})[clientIds[0]]||{};\nconst lead_email=String(cf.email||'').toLowerCase().trim();\nconst base={ prospectId:pr.id||'', prospectName:prf.Name||'', lead_email, pvWorkspace:cm.pvWorkspace||'' };\nif(!lead_email||!cm.pvWorkspace){ return [{ json: Object.assign({pvUrl:''},base) }]; }\nconst u1='https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id='+cm.pvWorkspace+'&lead='+lead_email+'&email_type=all';\nconst u2='https://api.plusvibe.ai/api/v1/unibox/campaign-emails?workspace_id='+cm.pvWorkspace+'&lead='+lead_email;\nreturn [{ json: Object.assign({pvUrl:u1},base) }, { json: Object.assign({pvUrl:u2},base) }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "84a449a2-e5dd-468e-a66c-eff21a998aa6",
+        "name": "PV Get Thread",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1500,
+          60
+        ],
+        "parameters": {
+          "url": "={{ $json.pvUrl }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2000
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "page_trail",
+                      "value": "={{ $response.body.page_trail }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.page_trail }}",
+                "limitPagesFetched": true,
+                "maxRequests": 8,
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 4,
+        "waitBetweenTries": 1500,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "92cd4611-c1e9-43e9-a939-31c918337bd4",
+        "name": "Format Thread",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1720,
+          60
+        ],
+        "parameters": {
+          "jsCode": "const items=$input.all();\nconst pl=$('Prep Lookup').first().json;\nconst leadEmail=(pl.lead_email||'').toLowerCase();\nconst sd=$getWorkflowStaticData('global');\nsd.threadStats.checked++;\nconst prf=($('Loop Prospects').first().json.fields||{});\nif(!leadEmail){ sd.threadStats.problems.push((pl.prospectName||pl.prospectId)+': contact fetch returned no email'); return [{ json: { prospectId: pl.prospectId, _skip:true } }]; }\nif(!pl.pvWorkspace){ sd.threadStats.problems.push((pl.prospectName||pl.prospectId)+': client has no PV workspace'); return [{ json: { prospectId: pl.prospectId, _skip:true } }]; }\nlet rateLimited=false;\nconst pool=[];\nfor(const it of items){ const r=(it&&it.json)||{}; const arr=r.data||r.emails; if(Array.isArray(arr)){ pool.push(...arr); } else { const s=JSON.stringify(r).slice(0,600); if(s.includes('1015')||s.toLowerCase().includes('rate limit')) rateLimited=true; } }\nif(rateLimited){ sd.threadStats.problems.push((pl.prospectName||pl.prospectId)+': PV rate limited, retries next run'); }\nconst emails=pool.filter(m=>String(m.lead||'').toLowerCase()===leadEmail);\nconst seen=new Set(); const uniq=[];\nfor(const m of emails){ const k=m.message_id||m.id||JSON.stringify([m.sent_on,m.subject]); if(!seen.has(k)){ seen.add(k); uniq.push(m); } }\nif(!uniq.length) return [{ json: { prospectId: pl.prospectId, _skip:true } }];\nconst fmtTs=(ts)=>{const d=new Date(ts);if(isNaN(d.getTime()))return '';return d.toLocaleString('sv-SE',{timeZone:'Asia/Jerusalem'}).slice(0,16)+' IL';};\nconst rawBody=(m)=>{if(typeof m.text_body==='string'&&m.text_body.trim())return m.text_body;let h='';if(m.body&&typeof m.body==='object')h=(typeof m.body.text==='string'&&m.body.text.trim())?m.body.text:(m.body.html||'');else if(typeof m.body==='string')h=m.body;else h=m.snippet||'';h=h.replace(/<style[\\s\\S]*?<\\/style>/gi,' ').replace(/<script[\\s\\S]*?<\\/script>/gi,' ').replace(/<br\\s*\\/?>/gi,'\\n').replace(/<\\/(?:p|div|tr|li|h[1-6])>/gi,'\\n\\n').replace(/<[^>]*>/g,' ');return h;};\nconst clean=(t)=>{\nif(!t)return '';\nlet s=String(t).replace(/\\r\\n?/g,'\\n');\ns=s.replace(/(?:\\n|^)[ \\t]*-{3,}\\s*Original Message\\s*-{3,}[\\s\\S]*$/i,'');\ns=s.replace(/(?:\\n|^)[ \\t]*_{10,}[\\s\\S]*$/,'');\ns=s.replace(/(?:\\n|\\s)On\\s+\\S[\\s\\S]{0,170}?wrote:[\\s\\S]*$/i,'');\ns=s.replace(/\\n\\s*>[\\s\\S]*$/,'');\ns=s.replace(/(?:\\n|^)From:\\s[\\s\\S]*$/i,'');\ns=s.replace(/(?:\\n|^)[ \\t]*Sent from my [^\\n]*[\\s\\S]*$/i,'');\ns=s.replace(/[a-z]+\\\\?:\\s*\\{behavior:url\\([^)]*\\)[^}]*\\}/gi,'');\ns=s.replace(/[.#]?[a-z][\\w-]*\\s*\\{[^}]*\\}/gi,'');\ns=s.replace(/&nbsp;/gi,' ').replace(/&[a-z#0-9]+;/gi,' ');\nconst SIGOFF=/^(?:thanks|thank you|thanks so much|many thanks|regards|best regards|kind regards|warm regards|best|cheers|sincerely|all the best|talk soon|speak soon)[,!.]*$/i;\nconst TITLE=/\\b(?:ceo|cto|coo|cfo|cmo|cro|cpo|vp|svp|evp|president|founder|co-?founder|director|manager|head of|partner|principal|engineer|consultant|advisor|owner|officer|chief)\\b/i;\nconst URLISH=/(?:https?:\\/\\/|www\\.|\\b[a-z0-9-]+\\.(?:com|net|org|io|ai|co|dev|app)\\b)/i;\nconst lines=s.split('\\n');\nconst looksSig=(i)=>{let score=0;let shorts=0;for(let j=i+1;j<Math.min(lines.length,i+7);j++){const L=lines[j].trim();if(!L)continue;const dg=L.replace(/\\D/g,'').length;if(dg>=9&&dg<=15&&/[\\d)]/.test(L))score+=2;if(URLISH.test(L))score+=2;if(TITLE.test(L))score+=2;if(L.length<=40)shorts++;}if(shorts>=2)score+=2;return score>=2;};\nlet cut=-1;\nfor(let i=0;i<lines.length;i++){const L=lines[i].trim();if(/^--\\s*$/.test(L)){cut=i;break;}if(SIGOFF.test(L)&&looksSig(i)){cut=i;break;}}\nif(cut>0)s=lines.slice(0,cut).join('\\n');\ns=s.split('\\n').map(x=>x.replace(/[^\\S\\n]+/g,' ').trim()).join('\\n');\ns=s.replace(/\\n{3,}/g,'\\n\\n');\nreturn s.trim();\n};\nconst fromOf=(m)=>{if(typeof m.from==='string')return m.from;if(Array.isArray(m.from_address_json)&&m.from_address_json[0])return m.from_address_json[0].address||'';return m.from_address_email||m.from_email||'';};\nconst isIn=(m)=>{if(m.current_step!=null)return false;const d=String(m.direction||'').toUpperCase();if(d==='IN')return true;if(d==='OUT')return false;return fromOf(m).toLowerCase().includes(leadEmail);};\nconst tsOf=(m)=>m.sent_on||m.timestamp_created||m.created_at||'';\nconst sorted=uniq.sort((a,b)=>new Date(tsOf(a))-new Date(tsOf(b)));\nconst blocks=[]; const themTs=[]; const usTs=[];\nfor(const m of sorted){\n  const body=clean(rawBody(m));\n  if(body.length<2) continue;\n  const dir=isIn(m)?'THEM':'US';\n  const t=tsOf(m);\n  if(dir==='THEM'&&t)themTs.push(t); if(dir==='US'&&t)usTs.push(t);\n  blocks.push('**['+fmtTs(t)+'] '+dir+':**\\n'+body);\n}\nlet thread_context=blocks.join('\\n\\n');\nif(thread_context.length>50000)thread_context=thread_context.slice(-50000);\nif(!thread_context) return [{ json: { prospectId: pl.prospectId, _skip:true } }];\nconst iso=(t)=>{const d=new Date(t);return isNaN(d.getTime())?'':d.toISOString();};\nconst firstThem=themTs.length?iso(themTs[0]):(prf['First Engagement']||'');\nconst lastThem=themTs.length?iso(themTs[themTs.length-1]):(prf['Last Engaged']||'');\nconst lastUs=usTs.length?iso(usTs[usTs.length-1]):(prf['Last Touch']||'');\nconst current=''+(prf['Conversation Thread']||'');\nif(thread_context.trim()===current.trim() && (!lastThem||prf['Last Engaged']) && (!lastUs||prf['Last Touch'])) return [{ json: { prospectId: pl.prospectId, _skip:true } }];\nsd.threadStats.updated++;\nreturn [{ json: { prospectId: pl.prospectId, 'Conversation Thread': thread_context, 'First Engagement': firstThem, 'Last Engaged': lastThem, 'Last Touch': lastUs } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b0c836b0-504e-4884-83d1-8369720fea60",
+        "name": "Write It?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1940,
+          60
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "wi1",
+                "leftValue": "={{ $json._skip ? 'skip' : 'write' }}",
+                "rightValue": "write",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "0ea918d4-2fb2-4e3e-9e86-3d88b994fd52",
+        "name": "Update Prospect Thread",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2160,
+          -20
+        ],
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.prospectId }}",
+              "Conversation Thread": "={{ $json['Conversation Thread'] }}",
+              "First Engagement": "={{ $json['First Engagement'] }}",
+              "Last Engaged": "={{ $json['Last Engaged'] }}",
+              "Last Touch": "={{ $json['Last Touch'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "466a8579-bf38-4da8-841c-bfd0b0f8f8a8",
+        "name": "Loop Prospects",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          840,
+          140
+        ],
+        "parameters": {
+          "batchSize": 1
+        }
+      },
+      {
+        "id": "0edd96a1-307b-46f6-b6c5-900cb608d1ff",
+        "name": "Parse Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          180,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst clientRecId=r.id||'';\nconst clientName=f['Client']||'';\nconst pvWorkspace=String(f['PlusVibe Workspace ID']||'').trim();\nconst clientSlug=String(clientName).toLowerCase().replace(/[^a-z0-9]/g,'');\nreturn [{ json: { clientRecId, clientName, pvWorkspace, clientSlug } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "de6d2a7c-c28d-409f-9971-46cda18d4ccd",
+        "name": "Get Campaign Stats",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          400,
+          -160
+        ],
+        "parameters": {
+          "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "f90d991f-c711-4196-b096-163ccb942756",
+        "name": "Format Campaign Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          620,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const clientRecId=$('Parse Client').first().json.clientRecId||'';\nconst raw=[];\nfor(const it of $input.all()){\n  const j=it.json||{};\n  const arr=Array.isArray(j)?j:(Array.isArray(j.campaigns)?j.campaigns:(Array.isArray(j.data)?j.data:[j]));\n  for(const c of arr){ if(c&&(c.id||c._id)) raw.push(c); }\n}\nif(!raw.length) return [{ json: { _keepAlive:true } }];\nreturn raw.map(c=>({ json: {\n  'Campaign': c.camp_name||c.id||c._id||'',\n  'Campaign ID': c.id||c._id||'',\n  'Client': clientRecId?[clientRecId]:[],\n  'Sequencer':'PlusVibe',\n  'Channel':'Email',\n  'Status': c.status||'',\n  'Leads': c.lead_count||0,\n  'Contacted': c.lead_contacted_count||0,\n  'Completed': c.completed_lead_count||0,\n  'Messages Sent': c.sent_count||0,\n  'Replies': c.replied_count||0,\n  'Positive Replies (PV)': c.positive_reply_count||0,\n  'Bounced': c.bounced_count||0,\n  'Opens': c.opened_count||0,\n  'Unique Opens': c.unique_opened_count||0,\n  'Open Tracking': !!c.is_emailopened_tracking,\n  'Last Sent': c.last_lead_sent||'',\n  'Created': c.created_at||'',\n  'Last Synced': $now.toISO()\n}}));"
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dec2773a-9cb3-42fe-aa81-ef580c58e67f",
+        "name": "Has Campaign?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          840,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json['Campaign ID'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "4e2f3ef1-9272-4199-b816-afae0ef789a8",
+        "name": "Upsert Campaigns",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1060,
+          -256
+        ],
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Campaign ID"
+            ],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $json.Campaign }}",
+              "Campaign ID": "={{ $json['Campaign ID'] }}",
+              "Client": "={{ $json.Client }}",
+              "Sequencer": "={{ $json.Sequencer }}",
+              "Channel": "={{ $json.Channel }}",
+              "Status": "={{ $json.Status }}",
+              "Leads": "={{ $json.Leads }}",
+              "Contacted": "={{ $json.Contacted }}",
+              "Completed": "={{ $json.Completed }}",
+              "Messages Sent": "={{ $json['Messages Sent'] }}",
+              "Replies": "={{ $json.Replies }}",
+              "Positive Replies (PV)": "={{ $json['Positive Replies (PV)'] }}",
+              "Bounced": "={{ $json.Bounced }}",
+              "Last Sent": "={{ $json['Last Sent'] }}",
+              "Created": "={{ $json.Created }}",
+              "Last Synced": "={{ $json['Last Synced'] }}",
+              "Opens": "={{ $json.Opens }}",
+              "Unique Opens": "={{ $json['Unique Opens'] }}",
+              "Open Tracking": "={{ $json['Open Tracking'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0630e8c5-0221-42ff-a4c3-085b04fa35ca",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1280,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nif(!Array.isArray(sd.pvSyncResults)) sd.pvSyncResults=[];\nlet clientRecId='', clientName='';\ntry{ const p=$('Parse Client').first().json; clientRecId=p.clientRecId||''; clientName=p.clientName||''; }catch(e){}\nlet rows=[]; try{ rows=$('Format Campaign Rows').all().map(i=>i.json).filter(r=>r&&r['Campaign ID']); }catch(e){}\nlet upserted=[]; try{ upserted=$('Upsert Campaigns').all().map(i=>i.json); }catch(e){}\nconst seen=rows.length;\nconst written=upserted.length;\nconst sent=rows.reduce((s,r)=>s+(r['Messages Sent']||0),0);\nconst replies=rows.reduce((s,r)=>s+(r['Replies']||0),0);\nconst positives=rows.reduce((s,r)=>s+(r['Positive Replies (PV)']||0),0);\nconst ok=!(seen>0 && written===0);\nsd.pvSyncResults.push({client:clientName||'(unknown)', clientRecId, campaigns:seen, written, sent, replies, positives, ok});\nreturn [{ json: { client:clientName||'', ok } }];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "5cb32090-7175-4c15-97b7-56ace853e078",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -40,
+          0
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "71394e88-e0d1-4ff0-bfae-14c77c824587",
+        "name": "Fire Add-on",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1500,
+          -160
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.flowroots.com/webhook/addon-pvsync-{{ $('Parse Client').first().json.clientSlug }}",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "recordId",
+                "value": "={{ $('Parse Client').first().json.clientRecId }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "notes": "Fires the client's pvsync add-on. 404 = client has no add-on, run continues.",
+        "onError": "continueRegularOutput",
+        "executeOnce": true
+      }
+    ],
+    "connections": {
+      "Get PV Clients": {
+        "main": [
+          [
+            {
+              "node": "Init Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Results": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Replied Prospects": {
+        "main": [
+          [
+            {
+              "node": "Drop Empty",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Drop Empty": {
+        "main": [
+          [
+            {
+              "node": "Any Prospects?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Prospects?": {
+        "main": [
+          [
+            {
+              "node": "Loop Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Contact": {
+        "main": [
+          [
+            {
+              "node": "Prep Lookup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Lookup": {
+        "main": [
+          [
+            {
+              "node": "PV Get Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Get Thread": {
+        "main": [
+          [
+            {
+              "node": "Format Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Thread": {
+        "main": [
+          [
+            {
+              "node": "Write It?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write It?": {
+        "main": [
+          [
+            {
+              "node": "Update Prospect Thread",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Loop Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Prospect Thread": {
+        "main": [
+          [
+            {
+              "node": "Loop Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Prospects": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get Contact",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Client": {
+        "main": [
+          [
+            {
+              "node": "Get Campaign Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Campaign Stats": {
+        "main": [
+          [
+            {
+              "node": "Format Campaign Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Campaign Rows": {
+        "main": [
+          [
+            {
+              "node": "Has Campaign?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Campaign?": {
+        "main": [
+          [
+            {
+              "node": "Upsert Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [
+            {
+              "node": "Find Replied Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Parse Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Every 12h (07+19)": {
+        "main": [
+          [
+            {
+              "node": "Get PV Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Add-on": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": "Version a056914d",
+    "description": "",
+    "autosaved": false
+  },
+  "tags": []
+}

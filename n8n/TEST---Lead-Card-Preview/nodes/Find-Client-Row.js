@@ -1,0 +1,1 @@
+return [{ json: { id: 'recN79He6wwPKogUR', fields: { 'Client': 'Adelante', 'BDR Slack Channel ID': 'C0B8KTG38JX', 'Slack Channel ID': 'C0B8KTG38JX', 'Dashboard Page ID': 'pagdmt6DznOwK9Cv7' } } }];

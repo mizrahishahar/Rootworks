@@ -1,0 +1,1 @@
+const c=$('Create WoC Sheet').first().json; const sid=c.spreadsheetId||c.id; return $('Domains WoC').all().map(i=>({json:{...i.json,_sheet_id:sid}}));

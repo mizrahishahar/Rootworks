@@ -1,0 +1,636 @@
+{
+  "updatedAt": "2026-07-19T14:25:21.000Z",
+  "createdAt": "2026-06-10T15:16:03.185Z",
+  "id": "bqruU2wZuKufjDK4",
+  "name": "SEGEMENT DISCOLIKE CONTACTS",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Discolike Contacts Upload",
+        "formDescription": "Upload a Discolike contacts export CSV. Outputs Contacts + Domains-without-contacts into the Leads folder.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Query name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "CSV",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "discolike-contacts",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/bqruU2wZuKufjDK4/executions/{{ $execution.id }}"
+            }
+          }
+        }
+      },
+      "id": "494012bb-9994-4239-b388-bbe9f139b41b",
+      "name": "Contacts Upload",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        384
+      ],
+      "webhookId": "a502f5fb-789e-4597-af0b-48a5f7d42f36"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "CSV",
+        "options": {
+          "enableBOM": true,
+          "includeEmptyCells": true
+        }
+      },
+      "id": "13b164ef-db18-465f-883c-8328c2a5f7a1",
+      "name": "Read CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Contacts-Handler.js"
+      },
+      "id": "6a41d355-9eb5-4bc9-bea9-d31b39527ea8",
+      "name": "Contacts Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Contacts Upload').first().json['Query name'] }} - Contacts - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "options": {}
+      },
+      "id": "8bea3221-612c-4bc5-ab38-257abb1af9e8",
+      "name": "Create Contacts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        96
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheetId || $json.id }}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1Y7t1fmXJme2JGtty0U12e1SfkgBLoc1O"
+        }
+      },
+      "id": "dc0c3a9e-d566-4bd4-9794-d72e53a9878d",
+      "name": "Move Contacts",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        896,
+        96
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Rows-Contacts.js"
+      },
+      "id": "b66c7851-fead-430d-be9a-36bef28388fa",
+      "name": "Rows Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json._sheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "dc9c94d3-119e-43fc-9223-d152f8cc6445",
+      "name": "Write Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Contacts Upload').first().json['Query name'] }} - Domains without contacts - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "options": {}
+      },
+      "id": "c118f6e2-e3a4-4fe2-bcaa-9b4e0f53bd21",
+      "name": "Create NoContacts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        384
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheetId || $json.id }}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1Y7t1fmXJme2JGtty0U12e1SfkgBLoc1O"
+        }
+      },
+      "id": "c88fa671-ecbd-4271-b436-1bc820a0538f",
+      "name": "Move NoContacts",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        896,
+        384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Rows-NoContacts.js"
+      },
+      "id": "9dc5142f-79d6-41ae-827e-50bc729f5d60",
+      "name": "Rows NoContacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json._sheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "c0ef4b07-84d6-48b7-b914-b5b838bf1791",
+      "name": "Write NoContacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/AT-Schema-Contacts.js"
+      },
+      "id": "0ef78987-36ba-40e1-9f4d-80200d8896f4",
+      "name": "AT Schema Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/meta/bases/appSTTKOc9Afqer9d/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"name\": $json.name, \"fields\": $json.fields } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "3409dfc1-cb59-45bf-9a21-5bf4d08031af",
+      "name": "AT Create Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/AT-Emit-Contacts.js"
+      },
+      "id": "7860c5d8-2c83-4348-ac83-a6419c317965",
+      "name": "AT Emit Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSTTKOc9Afqer9d"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('AT Create Contacts').first().json.id }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c3c62b0f-9a3a-40af-8f80-85293dbd03e6",
+      "name": "AT Insert Contacts",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Seg-Log-Build.js"
+      },
+      "id": "8a5bc701-dcaa-4264-ad68-98a2574d506f",
+      "name": "Seg Log Build",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSTTKOc9Afqer9d"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbl0IUwTZtsdyLjDa"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "1c5318ad-ffa8-4070-867e-005c3476c5be",
+      "name": "Seg Log",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        576
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Contacts Upload": {
+      "main": [
+        [
+          {
+            "node": "Read CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CSV": {
+      "main": [
+        [
+          {
+            "node": "Contacts Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contacts Handler": {
+      "main": [
+        [
+          {
+            "node": "Create Contacts Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create NoContacts Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Seg Log Build",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contacts Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Contacts": {
+      "main": [
+        [
+          {
+            "node": "Rows Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows Contacts": {
+      "main": [
+        [
+          {
+            "node": "Write Contacts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AT Schema Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create NoContacts Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move NoContacts": {
+      "main": [
+        [
+          {
+            "node": "Rows NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows NoContacts": {
+      "main": [
+        [
+          {
+            "node": "Write NoContacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Schema Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Create Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Create Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Emit Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Emit Contacts": {
+      "main": [
+        [
+          {
+            "node": "AT Insert Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seg Log Build": {
+      "main": [
+        [
+          {
+            "node": "Seg Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "b2ba26b4-3733-4c8f-b926-14a901de2c3b",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-10T15:16:03.196Z",
+      "createdAt": "2026-06-10T15:16:03.196Z",
+      "role": "workflow:owner",
+      "workflowId": "bqruU2wZuKufjDK4",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

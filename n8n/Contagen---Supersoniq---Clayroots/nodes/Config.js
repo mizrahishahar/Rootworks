@@ -1,0 +1,1 @@
+return [{ json: { hubBaseId: 'appQG6dK0FIOhTxOl', startedAt: $now.toISO() } }];

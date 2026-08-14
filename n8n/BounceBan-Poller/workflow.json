@@ -1,0 +1,689 @@
+{
+  "updatedAt": "2026-08-14T12:10:06.344Z",
+  "createdAt": "2026-06-11T13:28:30.597Z",
+  "id": "tllfBn4NycLftdef",
+  "name": "BounceBan Poller",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "d81a46f4-7bbe-4629-877a-7441c33fdc0a",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.bounceban.com/v1/verify/single",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "74db3a9f-a8d7-4cbe-81c7-d1c8842b498f",
+      "name": "Submit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FxpbAjoAjPEy8fBu",
+          "name": "BounceBan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Init.js"
+      },
+      "id": "e6a84c87-c688-46ce-afe7-18963e6058a2",
+      "name": "Init",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.bounceban.com/v1/verify/single/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "45a52b7d-771b-4653-a062-7e29d7964491",
+      "name": "Poll",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FxpbAjoAjPEy8fBu",
+          "name": "BounceBan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Gate.js"
+      },
+      "id": "dff7a4c2-b2dc-45af-8c22-f21c6bc699be",
+      "name": "Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._loop }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d9dd2d09-9fc9-4d6c-9cc5-2e52ee5f118a",
+      "name": "Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json._nextWaitSec }}"
+      },
+      "id": "eb9fdc4e-8b4a-4692-b276-efa0155366b2",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        0
+      ],
+      "webhookId": "002abf83-b9c1-4702-a3de-5f8e7c5be1f9"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Build-Update.js"
+      },
+      "id": "ccecd8cc-f92c-429f-9b49-0f10f77de248",
+      "name": "Build Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Init\").first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Init\").first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "de6a98e2-8950-4102-b780-946a64dd7f48",
+      "name": "Update Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Submit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit": {
+      "main": [
+        [
+          {
+            "node": "Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init": {
+      "main": [
+        [
+          {
+            "node": "Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll": {
+      "main": [
+        [
+          {
+            "node": "Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate": {
+      "main": [
+        [
+          {
+            "node": "Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending?": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Update": {
+      "main": [
+        [
+          {
+            "node": "Update Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Row": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "d5d6ae8b-5a90-47ed-b235-9792feaa6c90",
+  "activeVersionId": "d5d6ae8b-5a90-47ed-b235-9792feaa6c90",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-11T13:28:30.602Z",
+      "createdAt": "2026-06-11T13:28:30.602Z",
+      "role": "workflow:owner",
+      "workflowId": "tllfBn4NycLftdef",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-14T12:10:06.347Z",
+    "createdAt": "2026-08-14T12:10:06.347Z",
+    "versionId": "d5d6ae8b-5a90-47ed-b235-9792feaa6c90",
+    "workflowId": "tllfBn4NycLftdef",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "d81a46f4-7bbe-4629-877a-7441c33fdc0a",
+        "name": "Input",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          48
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://api.bounceban.com/v1/verify/single",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ $json.email }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "74db3a9f-a8d7-4cbe-81c7-d1c8842b498f",
+        "name": "Submit",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          48
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "FxpbAjoAjPEy8fBu",
+            "name": "BounceBan"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const c=$('Input').item.json; const r=$json; return { json:{ rowId:c.rowId, email:c.email, slot:c.slot, tableId:c.tableId, baseId:c.baseId, id:(r&&r.id)?r.id:'', _t0:Date.now() } };"
+        },
+        "id": "e6a84c87-c688-46ce-afe7-18963e6058a2",
+        "name": "Init",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          48
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://api.bounceban.com/v1/verify/single/status",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "45a52b7d-771b-4653-a062-7e29d7964491",
+        "name": "Poll",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          672,
+          48
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "FxpbAjoAjPEy8fBu",
+            "name": "BounceBan"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const BBOK=['deliverable','undeliverable','risky','unknown'];\nconst initAll=$('Init').all();\nconst t0=(initAll[0]&&initAll[0].json._t0)||Date.now();\nconst elapsed=Date.now()-t0;\nconst MAX=3600000;\nconst polls=$input.all();\nconst en=polls.map((p,idx)=>{ const j=p.json||{}; const c=(initAll[idx]&&initAll[idx].json)||{}; const res=BBOK.includes(j.result)?j.result:''; return {res,ready:!!res,c,j}; });\nconst anyPending=en.some(e=>!e.ready && e.c.id) && elapsed<MAX;\nconst w=elapsed<30000?15:elapsed<120000?30:elapsed<300000?60:180;\nreturn en.map(e=>({ json:{ rowId:e.c.rowId, email:e.c.email, slot:e.c.slot, tableId:e.c.tableId, baseId:e.c.baseId, id:e.c.id, _t0:e.c._t0, result: e.ready? e.res : (anyPending? '' : (e.c.id? ((e.j.result||e.j.state)||'risky') : 'error')), _loop:anyPending, _nextWaitSec:w } }));"
+        },
+        "id": "dff7a4c2-b2dc-45af-8c22-f21c6bc699be",
+        "name": "Gate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._loop }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "d9dd2d09-9fc9-4d6c-9cc5-2e52ee5f118a",
+        "name": "Pending?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "amount": "={{ $json._nextWaitSec }}"
+        },
+        "id": "eb9fdc4e-8b4a-4692-b276-efa0155366b2",
+        "name": "Wait",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1344,
+          0
+        ],
+        "webhookId": "002abf83-b9c1-4702-a3de-5f8e7c5be1f9"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const r=$json; const res=r.result;\n// 2026-08-12: 'Email Source' replaces 'Source' (Operator ruling). And only a DEFINITIVE verdict may\n// touch the address columns: deliverable fills them, undeliverable clears them. risky / unknown /\n// error write only BB and Status - omitting the keys leaves the existing Final Email untouched.\nif(res==='deliverable'){ return { json:{ id:r.rowId, 'BB':res, 'Final Email':r.email, 'Email Source':r.slot, 'Status':'done' } }; }\nif(res==='undeliverable'){ return { json:{ id:r.rowId, 'BB':res, 'Final Email':'', 'Email Source':'none', 'Status':'no_email_found' } }; }\nif(res==='risky'||res==='unknown'){ return { json:{ id:r.rowId, 'BB':res, 'Status':'no_email_found' } }; }\nreturn { json:{ id:r.rowId, 'BB':'error', 'Status':'error' } };"
+        },
+        "id": "ccecd8cc-f92c-429f-9b49-0f10f77de248",
+        "name": "Build Update",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          272
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $(\"Init\").first().json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $(\"Init\").first().json.tableId }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "de6a98e2-8950-4102-b780-946a64dd7f48",
+        "name": "Update Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1568,
+          192
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Input": {
+        "main": [
+          [
+            {
+              "node": "Submit",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Submit": {
+        "main": [
+          [
+            {
+              "node": "Init",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init": {
+        "main": [
+          [
+            {
+              "node": "Poll",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Poll": {
+        "main": [
+          [
+            {
+              "node": "Gate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gate": {
+        "main": [
+          [
+            {
+              "node": "Pending?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pending?": {
+        "main": [
+          [
+            {
+              "node": "Wait",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Update",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait": {
+        "main": [
+          [
+            {
+              "node": "Poll",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Update": {
+        "main": [
+          [
+            {
+              "node": "Update Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Row": {
+        "main": [
+          []
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

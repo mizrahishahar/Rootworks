@@ -1,0 +1,216 @@
+{
+  "updatedAt": "2026-07-21T08:12:49.000Z",
+  "createdAt": "2026-07-15T12:28:12.566Z",
+  "id": "hdl7I7QdPeaqwuPV",
+  "name": "Backfill Dave List to Alta (drip)",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "a13d3c7e-78aa-4d69-beb5-c6d3492630bb",
+      "name": "Start Backfill",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "87fc55da-9158-49bf-9116-e66fa72814a9",
+      "name": "Get Dave List Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSTTKOc9Afqer9d"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzDWfqe02Eny5QC"
+        },
+        "filterByFormula": "FIND(\"Dave hiring list 15.7\", {Signal Detail}) > 0",
+        "returnAll": true,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "5e1e8a6b-8fd3-45b5-9221-b31c07c99002",
+      "name": "One Row Per Domain",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "fields.Domain",
+        "options": {}
+      }
+    },
+    {
+      "id": "dd1cc92e-ac5e-4883-85fe-4a71ae299fdb",
+      "name": "Build Alta Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Alta-Payload.js"
+      }
+    },
+    {
+      "id": "832b2e52-18a9-4a93-9f6e-f843abca27cd",
+      "name": "Drip Enroll to Alta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.altaWebhookUrl }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.altaBody) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 4500
+            }
+          },
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": false,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "bc5b7c4d-3a00-47bb-a07f-7d68adc82d6b",
+      "name": "Run Backfill",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -220,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "dave-backfill",
+        "options": {}
+      },
+      "webhookId": "a24300bf-bcb4-4a9d-a664-f8b7960b025e"
+    }
+  ],
+  "connections": {
+    "Start Backfill": {
+      "main": [
+        [
+          {
+            "node": "Get Dave List Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Dave List Rows": {
+      "main": [
+        [
+          {
+            "node": "One Row Per Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Row Per Domain": {
+      "main": [
+        [
+          {
+            "node": "Build Alta Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alta Payload": {
+      "main": [
+        [
+          {
+            "node": "Drip Enroll to Alta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Backfill": {
+      "main": [
+        [
+          {
+            "node": "Get Dave List Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "eba13aca-9362-4ea0-b1ce-330ccb995bc8",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-15T12:28:12.571Z",
+      "createdAt": "2026-07-15T12:28:12.571Z",
+      "role": "workflow:owner",
+      "workflowId": "hdl7I7QdPeaqwuPV",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

@@ -1,0 +1,1 @@
+const c=$('Create Enriched Sheet').first().json; const sid=c.spreadsheetId||c.id; return $('Verdict').all().map(i=>({json:{...i.json,_sheet_id:sid}}));

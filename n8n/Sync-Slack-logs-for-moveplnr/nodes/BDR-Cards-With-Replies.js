@@ -1,0 +1,1 @@
+return $input.all().map(i=>i.json).filter(x=>x.msg&&(x.msg.replies||[]).length>0).map(x=>{const txt=String((x.msg&&x.msg.text)||'');const m=txt.match(/New interested lead[^:,]*[:,]\s*([^\n]+)/i);const company=m?m[1].trim():'';return {json:{ts:x.msg.ts, replies:x.msg.replies, company}};});

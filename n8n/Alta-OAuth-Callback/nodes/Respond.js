@@ -1,0 +1,2 @@
+const ok=!!($('Exchange Token').first().json.refresh_token);
+return [{ json: { message: ok ? 'Alta connected. You can close this tab.' : ('Token exchange failed: '+JSON.stringify($('Exchange Token').first().json)) } }];

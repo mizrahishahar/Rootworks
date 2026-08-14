@@ -1,0 +1,1 @@
+const c=$('Input').item.json; const r=$json; return { json:{ rowId:c.rowId, email:c.email, slot:c.slot, tableId:c.tableId, baseId:c.baseId, id:(r&&r.id)?r.id:'', _t0:Date.now() } };

@@ -1,0 +1,1789 @@
+{
+  "updatedAt": "2026-08-08T20:29:58.335Z",
+  "createdAt": "2026-07-28T09:25:51.367Z",
+  "id": "9iMXBGRlPk3O6pDZ",
+  "name": "Handle Intent Signal",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "31785609-44b2-49f4-a527-b90fd255f60e",
+      "name": "Intent Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intent-signal",
+        "options": {}
+      },
+      "webhookId": "7b43eda9-3cc8-472e-866f-6300525553a4"
+    },
+    {
+      "id": "ba51c6ae-84a1-4352-851a-ea5c7ea69fd0",
+      "name": "Parse Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Parse-Config.js"
+      }
+    },
+    {
+      "id": "45b59c92-e048-423e-8b10-792e07ac23ad",
+      "name": "Config OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -460,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.config_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "78327094-cb47-4fe0-af2d-f6a30f4ed43c",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $('Parse Config').first().json.client }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4da2d650-482b-4249-bf6c-77ec7732cac3",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      }
+    },
+    {
+      "id": "86aaef2a-6853-4d9e-b8a5-cc7825872ef0",
+      "name": "Get Scraped Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        200,
+        0
+      ],
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Parse Config').first().json.datasetId }}/items?clean=true&format=json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aDxiCFTdpoU3NFzm",
+          "name": "Apify"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ad531dfa-a07e-4855-a611-ab452f0702f7",
+      "name": "Get Worked Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        420,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Parse Config').first().json.table }}"
+        },
+        "options": {
+          "fields": [
+            "Domain"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
+      "name": "Filter & Qualify Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Filter-Qualify-Jobs.js"
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "6d579b4a-4e10-4303-a49e-c0ab4cdeea99",
+      "name": "Get Decision Makers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        860,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"companies\": [{ \"domain\": $json.domain }], \"filters\": { \"seniority\": $('Parse Config').first().json.sq_seniority, \"function\": $('Parse Config').first().json.sq_function, \"has_linkedin\": true }, \"tier\": \"full\", \"per_company_limit\": $('Parse Config').first().json.per_company_limit, \"confirm\": true } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      }
+    },
+    {
+      "id": "05afb2c0-2104-4d1b-875b-07995af78e44",
+      "name": "Build Intent Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Intent-Leads.js"
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "7305a906-5d24-46e6-97bb-c10a7ac66950",
+      "name": "Get DNC Domains",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1300,
+        0
+      ],
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/{{ $('Client Vars').first().json.base }}/DNC?fields%5B%5D=Domain&pageSize=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ed02821e-1d0a-4ef9-8b30-2feaa5b45fb0",
+      "name": "Apply DNC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Apply-DNC.js"
+      }
+    },
+    {
+      "id": "2ee9e8b9-6f75-428e-a4a8-533e57c1e2b1",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1740,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $json['Email'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "70f013c9-212a-4a25-b1cf-be06c547abf8",
+      "name": "Upsert by Email",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1960,
+        -180
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Parse Config').first().json.table }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b676368e-40d3-4775-b10f-4e9b9772ad03",
+      "name": "Upsert by Name+Domain",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1960,
+        -20
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Parse Config').first().json.table }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "matchingColumns": [
+            "Name",
+            "Domain"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "dac17c95-6808-429c-a442-033d3cb141e2",
+      "name": "Run Waterfall",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1740,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/waterfall-record",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"tableId\": $('Parse Config').first().json.table, \"baseId\": $('Client Vars').first().json.base, \"clientRecordId\": $('Parse Config').first().json.client } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 600000
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "01083aac-28b3-4bc5-83b4-002dc4310328",
+      "name": "Build Guard Fail Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        220
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Guard-Fail-Log.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c236c040-a8fc-4d34-8a3d-0ad623c9e57f",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3940,
+        160
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "dcfd7053-2759-43fa-90e1-db6198e9ce47",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3720,
+        160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ec90c90e-ffde-4e0e-a204-1c50286c7509",
+      "name": "Addon Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Addon-Payload.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fca37f2f-de3c-4610-b712-0f6fa0b30f09",
+      "name": "Fire Add-on",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4380,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.flowroots.com/webhook/addon-intent-{{ $('Client Vars').first().json.clientSlug }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e7b94bde-214f-43e6-8dcf-d41c2a5b4c57",
+      "name": "Base OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        90,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b1",
+              "leftValue": "={{ $json.base || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4cca1b2c-6bb2-4007-b24e-4ad697cb50be",
+      "name": "Build Base Fail Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        220
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Base-Fail-Log.js"
+      }
+    },
+    {
+      "id": "a2c0b59f-9f6d-484c-a81f-1361e7ce299a",
+      "name": "Any Leads?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1190,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "z1",
+              "leftValue": "={{ $json['LinkedIn URL'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Intent Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Config": {
+      "main": [
+        [
+          {
+            "node": "Config OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config OK?": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Guard Fail Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scraped Jobs": {
+      "main": [
+        [
+          {
+            "node": "Get Worked Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Worked Domains": {
+      "main": [
+        [
+          {
+            "node": "Filter & Qualify Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Qualify Jobs": {
+      "main": [
+        [
+          {
+            "node": "Get Decision Makers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Decision Makers": {
+      "main": [
+        [
+          {
+            "node": "Build Intent Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DNC Domains": {
+      "main": [
+        [
+          {
+            "node": "Apply DNC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply DNC": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Run Waterfall",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "Upsert by Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert by Name+Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Guard Fail Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Run": {
+      "main": [
+        [
+          {
+            "node": "Addon Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Addon Payload": {
+      "main": [
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Waterfall": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "Base OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base OK?": {
+      "main": [
+        [
+          {
+            "node": "Get Scraped Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Base Fail Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Base Fail Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Intent Leads": {
+      "main": [
+        [
+          {
+            "node": "Any Leads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Leads?": {
+      "main": [
+        [
+          {
+            "node": "Get DNC Domains",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "global": {
+      "runStartedAt": 1786701758688
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "6defe3ef-8333-4ea5-ab5b-d9361627673d",
+  "activeVersionId": "6defe3ef-8333-4ea5-ab5b-d9361627673d",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T09:25:51.384Z",
+      "createdAt": "2026-07-28T09:25:51.384Z",
+      "role": "workflow:owner",
+      "workflowId": "9iMXBGRlPk3O6pDZ",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:29:58.342Z",
+    "createdAt": "2026-08-08T20:29:58.342Z",
+    "versionId": "6defe3ef-8333-4ea5-ab5b-d9361627673d",
+    "workflowId": "9iMXBGRlPk3O6pDZ",
+    "nodes": [
+      {
+        "id": "31785609-44b2-49f4-a527-b90fd255f60e",
+        "name": "Intent Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -900,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "intent-signal",
+          "options": {}
+        },
+        "webhookId": "7b43eda9-3cc8-472e-866f-6300525553a4"
+      },
+      {
+        "id": "ba51c6ae-84a1-4352-851a-ea5c7ea69fd0",
+        "name": "Parse Config",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -680,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst j=$input.first().json||{};\nconst q=j.query||{}; const b=j.body||{};\nconst pick=(k)=>{ const v=(b[k]!==undefined&&b[k]!=='')?b[k]:q[k]; return (v===undefined||v===null)?'':String(v).trim(); };\nconst list=(v,def)=>{ const s=String(v||'').trim(); return (s?s.split(','):def).map(x=>String(x).trim()).filter(Boolean); };\nconst cfg={\n  client: pick('client'),\n  table: pick('table'),\n  campaign_url: pick('campaign'),\n  sender: pick('sender')||'webhook',\n  max_headcount: parseInt(pick('max_headcount')||pick('maxHeadcount'),10)||200,\n  country: pick('country')||'US',\n  sq_seniority: list(pick('sq_seniority')||pick('sqSeniority'),['C-Suite','VP','Founder','Owner','President','EVP / SVP','Head','Director']),\n  sq_function: list(pick('sq_function')||pick('sqFunction'),['Executive','Engineering','R&D','Technology']),\n  event_type: pick('event_type')||pick('eventType')||'became_hiring',\n  per_company_limit: parseInt(pick('per_company_limit')||pick('perCompanyLimit'),10)||5,\n  datasetId: (b.resource&&b.resource.defaultDatasetId)||''\n};\nconst missing=[];\nif(!cfg.client) missing.push('client');\nif(!cfg.table) missing.push('table');\nif(!cfg.campaign_url) missing.push('campaign');\nelse if(!/^https?:\\/\\//i.test(cfg.campaign_url)) missing.push('campaign (not a URL)');\ncfg.config_ok=(missing.length===0);\ncfg.missing=missing;\nreturn [{ json: cfg }];"
+        }
+      },
+      {
+        "id": "45b59c92-e048-423e-8b10-792e07ac23ad",
+        "name": "Config OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -460,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "g1",
+                "leftValue": "={{ $json.config_ok }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "78327094-cb47-4fe0-af2d-f6a30f4ed43c",
+        "name": "Get Client Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -240,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $('Parse Config').first().json.client }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "4da2d650-482b-4249-bf6c-77ec7732cac3",
+        "name": "Client Vars",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -20,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  clientName: name,\n  clientRecId: r.id||$('Parse Config').first().json.client||'',\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  slackChannel: f['Slack Channel ID']||'',\n  base: f['Clayroots Base ID']||''\n}}];"
+        }
+      },
+      {
+        "id": "86aaef2a-6853-4d9e-b8a5-cc7825872ef0",
+        "name": "Get Scraped Jobs",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          200,
+          0
+        ],
+        "parameters": {
+          "url": "=https://api.apify.com/v2/datasets/{{ $('Parse Config').first().json.datasetId }}/items?clean=true&format=json",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {}
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "aDxiCFTdpoU3NFzm",
+            "name": "Apify"
+          }
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "ad531dfa-a07e-4855-a611-ab452f0702f7",
+        "name": "Get Worked Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          420,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Vars').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Parse Config').first().json.table }}"
+          },
+          "options": {
+            "fields": [
+              "Domain"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
+        "name": "Filter & Qualify Jobs",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          640,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const cfg=$('Parse Config').first().json;\nlet items = $('Get Scraped Jobs').all().map(i => i.json);\nif (items.length === 1 && Array.isArray(items[0])) items = items[0];\nconst worked = new Set($('Get Worked Domains').all().map(i => { const j = i.json || {}; const d = (j.fields && j.fields.Domain) || j.Domain || ''; return String(d).toLowerCase().trim(); }).filter(Boolean));\nconst badName = ['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];\nconst badIndustry = ['staffing','recruiting','executive search','venture capital','private equity','venture'];\nfunction has(s, list){ s = String(s || '').toLowerCase(); return list.some(w => s.includes(w)); }\nconst seen = new Set();\nconst out = [];\nfor (const j of items) {\n  const country = (j.companyAddress && j.companyAddress.addressCountry) || '';\n  if (country && country !== cfg.country) continue;\n  if (has(j.companyName, badName) || has(j.jobPosterTitle, badName)) continue;\n  if (has(j.industries, badIndustry)) continue;\n  const emp = Number(j.companyEmployeesCount || 0);\n  if (emp && emp > cfg.max_headcount) continue;\n  let domain = String(j.companyWebsite || '').toLowerCase().replace('https://','').replace('http://','').replace('www.','').split('?')[0].split('#')[0].split('/')[0].trim();\n  if (!domain) continue;\n  if (seen.has(domain)) continue;\n  if (worked.has(domain)) continue;\n  seen.add(domain);\n  out.push({ json: { domain, company: j.companyName || '', headcount: emp, country: country || cfg.country, job_title: j.title || '', job_link: j.link || '', posted_at: j.postedAt || '' } });\n}\nreturn out;"
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "6d579b4a-4e10-4303-a49e-c0ab4cdeea99",
+        "name": "Get Decision Makers",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          860,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"companies\": [{ \"domain\": $json.domain }], \"filters\": { \"seniority\": $('Parse Config').first().json.sq_seniority, \"function\": $('Parse Config').first().json.sq_function, \"has_linkedin\": true }, \"tier\": \"full\", \"per_company_limit\": $('Parse Config').first().json.per_company_limit, \"confirm\": true } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        }
+      },
+      {
+        "id": "05afb2c0-2104-4d1b-875b-07995af78e44",
+        "name": "Build Intent Leads",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1080,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const cfg=$('Parse Config').first().json;\nconst cleanCompany=(nm)=>{if(!nm)return'';let c=String(nm).trim();\nconst pipe=c.indexOf(' | '); if(pipe>-1) c=c.slice(0,pipe).trim();\nconst dash=c.indexOf(' - '); if(dash>=3) c=c.slice(0,dash).trim();\nc=c.replace(/[®™]/g,'');\nfor(let i=0;i<2;i++){c=c.replace(/[,\\s]+(inc|llc|l\\.l\\.c\\.|ltd|limited|corp|corporation|co|company|gmbh|plc|llp|lp|pllc|pc)\\.?$/i,'').trim();}\nreturn c.replace(/,+$/,'').trim();};\nconst companies = {};\nfor (const i of $('Filter & Qualify Jobs').all()) { companies[i.json.domain] = i.json; }\nconst TARGET = cfg.campaign_url;\nconst nowIso = new Date().toISOString();\nfunction pushContact(out, c) {\n  const dom = String(c.company_domain || c.domain || '').toLowerCase();\n  const co = companies[dom] || {};\n  const li = c.linkedin_url || '';\n  if (!li) return;\n  const role = co.job_title || 'an infrastructure role';\n  const posted = co.posted_at ? ' (posted ' + co.posted_at + ')' : '';\n  out.push({ json: {\n    'Name': c.full_name || ((c.first_name || '') + ' ' + (c.last_name || '')).trim(),\n    'first_name': c.first_name || '',\n    'last_name': c.last_name || '',\n    'LinkedIn URL': li,\n    'Domain': dom,\n    'Company': cleanCompany(c.company_name || co.company || ''),\n    'Email': c.email || '',\n    'Event Type': cfg.event_type,\n    'Target Campaign': TARGET,\n    'Signal Detail': 'Hiring ' + role + posted + '. Decision maker (' + (c.job_title || c.seniority || '') + ') via Apify jobs scrape + Supersoniq. Job: ' + (co.job_link || ''),\n    'Intent Status': 'NEW',\n    'detected_at': nowIso\n  }});\n}\nconst out = [];\nfor (const it of $('Get Decision Makers').all()) {\n  const resp = it.json || {};\n  const comps = Array.isArray(resp.results) ? resp.results : [];\n  for (const comp of comps) {\n    if (Array.isArray(comp.contacts)) { for (const c of comp.contacts) pushContact(out, c); }\n    else pushContact(out, comp);\n  }\n}\nreturn out;"
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "7305a906-5d24-46e6-97bb-c10a7ac66950",
+        "name": "Get DNC Domains",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1300,
+          0
+        ],
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/{{ $('Client Vars').first().json.base }}/DNC?fields%5B%5D=Domain&pageSize=100",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "ed02821e-1d0a-4ef9-8b30-2feaa5b45fb0",
+        "name": "Apply DNC",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const dnc=new Set();\ntry{\n  const r=$('Get DNC Domains').first().json||{};\n  for(const rec of (r.records||[])){ const f=rec.fields||{}; const d=String(f.Domain||f.domain||'').toLowerCase().trim(); if(d) dnc.add(d); }\n}catch(e){}\nconst out=[];\nfor(const i of $('Build Intent Leads').all()){\n  const d=String(i.json['Domain']||'').toLowerCase().trim();\n  if(dnc.size && d && dnc.has(d)) continue;\n  out.push({ json: i.json });\n}\nreturn out;"
+        }
+      },
+      {
+        "id": "2ee9e8b9-6f75-428e-a4a8-533e57c1e2b1",
+        "name": "Has Email?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1740,
+          -100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "h1",
+                "leftValue": "={{ $json['Email'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "70f013c9-212a-4a25-b1cf-be06c547abf8",
+        "name": "Upsert by Email",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1960,
+          -180
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Vars').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Parse Config').first().json.table }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": null,
+            "matchingColumns": [
+              "Email"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b676368e-40d3-4775-b10f-4e9b9772ad03",
+        "name": "Upsert by Name+Domain",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1960,
+          -20
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Vars').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Parse Config').first().json.table }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": null,
+            "matchingColumns": [
+              "Name",
+              "Domain"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dac17c95-6808-429c-a442-033d3cb141e2",
+        "name": "Run Waterfall",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1740,
+          160
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.flowroots.com/webhook/waterfall-record",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"tableId\": $('Parse Config').first().json.table, \"baseId\": $('Client Vars').first().json.base, \"clientRecordId\": $('Parse Config').first().json.client } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 600000
+          }
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "01083aac-28b3-4bc5-83b4-002dc4310328",
+        "name": "Build Guard Fail Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -240,
+          220
+        ],
+        "parameters": {
+          "jsCode": "const cfg=$('Parse Config').first().json||{};\nconst missing=(cfg.missing||[]).join(', ')||'unknown';\nreturn [{json:{\n 'Automation':'Handle Intent Signal',\n 'Client': cfg.client?[cfg.client]:[],\n 'Status':'Failed',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': cfg.table||'(no table)',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Run FAILED, head guard tripped before any paid call**\\n\\n**Missing/invalid params:** '+missing+'\\n\\n**Required:** client, table, campaign (webhook body or query params on the Apify task URL). Fix and rerun.'\n}}];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c236c040-a8fc-4d34-8a3d-0ad623c9e57f",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3940,
+          160
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "dcfd7053-2759-43fa-90e1-db6198e9ce47",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3720,
+          160
+        ],
+        "parameters": {
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst cfg=$('Parse Config').first().json||{};\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nlet jobsIn=0; try{ let it=$('Get Scraped Jobs').all().map(i=>i.json); if(it.length===1&&Array.isArray(it[0])) it=it[0]; jobsIn=it.filter(j=>j&&(j.companyName||j.companyWebsite||j.title)).length; }catch(e){}\nlet qualified=0; try{ qualified=$('Filter & Qualify Jobs').all().map(i=>i.json).filter(j=>j&&j.domain).length; }catch(e){}\nlet contacts=0; try{ contacts=$('Build Intent Leads').all().map(i=>i.json).filter(j=>j&&j['LinkedIn URL']).length; }catch(e){}\nlet afterDnc=contacts; try{ afterDnc=$('Apply DNC').all().length; }catch(e){}\nlet upserted=0;\ntry{ upserted+=$('Upsert by Email').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\ntry{ upserted+=$('Upsert by Name+Domain').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\nlet wfOk=false, wfErrorPages=0;\ntry{ const w=$('Run Waterfall').first().json||{}; wfOk=!w.error; wfErrorPages=Number(w.errorPages)||0; }catch(e){}\nconst errs=Math.max(0, afterDnc-upserted);\nconst totalErrs=(contacts===0)?0:(errs+(wfOk===false?1:0)+wfErrorPages);\nconst status=totalErrs>0?'Succeeded with errors':'Succeeded';\nlet lines;\nif(contacts===0){\n  lines=[\n  '**0 contacts found, nothing inserted**',\n  '',\n  '**Play table:** '+(cfg.table||'(unknown)')+' in '+(base||'(unknown base)'),\n  '',\n  '**Pipeline**',\n  '- **Jobs scraped:** '+jobsIn,\n  '- **Companies qualified:** '+qualified,\n  '- **Contacts found:** 0',\n  '',\n  '**Skipped:** DNC gate, upserts and waterfall (nothing to do)'\n  ];\n}else{\n  lines=[\n  '**'+upserted+' upserted, '+totalErrs+' error'+(totalErrs===1?'':'s')+'**',\n  '',\n  '**Play table:** '+(cfg.table||'(unknown)')+' in '+(base||'(unknown base)'),\n  '',\n  '**Pipeline**',\n  '- **Jobs scraped:** '+jobsIn,\n  '- **Qualified companies:** '+qualified,\n  '- **Decision makers:** '+contacts+(contacts!==afterDnc?' · after DNC gate: '+afterDnc:''),\n  '- **Upserted to intent table:** '+upserted+(errs?' · '+errs+' upsert failure(s)':''),\n  '',\n  '**Waterfall batch fired:** '+(wfOk?'yes (sweeps all rows not done/verifying)':'no / errored')+(wfErrorPages?' · '+wfErrorPages+' error page(s)':''),\n  '',\n  '**Enrollment:** handled by the daily Add Leads runs'\n  ];\n}\nreturn [{json:{\n 'Automation':'Handle Intent Signal',\n 'Client': cfg.client?[cfg.client]:[],\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': (contacts===0?0:afterDnc),\n 'Records Out': upserted,\n 'Errors': totalErrs,\n 'Target': cfg.table||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n}}];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "ec90c90e-ffde-4e0e-a204-1c50286c7509",
+        "name": "Addon Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4160,
+          160
+        ],
+        "parameters": {
+          "jsCode": "let cv=null; try{ cv=$('Client Vars').first().json; }catch(e){}\nif(!cv||!cv.clientSlug) return [];\nconst cfg=$('Parse Config').first().json||{};\nlet upserted=0;\ntry{ upserted+=$('Upsert by Email').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\ntry{ upserted+=$('Upsert by Name+Domain').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\nreturn [{ json: {\n  recordId: cv.clientRecId||cfg.client||'',\n  clientSlug: cv.clientSlug||'',\n  base: cv.base||'', table: cfg.table||'', campaign_url: cfg.campaign_url||'', sender: cfg.sender||'webhook',\n  upserted: upserted\n}}];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "fca37f2f-de3c-4610-b712-0f6fa0b30f09",
+        "name": "Fire Add-on",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4380,
+          160
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.flowroots.com/webhook/addon-intent-{{ $('Client Vars').first().json.clientSlug }}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "e7b94bde-214f-43e6-8dcf-d41c2a5b4c57",
+        "name": "Base OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          90,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "b1",
+                "leftValue": "={{ $json.base || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "4cca1b2c-6bb2-4007-b24e-4ad697cb50be",
+        "name": "Build Base Fail Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          200,
+          220
+        ],
+        "parameters": {
+          "jsCode": "const cfg=$('Parse Config').first().json||{};\nreturn [{json:{\n 'Automation':'Handle Intent Signal',\n 'Client': cfg.client?[cfg.client]:[],\n 'Status':'Failed',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': cfg.table||'(no table)',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Run FAILED, no Clayroots Base ID**\\n\\n**Client row:** '+(cfg.client||'(unknown)')+'\\n\\nHead guard tripped after the client row read: the client row has no Clayroots Base ID, so the intent base cannot be resolved. Fill Clayroots Base ID on the Hub Clients row and rerun.'\n}}];"
+        }
+      },
+      {
+        "id": "a2c0b59f-9f6d-484c-a81f-1361e7ce299a",
+        "name": "Any Leads?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1190,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "z1",
+                "leftValue": "={{ $json['LinkedIn URL'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Intent Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Config": {
+        "main": [
+          [
+            {
+              "node": "Config OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Config OK?": {
+        "main": [
+          [
+            {
+              "node": "Get Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Client Row": {
+        "main": [
+          [
+            {
+              "node": "Client Vars",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Scraped Jobs": {
+        "main": [
+          [
+            {
+              "node": "Get Worked Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Worked Domains": {
+        "main": [
+          [
+            {
+              "node": "Filter & Qualify Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter & Qualify Jobs": {
+        "main": [
+          [
+            {
+              "node": "Get Decision Makers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Decision Makers": {
+        "main": [
+          [
+            {
+              "node": "Build Intent Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get DNC Domains": {
+        "main": [
+          [
+            {
+              "node": "Apply DNC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply DNC": {
+        "main": [
+          [
+            {
+              "node": "Has Email?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Run Waterfall",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Email?": {
+        "main": [
+          [
+            {
+              "node": "Upsert by Email",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Upsert by Name+Domain",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Guard Fail Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run": {
+        "main": [
+          [
+            {
+              "node": "Addon Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Addon Payload": {
+        "main": [
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Waterfall": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client Vars": {
+        "main": [
+          [
+            {
+              "node": "Base OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Base OK?": {
+        "main": [
+          [
+            {
+              "node": "Get Scraped Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Base Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Base Fail Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Intent Leads": {
+        "main": [
+          [
+            {
+              "node": "Any Leads?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Leads?": {
+        "main": [
+          [
+            {
+              "node": "Get DNC Domains",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

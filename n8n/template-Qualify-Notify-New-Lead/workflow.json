@@ -1,0 +1,999 @@
+{
+  "updatedAt": "2026-07-29T08:38:30.000Z",
+  "createdAt": "2026-07-21T10:10:17.823Z",
+  "id": "AfUQJWE470jmCRZF",
+  "name": "[template] Qualify & Notify New Lead",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "PASTE-slug-new-reply",
+        "options": {}
+      },
+      "id": "8b422924-5845-46ff-b845-8ae8595895cd",
+      "name": "Live Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -320
+      ],
+      "webhookId": "db5bd990-133d-4d2e-acb2-204a6467d315"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "l1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8f2b56d1-ce4c-4b4a-8498-07871d2b688f",
+      "name": "Live Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "74c12119-7420-48ab-89df-f8b5ce8f2a91",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Normalize.js"
+      },
+      "id": "ca729c63-edfe-4497-8bdd-f6720cb2ff18",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&lead={{ $json.lead_email }}&email_type=all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "bec689b9-91ef-46e9-8ca4-39091246eec8",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        -224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "fcdbdd7c-8032-4aa6-b942-5d0c7090a5c1",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "2e6bc0ab-bdee-4861-affc-8982589be374",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        -224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/contacts/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"domain\": [\"{{ $('Normalize').first().json.enrich_domain }}\"], \"name\": \"{{ $('Normalize').first().json.full_name }}\", \"results_by_company\": 3, \"max_companies\": 1 }",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c00ce78a-be99-4be2-9bf0-3f8519f7e4a5",
+      "name": "Contact Discover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2464,
+        -224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Extract-Contact.js"
+      },
+      "id": "abce3eb9-8c26-42d6-b875-6014ac13d966",
+      "name": "Extract Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nCONTACT ENRICHMENT (may be empty for role inboxes or freemail):\nphone: {{ $json.contact_phone }} | seniority: {{ $json.contact_seniority }} | title: {{ $json.contact_title }} | summary: {{ $json.contact_summary }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRun the qualification. Output structured JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+        }
+      },
+      "id": "a2312d54-470f-423e-8330-f39c1be25734",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3360,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "dc0a3a37-2e99-4339-a267-0c5c67517f2f",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3376,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9P7fOmZxpETeDhu8",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"recommended_action\":\"Book a call\"}"
+      },
+      "id": "351c4fd6-bd81-4745-afcf-fe1e20784c69",
+      "name": "Parse Qualification",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3504,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten.js"
+      },
+      "id": "bce1df87-4d16-4f49-ae9a-9b029b6636ec",
+      "name": "Flatten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "39eaebd3-6400-4038-9a22-911cff28c50a",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4592,
+        -224
+      ],
+      "webhookId": "19a86453-3359-49e1-bf0a-dd20088e3aca"
+    },
+    {
+      "parameters": {},
+      "id": "89349868-2acf-4254-8bb6-17cc1cf3877c",
+      "name": "Backfill Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "PASTE_LEAD_EMAIL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4c984a80-6406-4cbc-a8ac-279e2167d01f",
+      "name": "Backfill Input (edit email)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.slackChannel }}"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ $json.blocksJson }}",
+        "text": "=New interested lead: {{ $('Flatten').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "1d736f11-971f-4c97-a9fc-c5947c6ec6dd",
+      "name": "Slack Client Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        5056,
+        -224
+      ],
+      "webhookId": "fc791bcf-976b-43dc-92d9-a76dc6727296",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b78200e4-a040-4ba7-b8aa-2dcb278a03f9",
+      "name": "Lead in CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "PASTE_CLIENT_RECORD_ID",
+        "options": {}
+      },
+      "id": "3e1b48f2-0afb-4e10-a4d2-c2228babb405",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -224
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      },
+      "id": "e8edc854-c296-4eee-aaf6-d3f01f1ab9e5",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -224
+      ]
+    },
+    {
+      "id": "23a3b96e-f177-4ae9-b905-e1e95ba41a6b",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5056,
+        -48
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e8972794-f6c6-43b2-9b2c-78f6b8b98911",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6730058c-7df6-4977-8db9-e1648a19b75c",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -224
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize').item.json.enrich_domain }}\" != \"\", {domain} = \"{{ $('Normalize').item.json.enrich_domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Normalize').item.json.company_name }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "e473e02f-a485-4d50-8870-775dab09d335",
+      "name": "Create CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        -224
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Normalize').item.json.company_name || $('Normalize').item.json.full_name || $('Normalize').item.json.lead_email }}",
+            "Website": "={{ $('Normalize').item.json.is_freemail ? null : ('https://' + $('Normalize').item.json.domain) }}",
+            "Client": "={{ [ $('Get Client Row').first().json.id ] }}",
+            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "10650db8-46ff-4aea-b7ff-95c95344dfee",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        -224
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
+            "lastName": "={{ $('Normalize').item.json.last_name || null }}",
+            "position": "={{ $('Extract Contact').item.json.contact_title || $('Normalize').item.json.job_title || null }}",
+            "email": "={{ $('Normalize').item.json.lead_email }}",
+            "phone": "={{ $('Normalize').item.json.native_phone || $('Extract Contact').item.json.contact_phone || null }}",
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5a6533e0-c782-46c7-9526-26a9b8e4b006",
+      "name": "Set CRM Verdict",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4160,
+        -224
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Create CRM Prospect').item.json.id }}",
+            "PipelineStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+            "Qualification Brief": "={{ $('Flatten').item.json.custom_qualification_brief || '' }}",
+            "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "462e980f-cba1-407d-971b-5c10ef1dee04",
+      "name": "Build Slack Blocks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4832,
+        -224
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Build-Slack-Blocks.js"
+      }
+    }
+  ],
+  "connections": {
+    "Live Webhook": {
+      "main": [
+        [
+          {
+            "node": "Live Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "DiscoLike BizData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DiscoLike BizData": {
+      "main": [
+        [
+          {
+            "node": "Contact Discover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Discover": {
+      "main": [
+        [
+          {
+            "node": "Extract Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 5.1 Qualifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Trigger": {
+      "main": [
+        [
+          {
+            "node": "Backfill Input (edit email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live Input": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Input (edit email)": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Client Channel": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead in CRM?": {
+      "main": [
+        null,
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Lead in CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Contact": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten": {
+      "main": [
+        [
+          {
+            "node": "Set CRM Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CRM Verdict": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "Build Slack Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack Blocks": {
+      "main": [
+        [
+          {
+            "node": "Slack Client Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "523941b0-4b14-4c9f-8ac0-fe7c12a135fa",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-21T10:10:17.836Z",
+      "createdAt": "2026-07-21T10:10:17.836Z",
+      "role": "workflow:owner",
+      "workflowId": "AfUQJWE470jmCRZF",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

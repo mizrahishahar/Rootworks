@@ -1,0 +1,1 @@
+return $input.all().map(i=>{ const o={}; for(const k in i.json){ if(k==='row_number') continue; const v=i.json[k]; if(v!==''&&v!==null&&v!==undefined) o[k]=v; } return { json:o }; });

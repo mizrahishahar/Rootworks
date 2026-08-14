@@ -1,0 +1,1274 @@
+{
+  "updatedAt": "2026-07-29T09:22:05.000Z",
+  "createdAt": "2026-06-09T21:48:15.051Z",
+  "id": "uRVMo10TaUI0VcN5",
+  "name": "Handle new lead for Movplnr",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "moveplnr-new-reply",
+        "options": {}
+      },
+      "id": "8af306cd-ee82-4e3a-8d9d-44c77cd76760",
+      "name": "Live Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        48
+      ],
+      "webhookId": "de0c729a-fa12-48d9-84ec-b8f1b3235c97"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "l1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0f5247c5-5109-41f5-9f3d-b2a3f76a7213",
+      "name": "Live Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "18d616b6-d8fb-41c7-9b3d-ff55f0cf90b9",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        272,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Normalize.js"
+      },
+      "id": "f067cf2e-d664-43fe-8936-a6cd78f64dd1",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&lead={{ $('Normalize').first().json.lead_email }}&email_type=all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1cdd6d64-690e-4699-8a75-b73eeac7fb5e",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "5bccfbef-d972-4fd2-a041-d80fbea3674a",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6a006861-424a-4343-a7d7-d7586eeda6e6",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1616,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/contacts/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"domain\": [\"{{ $('Normalize').first().json.enrich_domain }}\"], \"name\": \"{{ $('Normalize').first().json.full_name }}\", \"results_by_company\": 3, \"max_companies\": 1 }",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "02dd4177-1f65-4054-b47f-18b3c68d5cab",
+      "name": "Contact Discover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1840,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Extract-Contact.js"
+      },
+      "id": "48b3dadb-b734-49f5-9b03-66d3d5b736ee",
+      "name": "Extract Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nCONTACT ENRICHMENT (may be empty for role inboxes or freemail):\nphone: {{ $json.contact_phone }} | seniority: {{ $json.contact_seniority }} | title: {{ $json.contact_title }} | summary: {{ $json.contact_summary }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRECENT EXCHANGE (our last message, then their reply — use this to interpret short replies like \"sure\"/\"yes\"):\n{{ $('Format Thread').first().json.last_two }}\n\nRun the qualification. Output structured JSON, and include a \"situation_summary\": ONE plain-English line (max 140 chars) stating what the prospect signaled and what they want next, interpreting the latest reply IN CONTEXT of our last message. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for (e.g. \"Said yes to a quick walkthrough video\" or \"Asked us to send more on how it works before a call\"). Never paste the raw reply verbatim; no names, signatures, or URLs.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+        }
+      },
+      "id": "4025eb6f-d7f8-4a81-b65a-0476259704cb",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2960,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "b52e0cf4-4af6-4061-9819-e1d470b6303a",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2976,
+        272
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9P7fOmZxpETeDhu8",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Apollo Moving\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"recommended_action\":\"Book Sam direct\"}"
+      },
+      "id": "aff1f174-12c4-4600-8425-1dd55d485273",
+      "name": "Parse Qualification",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3104,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten.js"
+      },
+      "id": "212e0758-e497-499a-ac52-71f349a3f40f",
+      "name": "Flatten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "fed5e814-2ea5-4761-ac20-91088e0fba29",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4208,
+        48
+      ],
+      "webhookId": "c13ad418-6e46-4f9c-aa01-cb00356887c4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://REPLACE-WITH-ERIC-ENDPOINT.example.com/lead",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"email\":\"{{ $('Flatten').first().json.lead_email }}\", \"company\":\"{{ $('Flatten').first().json.company_name }}\", \"phone\":\"{{ $('Flatten').first().json.custom_phone }}\", \"qualification_status\":\"{{ $('Flatten').first().json.custom_qualification_status }}\", \"brief\": {{ JSON.stringify($('Flatten').first().json.custom_qualification_brief) }}, \"conversation\": {{ JSON.stringify($('Flatten').first().json.thread_context) }} }",
+        "options": {}
+      },
+      "id": "536c495b-d341-4899-8951-bc6776de274a",
+      "name": "MovePlnr CRM POST (DISABLED)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4656,
+        48
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "id": "45df3369-663e-45d2-94da-b4c075eceac5",
+      "name": "Backfill Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "info@goldenlegacymoving.net"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cba9f4dd-1ac1-4ed0-b92b-1b978b78b68c",
+      "name": "Backfill Input (edit email)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AQ013Q8FN",
+          "mode": "list",
+          "cachedResultName": "moveplnr-bdr"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ (function(){ var F=$('Flatten').first().json; var N=$('Normalize').first().json; var rawLead=$('PV Get Lead').first().json; var recL=Array.isArray(rawLead)?rawLead[0]:((rawLead&&rawLead.lead_data)?rawLead:((rawLead&&rawLead[0])||rawLead||{})); var dL=(recL&&recL.lead_data)?recL.lead_data:(recL||{}); var acct=String(dL.email_account_id||'').toLowerCase(); var prefix=(acct.split('@')[0]||'').replace(/\\.[a-z0-9]+$/,''); var pmap={tomwilson:'Tom Wilson',sarahjohnson:'Sarah Johnson',mikecarter:'Mike Carter',jakemiller:'Jake Miller'}; var persona=pmap[prefix]||'our rep'; var company=F.company_name||'Unknown'; var tz=F.custom_timezone||''; var zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu'}; var zone=zmap[tz]||'America/New_York'; var localTime=$now.setZone(zone).toFormat('cccc h:mma'); var first=(N.first_name||'').trim(); var who=first?first:'General inbox, confirm you have the owner'; var city=(N.city||'').trim(); var where=(city?city+', ':'')+tz+' · now '+localTime; var brief=(F.custom_qualification_brief||''); var fit=(brief.split('\\n')[0]||'').replace(/:?white_check_mark:?/gi,'').replace(/^[ |-]+/,'').trim().slice(0,180)||F.custom_qualification_status||''; var situation=(F.situation_summary||'').trim()||((F.reply_text||'').replace(/\\s+/g,' ').trim().slice(0,160))||'interested, see thread'; var phone=F.custom_phone||'(no number)'; var isBooking=(N.event_type==='booking'); var bookedRaw=N.booked_time||''; var bookedDisp=bookedRaw; try{ if(bookedRaw){ var bdt=DateTime.fromISO(bookedRaw,{zone:'utc'}).setZone(zone); if(bdt.isValid){ bookedDisp=bdt.toFormat('cccc LLL d, h:mma')+(tz?' '+tz:''); } } }catch(e){} var header=isBooking?('📅 Straight demo booked — '+company):('🔥 New Cold Email Lead to call — '+company); var standsLine=isBooking?('When: '+(bookedDisp||'see Calendly')):('Where it stands: '+situation); var goalLine=isBooking?'Booked straight off the cold email, no follow-up. It is on the calendar with Sam, confirm and prep.':'Goal: book the demo with Sam'; var tailLine=isBooking?'Reply in this thread as you work it — your notes sync back to our system.':'Reply in this thread as you work it (called / reached / following up) — your notes sync back to our system. I keep hitting them on email in parallel and will flag the moment I book one so you can stop, and same the other way.'; var text=header+'\\nWho: '+who+'\\nWhere: '+where+'\\n📞 '+phone+'\\nFit: '+fit+'\\n'+standsLine+'\\nWe email them as '+persona+' (so you are consistent if it comes up)\\n'+goalLine+'\\n'+tailLine; return JSON.stringify({ blocks:[ { type:'section', text:{ type:'mrkdwn', text:text.slice(0,2900) } } ] }); })() }}",
+        "text": "=New Cold Email Lead to call: {{ $('Flatten').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "b741e9b8-961a-4847-a7a2-de2efa6de287",
+      "name": "Slack BDR",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        4880,
+        48
+      ],
+      "webhookId": "2f54606d-1ae8-4006-9806-7bd61fbad6d0",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ ($json.payload && $json.payload.email) ? $json.payload.email : (($json.body && $json.body.payload && $json.body.payload.email) ? $json.body.payload.email : ($json.email || ($json.body && $json.body.email) || '')) }}"
+            },
+            {
+              "id": "b2",
+              "name": "event_type",
+              "type": "string",
+              "value": "booking"
+            },
+            {
+              "id": "b3",
+              "name": "booked_time",
+              "type": "string",
+              "value": "={{ ($json.body && $json.body.payload && $json.body.payload.scheduled_event && $json.body.payload.scheduled_event.start_time) ? $json.body.payload.scheduled_event.start_time : (($json.payload && $json.payload.scheduled_event && $json.payload.scheduled_event.start_time) ? $json.payload.scheduled_event.start_time : '') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2be4968-7a9c-4060-ac90-6737efd40ef1",
+      "name": "Booking Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "moveplnr-booking",
+        "options": {}
+      },
+      "id": "1bd3e97e-20e4-4f73-baf6-c2cfc09fef93",
+      "name": "Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -144
+      ],
+      "webhookId": "9d63fb99-e4b2-480e-bf73-6f56ef1b800d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-demoevent",
+              "leftValue": "={{ ($json.body && $json.body.payload && $json.body.payload.scheduled_event) ? $json.body.payload.scheduled_event.event_type : '' }}",
+              "rightValue": "e8377c3f-21ef-40fe-89d4-5733306484a7",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ccd7c83d-2fbb-4ff8-b5be-ef719d4d5f1e",
+      "name": "Demo Event?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7e8b5d70-c05a-4d3d-9d19-40b8672e1e9c",
+      "name": "Lead in CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        48
+      ]
+    },
+    {
+      "id": "9c54f9e2-66ab-4823-9574-08faf524b7db",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5680,
+        -48
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "afd32ff2-ba8d-40b4-8fac-49b67bb04106",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5904,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e01223cc-8d5d-4bc6-a882-01288e5dacaa",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        -320
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "recyZTRr7Hb5S6Ozr"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "66c381ce-0080-41c1-a804-e62bd36b544d",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -144
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      }
+    },
+    {
+      "id": "4bac1005-fc61-47fb-bf19-7680f7e7fff4",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize').item.json.enrich_domain }}\" != \"\", {domain} = \"{{ $('Normalize').item.json.enrich_domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Normalize').item.json.company_name }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a261c654-0063-47fe-88b2-0e3b7c40e014",
+      "name": "Create CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Normalize').item.json.company_name || $('Normalize').item.json.full_name || $('Normalize').item.json.lead_email }}",
+            "Website": "={{ $('Normalize').item.json.is_freemail ? null : ('https://' + $('Normalize').item.json.domain) }}",
+            "Client": "={{ [ $('Get Client Row').first().json.id ] }}",
+            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "09f0c564-5e9d-4e63-a5ef-8de1c0314dd2",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2512,
+        48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
+            "lastName": "={{ $('Normalize').item.json.last_name || null }}",
+            "position": "={{ $('Extract Contact').item.json.contact_title || $('Normalize').item.json.job_title || null }}",
+            "email": "={{ $('Normalize').item.json.lead_email }}",
+            "phone": "={{ $('Normalize').item.json.native_phone || $('Extract Contact').item.json.contact_phone || null }}",
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0c71db3f-7cb8-4d8c-a37e-44232adaa9ff",
+      "name": "Set CRM Verdict",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3536,
+        48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Create CRM Prospect').item.json.id }}",
+            "PipelineStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+            "Qualification Brief": "={{ $('Flatten').item.json.custom_qualification_brief || '' }}",
+            "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e4a87929-ab46-45e5-811f-e7b572592e01",
+      "name": "Set Thread TS",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5104,
+        48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Create CRM Prospect').item.json.id }}",
+            "Slack Thread TS": "={{ $('Slack BDR').item.json.ts }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Live Webhook": {
+      "main": [
+        [
+          {
+            "node": "Live Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "DiscoLike BizData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DiscoLike BizData": {
+      "main": [
+        [
+          {
+            "node": "Contact Discover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Discover": {
+      "main": [
+        [
+          {
+            "node": "Extract Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 5.1 Qualifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Trigger": {
+      "main": [
+        [
+          {
+            "node": "Backfill Input (edit email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Input": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MovePlnr CRM POST (DISABLED)": {
+      "main": [
+        [
+          {
+            "node": "Slack BDR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Demo Event?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Event?": {
+      "main": [
+        [
+          {
+            "node": "Booking Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live Input": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Input (edit email)": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "MovePlnr CRM POST (DISABLED)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead in CRM?": {
+      "main": [
+        null,
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Lead in CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Contact": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten": {
+      "main": [
+        [
+          {
+            "node": "Set CRM Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CRM Verdict": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack BDR": {
+      "main": [
+        [
+          {
+            "node": "Set Thread TS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Thread TS": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": {
+    "node:Calendly Trigger": {}
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {
+    "Live Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.flowroots.com",
+            "user-agent": "axios/1.13.2",
+            "content-length": "6596",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "3.146.115.135",
+            "x-forwarded-host": "n8n.flowroots.com",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "webhook_id": "6a245708f5f56a3760420f2c",
+            "webhook_name": "MARKED AS INTERESTED",
+            "webhook_event": "LEAD_MARKED_AS_INTERESTED",
+            "campaign_name": "7.7.26 - Home Movers - Owner-Operators - Company Inbox",
+            "workspace_name": "Flowroots X Moveplnr",
+            "camp_id": "6a4d4bc798351a77a09c2bea",
+            "parent_lead_id": "6a4d50e57ea0ce079a4fb0bd",
+            "_id": "6a4d50e57ea0ce079a4fb0bd",
+            "first_name": "",
+            "last_name": "",
+            "country_code": "",
+            "phone_number": "",
+            "company_website": "",
+            "address_line": "",
+            "city": "Simcoe",
+            "country": "CA",
+            "company_name": "Two Dudes, One Couch",
+            "email": "twodudesonecouch1@gmail.com",
+            "organization_id": "6a018ddb85c01f5da7906693",
+            "campaign_id": "6a4d4bc798351a77a09c2bea",
+            "workspace_id": "6a018ddb85c01f5da7906694",
+            "is_completed": 1,
+            "current_step": 2,
+            "email_account_id": "6a09a5e7897df91d6b3847a5",
+            "created_at": "2026-07-07T19:17:57.306Z",
+            "modified_at": "2026-07-14T12:32:08.984Z",
+            "status": "REPLIED",
+            "label": "INTERESTED",
+            "linkedin_person_url": "",
+            "linkedin_company_url": "",
+            "job_title": "",
+            "department": "",
+            "industry": "",
+            "state": "",
+            "mx": "GOOGLE_WORKSPACE",
+            "actual_replied_from": "twodudesonecouch1@gmail.com",
+            "hubspot_id": null,
+            "hubspot_deal_id": null,
+            "ghl_lead_id": null,
+            "ghl_conv_id": null,
+            "member_id": null,
+            "domain": "gmail.com",
+            "company_clean_name": "",
+            "personalization_line": "",
+            "title": "",
+            "phone": "",
+            "email_account_name": "tomwilson.j@withmoveplnr.com",
+            "last_lead_reply": "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><div dir=\"auto\">Hey, Is there a video demo showing how it works? I don’t have mucb time for a meeting or phone call.</div><div><br clear=\"all\"><br clear=\"all\"><div><div dir=\"ltr\" class=\"gmail_signature\" data-smartmail=\"gmail_signature\"><div dir=\"ltr\"><div>Thank you,<br><div>Two Dudes One Couch</div><div><br></div><div>Simcoe, ON</div><div>Phone: 226-934-3414</div></div><div><br></div><div><img src=\"https://ci3.googleusercontent.com/mail-sig/AIorK4xft69yqSdXV6DRKiPl1PyvHAB1B3jPuBldDvNe9pXiqVixe66qFEAnqMggCuA9fF_Gx-0Gikh7MeMA\" width=\"200\" height=\"158\"></div></div></div></div></div><div><br><div class=\"gmail_quote gmail_quote_container\"><div dir=\"ltr\" class=\"gmail_attr\">On Tue, Jul 14, 2026 at 8:32 AM Tom Wilson &lt;<a href=\"mailto:tomwilson.j@withmoveplnr.com\">tomwilson.j@withmoveplnr.com</a>&gt; wrote:<br></div><blockquote class=\"gmail_quote\" style=\"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-style:solid;padding-left:1ex;border-left-color:rgb(204,204,204)\"><u></u>\n<div><div>Looked up movers in Simcoe and Two Dudes, One Couch kept coming up.<br><br>When a lead comes in after hours or mid-job, does it get a quote that day, or does it sit? Every one that sits is a booked move lost.<br><br>Two Dudes, One Couch could quote every lead the second it lands and chase it until it books, using a system that runs it for you. Cactus tripled its moves this way, 372 to over 1,000 a month.<br><br>It's free to try and shaped to how you run. Sam grew his own company on it, $2M to $7M. Want an intro to him?<br><br><div>Thanks,<br>Tom Wilson<br>MovePlnr<br><br>Calgary, AB, Canada<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div></div></div></blockquote></div></div>",
+            "text_body": "Hey, Is there a video demo showing how it works? I don’t have mucb time for a meeting or phone call.\n\n\n\nThank you,\n\nTwo Dudes One Couch\n\n\nSimcoe, ON\nPhone: 226-934-3414\n\n\n[https://ci3.googleusercontent.com/mail-sig/AIorK4xft69yqSdXV6DRKiPl1PyvHAB1B3jPuBldDvNe9pXiqVixe66qFEAnqMggCuA9fF_Gx-0Gikh7MeMA]\n\n\nOn Tue, Jul 14, 2026 at 8:32 AM Tom Wilson <tomwilson.j@withmoveplnr.com [tomwilson.j@withmoveplnr.com]> wrote:\n\n\n> Looked up movers in Simcoe and Two Dudes, One Couch kept coming up.\n> \n> When a lead comes in after hours or mid-job, does it get a quote that day, or does it sit? Every one that sits is a booked move lost.\n> \n> Two Dudes, One Couch could quote every lead the second it lands and chase it until it books, using a system that runs it for you. Cactus tripled its moves this way, 372 to over 1,000 a month.\n> \n> It's free to try and shaped to how you run. Sam grew his own company on it, $2M to $7M. Want an intro to him?\n> \n> \n> Thanks,\n> Tom Wilson\n> MovePlnr\n> \n> Calgary, AB, Canada\n> \n> P.S. Please reply \"no thanks\" if not interested.",
+            "last_lead_reply_subject": "Re: Two Dudes, One Couch <> Sam",
+            "last_email_id": "6a562d2202d07dcaa4451f67",
+            "last_thread_id": "6a562d22b8c0204dfc42385f",
+            "latest_message": "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><div dir=\"auto\">Hey, Is there a video demo showing how it works? I don’t have mucb time for a meeting or phone call.</div><div><br clear=\"all\"><br clear=\"all\"><div><div dir=\"ltr\" class=\"gmail_signature\" data-smartmail=\"gmail_signature\"><div dir=\"ltr\"><div>Thank you,<br><div>Two Dudes One Couch</div><div><br></div><div>Simcoe, ON</div><div>Phone: 226-934-3414</div></div><div><br></div><div><img src=\"https://ci3.googleusercontent.com/mail-sig/AIorK4xft69yqSdXV6DRKiPl1PyvHAB1B3jPuBldDvNe9pXiqVixe66qFEAnqMggCuA9fF_Gx-0Gikh7MeMA\" width=\"200\" height=\"158\"></div></div></div></div></div><div><br><div class=\"gmail_quote gmail_quote_container\"><div dir=\"ltr\" class=\"gmail_attr\">On Tue, Jul 14, 2026 at 8:32 AM Tom Wilson &lt;<a href=\"mailto:tomwilson.j@withmoveplnr.com\">tomwilson.j@withmoveplnr.com</a>&gt; wrote:<br></div><blockquote class=\"gmail_quote\" style=\"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-style:solid;padding-left:1ex;border-left-color:rgb(204,204,204)\"><u></u>\n<div><div>Looked up movers in Simcoe and Two Dudes, One Couch kept coming up.<br><br>When a lead comes in after hours or mid-job, does it get a quote that day, or does it sit? Every one that sits is a booked move lost.<br><br>Two Dudes, One Couch could quote every lead the second it lands and chase it until it books, using a system that runs it for you. Cactus tripled its moves this way, 372 to over 1,000 a month.<br><br>It's free to try and shaped to how you run. Sam grew his own company on it, $2M to $7M. Want an intro to him?<br><br><div>Thanks,<br>Tom Wilson<br>MovePlnr<br><br>Calgary, AB, Canada<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div></div></div></blockquote></div></div>",
+            "latest_subject": "Re: Two Dudes, One Couch <> Sam",
+            "lead_id": "6a4d50e57ea0ce079a4fb0bd",
+            "camp_tag_ids": [],
+            "is_email_verified": -1,
+            "sender_first_name": "Tom",
+            "sender_last_name": "Wilson",
+            "lead_last_sent_at": "2026-07-14T12:32:08.984Z",
+            "ws_lead_last_sent_at": "2026-07-14T12:32:09.004Z",
+            "is_mx": 1,
+            "seg": "",
+            "sentiment": "POSITIVE",
+            "step": 1,
+            "variation": "A"
+          },
+          "webhookUrl": "https://n8n.flowroots.com/webhook/moveplnr-new-reply",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "a8a659d4-3523-4aff-91e4-49db3dc310e8",
+  "activeVersionId": null,
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-06-09T21:48:15.126Z",
+      "createdAt": "2026-06-09T21:48:15.126Z",
+      "role": "workflow:owner",
+      "workflowId": "uRVMo10TaUI0VcN5",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

@@ -1,0 +1,1556 @@
+{
+  "updatedAt": "2026-08-08T16:05:32.858Z",
+  "createdAt": "2026-07-31T10:55:24.246Z",
+  "id": "M0IvVrjXaGT1K6Fs",
+  "name": "Backfill Build Date (one-off)",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "3ac3cdb9-5988-46a6-ad10-28cf5d193fb8",
+      "name": "Backfill Build Date Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Backfill Build Date",
+        "formDescription": "One-off. Fills Build Date on every row of an existing ClayRoots table from ingested_at, falling back to Created. Rows that already have a Build Date are left alone.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Clayroots Base ID",
+              "fieldName": "Clayroots Base ID",
+              "fieldType": "text",
+              "placeholder": "appXXXXXXXXXXXXXX",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table ID",
+              "fieldName": "Table ID",
+              "fieldType": "text",
+              "placeholder": "tblXXXXXXXXXXXXXX",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "backfill-build-date",
+          "buttonLabel": "Run backfill",
+          "ignoreBots": true,
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions"
+            }
+          }
+        }
+      },
+      "webhookId": "f2ee257c-4d76-48c4-9d48-8141ce000c9f"
+    },
+    {
+      "id": "5d3278b7-20d3-4b55-ae16-74ac56ef8eec",
+      "name": "Head Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Head-Guard.js"
+      }
+    },
+    {
+      "id": "3c90a69b-2275-4293-bc76-b54fa84f3758",
+      "name": "Fetch Table Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "19f790f3-7153-4ea0-aef2-d81bf229062d",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Check-Table.js"
+      }
+    },
+    {
+      "id": "97c9b46c-77d2-4881-9521-fb3fa5685dc8",
+      "name": "Build Date Column Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-build-date",
+              "leftValue": "={{ $json.hasBuildDate }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "914dcb22-aa2d-4971-a6b5-6eb4dd4534df",
+      "name": "Note Existing Column",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Note-Existing-Column.js"
+      }
+    },
+    {
+      "id": "150e120b-6f71-4e7f-b690-08b6137baf5b",
+      "name": "Init Loop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Init-Loop.js"
+      }
+    },
+    {
+      "id": "01e5c782-76a6-49c1-ae5a-6e627d9ffff1",
+      "name": "Create Build Date Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        340
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables/{{ $json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"name\":\"Build Date\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a9b21b5a-ef20-46e4-870a-616be25619e8",
+      "name": "Refetch Table Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        340
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Check Table').first().json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "1a17e129-c5c6-4be3-9f09-12cb28fefa65",
+      "name": "Verify Build Date Field",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        340
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Verify-Build-Date-Field.js"
+      }
+    },
+    {
+      "id": "c81a9dcc-734b-4659-9b8a-21dd720fd7d1",
+      "name": "Fetch Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.baseUrl }}{{ $json.offset ? '&offset=' + encodeURIComponent($json.offset) : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "41875c7b-9ff9-44da-80ee-cb66d03794c4",
+      "name": "Resolve Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Resolve-Page.js"
+      }
+    },
+    {
+      "id": "07b6e3d4-56b9-4c53-b915-184c17f23c54",
+      "name": "Page Has Writes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2200,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "write-count",
+              "leftValue": "={{ $json.writeCount }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "47117a0f-22a4-4cfe-9763-fa63cf5ac4b5",
+      "name": "Split Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Split-Writes.js"
+      }
+    },
+    {
+      "id": "6555bf79-16ff-4033-9ab9-0a3823ccc37e",
+      "name": "Write Build Date",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Table').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Table').first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6c5bcd69-d57c-49b5-8723-29a54cf217e5",
+      "name": "Page Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Page-Done.js"
+      }
+    },
+    {
+      "id": "4896d29b-b627-4f78-b31c-263b1894bff4",
+      "name": "All Pages Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3080,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "loop-done",
+              "leftValue": "={{ $json.done }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "0e8f04b2-67d4-4448-85b0-051a647105cf",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={{ '{Clayroots Base ID} = \"' + $('Check Table').first().json.baseId + '\"' }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5e1d1ec2-4a83-4fc8-885b-e4429d568f28",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Build-Log.js"
+      }
+    },
+    {
+      "id": "94484612-7986-4791-ab7a-c89eb5468ccb",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3740,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Backfill Build Date Form": {
+      "main": [
+        [
+          {
+            "node": "Head Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Head Guard": {
+      "main": [
+        [
+          {
+            "node": "Fetch Table Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Table Schema": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Build Date Column Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Date Column Exists?": {
+      "main": [
+        [
+          {
+            "node": "Note Existing Column",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Build Date Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Note Existing Column": {
+      "main": [
+        [
+          {
+            "node": "Init Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Loop": {
+      "main": [
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Build Date Field": {
+      "main": [
+        [
+          {
+            "node": "Refetch Table Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refetch Table Schema": {
+      "main": [
+        [
+          {
+            "node": "Verify Build Date Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Build Date Field": {
+      "main": [
+        [
+          {
+            "node": "Init Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Page": {
+      "main": [
+        [
+          {
+            "node": "Resolve Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Page": {
+      "main": [
+        [
+          {
+            "node": "Page Has Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Has Writes?": {
+      "main": [
+        [
+          {
+            "node": "Split Writes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Page Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Writes": {
+      "main": [
+        [
+          {
+            "node": "Write Build Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Build Date": {
+      "main": [
+        [
+          {
+            "node": "Page Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Done": {
+      "main": [
+        [
+          {
+            "node": "All Pages Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Pages Done?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "global": {}
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "2fe6bcc2-43c0-4ce3-ab06-cc31c591f48d",
+  "activeVersionId": "2fe6bcc2-43c0-4ce3-ab06-cc31c591f48d",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-31T10:55:24.256Z",
+      "createdAt": "2026-07-31T10:55:24.256Z",
+      "role": "workflow:owner",
+      "workflowId": "M0IvVrjXaGT1K6Fs",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-07-31T11:11:27.000Z",
+    "createdAt": "2026-07-31T10:55:24.262Z",
+    "versionId": "2fe6bcc2-43c0-4ce3-ab06-cc31c591f48d",
+    "workflowId": "M0IvVrjXaGT1K6Fs",
+    "nodes": [
+      {
+        "id": "3ac3cdb9-5988-46a6-ad10-28cf5d193fb8",
+        "name": "Backfill Build Date Form",
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.6,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "authentication": "none",
+          "formTitle": "Backfill Build Date",
+          "formDescription": "One-off. Fills Build Date on every row of an existing ClayRoots table from ingested_at, falling back to Created. Rows that already have a Build Date are left alone.",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Clayroots Base ID",
+                "fieldName": "Clayroots Base ID",
+                "fieldType": "text",
+                "placeholder": "appXXXXXXXXXXXXXX",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Table ID",
+                "fieldName": "Table ID",
+                "fieldType": "text",
+                "placeholder": "tblXXXXXXXXXXXXXX",
+                "requiredField": true
+              }
+            ]
+          },
+          "responseMode": "onReceived",
+          "options": {
+            "path": "backfill-build-date",
+            "buttonLabel": "Run backfill",
+            "ignoreBots": true,
+            "respondWithOptions": {
+              "values": {
+                "respondWith": "redirect",
+                "redirectUrl": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions"
+              }
+            }
+          }
+        },
+        "webhookId": "f2ee257c-4d76-48c4-9d48-8141ce000c9f"
+      },
+      {
+        "id": "5d3278b7-20d3-4b55-ae16-74ac56ef8eec",
+        "name": "Head Guard",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const f = $input.first().json || {};\nconst baseId = String(f['Clayroots Base ID'] || '').trim();\nconst tableId = String(f['Table ID'] || '').trim();\nif (!/^app[A-Za-z0-9]{14}$/.test(baseId)) { throw new Error('Clayroots Base ID \"' + baseId + '\" is not a valid Airtable base id (expected appXXXXXXXXXXXXXX). Nothing was written.'); }\nif (!/^tbl[A-Za-z0-9]{14}$/.test(tableId)) { throw new Error('Table ID \"' + tableId + '\" is not a valid Airtable table id (expected tblXXXXXXXXXXXXXX). Nothing was written.'); }\nreturn [{ json: { baseId: baseId, tableId: tableId, startedAt: new Date().toISOString() } }];"
+        }
+      },
+      {
+        "id": "3c90a69b-2275-4293-bc76-b54fa84f3758",
+        "name": "Fetch Table Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          220,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "19f790f3-7153-4ea0-aef2-d81bf229062d",
+        "name": "Check Table",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          440,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const g = $('Head Guard').first().json;\nconst resp = $input.first().json || {};\nconst tables = Array.isArray(resp.tables) ? resp.tables : [];\nif (!tables.length) { throw new Error('No tables came back for base ' + g.baseId + '. Check the base id and that the Airtable token has schema access. Airtable said: ' + JSON.stringify(resp.error || resp) + '. Nothing was written.'); }\nconst t = tables.filter(function (x) { return x && x.id === g.tableId; })[0];\nif (!t) { throw new Error('Table ' + g.tableId + ' is not in base ' + g.baseId + '. Tables present: ' + tables.map(function (x) { return x.name + ' (' + x.id + ')'; }).join(', ') + '. Nothing was written.'); }\nconst names = (Array.isArray(t.fields) ? t.fields : []).map(function (x) { return x.name; });\nconst hasIngested = names.indexOf('ingested_at') > -1;\nconst hasCreated = names.indexOf('Created') > -1;\nconst hasBuildDate = names.indexOf('Build Date') > -1;\nif (!hasIngested && !hasCreated) { throw new Error('\\'' + t.name + '\\' has neither ingested_at nor Created, so Build Date cannot be derived. Nothing was written.'); }\nreturn [{ json: { baseId: g.baseId, tableId: g.tableId, tableName: t.name, hasIngested: hasIngested, hasCreated: hasCreated, hasBuildDate: hasBuildDate, startedAt: g.startedAt } }];"
+        }
+      },
+      {
+        "id": "97c9b46c-77d2-4881-9521-fb3fa5685dc8",
+        "name": "Build Date Column Exists?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          660,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "has-build-date",
+                "leftValue": "={{ $json.hasBuildDate }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "914dcb22-aa2d-4971-a6b5-6eb4dd4534df",
+        "name": "Note Existing Column",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          80
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const g = $('Check Table').first().json;\nreturn [{ json: Object.assign({}, g, { fieldCreated: false }) }];"
+        }
+      },
+      {
+        "id": "150e120b-6f71-4e7f-b690-08b6137baf5b",
+        "name": "Init Loop",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const g = $('Check Table').first().json;\nconst fieldCreated = !!(($input.first() || { json: {} }).json || {}).fieldCreated;\nconst fields = ['Build Date'];\nif (g.hasIngested) { fields.push('ingested_at'); }\nif (g.hasCreated) { fields.push('Created'); }\nconst qs = ['pageSize=100'].concat(fields.map(function (f) { return 'fields%5B%5D=' + encodeURIComponent(f); })).join('&');\nconst sd = $getWorkflowStaticData('global');\nsd.bd_scanned = 0;\nsd.bd_alreadySet = 0;\nsd.bd_fromIngested = 0;\nsd.bd_fromCreated = 0;\nsd.bd_unresolved = 0;\nsd.bd_unresolvedSamples = [];\nsd.bd_written = 0;\nsd.bd_writeFail = 0;\nsd.bd_pages = 0;\nsd.bd_capped = false;\nsd.bd_fieldCreated = fieldCreated;\nsd.bd_startedAt = g.startedAt || new Date().toISOString();\nreturn [{ json: { baseUrl: 'https://api.airtable.com/v0/' + g.baseId + '/' + g.tableId + '?' + qs, offset: '', page: 0, done: false } }];"
+        }
+      },
+      {
+        "id": "01e5c782-76a6-49c1-ae5a-6e627d9ffff1",
+        "name": "Create Build Date Field",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          880,
+          340
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables/{{ $json.tableId }}/fields",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "{\"name\":\"Build Date\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "a9b21b5a-ef20-46e4-870a-616be25619e8",
+        "name": "Refetch Table Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          340
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Check Table').first().json.baseId }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "1a17e129-c5c6-4be3-9f09-12cb28fefa65",
+        "name": "Verify Build Date Field",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          340
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const g = $('Check Table').first().json;\nconst resp = $input.first().json || {};\nconst tables = Array.isArray(resp.tables) ? resp.tables : [];\nconst t = tables.filter(function (x) { return x && x.id === g.tableId; })[0];\nconst names = t && Array.isArray(t.fields) ? t.fields.map(function (x) { return x.name; }) : [];\nif (names.indexOf('Build Date') === -1) {\n  const c = $('Create Build Date Field').first().json;\n  throw new Error('The Build Date column did not appear on \\'' + g.tableName + '\\' after the create call. Airtable said: ' + JSON.stringify(c && c.error ? c.error : c) + '. Nothing was written.');\n}\nreturn [{ json: Object.assign({}, g, { fieldCreated: true }) }];"
+        }
+      },
+      {
+        "id": "c81a9dcc-734b-4659-9b8a-21dd720fd7d1",
+        "name": "Fetch Page",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1760,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.baseUrl }}{{ $json.offset ? '&offset=' + encodeURIComponent($json.offset) : '' }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "41875c7b-9ff9-44da-80ee-cb66d03794c4",
+        "name": "Resolve Page",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst resp = $input.first().json || {};\nconst records = Array.isArray(resp.records) ? resp.records : [];\nconst DATE = /^\\d{4}-\\d{2}-\\d{2}$/;\nconst filled = function (v) { return v !== undefined && v !== null && String(v).trim() !== ''; };\nconst writes = [];\nfor (let i = 0; i < records.length; i++) {\n  const r = records[i] || {};\n  const f = r.fields || {};\n  sd.bd_scanned = (sd.bd_scanned || 0) + 1;\n  if (filled(f['Build Date'])) { sd.bd_alreadySet = (sd.bd_alreadySet || 0) + 1; continue; }\n  let value = '';\n  let src = '';\n  if (filled(f['ingested_at'])) {\n    const c1 = String(f['ingested_at']).trim().slice(0, 10);\n    if (DATE.test(c1)) { value = c1; src = 'ingested_at'; }\n  }\n  if (!value && filled(f['Created'])) {\n    const c2 = String(f['Created']).trim().slice(0, 10);\n    if (DATE.test(c2)) { value = c2; src = 'Created'; }\n  }\n  if (!value) {\n    sd.bd_unresolved = (sd.bd_unresolved || 0) + 1;\n    if (!Array.isArray(sd.bd_unresolvedSamples)) { sd.bd_unresolvedSamples = []; }\n    if (sd.bd_unresolvedSamples.length < 20) { sd.bd_unresolvedSamples.push(r.id); }\n    continue;\n  }\n  if (src === 'ingested_at') { sd.bd_fromIngested = (sd.bd_fromIngested || 0) + 1; }\n  else { sd.bd_fromCreated = (sd.bd_fromCreated || 0) + 1; }\n  writes.push({ id: r.id, 'Build Date': value });\n}\nsd.bd_pages = (sd.bd_pages || 0) + 1;\nsd.bd_written = (sd.bd_written || 0) + writes.length;\nconst baseUrl = $('Init Loop').first().json.baseUrl;\nreturn [{ json: { baseUrl: baseUrl, offset: String(resp.offset || ''), page: sd.bd_pages, writeCount: writes.length, writes: writes } }];"
+        }
+      },
+      {
+        "id": "07b6e3d4-56b9-4c53-b915-184c17f23c54",
+        "name": "Page Has Writes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2200,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "write-count",
+                "leftValue": "={{ $json.writeCount }}",
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                },
+                "rightValue": 0
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "47117a0f-22a4-4cfe-9763-fa63cf5ac4b5",
+        "name": "Split Writes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          80
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const w = ($input.first().json || {}).writes || [];\nreturn w.map(function (r) { return { json: r }; });"
+        }
+      },
+      {
+        "id": "6555bf79-16ff-4033-9ab9-0a3823ccc37e",
+        "name": "Write Build Date",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          80
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "authentication": "airtableTokenApi",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Check Table').first().json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Check Table').first().json.tableId }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "6c5bcd69-d57c-49b5-8723-29a54cf217e5",
+        "name": "Page Done",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst items = $input.all();\nlet fails = 0;\nfor (let i = 0; i < items.length; i++) {\n  const j = items[i].json || {};\n  if (j.error !== undefined && j.error !== null && j.error !== '') { fails++; }\n}\nsd.bd_writeFail = (sd.bd_writeFail || 0) + fails;\nconst rp = $('Resolve Page').first().json;\nconst page = Number(rp.page) || 0;\nconst offset = String(rp.offset || '');\nconst capped = page >= 1000 && !!offset;\nif (capped) { sd.bd_capped = true; }\nreturn [{ json: { baseUrl: rp.baseUrl, offset: offset, page: page, done: !offset || page >= 1000 } }];"
+        }
+      },
+      {
+        "id": "4896d29b-b627-4f78-b31c-263b1894bff4",
+        "name": "All Pages Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3080,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "loop-done",
+                "leftValue": "={{ $json.done }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "0e8f04b2-67d4-4448-85b0-051a647105cf",
+        "name": "Resolve Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3300,
+          80
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "authentication": "airtableTokenApi",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={{ '{Clayroots Base ID} = \"' + $('Check Table').first().json.baseId + '\"' }}",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "5e1d1ec2-4a83-4fc8-885b-e4429d568f28",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          80
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst g = $('Check Table').first().json;\nconst scanned = sd.bd_scanned || 0;\nconst written = sd.bd_written || 0;\nconst alreadySet = sd.bd_alreadySet || 0;\nconst fromIngested = sd.bd_fromIngested || 0;\nconst fromCreated = sd.bd_fromCreated || 0;\nconst unresolved = sd.bd_unresolved || 0;\nconst samples = Array.isArray(sd.bd_unresolvedSamples) ? sd.bd_unresolvedSamples.slice(0, 20) : [];\nconst writeFail = sd.bd_writeFail || 0;\nconst pages = sd.bd_pages || 0;\nconst capped = !!sd.bd_capped;\nconst fieldCreated = !!sd.bd_fieldCreated;\nconst startedAt = sd.bd_startedAt || g.startedAt;\nconst duration = Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 1000));\nlet clientId = '';\nconst c = (($input.first() || { json: {} }).json) || {};\nif (c.id && String(c.id).indexOf('rec') === 0) { clientId = String(c.id); }\nconst status = (writeFail > 0 || capped) ? 'Partial' : 'Success';\nconst target = g.tableName + ' (' + g.tableId + ')';\nconst desc = [\n  '- Table: ' + target,\n  '- Rows scanned: ' + scanned,\n  '- Dates written: ' + written,\n  '- Already had Build Date: ' + alreadySet,\n  '- From ingested_at: ' + fromIngested,\n  '- From Created: ' + fromCreated,\n  '- Unresolved: ' + unresolved + (samples.length ? ' (sample ids: ' + samples.join(', ') + ')' : ''),\n  '- Write failures: ' + writeFail,\n  '- Pages fetched: ' + pages + (capped ? ' (hit the 1000-page cap, table not fully scanned)' : ''),\n  '- Build Date column: ' + (fieldCreated ? 'created by this run' : 'already existed')\n].join('\\n');\ndelete sd.bd_scanned;\ndelete sd.bd_written;\ndelete sd.bd_alreadySet;\ndelete sd.bd_fromIngested;\ndelete sd.bd_fromCreated;\ndelete sd.bd_unresolved;\ndelete sd.bd_unresolvedSamples;\ndelete sd.bd_writeFail;\ndelete sd.bd_pages;\ndelete sd.bd_capped;\ndelete sd.bd_fieldCreated;\ndelete sd.bd_startedAt;\nreturn [{ json: {\n  'Automation': 'Backfill Build Date',\n  'Status': status,\n  'Run at': new Date().toISOString(),\n  'Client': clientId ? [clientId] : [],\n  'Target': target,\n  'Records In': scanned,\n  'Records Out': written,\n  'Duration s': duration,\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  'Description': desc\n} }];"
+        }
+      },
+      {
+        "id": "94484612-7986-4791-ab7a-c89eb5468ccb",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3740,
+          80
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "authentication": "airtableTokenApi",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Backfill Build Date Form": {
+        "main": [
+          [
+            {
+              "node": "Head Guard",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Head Guard": {
+        "main": [
+          [
+            {
+              "node": "Fetch Table Schema",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Table Schema": {
+        "main": [
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Table": {
+        "main": [
+          [
+            {
+              "node": "Build Date Column Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Date Column Exists?": {
+        "main": [
+          [
+            {
+              "node": "Note Existing Column",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Build Date Field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Note Existing Column": {
+        "main": [
+          [
+            {
+              "node": "Init Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Loop": {
+        "main": [
+          [
+            {
+              "node": "Fetch Page",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Build Date Field": {
+        "main": [
+          [
+            {
+              "node": "Refetch Table Schema",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Refetch Table Schema": {
+        "main": [
+          [
+            {
+              "node": "Verify Build Date Field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verify Build Date Field": {
+        "main": [
+          [
+            {
+              "node": "Init Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Page": {
+        "main": [
+          [
+            {
+              "node": "Resolve Page",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Page": {
+        "main": [
+          [
+            {
+              "node": "Page Has Writes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Page Has Writes?": {
+        "main": [
+          [
+            {
+              "node": "Split Writes",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Page Done",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Writes": {
+        "main": [
+          [
+            {
+              "node": "Write Build Date",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Build Date": {
+        "main": [
+          [
+            {
+              "node": "Page Done",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Page Done": {
+        "main": [
+          [
+            {
+              "node": "All Pages Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "All Pages Done?": {
+        "main": [
+          [
+            {
+              "node": "Resolve Client",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fetch Page",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Client": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": "Version 2fe6bcc2",
+    "description": "",
+    "autosaved": false
+  },
+  "tags": []
+}

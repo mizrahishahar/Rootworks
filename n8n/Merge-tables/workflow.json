@@ -1,0 +1,1222 @@
+{
+  "updatedAt": "2026-07-29T07:09:45.000Z",
+  "createdAt": "2026-07-28T22:05:28.912Z",
+  "id": "QpNeZlsDRz94Ht58",
+  "name": "Merge tables",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Merge tables",
+        "formDescription": "Copies every row of the source table into the target table, upserted on the shared key so re-pull duplicates collapse instead of stacking. Missing columns are created in the target. The source table is left untouched.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Clayroots Base ID",
+              "placeholder": "appXXXXXXXXXXXXXX — from the Hub Clients table",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Source Table ID",
+              "placeholder": "tblXXXXXXXXXXXXXX — the table to copy FROM",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Table ID",
+              "placeholder": "tblXXXXXXXXXXXXXX — the table to copy INTO",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "merge-tables",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            }
+          }
+        }
+      },
+      "id": "f9da760b-fd7a-41ac-8208-8956004734e5",
+      "name": "Merge Tables Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1200,
+        400
+      ],
+      "webhookId": "8d312319-772f-4748-aed1-246145f99d74"
+    },
+    {
+      "parameters": {},
+      "id": "b9bf26af-e8a6-4b6a-ad0c-fd680d900c30",
+      "name": "Merge Launch",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-merge-tables",
+        "options": {}
+      },
+      "id": "6c62e716-4e1f-4db5-9c4f-de95c56d7c39",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1968,
+        848
+      ],
+      "webhookId": "67b6f303-10e3-4ea8-85d8-da4132f32e5f"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "82a1734a-767e-4176-966c-c469f706bb3c",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1744,
+        848
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $json.fields.Client[0] }}",
+        "options": {}
+      },
+      "id": "7911da48-597b-42c0-8817-cb6566046f46",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1520,
+        848
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "27cda19a-97ee-48ea-8c57-be604ebf2604",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json._launchRecordId }}",
+            "Status": "Running",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "9ba05c5d-d9d0-43c7-96a9-2b8690bf53cd",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1072,
+        848
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Restore-Params.js"
+      },
+      "id": "c783e6c8-2e6f-49fa-b01a-e71aef92dfe3",
+      "name": "Restore Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Validate-Params.js"
+      },
+      "id": "5be6c3ee-3541-46d0-834f-af7b66710449",
+      "name": "Validate Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {}
+      },
+      "id": "d32903a7-861e-443a-8fc9-c82a0d945c9f",
+      "name": "Fetch Base Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -176,
+        624
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Guard-Tables.js"
+      },
+      "id": "09e1e89d-9b5f-4813-900f-b023bd94141d",
+      "name": "Guard Tables",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.needsDomainScan }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "accfc618-35fb-4ce4-aa41-c6c667ac8b3d",
+      "name": "Domain Key?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Scan-Init.js"
+      },
+      "id": "004cae68-50fd-4750-929b-cb5719dbb950",
+      "name": "Scan Init",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/{{ $json.scanBase }}/{{ $json.scanTable }}?pageSize=100&fields%5B%5D={{ encodeURIComponent($json.scanField) }}{{ $json.scanOffset ? '&offset=' + encodeURIComponent($json.scanOffset) : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {}
+      },
+      "id": "d256d737-5b04-4f68-a48f-a9d2b8d43e4c",
+      "name": "Fetch Key Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        448
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Scan-For-Repeated-Key.js"
+      },
+      "id": "7d8af8d5-5513-4903-9891-6dc3dbf08365",
+      "name": "Scan For Repeated Key",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.scanAction }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "continue"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0ee6d10e-aa1f-4eaa-a1a2-4cb36d01f593",
+      "name": "Scan More?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        448
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d2f17369-d591-4039-8a1b-9e318f91a8b2",
+      "name": "Key Verified",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Fields.js"
+      },
+      "id": "293055ae-bdd4-4ec1-9d0d-e778732b9cd5",
+      "name": "Plan Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.missingFields.length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "91effef6-23d0-46eb-a7d9-65ec28b2e0b3",
+      "name": "Fields Missing?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1840,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Split-Missing-Fields.js"
+      },
+      "id": "2e69b2ff-29bd-42c8-8746-744269ea912b",
+      "name": "Split Missing Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Plan Fields').first().json.baseId }}/tables/{{ $('Plan Fields').first().json.targetTableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.createBody) }}",
+        "options": {}
+      },
+      "id": "b81903b5-4a3a-4381-8a97-049f614e537f",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2288,
+        448
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "a61f2c31-bf37-4ccd-8772-478cbe8af981",
+      "name": "Fields Ready",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Plan Fields').first().json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {}
+      },
+      "id": "cda364e4-c252-4724-afe0-fe6b768cb95f",
+      "name": "Refetch Target Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2736,
+        624
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Reconcile-Fields.js"
+      },
+      "id": "e490e830-e68b-41d6-8a24-7c2526a20a1a",
+      "name": "Reconcile Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/{{ $json.baseId }}/{{ $json.sourceTableId }}?pageSize=100{{ $json.pageOffset ? '&offset=' + encodeURIComponent($json.pageOffset) : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {}
+      },
+      "id": "76f6f69f-2fa2-44a3-a346-69ef43b1cdf4",
+      "name": "Fetch Source Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3184,
+        624
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Page-Plan.js"
+      },
+      "id": "7288824f-8856-47bf-b262-1fe3f8329928",
+      "name": "Page Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3408,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.keptRows }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a8e9240d-b41b-423d-a5e3-4f94cf209fae",
+      "name": "Has Rows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3632,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Map-Rows.js"
+      },
+      "id": "9cd36ca4-3ace-431f-9602-65869b4cca96",
+      "name": "Map Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3856,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Reconcile Fields').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Reconcile Fields').first().json.targetTableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "schema": [],
+          "matchingColumns": [
+            "={{ $('Reconcile Fields').first().json.targetKeyField }}"
+          ]
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "cf08b5a1-0173-43dc-96ee-e4f723002d48",
+      "name": "Upsert Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4080,
+        448
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Tally-Writes.js"
+      },
+      "id": "c001185a-ac0b-4e5e-8525-603be88a4499",
+      "name": "Tally Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4304,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "continue"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d31256f-48db-42aa-8964-f96a7cd20f13",
+      "name": "More Pages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4528,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Results.js"
+      },
+      "id": "bbec2c7b-4177-4326-89c8-349e466aad01",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4752,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={Clayroots Base ID} = '{{ $('Collect Results').first().json.baseId }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "e492fa9e-cb34-45e6-a5c9-729a5da702be",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4976,
+        800
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "e31ed4e9-594f-4dd6-89f6-3ce3e7a2b557",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5200,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "schema": [],
+          "matchingColumns": [
+            "Execution ID"
+          ]
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "db282f74-a5ad-4a86-b3bb-fe6cce770097",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5424,
+        800
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Merge Tables Form": {
+      "main": [
+        [
+          {
+            "node": "Merge Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Launch": {
+      "main": [
+        [
+          {
+            "node": "Validate Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Restore Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Params": {
+      "main": [
+        [
+          {
+            "node": "Merge Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Params": {
+      "main": [
+        [
+          {
+            "node": "Fetch Base Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Base Schema": {
+      "main": [
+        [
+          {
+            "node": "Guard Tables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Tables": {
+      "main": [
+        [
+          {
+            "node": "Domain Key?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Domain Key?": {
+      "main": [
+        [
+          {
+            "node": "Scan Init",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Key Verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scan Init": {
+      "main": [
+        [
+          {
+            "node": "Fetch Key Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Key Page": {
+      "main": [
+        [
+          {
+            "node": "Scan For Repeated Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scan For Repeated Key": {
+      "main": [
+        [
+          {
+            "node": "Scan More?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scan More?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Key Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Key Verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Key Verified": {
+      "main": [
+        [
+          {
+            "node": "Plan Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Fields": {
+      "main": [
+        [
+          {
+            "node": "Fields Missing?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fields Missing?": {
+      "main": [
+        [
+          {
+            "node": "Split Missing Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fields Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Missing Fields": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Field": {
+      "main": [
+        [
+          {
+            "node": "Fields Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fields Ready": {
+      "main": [
+        [
+          {
+            "node": "Refetch Target Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refetch Target Schema": {
+      "main": [
+        [
+          {
+            "node": "Reconcile Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile Fields": {
+      "main": [
+        [
+          {
+            "node": "Fetch Source Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Source Page": {
+      "main": [
+        [
+          {
+            "node": "Page Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Plan": {
+      "main": [
+        [
+          {
+            "node": "Has Rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Rows?": {
+      "main": [
+        [
+          {
+            "node": "Map Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "More Pages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Rows": {
+      "main": [
+        [
+          {
+            "node": "Tally Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tally Writes": {
+      "main": [
+        [
+          {
+            "node": "More Pages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "More Pages?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Source Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "global": {}
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "26990607-d683-42b7-8677-c8404f40b576",
+  "activeVersionId": null,
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T22:05:28.922Z",
+      "createdAt": "2026-07-28T22:05:28.922Z",
+      "role": "workflow:owner",
+      "workflowId": "QpNeZlsDRz94Ht58",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

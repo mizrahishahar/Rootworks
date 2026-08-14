@@ -1,0 +1,505 @@
+{
+  "updatedAt": "2026-07-29T08:49:00.000Z",
+  "createdAt": "2026-07-07T21:42:31.400Z",
+  "id": "icsletpJsV5umvv4",
+  "name": "Sync Slack to Obsidian for Piper AI",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "4f4ee36d-8085-4cb2-b850-300fce0cdb8c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "476b159c-ea2c-4fb4-88cb-d5c613fe0b29",
+      "name": "Get channel messages",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "resource": "channel",
+        "operation": "history",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Config').first().json.slackChannelId }}"
+        },
+        "filters": {
+          "oldest": "={{ new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }}"
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "webhookId": "01856f4f-eabc-454e-b690-e4c35bd3bef6"
+    },
+    {
+      "id": "c545f759-6d8b-4a12-858a-11f40ef3fbb8",
+      "name": "Fetch thread replies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "url": "https://slack.com/api/conversations.replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $('Client Config').first().json.slackChannelId }}"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json.ts }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      }
+    },
+    {
+      "id": "a06732ec-4d94-424d-9a85-ff293d506862",
+      "name": "Attach replies to parent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Attach-replies-to-parent.js"
+      }
+    },
+    {
+      "id": "c155250e-874a-4c54-8a3f-0fb0551941ba",
+      "name": "Get Channel Members",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "resource": "channel",
+        "operation": "member",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Config').first().json.slackChannelId }}"
+        },
+        "returnAll": true
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "executeOnce": true,
+      "webhookId": "f6e5ed21-2f76-43c8-a7d3-7e2964194d87"
+    },
+    {
+      "id": "9e8e9775-ef9e-4595-9108-4fe536d9846c",
+      "name": "Get User Details",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "resource": "user",
+        "operation": "info",
+        "user": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.member }}"
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "webhookId": "761b0ce1-cfed-4a2f-91f2-43e62bf02426"
+    },
+    {
+      "id": "e529da70-b500-4242-b8b4-a9dd085c34f7",
+      "name": "Format messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-messages.js"
+      }
+    },
+    {
+      "id": "8eeb729c-6a76-4ca1-843f-7cc6c6b9093a",
+      "name": "Find Logs Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "resource": "fileFolder",
+        "operation": "search",
+        "queryString": "Logs",
+        "limit": 5,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Config').first().json.driveFolderId }}"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "id": "e55a0e24-0b19-4752-be60-13bdfc956d5e",
+      "name": "Create file from text",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "createFromText",
+        "content": "={{ $('Format messages').item.json.content }}",
+        "name": "={{ $('Format messages').item.json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Logs Folder').first().json.id }}"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "id": "ecdb0955-42db-4245-bfc9-72556cc3378b",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        100,
+        -200
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "recjK36ixfluCkVHu"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "6273bad2-7c97-4e9a-af48-d2ae3a7ba9ec",
+      "name": "Client Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Config.js"
+      }
+    },
+    {
+      "id": "ec7dcee2-5c47-49a4-ad11-cc5e7f277d8b",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "da9c7919-feda-4338-9b3c-c3320b3d19b9",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    }
+  ],
+  "connections": {
+    "Get channel messages": {
+      "main": [
+        [
+          {
+            "node": "Fetch thread replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch thread replies": {
+      "main": [
+        [
+          {
+            "node": "Attach replies to parent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach replies to parent": {
+      "main": [
+        [
+          {
+            "node": "Get Channel Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Channel Members": {
+      "main": [
+        [
+          {
+            "node": "Get User Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Details": {
+      "main": [
+        [
+          {
+            "node": "Format messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format messages": {
+      "main": [
+        [
+          {
+            "node": "Find Logs Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Logs Folder": {
+      "main": [
+        [
+          {
+            "node": "Create file from text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Config": {
+      "main": [
+        [
+          {
+            "node": "Get channel messages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "4b41b9d0-2ac3-423a-a25d-3a043374f8fa",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-07T21:42:31.410Z",
+      "createdAt": "2026-07-07T21:42:31.410Z",
+      "role": "workflow:owner",
+      "workflowId": "icsletpJsV5umvv4",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

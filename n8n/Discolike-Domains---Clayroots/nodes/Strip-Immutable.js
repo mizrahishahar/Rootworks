@@ -1,0 +1,1 @@
+return $input.all().map(i => { const j = { ...i.json }; delete j['Build Date']; delete j['Run ID']; return { json: j }; });

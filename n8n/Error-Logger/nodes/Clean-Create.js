@@ -1,0 +1,1 @@
+const j = Object.assign({}, $json); delete j._mode; return [{ json: j }];

@@ -1,0 +1,1 @@
+const r=$json; const email=$('Input').item.json.email; return { json:{ email, id:(r&&r.id)?r.id:'', _t0:Date.now(), submit:r } };

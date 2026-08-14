@@ -1,0 +1,680 @@
+{
+  "updatedAt": "2026-07-11T14:56:57.000Z",
+  "createdAt": "2026-06-09T21:53:01.116Z",
+  "id": "6BqzboxFVfmN3YXa",
+  "name": "Generate Daily Campaign Digest",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "406bda4e-acc0-4216-a2fd-d40b6cd76300",
+      "name": "Daily 8am Asia/Jerusalem",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/workspaces",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "1f4b9acb-81d5-41d6-9e26-f79093b595d2",
+      "name": "Get Workspaces",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        272
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/analytics/campaign/stats",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $(\"Loop Over Workspaces\").item.json.id }}"
+            },
+            {
+              "name": "start_date",
+              "value": "2020-01-01"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "6ee0a635-03be-4f86-be80-fd1c0f53f896",
+      "name": "Stats Lifetime",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        128
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/campaign/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $(\"Loop Over Workspaces\").item.json.id }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "ecd3064d-35f0-4b28-abc6-195add682c7a",
+      "name": "Campaign List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        128
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/unibox/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $(\"Loop Over Workspaces\").item.json.id }}"
+            },
+            {
+              "name": "email_type",
+              "value": "received"
+            },
+            {
+              "name": "preview_only",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page_trail",
+                    "value": "={{ $response.body.page_trail }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.page_trail }}",
+              "limitPagesFetched": true,
+              "maxRequests": 80,
+              "requestInterval": 2500
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "e37f7d45-8a54-44fe-ae95-81bd1caf0eb8",
+      "name": "Get Replies (paginated)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1056,
+        128
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Slack-Blocks-and-Markdown.js"
+      },
+      "id": "eb7f9fc7-701e-47e3-9c69-0510883bad3c",
+      "name": "Build Slack Blocks and Markdown",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8Q745KT8",
+          "mode": "list",
+          "cachedResultName": "flowroots-campaigns"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ $json.blocks }}",
+        "text": "={{ $json.fallback }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "id": "c79d6871-2d18-4461-861c-04e14fc93693",
+      "name": "Post to flowroots-campaigns",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1456,
+        128
+      ],
+      "webhookId": "d626c9a3-c401-42b0-8011-f45135340edb",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "={{ \"{workspaceID} = \\\"\" + $(\"Build Slack Blocks and Markdown\").first().json.workspace_id + \"\\\"\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "Name",
+            "driveMainFolderID"
+          ]
+        }
+      },
+      "id": "34200be8-92e0-437c-9188-f92673d8a193",
+      "name": "Lookup Company by workspaceID",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        128
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Reports",
+        "limit": 5,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.fields.driveMainFolderID }}"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name"
+          ]
+        }
+      },
+      "id": "766da41b-36cc-4f89-943f-c73ea4a4b907",
+      "name": "Find Reports Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1856,
+        128
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "latest-campaign-report.md",
+        "limit": 5,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.id }}"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name"
+          ]
+        }
+      },
+      "id": "aac214dc-ca29-49d1-8e7e-a47b94552c04",
+      "name": "Find Existing Report File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2048,
+        128
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "db71161d-2799-46a7-b201-4905594a1e38",
+      "name": "File Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2256,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {}
+      },
+      "id": "42fecce3-6f55-4375-b134-88a17ad704b9",
+      "name": "Delete Old Report File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2448,
+        48
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $(\"Build Slack Blocks and Markdown\").first().json.markdown }}",
+        "name": "latest-campaign-report.md",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Find Reports Folder\").first().json.id }}"
+        },
+        "options": {}
+      },
+      "id": "5fe97cd7-4a04-44aa-a37f-cc86405f98dc",
+      "name": "Create Report (after delete)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2656,
+        48
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a9d2fd62-50cb-4d3b-be9b-46315bdb6aec",
+      "name": "Loop Over Workspaces",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $(\"Build Slack Blocks and Markdown\").first().json.markdown }}",
+        "name": "latest-campaign-report.md",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Find Reports Folder\").first().json.id }}"
+        },
+        "options": {}
+      },
+      "id": "a1ce8a76-c90b-4703-8d4a-758dddb51496",
+      "name": "Create Report (fresh)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2448,
+        192
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 8am Asia/Jerusalem": {
+      "main": [
+        [
+          {
+            "node": "Get Workspaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Workspaces": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Workspaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stats Lifetime": {
+      "main": [
+        [
+          {
+            "node": "Campaign List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign List": {
+      "main": [
+        [
+          {
+            "node": "Get Replies (paginated)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Replies (paginated)": {
+      "main": [
+        [
+          {
+            "node": "Build Slack Blocks and Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack Blocks and Markdown": {
+      "main": [
+        [
+          {
+            "node": "Post to flowroots-campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to flowroots-campaigns": {
+      "main": [
+        [
+          {
+            "node": "Lookup Company by workspaceID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Company by workspaceID": {
+      "main": [
+        [
+          {
+            "node": "Find Reports Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Reports Folder": {
+      "main": [
+        [
+          {
+            "node": "Find Existing Report File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Existing Report File": {
+      "main": [
+        [
+          {
+            "node": "File Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Exists?": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Report File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Report (fresh)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Report File": {
+      "main": [
+        [
+          {
+            "node": "Create Report (after delete)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Report (after delete)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Workspaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Workspaces": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Stats Lifetime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Report (fresh)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Workspaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": {
+    "node:Daily 8am Asia/Jerusalem": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c66f5e2d-973a-4914-979e-82a46f955114",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-09T21:53:01.121Z",
+      "createdAt": "2026-06-09T21:53:01.121Z",
+      "role": "workflow:owner",
+      "workflowId": "6BqzboxFVfmN3YXa",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

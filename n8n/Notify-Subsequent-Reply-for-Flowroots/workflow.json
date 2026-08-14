@@ -1,0 +1,358 @@
+{
+  "updatedAt": "2026-07-29T08:39:58.000Z",
+  "createdAt": "2026-06-28T18:33:48.935Z",
+  "id": "QlOzldVQi4Z3jxWb",
+  "name": "Notify Subsequent Reply for Flowroots",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1879c468-95a9-4ee9-8836-a9d74310a7f5",
+        "options": {}
+      },
+      "id": "54fe6b79-5cb8-47e8-834f-6a816941e039",
+      "name": "Sub Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2240,
+        -32
+      ],
+      "webhookId": "1879c468-95a9-4ee9-8836-a9d74310a7f5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.from_email }}"
+            },
+            {
+              "id": "s2",
+              "name": "current_reply",
+              "type": "string",
+              "value": "={{ $json.body.text_body }}"
+            },
+            {
+              "id": "s3",
+              "name": "label",
+              "type": "string",
+              "value": "={{ $json.body.label }}"
+            },
+            {
+              "id": "s4",
+              "name": "campaign_id",
+              "type": "string",
+              "value": "={{ $json.body.camp_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "079580d3-dfb7-45da-af50-5f84556a9112",
+      "name": "Sub Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2448,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id=6a018ddb85c01f5da7906694&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6f22236e-9b75-4dc3-92ff-bd96bcb49f8c",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2640,
+        -32
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Sub-Normalize.js"
+      },
+      "id": "f6f5c22b-7748-4a63-88b5-98984248cc74",
+      "name": "Sub Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2848,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.replied_count }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 1
+            },
+            {
+              "leftValue": "={{ $json.existing_brief }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d6a3d71e-7c27-46e0-9bf9-4e547076f2b9",
+      "name": "Subsequent & Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3040,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id=6a018ddb85c01f5da7906694&lead={{ $json.lead_email }}&email_type=all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "add797a1-ad46-453e-b214-86ac6531ad82",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3248,
+        -32
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rdwGtZQfExOd6nHK",
+          "name": "Plusvibe MovePLNR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "4e0f8fe8-a265-489d-b9cd-e36fee88cd18",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8KTG38JX",
+          "mode": "list",
+          "cachedResultName": "flowroots-replies"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ JSON.stringify({ blocks: [ { type:\"header\", text:{ type:\"plain_text\", text:\"💬 Subreply: \" + $('Sub Normalize').first().json.company_name } }, { type:\"section\", text:{ type:\"mrkdwn\", text: (\"*Latest exchange:*\\n\" + $('Format Thread').first().json.last_two).slice(0,2900) } }, { type:\"context\", elements:[ { type:\"mrkdwn\", text: (\"Label: \" + $('Sub Normalize').first().json.label + \" · Status: \" + $('Sub Normalize').first().json.custom_qualification_status + \" · \" + $('Sub Normalize').first().json.first_name).slice(0,2900) } ] } ] }) }}",
+        "text": "=Subreply: {{ $('Sub Normalize').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "path": "c8fdb37c-ee04-4b42-bf00-6267891b00f1"
+      },
+      "id": "f96d4462-3ea7-4df1-919f-c527fe51d4f7",
+      "name": "Slack Subreply",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        3648,
+        -32
+      ],
+      "webhookId": "c8fdb37c-ee04-4b42-bf00-6267891b00f1",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://REPLACE-WITH-ERIC-ENDPOINT.example.com/lead",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"email\":\"{{ $('Sub Normalize').first().json.lead_email }}\", \"new_reply\": {{ JSON.stringify($('Format Thread').first().json.reply_text) }} }",
+        "options": {}
+      },
+      "id": "a999b7b5-1733-4812-a192-5fe0db33142c",
+      "name": "MovePlnr CRM PATCH (DISABLED)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3840,
+        -32
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Sub Webhook": {
+      "main": [
+        [
+          {
+            "node": "Sub Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub Input": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Sub Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub Normalize": {
+      "main": [
+        [
+          {
+            "node": "Subsequent & Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subsequent & Qualified?": {
+      "main": [
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "Slack Subreply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Subreply": {
+      "main": [
+        [
+          {
+            "node": "MovePlnr CRM PATCH (DISABLED)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "3c53af37-753f-4288-9538-d6daa01bac92",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-28T18:33:48.943Z",
+      "createdAt": "2026-06-28T18:33:48.943Z",
+      "role": "workflow:owner",
+      "workflowId": "QlOzldVQi4Z3jxWb",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

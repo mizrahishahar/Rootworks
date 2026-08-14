@@ -1,0 +1,1 @@
+return $input.all().map(i=>{const m=i.json;const t=String(m.text||'').split('\n')[0];return { json: { ts: m.ts, first_line: t } };});

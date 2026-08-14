@@ -1,0 +1,2477 @@
+{
+  "updatedAt": "2026-08-08T20:29:49.199Z",
+  "createdAt": "2026-08-01T14:55:25.827Z",
+  "id": "up8Yll6huq06h1DE",
+  "name": "Sync Alta Campaigns to Hub",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "0fccb4d5-3276-4231-8e6c-e1f8fa53bc95",
+      "name": "Every 12h (07:30+19:30)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -600,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            },
+            {
+              "triggerAtHour": 19,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "be5243fd-644e-497d-9f6c-6e4fea7a3e57",
+      "name": "Fetch Alta Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -380,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.altahq.com/v1/campaigns",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "sx4wc41lcV5NSNM8",
+          "name": "Alta"
+        }
+      }
+    },
+    {
+      "id": "0f31c375-2ea8-41e2-98c0-fecf733a78b0",
+      "name": "Filter Active",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Filter-Active.js"
+      }
+    },
+    {
+      "id": "62a69264-f67e-4f5a-b681-fab7602583be",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        220
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "093ebb98-6c4a-47e6-9d8b-bfa5162ad14a",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        220
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "3fa4a61b-c1ad-44fc-9b46-f005600a4520",
+      "name": "Count Prospects",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        280,
+        -160
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.altahq.com/v1/prospects",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "campaignId",
+              "value": "={{ $json.campaignId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "cursor",
+                    "value": "={{ $response.body.next }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.hasMore }}",
+              "limitPagesFetched": true,
+              "maxRequests": 50,
+              "requestInterval": 300
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "sx4wc41lcV5NSNM8",
+          "name": "Alta"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "70b8f68f-04ca-42a6-b3bb-252c9402add0",
+      "name": "Build Campaign Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Campaign-Row.js"
+      }
+    },
+    {
+      "id": "c77abc18-7978-4fd9-9ac6-ff8695101fbb",
+      "name": "Upsert Campaign",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        -160
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Campaign ID"
+          ],
+          "schema": [],
+          "value": {
+            "Campaign": "={{ $json.Campaign }}",
+            "Campaign ID": "={{ $json['Campaign ID'] }}",
+            "Client": "={{ $json.Client }}",
+            "Sequencer": "={{ $json.Sequencer }}",
+            "Channel": "={{ $json.Channel }}",
+            "Status": "={{ $json.Status }}",
+            "Leads": "={{ $json.Leads }}",
+            "Created": "={{ $json.Created }}",
+            "Last Synced": "={{ $json['Last Synced'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "868ff4e6-63cb-4146-b7a8-8ac12a1b1b9b",
+      "name": "Loop Campaigns",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        60,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "93240dd0-a133-4994-aa90-997976a6f37c",
+      "name": "Alta Get Token",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        280,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ZHXXvRsdnOnoQEkx"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "alta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "id": "a1242965-b847-409f-99d9-80b8ec1715e2",
+      "name": "Alta Refresh Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        460
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "refresh_token"
+            },
+            {
+              "name": "refresh_token",
+              "value": "={{ $json.refresh_token }}"
+            },
+            {
+              "name": "client_id",
+              "value": "ZsOUl58K5kzcjWGMHhReiXkEezHN7CNM"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b1e0b24a-7ed9-4f87-ba8f-2aef68537605",
+      "name": "Alta Token Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        460
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Alta-Token-Gate.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0ea872a2-382d-4dea-a988-84133e952eb1",
+      "name": "Auth OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        940,
+        460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ao1",
+              "leftValue": "={{ $json._authFailed ? 'fail' : 'ok' }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d826428c-64ed-4c23-b9b6-65d0bb6c6b88",
+      "name": "Note Auth Fail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        620
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Note-Auth-Fail.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "71a3563d-e616-4c6c-830a-75e4159d8c57",
+      "name": "Alta Store Token",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1160,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ZHXXvRsdnOnoQEkx"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "alta"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "key": "alta",
+            "access_token": "={{ $json.access_token }}",
+            "refresh_token": "={{ $json.refresh_token }}",
+            "expires_at": "={{ $json.expires_at }}"
+          }
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dff84b71-555c-4ec8-8986-374373ac0af7",
+      "name": "Find Alta Prospects",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1380,
+        460
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND({Alta Prospect ID} != '', {Alta Msg ID} != '')",
+        "returnAll": true,
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "d73bb1fe-573f-4dd6-badb-f1e0354ff8a0",
+      "name": "Alta Drop Empty",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        460
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Alta-Drop-Empty.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "31ddb1fb-197b-4730-9c4e-7d41704d9c19",
+      "name": "Alta Any?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1820,
+        460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "aa1",
+              "leftValue": "={{ $json._empty ? 'empty' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "17684382-e555-45eb-ac4b-4a4fa548b85d",
+      "name": "Alta Thread Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2040,
+        460
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "d0f53786-dee9-4965-9a67-d7c193335759",
+      "name": "Get Campaign Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2260,
+        380
+      ],
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "id": "={{ (($json.fields ? $json.fields.Campaigns : $json.Campaigns) || [''])[0] }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "5b08ac82-c7fa-413b-ac9e-106059cd6c22",
+      "name": "MCP Get Rep LI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2480,
+        380
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_linkedin_message', arguments: { linkedinMessageId: (($('Alta Thread Loop').first().json.fields ? $('Alta Thread Loop').first().json.fields['Alta Msg ID'] : $('Alta Thread Loop').first().json['Alta Msg ID']) || '') } } } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "7418c45c-d490-4b24-abc2-206265d5752d",
+      "name": "MCP Get Rep Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2700,
+        380
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_email_message', arguments: { emailMessageId: (($('Alta Thread Loop').first().json.fields ? $('Alta Thread Loop').first().json.fields['Alta Msg ID'] : $('Alta Thread Loop').first().json['Alta Msg ID']) || '') } } } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "7d65a027-2b28-4cce-8d78-c390bacfb59f",
+      "name": "Prep Alta Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        380
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Alta-Calls.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "11013d87-c9ce-49cb-8b8a-151e01b8a261",
+      "name": "Skip Rep?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3140,
+        380
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sr1",
+              "leftValue": "={{ $json._skip ? 'skip' : 'go' }}",
+              "rightValue": "go",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bd195916-d3d7-4df4-be16-818bfef6eaf9",
+      "name": "MCP List Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.callBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b0a4e67f-061d-44db-81a7-22cf24308cbb",
+      "name": "Merge Alta Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3580,
+        300
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Merge-Alta-Thread.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3cdd12e6-10e1-46bb-b2d0-8673f4b006a6",
+      "name": "Write Alta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3800,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "wa1",
+              "leftValue": "={{ $json._skip ? 'skip' : 'write' }}",
+              "rightValue": "write",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7f7487c3-0abd-4c6a-a0be-f5fc01f431af",
+      "name": "Update Alta Thread",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4020,
+        220
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.prospectId }}",
+            "Conversation Thread": "={{ $json['Conversation Thread'] }}",
+            "First Engagement": "={{ $json['First Engagement'] }}",
+            "Last Engaged": "={{ $json['Last Engaged'] }}",
+            "Last Touch": "={{ $json['Last Touch'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Fetch Alta Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Filter Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Active": {
+      "main": [
+        [
+          {
+            "node": "Loop Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Prospects": {
+      "main": [
+        [
+          {
+            "node": "Build Campaign Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Campaign Row": {
+      "main": [
+        [
+          {
+            "node": "Upsert Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Campaign": {
+      "main": [
+        [
+          {
+            "node": "Loop Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Alta Get Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Count Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Get Token": {
+      "main": [
+        [
+          {
+            "node": "Alta Refresh Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Refresh Token": {
+      "main": [
+        [
+          {
+            "node": "Alta Token Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Token Gate": {
+      "main": [
+        [
+          {
+            "node": "Auth OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth OK?": {
+      "main": [
+        [
+          {
+            "node": "Alta Store Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Note Auth Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Note Auth Fail": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Store Token": {
+      "main": [
+        [
+          {
+            "node": "Find Alta Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Alta Prospects": {
+      "main": [
+        [
+          {
+            "node": "Alta Drop Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Drop Empty": {
+      "main": [
+        [
+          {
+            "node": "Alta Any?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Any?": {
+      "main": [
+        [
+          {
+            "node": "Alta Thread Loop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Thread Loop": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Campaign Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Campaign Row": {
+      "main": [
+        [
+          {
+            "node": "MCP Get Rep LI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Get Rep LI": {
+      "main": [
+        [
+          {
+            "node": "MCP Get Rep Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Get Rep Email": {
+      "main": [
+        [
+          {
+            "node": "Prep Alta Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Alta Calls": {
+      "main": [
+        [
+          {
+            "node": "Skip Rep?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Rep?": {
+      "main": [
+        [
+          {
+            "node": "MCP List Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alta Thread Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP List Messages": {
+      "main": [
+        [
+          {
+            "node": "Merge Alta Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Alta Thread": {
+      "main": [
+        [
+          {
+            "node": "Write Alta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Alta?": {
+      "main": [
+        [
+          {
+            "node": "Update Alta Thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alta Thread Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Alta Thread": {
+      "main": [
+        [
+          {
+            "node": "Alta Thread Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 12h (07:30+19:30)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Alta Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Daily 07:30": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "altaSync": {
+        "totalInWorkspace": 31,
+        "truncated": false,
+        "campaigns": [
+          {
+            "name": "Founder Engineers (2025+ accelerator-cohort)",
+            "leads": 49
+          },
+          {
+            "name": "Founders & Tech - Infra 2+ (2025+ accelerator-cohort)",
+            "leads": 39
+          },
+          {
+            "name": "Founders & Tech - Infra 1 (2025+ accelerator-cohort)",
+            "leads": 52
+          },
+          {
+            "name": "Founders & Tech - Infra 0 (2025+ accelerator-cohort)",
+            "leads": 960
+          },
+          {
+            "name": "Hiring · Owner-Led — Infra US (webhook)",
+            "leads": 745
+          }
+        ]
+      },
+      "altaThreads": {
+        "checked": 29,
+        "updated": 1,
+        "skipped": [
+          "BrothersTech (missing campaignId)"
+        ]
+      },
+      "runStartedAt": 1786681853371
+    },
+    "node:Every 12h (07:30+19:30)": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
+  "activeVersionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-01T14:55:25.833Z",
+      "createdAt": "2026-08-01T14:55:25.833Z",
+      "role": "workflow:owner",
+      "workflowId": "up8Yll6huq06h1DE",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:29:49.202Z",
+    "createdAt": "2026-08-08T20:29:49.202Z",
+    "versionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
+    "workflowId": "up8Yll6huq06h1DE",
+    "nodes": [
+      {
+        "id": "0fccb4d5-3276-4231-8e6c-e1f8fa53bc95",
+        "name": "Every 12h (07:30+19:30)",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -600,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 7,
+                "triggerAtMinute": 30
+              },
+              {
+                "triggerAtHour": 19,
+                "triggerAtMinute": 30
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "be5243fd-644e-497d-9f6c-6e4fea7a3e57",
+        "name": "Fetch Alta Campaigns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -380,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.altahq.com/v1/campaigns",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "sx4wc41lcV5NSNM8",
+            "name": "Alta"
+          }
+        }
+      },
+      {
+        "id": "0f31c375-2ea8-41e2-98c0-fecf733a78b0",
+        "name": "Filter Active",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -160,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const j=$input.first().json||{};\nconst all=j.data||[];\nconst sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.altaSync={ totalInWorkspace: all.length, truncated: !!j.hasMore, campaigns: [] };\nconst active=all.filter(c=>c.status==='active'&&!c.isArchived);\nreturn active.map(c=>({ json: { campaignId:c.id, campaignName:c.name, status:String(c.status||'').toUpperCase(), launchedAt:c.launchedAt||c.createdAt||'' } }));"
+        }
+      },
+      {
+        "id": "62a69264-f67e-4f5a-b681-fab7602583be",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          280,
+          220
+        ],
+        "parameters": {
+          "jsCode": "let s={totalInWorkspace:0,truncated:false,campaigns:[]};\nlet t={checked:0,updated:0,skipped:[]};\nlet rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); s=sd.altaSync||s; t=sd.altaThreads||t; rs=sd.runStartedAt||0; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=s.campaigns.map(c=>'- **'+c.name+':** '+nf(c.leads)+' leads');\nconst warn=s.truncated?['**WARNING:** workspace has >100 campaigns, list truncated']:[];\nconst authFailed=t.skipped.some(p=>String(p).includes('AUTH FAILED'));\nconst zeroUpsert=s.totalInWorkspace>0 && s.campaigns.length===0;\nconst errCount=t.skipped.length + (authFailed && !t.skipped.length ? 1 : 0) + (zeroUpsert ? 1 : 0);\nconst zeroWarn=zeroUpsert?['**ERROR:** 0 campaigns upserted while workspace has '+s.totalInWorkspace+' campaign(s)']:[];\nconst parts=['**'+s.campaigns.length+' active of '+s.totalInWorkspace+' campaigns in workspace**'];\nif(warn.length) parts.push(warn.join('\\n'));\nif(zeroWarn.length) parts.push(zeroWarn.join('\\n'));\nif(lines.length) parts.push('**Campaigns**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(t.skipped.length) parts.push('**Thread problems ('+t.skipped.length+')**\\n'+t.skipped.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Sync Alta Campaigns to Hub',\n 'Client': ['reclCOYRBgMowJd8G'],\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': s.campaigns.length,\n 'Records Out': s.campaigns.length,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "093ebb98-6c4a-47e6-9d8b-bfa5162ad14a",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          500,
+          220
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "3fa4a61b-c1ad-44fc-9b46-f005600a4520",
+        "name": "Count Prospects",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          280,
+          -160
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.altahq.com/v1/prospects",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "campaignId",
+                "value": "={{ $json.campaignId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "cursor",
+                      "value": "={{ $response.body.next }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.hasMore }}",
+                "limitPagesFetched": true,
+                "maxRequests": 50,
+                "requestInterval": 300
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "sx4wc41lcV5NSNM8",
+            "name": "Alta"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "70b8f68f-04ca-42a6-b3bb-252c9402add0",
+        "name": "Build Campaign Row",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          500,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const c=$('Loop Campaigns').first().json;\nlet leads=0;\nfor(const it of $input.all()){ const j=it.json||{}; leads+=(Array.isArray(j.data)?j.data.length:0); }\nconst sd=$getWorkflowStaticData('global');\nsd.altaSync.campaigns.push({name:c.campaignName, leads});\nreturn [{ json: {\n  'Campaign': c.campaignName,\n  'Campaign ID': c.campaignId,\n  'Client': ['reclCOYRBgMowJd8G'],\n  'Sequencer': 'Alta',\n  'Channel': 'Multi',\n  'Status': c.status,\n  'Leads': leads,\n  'Created': c.launchedAt,\n  'Last Synced': $now.toISO()\n}}];"
+        }
+      },
+      {
+        "id": "c77abc18-7978-4fd9-9ac6-ff8695101fbb",
+        "name": "Upsert Campaign",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          720,
+          -160
+        ],
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Campaign ID"
+            ],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $json.Campaign }}",
+              "Campaign ID": "={{ $json['Campaign ID'] }}",
+              "Client": "={{ $json.Client }}",
+              "Sequencer": "={{ $json.Sequencer }}",
+              "Channel": "={{ $json.Channel }}",
+              "Status": "={{ $json.Status }}",
+              "Leads": "={{ $json.Leads }}",
+              "Created": "={{ $json.Created }}",
+              "Last Synced": "={{ $json['Last Synced'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "868ff4e6-63cb-4146-b7a8-8ac12a1b1b9b",
+        "name": "Loop Campaigns",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          60,
+          0
+        ],
+        "parameters": {
+          "batchSize": 1
+        }
+      },
+      {
+        "id": "93240dd0-a133-4994-aa90-997976a6f37c",
+        "name": "Alta Get Token",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          280,
+          460
+        ],
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "ZHXXvRsdnOnoQEkx"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "key",
+                "condition": "eq",
+                "keyValue": "alta"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "executeOnce": true
+      },
+      {
+        "id": "a1242965-b847-409f-99d9-80b8ec1715e2",
+        "name": "Alta Refresh Token",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          500,
+          460
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/token",
+          "sendBody": true,
+          "contentType": "form-urlencoded",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "grant_type",
+                "value": "refresh_token"
+              },
+              {
+                "name": "refresh_token",
+                "value": "={{ $json.refresh_token }}"
+              },
+              {
+                "name": "client_id",
+                "value": "ZsOUl58K5kzcjWGMHhReiXkEezHN7CNM"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b1e0b24a-7ed9-4f87-ba8f-2aef68537605",
+        "name": "Alta Token Gate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          460
+        ],
+        "parameters": {
+          "jsCode": "const t=$input.first().json||{};\nconst prev=$('Alta Get Token').first().json||{};\nconst sd=$getWorkflowStaticData('global');\nsd.altaThreads={checked:0,updated:0,skipped:[]};\nconst access=t.access_token||'';\nif(!access) return [{ json: { _authFailed:true, detail: JSON.stringify(t).slice(0,300) } }];\nreturn [{ json: { access_token:access, refresh_token:t.refresh_token||prev.refresh_token||'', expires_at:new Date(Date.now()+((t.expires_in||86400)*1000)).toISOString() } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0ea872a2-382d-4dea-a988-84133e952eb1",
+        "name": "Auth OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          940,
+          460
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ao1",
+                "leftValue": "={{ $json._authFailed ? 'fail' : 'ok' }}",
+                "rightValue": "ok",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d826428c-64ed-4c23-b9b6-65d0bb6c6b88",
+        "name": "Note Auth Fail",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1160,
+          620
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.altaThreads.skipped.push('AUTH FAILED - re-auth needed via Alta OAuth Callback flow: '+(($input.first().json||{}).detail||''));\nreturn [{ json: { ok:false } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "71a3563d-e616-4c6c-830a-75e4159d8c57",
+        "name": "Alta Store Token",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          1160,
+          460
+        ],
+        "parameters": {
+          "resource": "row",
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "ZHXXvRsdnOnoQEkx"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "key",
+                "condition": "eq",
+                "keyValue": "alta"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "key": "alta",
+              "access_token": "={{ $json.access_token }}",
+              "refresh_token": "={{ $json.refresh_token }}",
+              "expires_at": "={{ $json.expires_at }}"
+            }
+          },
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "dff84b71-555c-4ec8-8986-374373ac0af7",
+        "name": "Find Alta Prospects",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1380,
+          460
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=AND({Alta Prospect ID} != '', {Alta Msg ID} != '')",
+          "returnAll": true,
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "d73bb1fe-573f-4dd6-badb-f1e0354ff8a0",
+        "name": "Alta Drop Empty",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          460
+        ],
+        "parameters": {
+          "jsCode": "const items=$input.all().filter(it=>it&&it.json&&it.json.id);\nif(!items.length) return [{ json: { _empty:true } }];\nreturn items;"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "31ddb1fb-197b-4730-9c4e-7d41704d9c19",
+        "name": "Alta Any?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1820,
+          460
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "aa1",
+                "leftValue": "={{ $json._empty ? 'empty' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "17684382-e555-45eb-ac4b-4a4fa548b85d",
+        "name": "Alta Thread Loop",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          2040,
+          460
+        ],
+        "parameters": {
+          "batchSize": 1
+        }
+      },
+      {
+        "id": "d0f53786-dee9-4965-9a67-d7c193335759",
+        "name": "Get Campaign Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2260,
+          380
+        ],
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "id": "={{ (($json.fields ? $json.fields.Campaigns : $json.Campaigns) || [''])[0] }}",
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 4,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "5b08ac82-c7fa-413b-ac9e-106059cd6c22",
+        "name": "MCP Get Rep LI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2480,
+          380
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/mcp",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_linkedin_message', arguments: { linkedinMessageId: (($('Alta Thread Loop').first().json.fields ? $('Alta Thread Loop').first().json.fields['Alta Msg ID'] : $('Alta Thread Loop').first().json['Alta Msg ID']) || '') } } } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "7418c45c-d490-4b24-abc2-206265d5752d",
+        "name": "MCP Get Rep Email",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2700,
+          380
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/mcp",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_email_message', arguments: { emailMessageId: (($('Alta Thread Loop').first().json.fields ? $('Alta Thread Loop').first().json.fields['Alta Msg ID'] : $('Alta Thread Loop').first().json['Alta Msg ID']) || '') } } } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "7d65a027-2b28-4cce-8d78-c390bacfb59f",
+        "name": "Prep Alta Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2920,
+          380
+        ],
+        "parameters": {
+          "jsCode": "const parse=(raw)=>{ try{ let s=raw; if(typeof s==='object'&&s.data)s=s.data; if(typeof s!=='string')s=JSON.stringify(s); const m=s.match(/data:\\s*(\\{[\\s\\S]*\\})/); const rpc=JSON.parse(m?m[1]:s); const txt=rpc.result&&rpc.result.content&&rpc.result.content[0]&&rpc.result.content[0].text; return txt?JSON.parse(txt):null; }catch(e){ return null; } };\nconst pr=$('Alta Thread Loop').first().json; const prf=pr.fields||pr;\nconst crow=$('Get Campaign Row').first().json||{}; const cf=crow.fields||crow;\nconst campaignId=cf['Campaign ID']||'';\nconst prospectId=prf['Alta Prospect ID']||'';\nconst li=parse($('MCP Get Rep LI').first().json);\nconst em=parse($('MCP Get Rep Email').first().json);\nconst repId=(li&&li.repId)||(em&&em.repId)||'';\nconst sd=$getWorkflowStaticData('global');\nsd.altaThreads.checked++;\nif(!campaignId||!prospectId||!repId){ sd.altaThreads.skipped.push((prf.Name||pr.id)+' (missing'+(!campaignId?' campaignId':'')+(!prospectId?' prospectId':'')+(!repId?' repId':'')+')'); return [{ json: { _skip:true } }]; }\nconst mk=(tool,type)=>({jsonrpc:'2.0',id:2,method:'tools/call',params:{name:tool,arguments:{campaignId,prospectId,repId,type,tag:null,unread:false}}});\nconst out=[];\nfor(const type of ['campaign','received','manual','reply_agent']){ out.push({ json: { callBody: mk('list_linkedin_messages',type) } }); out.push({ json: { callBody: mk('list_email_messages',type) } }); }\nreturn out;"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "11013d87-c9ce-49cb-8b8a-151e01b8a261",
+        "name": "Skip Rep?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3140,
+          380
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sr1",
+                "leftValue": "={{ $json._skip ? 'skip' : 'go' }}",
+                "rightValue": "go",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "bd195916-d3d7-4df4-be16-818bfef6eaf9",
+        "name": "MCP List Messages",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3360,
+          300
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/mcp",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.callBody }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            }
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b0a4e67f-061d-44db-81a7-22cf24308cbb",
+        "name": "Merge Alta Thread",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3580,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const parse=(raw)=>{ try{ let s=raw; if(typeof s==='object'&&s.data)s=s.data; if(typeof s!=='string')s=JSON.stringify(s); const m=s.match(/data:\\s*(\\{[\\s\\S]*\\})/); const rpc=JSON.parse(m?m[1]:s); const txt=rpc.result&&rpc.result.content&&rpc.result.content[0]&&rpc.result.content[0].text; return txt?(txt.startsWith('{')?JSON.parse(txt):txt):null; }catch(e){ return null; } };\nconst msgs=[];\nfor(const it of $input.all()){\n  const r=parse(it.json);\n  if(!r||typeof r!=='object') continue;\n  const arr=r.linkedinMessages||r.emailMessages||[];\n  for(const m of arr){ if(m&&m.id) msgs.push(m); }\n}\nconst pr=$('Alta Thread Loop').first().json; const prf=pr.fields||pr;\nconst seen=new Set(); const uniq=[];\nfor(const m of msgs){ if(!seen.has(m.id)){ seen.add(m.id); uniq.push(m); } }\nuniq.sort((a,b)=>new Date(a.happenedAt||a.createdAt||0)-new Date(b.happenedAt||b.createdAt||0));\nconst fmtTs=(ts)=>{const d=new Date(ts);if(isNaN(d.getTime()))return '';return d.toLocaleString('sv-SE',{timeZone:'Asia/Jerusalem'}).slice(0,16);};\nconst blocks=[]; const themTs=[]; const usTs=[];\nfor(const m of uniq){\n  const txt=String(m.text||m.body||'').replace(/\\s+/g,' ').trim().slice(0,400);\n  if(txt.length<2) continue;\n  const dir=(m.type==='received')?'THEM':'US';\n  const t=m.happenedAt||m.createdAt||'';\n  if(dir==='THEM'&&t)themTs.push(t); if(dir==='US'&&t)usTs.push(t);\n  blocks.push('**['+fmtTs(t)+'] '+dir+':**\\n'+txt);\n}\nlet thread=blocks.join('\\n\\n');\nif(thread.length>9000)thread=thread.slice(-9000);\nconst iso=(t)=>{const d=new Date(t);return isNaN(d.getTime())?'':d.toISOString();};\nconst firstThem=themTs.length?iso(themTs[0]):(prf['First Engagement']||'');\nconst lastThem=themTs.length?iso(themTs[themTs.length-1]):(prf['Last Engaged']||'');\nconst lastUs=usTs.length?iso(usTs[usTs.length-1]):(prf['Last Touch']||'');\nconst current=String(prf['Conversation Thread']||'').trim();\nif(!thread||(thread.trim()===current && (!lastThem||prf['Last Engaged']) && (!lastUs||prf['Last Touch']))) return [{ json: { _skip:true } }];\nconst sd=$getWorkflowStaticData('global');\nsd.altaThreads.updated++;\nreturn [{ json: { prospectId: pr.id, 'Conversation Thread': thread, 'First Engagement': firstThem, 'Last Engaged': lastThem, 'Last Touch': lastUs } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "3cdd12e6-10e1-46bb-b2d0-8673f4b006a6",
+        "name": "Write Alta?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3800,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "wa1",
+                "leftValue": "={{ $json._skip ? 'skip' : 'write' }}",
+                "rightValue": "write",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "7f7487c3-0abd-4c6a-a0be-f5fc01f431af",
+        "name": "Update Alta Thread",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4020,
+          220
+        ],
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.prospectId }}",
+              "Conversation Thread": "={{ $json['Conversation Thread'] }}",
+              "First Engagement": "={{ $json['First Engagement'] }}",
+              "Last Engaged": "={{ $json['Last Engaged'] }}",
+              "Last Touch": "={{ $json['Last Touch'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Fetch Alta Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Filter Active",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Active": {
+        "main": [
+          [
+            {
+              "node": "Loop Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Count Prospects": {
+        "main": [
+          [
+            {
+              "node": "Build Campaign Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Campaign Row": {
+        "main": [
+          [
+            {
+              "node": "Upsert Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Campaign": {
+        "main": [
+          [
+            {
+              "node": "Loop Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Alta Get Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Count Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Get Token": {
+        "main": [
+          [
+            {
+              "node": "Alta Refresh Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Refresh Token": {
+        "main": [
+          [
+            {
+              "node": "Alta Token Gate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Token Gate": {
+        "main": [
+          [
+            {
+              "node": "Auth OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Auth OK?": {
+        "main": [
+          [
+            {
+              "node": "Alta Store Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Note Auth Fail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Note Auth Fail": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Store Token": {
+        "main": [
+          [
+            {
+              "node": "Find Alta Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Alta Prospects": {
+        "main": [
+          [
+            {
+              "node": "Alta Drop Empty",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Drop Empty": {
+        "main": [
+          [
+            {
+              "node": "Alta Any?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Any?": {
+        "main": [
+          [
+            {
+              "node": "Alta Thread Loop",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Thread Loop": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get Campaign Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Campaign Row": {
+        "main": [
+          [
+            {
+              "node": "MCP Get Rep LI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Get Rep LI": {
+        "main": [
+          [
+            {
+              "node": "MCP Get Rep Email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Get Rep Email": {
+        "main": [
+          [
+            {
+              "node": "Prep Alta Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Alta Calls": {
+        "main": [
+          [
+            {
+              "node": "Skip Rep?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Skip Rep?": {
+        "main": [
+          [
+            {
+              "node": "MCP List Messages",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Alta Thread Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP List Messages": {
+        "main": [
+          [
+            {
+              "node": "Merge Alta Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Alta Thread": {
+        "main": [
+          [
+            {
+              "node": "Write Alta?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Alta?": {
+        "main": [
+          [
+            {
+              "node": "Update Alta Thread",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Alta Thread Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Alta Thread": {
+        "main": [
+          [
+            {
+              "node": "Alta Thread Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Every 12h (07:30+19:30)": {
+        "main": [
+          [
+            {
+              "node": "Fetch Alta Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

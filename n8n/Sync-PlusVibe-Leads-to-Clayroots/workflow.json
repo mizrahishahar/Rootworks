@@ -1,0 +1,2809 @@
+{
+  "updatedAt": "2026-08-13T09:22:11.835Z",
+  "createdAt": "2026-08-08T16:34:33.134Z",
+  "id": "TTRm3gldn3jiVgkp",
+  "name": "Sync PlusVibe Leads to Clayroots",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "a1248f1d-a7d5-434d-9bba-346deb5fd229",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1008,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Run.js"
+      },
+      "id": "25d4cc8a-901f-4ea9-bfc0-5ee74a361b56",
+      "name": "Init Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        464
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "AND({PlusVibe Workspace ID} != '', {Clayroots Base ID} != '')",
+        "options": {}
+      },
+      "id": "97d98859-66b4-4e38-9eaa-868d2e09053a",
+      "name": "Get Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        464
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Map-Clients.js"
+      },
+      "id": "6b3bfee5-01a5-4822-874f-312604c38f60",
+      "name": "Map Clients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Close-Client.js"
+      },
+      "id": "abfbe612-69d5-4d02-b50d-9984b9e81571",
+      "name": "Close Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -208
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "181af2e0-397d-44c5-80d6-48d27178b2cc",
+      "name": "Log Runs",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        -208
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}/listRecords",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({filterByFormula: $json.formula, fields: ['Final Email'], pageSize: 100}) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "offset",
+                    "value": "={{ $response?.body?.offset ?? '' }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "id": "4f980f67-470b-43da-adc2-99a86daf9c82",
+      "name": "Find Matches",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        -16
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Patches.js"
+      },
+      "id": "fdd3e079-f3ff-491c-9b31-c42556418a03",
+      "name": "Build Patches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -16
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ap1",
+              "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7ec089ca-0918-40a4-9d5c-594e1b7ed517",
+      "name": "Any Patches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "73d2e16f-cdc4-469f-b891-12df5859bae0",
+      "name": "Patch Records",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        80
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-Writes.js"
+      },
+      "id": "ffd6223b-4dc7-45e7-8fa8-078d6f0a1eb3",
+      "name": "Record Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        160
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Context.js"
+      },
+      "id": "6ff948e3-7010-4a04-8fd9-73f0f411974e",
+      "name": "Client Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "=AND({Automation} = 'Sync PlusVibe Leads to Clayroots', {Trigger} = 'schedule', {Watermark OK})",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "sort": {
+          "property": [
+            {
+              "field": "Run at",
+              "direction": "desc"
+            }
+          ]
+        }
+      },
+      "id": "93740136-1b88-4919-b5a3-c4a5463596db",
+      "name": "Get Watermark",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        496
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Set-Watermark.js"
+      },
+      "id": "47e7c11c-133a-4378-9223-8c9a1b1128b9",
+      "name": "Set Watermark",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        496
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.ws }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 600
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "38389a58-de9a-4940-8ec9-38a23f79071d",
+      "name": "List Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        496
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Campaign-Items.js"
+      },
+      "id": "6c21d6b2-598c-41ad-80c4-5394f04b2dec",
+      "name": "Campaign Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        496
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hc1",
+              "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "713d91e3-ed9a-4287-8e62-f83bda77b7d8",
+      "name": "Has Campaigns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.ws }}"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.campaign_id }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "page",
+              "value": "={{ $json.page }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "2e44d1d2-a1da-4725-81a3-15dee4a551fb",
+      "name": "Pull Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        400
+      ],
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Nominate-Compute.js"
+      },
+      "id": "37878d99-a2be-4568-af8c-f86bd8270d7e",
+      "name": "Nominate + Compute",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        496
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f4661d42-8b04-4e06-afa7-7ea530704182",
+      "name": "Get CR Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1904,
+        496
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Adoption.js"
+      },
+      "id": "fcec5c3e-966c-41eb-b8aa-24cb9e5f1db8",
+      "name": "Plan Adoption",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        496
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fc1",
+              "leftValue": "={{ $json._none ? 'none' : 'create' }}",
+              "rightValue": "create",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "89d0703c-bdc0-4242-83bd-3d078870d029",
+      "name": "Fields To Create?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2352,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Client Context').first().json.crBase }}/tables/{{ $json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.field) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "58aad372-24d2-4939-8d50-b2383e324719",
+      "name": "Create Fields",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2576,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Finish-Client.js"
+      },
+      "id": "77d62ab7-28ea-4f36-8c93-e8258d9ca3f5",
+      "name": "Finish Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        560
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "46dc515d-d6d8-4709-92f7-c5c7791ecef8",
+      "name": "Loop Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -112,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 3
+            }
+          ]
+        }
+      },
+      "id": "5c4cc515-53f1-4d3a-a5ba-1b5e6963f84a",
+      "name": "Nightly 03:00 (armed on publish)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        560
+      ]
+    },
+    {
+      "id": "bcde64b5-063b-473a-bc10-83b1adcd0520",
+      "name": "Init Lead Pull",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Lead-Pull.js"
+      }
+    },
+    {
+      "id": "6402ea86-90d7-4fbb-bf7f-5f7a5f518e37",
+      "name": "Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        60
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "9f6fc358-a23f-4dc2-8ac9-104a2519e294"
+    },
+    {
+      "id": "2e8907c1-0954-456b-93d6-b84a29a4c9c4",
+      "name": "Collect Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Page.js"
+      }
+    },
+    {
+      "id": "3a8fb719-7cba-43ee-8577-04bcfd51aa2f",
+      "name": "Pull Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1880,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7a734432-bf8a-4e31-8f9f-6b7db3eccebf",
+      "name": "Next Chunk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Next-Chunk.js"
+      }
+    },
+    {
+      "id": "82b17d19-d5f7-4df7-ba8a-59e8199bc5ec",
+      "name": "Chunks Left?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        340,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cl1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "more",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d54be8c6-0b15-459f-be32-fceb0052ea9a",
+      "name": "Mirror Needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2980,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "mn1",
+              "leftValue": "={{ $json.mirrorId ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b69396af-0d62-41ab-a843-9d175c773ee6",
+      "name": "Read Mirror",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3200,
+        320
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.crBase }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.mirrorId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Campaign ID"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "63ea8f0e-3514-4f4d-a1a4-b3ccaa7b1a5d",
+      "name": "Map Mirror",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3420,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Map-Mirror.js"
+      }
+    },
+    {
+      "id": "2db7ebf5-5df3-441e-9553-d2d8e8f57ae6",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        -200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "Init Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Run": {
+      "main": [
+        [
+          {
+            "node": "Get Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clients": {
+      "main": [
+        [
+          {
+            "node": "Map Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matches": {
+      "main": [
+        [
+          {
+            "node": "Build Patches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Patches": {
+      "main": [
+        [
+          {
+            "node": "Any Patches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Patches?": {
+      "main": [
+        [
+          {
+            "node": "Patch Records",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Next Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patch Records": {
+      "main": [
+        [
+          {
+            "node": "Record Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Context": {
+      "main": [
+        [
+          {
+            "node": "Get Watermark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Watermark": {
+      "main": [
+        [
+          {
+            "node": "Set Watermark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Watermark": {
+      "main": [
+        [
+          {
+            "node": "List Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Campaign Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Items": {
+      "main": [
+        [
+          {
+            "node": "Has Campaigns?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Campaigns?": {
+      "main": [
+        [
+          {
+            "node": "Init Lead Pull",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nominate + Compute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nominate + Compute": {
+      "main": [
+        [
+          {
+            "node": "Get CR Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get CR Schema": {
+      "main": [
+        [
+          {
+            "node": "Plan Adoption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Adoption": {
+      "main": [
+        [
+          {
+            "node": "Fields To Create?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fields To Create?": {
+      "main": [
+        [
+          {
+            "node": "Create Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finish Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Fields": {
+      "main": [
+        [
+          {
+            "node": "Finish Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Clients": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Client Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nightly 03:00 (armed on publish)": {
+      "main": [
+        [
+          {
+            "node": "Init Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Clients": {
+      "main": [
+        [
+          {
+            "node": "Loop Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Lead Pull": {
+      "main": [
+        [
+          {
+            "node": "Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pace": {
+      "main": [
+        [
+          {
+            "node": "Pull Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Page": {
+      "main": [
+        [
+          {
+            "node": "Pull Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Done?": {
+      "main": [
+        [
+          {
+            "node": "Nominate + Compute",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next Chunk": {
+      "main": [
+        [
+          {
+            "node": "Chunks Left?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunks Left?": {
+      "main": [
+        [
+          {
+            "node": "Find Matches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Writes": {
+      "main": [
+        [
+          {
+            "node": "Next Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finish Client": {
+      "main": [
+        [
+          {
+            "node": "Mirror Needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror Needed?": {
+      "main": [
+        [
+          {
+            "node": "Read Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Next Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Mirror": {
+      "main": [
+        [
+          {
+            "node": "Map Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Mirror": {
+      "main": [
+        [
+          {
+            "node": "Next Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Client": {
+      "main": [
+        [
+          {
+            "node": "Loop Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Runs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Nightly 03:00 (armed on publish)": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "run": {
+        "start": "2026-08-14T03:00:32.200+03:00",
+        "trigger": "schedule",
+        "clientFilter": "",
+        "fullPass": false
+      },
+      "clients": {},
+      "chunks": [],
+      "currentClient": "recyZTRr7Hb5S6Ozr",
+      "pull": {
+        "queue": [],
+        "idx": 0,
+        "byCampaign": {}
+      },
+      "write": null
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
+  "activeVersionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-08T16:34:33.183Z",
+      "createdAt": "2026-08-08T16:34:33.183Z",
+      "role": "workflow:owner",
+      "workflowId": "TTRm3gldn3jiVgkp",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-13T09:22:11.841Z",
+    "createdAt": "2026-08-13T09:22:11.841Z",
+    "versionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
+    "workflowId": "TTRm3gldn3jiVgkp",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "a1248f1d-a7d5-434d-9bba-346deb5fd229",
+        "name": "Manual Start",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -1008,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nlet trig='schedule', cf='', fp=false;\ntry{\n  const t=$('Manual Start').first().json||{};\n  trig='event';\n  const b=(t&&typeof t.body==='object'&&t.body)?t.body:{};\n  const q=(t&&typeof t.query==='object'&&t.query)?t.query:{};\n  cf=String(t.clientFilter||b.clientFilter||q.clientFilter||'').trim();\n  const rawFp=(t.fullPass!==undefined?t.fullPass:(b.fullPass!==undefined?b.fullPass:q.fullPass));\n  fp=(rawFp===true||String(rawFp).toLowerCase()==='true');\n}catch(e){}\nsd.run={start:$now.toISO(), trigger:trig, clientFilter:cf, fullPass:fp};\nsd.clients={};\nsd.pull=null;\nsd.write=null;\nreturn [{json:{trigger:trig, clientFilter:cf, fullPass:fp}}];"
+        },
+        "id": "25d4cc8a-901f-4ea9-bfc0-5ee74a361b56",
+        "name": "Init Run",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -784,
+          464
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "AND({PlusVibe Workspace ID} != '', {Clayroots Base ID} != '')",
+          "options": {}
+        },
+        "id": "97d98859-66b4-4e38-9eaa-868d2e09053a",
+        "name": "Get Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -560,
+          464
+        ],
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst cf=String((sd.run||{}).clientFilter||'').toLowerCase();\nconst out=[];\nfor(const it of $input.all()){\n  const r=it.json||{};\n  const f=r.fields||r;\n  const name=String(f['Client name']||f['Client']||'').trim();\n  const ws=String(f['PlusVibe Workspace ID']||'').trim();\n  const crBase=String(f['Clayroots Base ID']||'').trim();\n  if(!r.id||!name||!ws||!crBase) continue;\n  if(cf && name.toLowerCase().indexOf(cf)===-1) continue;\n  out.push({json:{clientRecId:r.id, clientName:name, ws, crBase}});\n}\nreturn out;"
+        },
+        "id": "6b3bfee5-01a5-4822-874f-312604c38f60",
+        "name": "Map Clients",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -336,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst id=sd.currentClient;\nconst c=sd.clients[id];\nconst cids=Object.keys(c.perCampaign);\nlet complete=0;\nfor(const cid of cids){ const p=c.perCampaign[cid]; const ok=(p.sentCounter===null||p.sentCounter===undefined)||Number(p.sumSentStep)===Number(p.sentCounter)||p.accepted===true; if(ok) complete++; }\nconst rowsWritten=Object.keys(c.updates).reduce((s,t)=>s+(c.updates[t]||0),0);\nconst skips=c.skippedTables.map(s=>'table skipped: '+s);\nif(c.nominated===0) skips.push('no nominated leads, nothing to write');\nconst warns=c.warnings.slice();\nfor(const t of Object.keys(c.goneTables||{})) warns.push('table gone mid-run: '+t+' ('+c.goneTables[t]+' batches skipped)');\nc.summary={name:c.name, mode:(c.watermark?('incremental since '+c.watermark):'backfill'), campaigns:cids.length, complete, incomplete:cids.length-complete, leadsPulled:c.leadsPulled, nominated:c.nominated, rowsWritten, failedList:[].concat(c.errors, c.invariant), warnings:warns, skips, pullOk:c.pullOk!==false, writeOk:c.writeOk!==false};\ndelete c.perCampaign; delete c.payloads; delete c.updates; delete c.errors; delete c.warnings; delete c.invariant; delete c.skippedTables; delete c.targetTables; delete c.mirrorMap; delete c._noMirrorWarned; delete c.goneTables;\nsd.write=null;\nsd.pull={queue:[], idx:0, byCampaign:{}};\nreturn [{json:{clientRecId:id}}];"
+        },
+        "id": "abfbe612-69d5-4d02-b50d-9984b9e81571",
+        "name": "Close Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          784,
+          -208
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "181af2e0-397d-44c5-80d6-48d27178b2cc",
+        "name": "Log Runs",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1008,
+          -208
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({filterByFormula: $json.formula, fields: ['Final Email'], pageSize: 100}) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "id": "4f980f67-470b-43da-adc2-99a86daf9c82",
+        "name": "Find Matches",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          784,
+          -16
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst ch=(sd.write&&sd.write.current)||{};\nconst c=sd.clients[ch.clientRecId];\nconst isGone=s=>/INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND|TABLE_NOT_FOUND|NOT_FOUND|MODEL_ID_NOT_FOUND/i.test(s);\nconst recs=[];\nfor(const it of $input.all()){\n  const j=it.json||{};\n  if(Array.isArray(j.records)) recs.push(...j.records);\n  else if(j.error){\n    const s=JSON.stringify(j.error).slice(0,300);\n    if(isGone(s)){ c.goneTables[ch.tableName]=(c.goneTables[ch.tableName]||0)+1; }\n    else { c.errors.push('list '+ch.tableName+': '+s.slice(0,200)); c.writeOk=false; }\n  }\n}\nconst norm=e=>String(e||'').toLowerCase().trim();\nconst patches=[];\nfor(const r of recs){\n  const em=norm((r.fields||{})['Final Email']);\n  const p=c.payloads[em];\n  if(!p) continue;\n  const fields={'Messages Sent':p['Messages Sent'], 'Campaign Status':p['Campaign Status'], 'Bounce Reason':p['Bounce Reason'], 'Synced At':p['Synced At']};\n  if(p['Last Contacted']) fields['Last Contacted']=p['Last Contacted'];\n  if(c.mirrorId){\n    const links=[];\n    for(const cid of (p['Campaigns']||[])){\n      const rid=(c.mirrorMap||{})[cid];\n      if(rid) links.push(rid);\n      else if(!c._noMirrorWarned[cid]){ c._noMirrorWarned[cid]=1; c.warnings.push('no mirror row for campaign '+cid+'; Campaigns link skipped for its leads'); }\n    }\n    fields['Campaigns']=links;\n  }\n  patches.push({id:r.id, fields});\n}\nconst out=[];\nfor(let i=0;i<patches.length;i+=10){\n  out.push({json:{crBase:ch.crBase, tableId:ch.tableId, tableName:ch.tableName, clientRecId:ch.clientRecId, body:{records:patches.slice(i,i+10), typecast:true}}});\n}\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+        },
+        "id": "fdd3e079-f3ff-491c-9b31-c42556418a03",
+        "name": "Build Patches",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1008,
+          -16
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ap1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "7ec089ca-0918-40a4-9d5c-594e1b7ed517",
+        "name": "Any Patches?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1232,
+          80
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "73d2e16f-cdc4-469f-b891-12df5859bae0",
+        "name": "Patch Records",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1456,
+          80
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst ch=(sd.write&&sd.write.current)||{};\nconst c=sd.clients[ch.clientRecId];\nconst isGone=s=>/INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND|TABLE_NOT_FOUND|NOT_FOUND|MODEL_ID_NOT_FOUND/i.test(s);\ntry{\n  for(const it of $('Patch Records').all()){\n    const j=it.json||{};\n    if(Array.isArray(j.records)) c.updates[ch.tableName]=(c.updates[ch.tableName]||0)+j.records.length;\n    else if(j.error){\n      const s=JSON.stringify(j.error).slice(0,300);\n      if(isGone(s)){ c.goneTables[ch.tableName]=(c.goneTables[ch.tableName]||0)+1; }\n      else { c.errors.push('patch '+ch.tableName+': '+s.slice(0,200)); c.writeOk=false; }\n    }\n  }\n}catch(e){}\nreturn [{json:{done:true}}];"
+        },
+        "id": "ffd6223b-4dc7-45e7-8fa8-078d6f0a1eb3",
+        "name": "Record Writes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1680,
+          160
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=$input.first().json;\nsd.currentClient=c.clientRecId;\nsd.pull={queue:[], idx:0, page:1, attempts:0, got:0, retried:false, byCampaign:{}, campStart:0};\nsd.write={queue:[], idx:0, current:null};\nsd.clients[c.clientRecId]={name:c.clientName, ws:c.ws, crBase:c.crBase, startedAt:Date.now(), watermark:null, leadsPulled:0, nominated:0, perCampaign:{}, payloads:{}, targetTables:[], skippedTables:[], mirrorId:'', mirrorMap:{}, _noMirrorWarned:{}, fieldsCreated:0, updates:{}, errors:[], warnings:[], invariant:[], invariantOk:true, pullOk:true, writeOk:true, goneTables:{}};\nreturn [{json:c}];"
+        },
+        "id": "6ff948e3-7010-4a04-8fd9-73f0f411974e",
+        "name": "Client Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          112,
+          496
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "=AND({Automation} = 'Sync PlusVibe Leads to Clayroots', {Trigger} = 'schedule', {Watermark OK})",
+          "returnAll": false,
+          "limit": 1,
+          "options": {},
+          "sort": {
+            "property": [
+              {
+                "field": "Run at",
+                "direction": "desc"
+              }
+            ]
+          }
+        },
+        "id": "93740136-1b88-4919-b5a3-c4a5463596db",
+        "name": "Get Watermark",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          336,
+          496
+        ],
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nlet wm=null;\nif(!((sd.run||{}).fullPass)){\n  try{\n    const r=$input.first().json||{};\n    const f=r.fields||r;\n    const ra=f['Run at'];\n    if(r.id&&ra){ const d=new Date(ra); if(!isNaN(d.getTime())) wm=new Date(d.getTime()-24*3600*1000).toISOString(); }\n  }catch(e){}\n}\nc.watermark=wm;\nreturn [{json:{clientRecId:sd.currentClient, watermark:wm, ws:c.ws}}];"
+        },
+        "id": "47e7c11c-133a-4378-9223-8c9a1b1128b9",
+        "name": "Set Watermark",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          496
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.ws }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 600
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "38389a58-de9a-4940-8ec9-38a23f79071d",
+        "name": "List Campaigns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          784,
+          496
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst raw=[];\nlet sawValidEmpty=false;\nlet firstSnippet='';\nfor(const it of $input.all()){\n  const j=it.json||{};\n  const hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\n  const body=hasWrap?j.body:j;\n  const status=Number(j.statusCode||0);\n  if(!firstSnippet) firstSnippet=JSON.stringify(hasWrap?{statusCode:status, body:body}:j).slice(0,300);\n  const ok=!status||(status>=200&&status<300);\n  const arr=Array.isArray(body)?body:(body&&Array.isArray(body.campaigns)?body.campaigns:(body&&Array.isArray(body.data)?body.data:((body&&(body.id||body._id))?[body]:null)));\n  if(ok&&Array.isArray(arr)){\n    for(const x of arr){ if(x&&(x.id||x._id)) raw.push(x); }\n    if(!arr.length) sawValidEmpty=true;\n  }\n  if(hasWrap&&status>=200&&status<300&&body&&typeof body==='object'&&!Array.isArray(body)&&!Object.keys(body).length) sawValidEmpty=true;\n}\nif(!raw.length){\n  if(sawValidEmpty) c.warnings.push('workspace has no campaigns');\n  else { c.errors.push('campaign/list-all failed or unrecognized response - failing closed. First response item: '+firstSnippet); c.pullOk=false; }\n}\nconst out=[];\nfor(const x of raw){\n  const id=String(x.id||x._id);\n  c.perCampaign[id]={name:x.camp_name||x.name||id, sentCounter:Number(x.sent_count||0), sumSentStep:0, leads:0};\n  out.push({json:{campaign_id:id, ws:c.ws, expected:(x.lead_count===undefined||x.lead_count===null)?null:Number(x.lead_count)}});\n}\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+        },
+        "id": "6c21d6b2-598c-41ad-80c4-5394f04b2dec",
+        "name": "Campaign Items",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1008,
+          496
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "hc1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "713d91e3-ed9a-4287-8e62-f83bda77b7d8",
+        "name": "Has Campaigns?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1232,
+          496
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.ws }}"
+              },
+              {
+                "name": "campaign_id",
+                "value": "={{ $json.campaign_id }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "page",
+                "value": "={{ $json.page }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "2e44d1d2-a1da-4725-81a3-15dee4a551fb",
+        "name": "Pull Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1456,
+          400
+        ],
+        "retryOnFail": false,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst inFirst=($input.first()||{}).json||{};\nconst leads=[];\nif(!inFirst._none){\n  const P=sd.pull||{};\n  const by=P.byCampaign||{};\n  for(const k of Object.keys(by)){\n    for(const l of by[k]){\n      if(!l||!(l.email||l.lead_email)) continue;\n      leads.push(Object.assign({}, l, {campaign_id:String(l.campaign_id||k)}));\n    }\n  }\n}\nconst wm=c.watermark?new Date(c.watermark).getTime():null;\nconst norm=e=>String(e||'').toLowerCase().trim();\nconst groups={};\nlet kept=0;\nfor(const l of leads){\n  const em=norm(l.email||l.lead_email); if(!em) continue;\n  const cid=String(l.campaign_id||'');\n  if(!c.perCampaign[cid]) continue;\n  kept++;\n  const rec={cid, status:String(l.status||'').toUpperCase(), sent_step:Number(l.sent_step||0), last_sent_at:l.last_sent_at||null, modified_at:l.modified_at||null, replied_count:Number(l.replied_count||0), bounce_msg:String(l.bounce_msg||'')};\n  c.perCampaign[cid].sumSentStep+=rec.sent_step;\n  c.perCampaign[cid].leads++;\n  (groups[em]=groups[em]||[]).push(rec);\n}\nc.leadsPulled=kept;\nconst prec={UNSUBSCRIBED:6,BOUNCED:5,REPLIED:4,IN_SEQUENCE:3,COMPLETED:2,NEVER_CONTACTED:1};\nconst mapStatus=s=>{ if(s==='UNSUBSCRIBED')return 'UNSUBSCRIBED'; if(s==='BOUNCED')return 'BOUNCED'; if(s==='REPLIED')return 'REPLIED'; if(s==='CONTACTED'||s==='PENDING'||s==='RESCHEDULED')return 'IN_SEQUENCE'; if(s==='COMPLETED')return 'COMPLETED'; return 'NEVER_CONTACTED'; };\nconst runStart=(sd.run||{}).start||$now.toISO();\nlet nominated=0;\nfor(const em of Object.keys(groups)){\n  const recs=groups[em];\n  const nom = wm===null || recs.some(r=> (r.modified_at && new Date(r.modified_at).getTime()>wm) || r.status==='REPLIED' || r.status==='UNSUBSCRIBED');\n  if(!nom) continue;\n  nominated++;\n  let sent=0, last=null, worst='NEVER_CONTACTED', bm='', bmTs=-1;\n  const cids=[];\n  for(const r of recs){\n    sent+=r.sent_step;\n    if(r.last_sent_at){ const t=new Date(r.last_sent_at).getTime(); if(!isNaN(t)&&(last===null||t>last)) last=t; }\n    const m=mapStatus(r.status); if(prec[m]>prec[worst]) worst=m;\n    if(r.bounce_msg){ const t=r.modified_at?new Date(r.modified_at).getTime():0; if(t>=bmTs){ bmTs=t; bm=r.bounce_msg; } }\n    if(!cids.includes(r.cid)) cids.push(r.cid);\n  }\n  c.payloads[em]={'Messages Sent':sent, 'Last Contacted': last===null?null:new Date(last).toISOString(), 'Campaign Status':worst, 'Bounce Reason':bm, 'Campaigns':cids, 'Synced At':runStart};\n}\nc.nominated=nominated;\nconst ACCEPTED={'6a5e3dc49b872335dfa3f027':{sum:364, sent:365}, '6a3ad9db3b32b093822e07fb':{sum:1783, sent:1387}, '6a3ad9daf294f74388ea65ac':{sum:4034, sent:3127}};\nfor(const cid of Object.keys(c.perCampaign)){\n  const p=c.perCampaign[cid];\n  if(p.sentCounter===null||p.sentCounter===undefined) continue;\n  if(Number(p.sumSentStep)===Number(p.sentCounter)) continue;\n  const acc=ACCEPTED[cid];\n  if(acc && Number(p.sumSentStep)===acc.sum && Number(p.sentCounter)===acc.sent){\n    p.accepted=true;\n    c.warnings.push('known mismatch (accepted): '+p.name+' '+p.sumSentStep+' vs '+p.sentCounter);\n  } else if(acc){\n    c.invariantOk=false;\n    c.invariant.push(p.name+' ('+cid+'): sum sent_step='+p.sumSentStep+' vs campaign sent='+p.sentCounter+' - DRIFTED beyond accepted '+acc.sum+' vs '+acc.sent);\n  } else {\n    c.invariantOk=false;\n    c.invariant.push(p.name+' ('+cid+'): sum sent_step='+p.sumSentStep+' vs campaign sent='+p.sentCounter);\n  }\n}\nif(sd.pull) sd.pull.byCampaign={};\nreturn [{json:{clientRecId:sd.currentClient, crBase:c.crBase, nominated}}];"
+        },
+        "id": "37878d99-a2be-4568-af8c-f86bd8270d7e",
+        "name": "Nominate + Compute",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1680,
+          496
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "f4661d42-8b04-4e06-afa7-7ea530704182",
+        "name": "Get CR Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1904,
+          496
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst j=($input.first()||{}).json||{};\nconst tables=Array.isArray(j.tables)?j.tables:[];\nif(!tables.length){ c.errors.push('schema fetch failed or base has no tables'); c.writeOk=false; return [{json:{_none:true}}]; }\nconst mirror=tables.find(t=>{ const names=new Set((t.fields||[]).map(f=>f.name)); return !names.has('Final Email') && names.has('Campaign ID') && names.has('Sequencer'); });\nc.mirrorId=mirror?mirror.id:'';\nconst want=[\n {name:'Messages Sent', spec:{name:'Messages Sent', type:'number', options:{precision:0}}},\n {name:'Last Contacted', spec:{name:'Last Contacted', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}}},\n {name:'Campaign Status', spec:{name:'Campaign Status', type:'singleSelect', options:{choices:[{name:'NEVER_CONTACTED'},{name:'IN_SEQUENCE'},{name:'COMPLETED'},{name:'REPLIED'},{name:'BOUNCED'},{name:'UNSUBSCRIBED'}]}}},\n {name:'Bounce Reason', spec:{name:'Bounce Reason', type:'singleLineText'}},\n {name:'Synced At', spec:{name:'Synced At', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}}}\n];\nconst out=[];\nfor(const t of tables){\n  const fe=(t.fields||[]).find(f=>f.name==='Final Email');\n  if(!fe) continue;\n  if(fe.type!=='singleLineText' && fe.type!=='email'){ c.skippedTables.push(t.name+' (Final Email is '+fe.type+')'); continue; }\n  c.targetTables.push({id:t.id, name:t.name});\n  c.updates[t.name]=0;\n  const have=new Set((t.fields||[]).map(f=>f.name));\n  for(const w of want){ if(!have.has(w.name)) out.push({json:{tableId:t.id, tableName:t.name, field:w.spec}}); }\n  if(mirror && !have.has('Campaigns')) out.push({json:{tableId:t.id, tableName:t.name, field:{name:'Campaigns', type:'multipleRecordLinks', options:{linkedTableId:mirror.id}}}});\n}\nif(!c.targetTables.length){ c.errors.push('no target tables with Final Email found in base'); c.writeOk=false; }\nif(!mirror) c.warnings.push('no campaigns mirror table (Campaign ID + Sequencer fields, no Final Email); Campaigns link field skipped');\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+        },
+        "id": "fcec5c3e-966c-41eb-b8aa-24cb9e5f1db8",
+        "name": "Plan Adoption",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2128,
+          496
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "fc1",
+                "leftValue": "={{ $json._none ? 'none' : 'create' }}",
+                "rightValue": "create",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "89d0703c-bdc0-4242-83bd-3d078870d029",
+        "name": "Fields To Create?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2352,
+          496
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Client Context').first().json.crBase }}/tables/{{ $json.tableId }}/fields",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.field) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 300
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "58aad372-24d2-4939-8d50-b2383e324719",
+        "name": "Create Fields",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2576,
+          400
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst inFirst=($input.first()||{}).json||{};\nif(!inFirst._none){\n  try{\n    const res=$('Create Fields').all();\n    let ok=0;\n    for(const it of res){ const j=it.json||{}; if(j.id) ok++; else if(j.error){ c.errors.push('field create: '+JSON.stringify(j.error).slice(0,200)); c.writeOk=false; } }\n    c.fieldsCreated=ok;\n  }catch(e){}\n}\nconst emails=Object.keys(c.payloads);\nsd.write={queue:[], idx:0, current:null};\nfor(const t of c.targetTables){\n  for(let i=0;i<emails.length;i+=100){\n    const slice=emails.slice(i,i+100);\n    const formula='OR('+slice.map(e=>'LOWER(TRIM({Final Email}))=\"'+e.replace(/\"/g,'')+'\"').join(',')+')';\n    sd.write.queue.push({clientRecId:sd.currentClient, crBase:c.crBase, tableId:t.id, tableName:t.name, formula, emails:slice.length});\n  }\n}\nreturn [{json:{clientRecId:sd.currentClient, chunks:sd.write.queue.length, mirrorId:c.mirrorId||'', crBase:c.crBase}}];"
+        },
+        "id": "77d62ab7-28ea-4f36-8c93-e8258d9ca3f5",
+        "name": "Finish Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2800,
+          560
+        ],
+        "executeOnce": false
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "46dc515d-d6d8-4709-92f7-c5c7791ecef8",
+        "name": "Loop Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -112,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 3
+              }
+            ]
+          }
+        },
+        "id": "5c4cc515-53f1-4d3a-a5ba-1b5e6963f84a",
+        "name": "Nightly 03:00 (armed on publish)",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -1008,
+          560
+        ]
+      },
+      {
+        "id": "bcde64b5-063b-473a-bc10-83b1adcd0520",
+        "name": "Init Lead Pull",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1340,
+          180
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst items=$input.all().map(i=>i.json).filter(x=>x&&x.campaign_id);\nsd.pull={queue:items.map(x=>({id:String(x.campaign_id), ws:x.ws, expected:(x.expected===undefined?null:x.expected)})), idx:0, page:1, attempts:0, got:0, retried:false, byCampaign:{}, campStart:Date.now()};\nif(!sd.pull.queue.length) return [{json:{done:true, wait:0}}];\nconst f=sd.pull.queue[0];\nreturn [{json:{ws:f.ws, campaign_id:f.id, page:1, wait:0}}];"
+        }
+      },
+      {
+        "id": "6402ea86-90d7-4fbb-bf7f-5f7a5f518e37",
+        "name": "Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1440,
+          60
+        ],
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "webhookId": "9f6fc358-a23f-4dc2-8ac9-104a2519e294"
+      },
+      {
+        "id": "2e8907c1-0954-456b-93d6-b84a29a4c9c4",
+        "name": "Collect Page",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1660,
+          180
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst P=sd.pull;\nconst c=sd.clients[sd.currentClient];\nconst j=($input.first()||{}).json||{};\nconst cur=P.queue[P.idx];\nconst emit=o=>[{json:o}];\nconst advance=()=>{ P.idx++; P.page=1; P.attempts=0; P.got=0; P.retried=false; P.campStart=Date.now(); if(P.idx<P.queue.length){ const n=P.queue[P.idx]; return emit({ws:n.ws, campaign_id:n.id, page:1, wait:2}); } return emit({done:true, wait:0}); };\nif(Date.now()-(P.campStart||Date.now())>900000){\n  c.errors.push('time-box: campaign '+cur.id+' exceeded 15 minutes, aborted (page '+P.page+', '+P.got+' leads pulled)');\n  c.pullOk=false;\n  return advance();\n}\nconst hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\nconst body=hasWrap?j.body:j;\nconst status=Number(j.statusCode||0);\nlet arr=null;\nif(Array.isArray(body)) arr=body;\nelse if(body&&Array.isArray(body.data)) arr=body.data;\nelse if(body&&Array.isArray(body.leads)) arr=body.leads;\nif(status&&(status<200||status>=300)) arr=null;\nconst nextReq=w=>emit({ws:cur.ws, campaign_id:cur.id, page:P.page, wait:w});\nif(arr===null){\n  P.attempts++;\n  if(P.attempts<=5){\n    let w=Math.pow(2,P.attempts);\n    const h=j.headers||{};\n    const ra=Number(h['retry-after']||h['Retry-After']||0);\n    if(ra>0) w=Math.max(w,Math.min(ra,120));\n    return nextReq(w);\n  }\n  c.errors.push('lead pull failed: campaign '+cur.id+' page '+P.page+' after 5 retries (status '+(status||'?')+'): '+JSON.stringify(body).slice(0,200));\n  c.pullOk=false;\n  return advance();\n}\nP.attempts=0;\n(P.byCampaign[cur.id]=P.byCampaign[cur.id]||[]).push(...arr);\nP.got+=arr.length;\nif(arr.length===100){\n  P.page++;\n  if(P.page>500){ c.errors.push('lead pull aborted: campaign '+cur.id+' exceeded 500 pages'); c.pullOk=false; return advance(); }\n  return nextReq(2);\n}\nif(cur.expected!==null&&cur.expected!==undefined&&Number(P.got)!==Number(cur.expected)){\n  if(!P.retried){ P.retried=true; P.page=1; P.got=0; P.attempts=0; P.byCampaign[cur.id]=[]; return nextReq(3); }\n  c.errors.push('pull-completeness: campaign '+cur.id+' pulled '+P.got+' of expected '+cur.expected+' after full campaign retry');\n  c.pullOk=false;\n}\nreturn advance();"
+        }
+      },
+      {
+        "id": "3a8fb719-7cba-43ee-8577-04bcfd51aa2f",
+        "name": "Pull Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1880,
+          180
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "7a734432-bf8a-4e31-8f9f-6b7db3eccebf",
+        "name": "Next Chunk",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          120,
+          40
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst W=sd.write||{queue:[], idx:0};\nif(W.idx<W.queue.length){ W.current=W.queue[W.idx]; W.idx++; return [{json:Object.assign({done:false}, W.current)}]; }\nW.current=null;\nreturn [{json:{done:true}}];"
+        }
+      },
+      {
+        "id": "82b17d19-d5f7-4df7-ba8a-59e8199bc5ec",
+        "name": "Chunks Left?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          340,
+          40
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "cl1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "more",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d54be8c6-0b15-459f-be32-fceb0052ea9a",
+        "name": "Mirror Needed?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2980,
+          400
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "mn1",
+                "leftValue": "={{ $json.mirrorId ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b69396af-0d62-41ab-a843-9d175c773ee6",
+        "name": "Read Mirror",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3200,
+          320
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.mirrorId }}"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Campaign ID"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "id": "63ea8f0e-3514-4f4d-a1a4-b3ccaa7b1a5d",
+        "name": "Map Mirror",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3420,
+          320
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nc.mirrorMap={};\nfor(const it of $input.all()){\n  const r=it.json||{};\n  const f=r.fields||r;\n  const cid=String(f['Campaign ID']||'').trim();\n  if(cid&&r.id) c.mirrorMap[cid]=r.id;\n}\nreturn [{json:{mapped:Object.keys(c.mirrorMap).length}}];"
+        }
+      },
+      {
+        "id": "2db7ebf5-5df3-441e-9553-d2d8e8f57ae6",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          340,
+          -200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst run=sd.run||{};\nconst durS=Math.round((Date.now()-new Date(run.start||Date.now()).getTime())/1000);\nconst clients=Object.keys(sd.clients||{}).map(id=>sd.clients[id]);\nlet totalIn=0, totalOut=0, failedClients=0;\nconst allFailed=[], skipLines=[], warnLines=[], clientLines=[], wmHold=[];\nfor(const c of clients){\n  const s=c.summary||{};\n  totalIn+=s.leadsPulled||0;\n  totalOut+=s.rowsWritten||0;\n  const fl=s.failedList||[];\n  if(fl.length) failedClients++;\n  for(const e of fl) allFailed.push('**'+(s.name||'?')+':** '+e);\n  for(const sk of (s.skips||[])) skipLines.push('**'+(s.name||'?')+':** '+sk);\n  for(const w of (s.warnings||[])) warnLines.push('**'+(s.name||'?')+':** '+w);\n  if(s.pullOk===false) wmHold.push((s.name||'?')+' pull incomplete');\n  if(s.writeOk===false) wmHold.push((s.name||'?')+' write failures');\n  clientLines.push('- **'+(s.name||'?')+':** '+[(s.campaigns||0)+' campaigns ('+(s.complete||0)+'/'+(s.campaigns||0)+' invariants OK)', (s.leadsPulled||0)+' leads pulled', (s.nominated||0)+' refreshed', (s.rowsWritten||0)+' rows written', s.mode||''].filter(Boolean).join(' · '));\n}\nconst partial=!!(run.clientFilter);\nif(partial) wmHold.push('partial run (clientFilter \"'+run.clientFilter+'\")');\nconst wmOk=wmHold.length===0 && clients.length>0;\nconst md=[];\nmd.push('**'+clients.length+' clients, '+failedClients+' failed**');\nmd.push('');\nmd.push('**Watermark:** '+(wmOk?'advanced (pull complete, writes clean)':('HELD - '+wmHold.join('; '))));\nmd.push('');\nmd.push('**Clients**');\nfor(const l of clientLines) md.push(l);\nif(allFailed.length){ md.push(''); md.push('**FAILED ('+allFailed.length+')**'); for(const e of allFailed) md.push('- '+e); }\nif(skipLines.length){ md.push(''); md.push('**Skipped ('+skipLines.length+')**'); for(const e of skipLines) md.push('- '+e); }\nif(warnLines.length){ md.push(''); md.push('**Warnings ('+warnLines.length+')**'); for(const e of warnLines) md.push('- '+e); }\nconst errTotal=allFailed.length;\nsd.clients={};\nreturn [{json:{\n  'Automation':'Sync PlusVibe Leads to Clayroots',\n  'Status':errTotal?'Succeeded with errors':'Succeeded',\n  'Watermark OK':wmOk,\n  'Trigger':run.trigger||'event',\n  'Run at':run.start||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':totalIn,\n  'Records Out':totalOut,\n  'Errors':errTotal,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':md.join('\\n').slice(0,95000)\n}}];"
+        }
+      }
+    ],
+    "connections": {
+      "Manual Start": {
+        "main": [
+          [
+            {
+              "node": "Init Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Run": {
+        "main": [
+          [
+            {
+              "node": "Get Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Clients": {
+        "main": [
+          [
+            {
+              "node": "Map Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Matches": {
+        "main": [
+          [
+            {
+              "node": "Build Patches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Patches": {
+        "main": [
+          [
+            {
+              "node": "Any Patches?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Patches?": {
+        "main": [
+          [
+            {
+              "node": "Patch Records",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Next Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Patch Records": {
+        "main": [
+          [
+            {
+              "node": "Record Writes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client Context": {
+        "main": [
+          [
+            {
+              "node": "Get Watermark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Watermark": {
+        "main": [
+          [
+            {
+              "node": "Set Watermark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Watermark": {
+        "main": [
+          [
+            {
+              "node": "List Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Campaign Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Campaign Items": {
+        "main": [
+          [
+            {
+              "node": "Has Campaigns?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Campaigns?": {
+        "main": [
+          [
+            {
+              "node": "Init Lead Pull",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Nominate + Compute",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Nominate + Compute": {
+        "main": [
+          [
+            {
+              "node": "Get CR Schema",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get CR Schema": {
+        "main": [
+          [
+            {
+              "node": "Plan Adoption",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Adoption": {
+        "main": [
+          [
+            {
+              "node": "Fields To Create?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fields To Create?": {
+        "main": [
+          [
+            {
+              "node": "Create Fields",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finish Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Fields": {
+        "main": [
+          [
+            {
+              "node": "Finish Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Clients": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Client Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Nightly 03:00 (armed on publish)": {
+        "main": [
+          [
+            {
+              "node": "Init Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map Clients": {
+        "main": [
+          [
+            {
+              "node": "Loop Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Lead Pull": {
+        "main": [
+          [
+            {
+              "node": "Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pace": {
+        "main": [
+          [
+            {
+              "node": "Pull Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Page",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Page": {
+        "main": [
+          [
+            {
+              "node": "Pull Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Done?": {
+        "main": [
+          [
+            {
+              "node": "Nominate + Compute",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Next Chunk": {
+        "main": [
+          [
+            {
+              "node": "Chunks Left?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunks Left?": {
+        "main": [
+          [
+            {
+              "node": "Find Matches",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Writes": {
+        "main": [
+          [
+            {
+              "node": "Next Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Finish Client": {
+        "main": [
+          [
+            {
+              "node": "Mirror Needed?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mirror Needed?": {
+        "main": [
+          [
+            {
+              "node": "Read Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Next Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Mirror": {
+        "main": [
+          [
+            {
+              "node": "Map Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map Mirror": {
+        "main": [
+          [
+            {
+              "node": "Next Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Close Client": {
+        "main": [
+          [
+            {
+              "node": "Loop Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Runs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

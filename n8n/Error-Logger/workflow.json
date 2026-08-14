@@ -1,0 +1,1848 @@
+{
+  "updatedAt": "2026-08-08T20:30:45.660Z",
+  "createdAt": "2026-06-09T21:52:10.029Z",
+  "id": "gqm6HzVNzEMQ8Ml0",
+  "name": "Error Logger",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "10e89379-455a-4279-8fdc-990b7520175e",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8YFC5R0C",
+          "mode": "list",
+          "cachedResultName": "flowroots-pulse"
+        },
+        "text": "=:red_circle: *{{ $json.workflow.name }}* failed\n*Node:* `{{ $json.execution.lastNodeExecuted }}`\n*Error:* {{ $json.execution.error.message }}\n*When:* {{ $now.toFormat(\"yyyy-LL-dd HH:mm:ss\") }}\n<{{ $json.execution.url }}|Open execution>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "id": "74c9018d-cb83-4730-8026-2d41708cb22a",
+      "name": "Post Error to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "webhookId": "5763ca35-3e50-4880-9224-7d79fa422152",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "={Execution ID} = '{{ $json.execution.id }}'",
+        "options": {}
+      },
+      "id": "07183cda-f7d7-4e5b-a8c5-6f5fa4f6f7f9",
+      "name": "Find Run Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Fail-Stamp.js"
+      },
+      "id": "6d3edaf2-2a83-4e3a-be87-d4cb8f0ba5e6",
+      "name": "Prep Fail Stamp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._mode }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "update"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "392fb749-8764-4975-8b4f-3e669f36ae28",
+      "name": "Record Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Clean-Update.js"
+      },
+      "id": "f91c01df-2290-4532-8b97-afc735c1068b",
+      "name": "Clean Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Clean-Create.js"
+      },
+      "id": "9e9da2a0-53fe-4252-9e57-493656e7fc2a",
+      "name": "Clean Create",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "2d75ed5d-6662-4c0e-ad42-933e49b09f35",
+      "name": "Stamp Failed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        128
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Execution ID",
+              "displayName": "Execution ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Automation",
+              "displayName": "Automation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ContaGen -> Supersoniq",
+                  "value": "ContaGen -> Supersoniq"
+                },
+                {
+                  "name": "Waterfall Emails",
+                  "value": "Waterfall Emails"
+                },
+                {
+                  "name": "Storeleads -> Supersoniq",
+                  "value": "Storeleads -> Supersoniq"
+                },
+                {
+                  "name": "Verify Emails",
+                  "value": "Verify Emails"
+                },
+                {
+                  "name": "Discolike Domains",
+                  "value": "Discolike Domains"
+                },
+                {
+                  "name": "Qualify & Notify New Lead",
+                  "value": "Qualify & Notify New Lead"
+                },
+                {
+                  "name": "Handle Intent",
+                  "value": "Handle Intent"
+                },
+                {
+                  "name": "Handle New Lead",
+                  "value": "Handle New Lead"
+                },
+                {
+                  "name": "Sync Slack Logs",
+                  "value": "Sync Slack Logs"
+                },
+                {
+                  "name": "Sync Meeting Summary",
+                  "value": "Sync Meeting Summary"
+                },
+                {
+                  "name": "Handle New Discovery",
+                  "value": "Handle New Discovery"
+                },
+                {
+                  "name": "Handle Another Meeting",
+                  "value": "Handle Another Meeting"
+                },
+                {
+                  "name": "Notify Subsequent Reply",
+                  "value": "Notify Subsequent Reply"
+                },
+                {
+                  "name": "BounceBan Poller",
+                  "value": "BounceBan Poller"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Run at",
+              "displayName": "Run at",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Target",
+              "displayName": "Target",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Duration s",
+              "displayName": "Duration s",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Execution Link",
+              "displayName": "Execution Link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Succeeded",
+                  "value": "Succeeded"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Build name",
+              "displayName": "Build name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Attachment",
+              "displayName": "Attachment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "United States",
+                  "value": "United States"
+                },
+                {
+                  "name": "United Kingdom",
+                  "value": "United Kingdom"
+                },
+                {
+                  "name": "Canada",
+                  "value": "Canada"
+                },
+                {
+                  "name": "Australia",
+                  "value": "Australia"
+                },
+                {
+                  "name": "Ireland",
+                  "value": "Ireland"
+                },
+                {
+                  "name": "Israel",
+                  "value": "Israel"
+                },
+                {
+                  "name": "Germany",
+                  "value": "Germany"
+                },
+                {
+                  "name": "France",
+                  "value": "France"
+                },
+                {
+                  "name": "Netherlands",
+                  "value": "Netherlands"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Platforms",
+              "displayName": "Platforms",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "shopify",
+                  "value": "shopify"
+                },
+                {
+                  "name": "woocommerce",
+                  "value": "woocommerce"
+                },
+                {
+                  "name": "bigcommerce",
+                  "value": "bigcommerce"
+                },
+                {
+                  "name": "wix",
+                  "value": "wix"
+                },
+                {
+                  "name": "squarespace",
+                  "value": "squarespace"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Monthly revenue",
+              "displayName": "Monthly revenue",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Under $10k",
+                  "value": "Under $10k"
+                },
+                {
+                  "name": "$10k-50k",
+                  "value": "$10k-50k"
+                },
+                {
+                  "name": "$50k-100k",
+                  "value": "$50k-100k"
+                },
+                {
+                  "name": "$100k-500k",
+                  "value": "$100k-500k"
+                },
+                {
+                  "name": "$500k-1M",
+                  "value": "$500k-1M"
+                },
+                {
+                  "name": "$1M+",
+                  "value": "$1M+"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employees",
+              "displayName": "Employees",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "1-10",
+                  "value": "1-10"
+                },
+                {
+                  "name": "11-50",
+                  "value": "11-50"
+                },
+                {
+                  "name": "51-200",
+                  "value": "51-200"
+                },
+                {
+                  "name": "200+",
+                  "value": "200+"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Product count",
+              "displayName": "Product count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "1-50",
+                  "value": "1-50"
+                },
+                {
+                  "name": "51-500",
+                  "value": "51-500"
+                },
+                {
+                  "name": "500+",
+                  "value": "500+"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Store age",
+              "displayName": "Store age",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Under 1 year",
+                  "value": "Under 1 year"
+                },
+                {
+                  "name": "1-3 years",
+                  "value": "1-3 years"
+                },
+                {
+                  "name": "3+ years",
+                  "value": "3+ years"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Must-have app IDs",
+              "displayName": "Must-have app IDs",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Max companies",
+              "displayName": "Max companies",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contacts per company",
+              "displayName": "Contacts per company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Seniority",
+              "displayName": "Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "C-Suite",
+                  "value": "C-Suite"
+                },
+                {
+                  "name": "Founder",
+                  "value": "Founder"
+                },
+                {
+                  "name": "Owner",
+                  "value": "Owner"
+                },
+                {
+                  "name": "President",
+                  "value": "President"
+                },
+                {
+                  "name": "VP",
+                  "value": "VP"
+                },
+                {
+                  "name": "Head",
+                  "value": "Head"
+                },
+                {
+                  "name": "Director",
+                  "value": "Director"
+                },
+                {
+                  "name": "Manager",
+                  "value": "Manager"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Departments",
+              "displayName": "Departments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "ALL",
+                  "value": "ALL"
+                },
+                {
+                  "name": "Executive",
+                  "value": "Executive"
+                },
+                {
+                  "name": "Engineering",
+                  "value": "Engineering"
+                },
+                {
+                  "name": "Technology",
+                  "value": "Technology"
+                },
+                {
+                  "name": "Product",
+                  "value": "Product"
+                },
+                {
+                  "name": "Data",
+                  "value": "Data"
+                },
+                {
+                  "name": "R&D",
+                  "value": "R&D"
+                },
+                {
+                  "name": "Security",
+                  "value": "Security"
+                },
+                {
+                  "name": "Design",
+                  "value": "Design"
+                },
+                {
+                  "name": "Operations",
+                  "value": "Operations"
+                },
+                {
+                  "name": "Sales",
+                  "value": "Sales"
+                },
+                {
+                  "name": "Marketing",
+                  "value": "Marketing"
+                },
+                {
+                  "name": "Finance",
+                  "value": "Finance"
+                },
+                {
+                  "name": "Human Resources",
+                  "value": "Human Resources"
+                },
+                {
+                  "name": "Customer Success",
+                  "value": "Customer Success"
+                },
+                {
+                  "name": "Project Management",
+                  "value": "Project Management"
+                },
+                {
+                  "name": "Strategy",
+                  "value": "Strategy"
+                },
+                {
+                  "name": "Legal",
+                  "value": "Legal"
+                },
+                {
+                  "name": "Supply Chain",
+                  "value": "Supply Chain"
+                },
+                {
+                  "name": "Communications",
+                  "value": "Communications"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Table ID",
+              "displayName": "Table ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Max Rows",
+              "displayName": "Max Rows",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "View",
+              "displayName": "View",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "cb74a544-c23b-44e7-af02-26c56be30b74",
+      "name": "Log Failed Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        320
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Post Error to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Find Run Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Run Record": {
+      "main": [
+        [
+          {
+            "node": "Prep Fail Stamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Fail Stamp": {
+      "main": [
+        [
+          {
+            "node": "Record Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Exists?": {
+      "main": [
+        [
+          {
+            "node": "Clean Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clean Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Update": {
+      "main": [
+        [
+          {
+            "node": "Stamp Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Create": {
+      "main": [
+        [
+          {
+            "node": "Log Failed Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "3ad94ee4-9fd9-40cb-b525-3dba452957f6",
+  "activeVersionId": "3ad94ee4-9fd9-40cb-b525-3dba452957f6",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-09T21:52:10.035Z",
+      "createdAt": "2026-06-09T21:52:10.035Z",
+      "role": "workflow:owner",
+      "workflowId": "gqm6HzVNzEMQ8Ml0",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:30:45.662Z",
+    "createdAt": "2026-08-08T20:30:45.662Z",
+    "versionId": "3ad94ee4-9fd9-40cb-b525-3dba452957f6",
+    "workflowId": "gqm6HzVNzEMQ8Ml0",
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "10e89379-455a-4279-8fdc-990b7520175e",
+        "name": "Error Trigger",
+        "type": "n8n-nodes-base.errorTrigger",
+        "typeVersion": 1,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "value": "C0B8YFC5R0C",
+            "mode": "list",
+            "cachedResultName": "flowroots-pulse"
+          },
+          "text": "=:red_circle: *{{ $json.workflow.name }}* failed\n*Node:* `{{ $json.execution.lastNodeExecuted }}`\n*Error:* {{ $json.execution.error.message }}\n*When:* {{ $now.toFormat(\"yyyy-LL-dd HH:mm:ss\") }}\n<{{ $json.execution.url }}|Open execution>",
+          "otherOptions": {
+            "includeLinkToWorkflow": false,
+            "mrkdwn": true
+          }
+        },
+        "id": "74c9018d-cb83-4730-8026-2d41708cb22a",
+        "name": "Post Error to Slack",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          224,
+          0
+        ],
+        "webhookId": "5763ca35-3e50-4880-9224-7d79fa422152",
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "={Execution ID} = '{{ $json.execution.id }}'",
+          "options": {}
+        },
+        "id": "07183cda-f7d7-4e5b-a8c5-6f5fa4f6f7f9",
+        "name": "Find Run Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          224
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const e = $('Error Trigger').first().json;\nconst execId = String((e.execution && e.execution.id) || '');\nconst errMsg = (e.execution && e.execution.error && e.execution.error.message) || 'Unknown error';\nconst node = (e.execution && e.execution.lastNodeExecuted) || '';\nconst url = (e.execution && e.execution.url) || '';\nconst wf = (e.workflow && e.workflow.name) || '';\nconst auto = wf;\nconst desc = '**Run FAILED**\\n\\n**Workflow:** '+wf+'\\n**Node:** '+node+'\\n**Error:** '+errMsg;\nlet rec = null;\ntry { const f = $('Find Run Record').first().json; if (f && f.id) rec = f.id; } catch (err) {}\nif (rec) { return [{ json: { _mode:'update', id: rec, 'Status':'Failed', 'Description': desc } }]; }\nreturn [{ json: { _mode:'create', 'Automation': auto, 'Status':'Failed', 'Run at': $now.toISO(), 'Description': desc, 'Execution ID': execId || ('err-' + $now.toMillis()), 'Execution Link': url } }];"
+        },
+        "id": "6d3edaf2-2a83-4e3a-be87-d4cb8f0ba5e6",
+        "name": "Prep Fail Stamp",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          224
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._mode }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "update"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "392fb749-8764-4975-8b4f-3e669f36ae28",
+        "name": "Record Exists?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          672,
+          224
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const j = Object.assign({}, $json); delete j._mode; return [{ json: j }];"
+        },
+        "id": "f91c01df-2290-4532-8b97-afc735c1068b",
+        "name": "Clean Update",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          128
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const j = Object.assign({}, $json); delete j._mode; return [{ json: j }];"
+        },
+        "id": "9e9da2a0-53fe-4252-9e57-493656e7fc2a",
+        "name": "Clean Create",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          320
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "2d75ed5d-6662-4c0e-ad42-933e49b09f35",
+        "name": "Stamp Failed",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          128
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Execution ID",
+                "displayName": "Execution ID",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Automation",
+                "displayName": "Automation",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "ContaGen -> Supersoniq",
+                    "value": "ContaGen -> Supersoniq"
+                  },
+                  {
+                    "name": "Waterfall Emails",
+                    "value": "Waterfall Emails"
+                  },
+                  {
+                    "name": "Storeleads -> Supersoniq",
+                    "value": "Storeleads -> Supersoniq"
+                  },
+                  {
+                    "name": "Verify Emails",
+                    "value": "Verify Emails"
+                  },
+                  {
+                    "name": "Discolike Domains",
+                    "value": "Discolike Domains"
+                  },
+                  {
+                    "name": "Qualify & Notify New Lead",
+                    "value": "Qualify & Notify New Lead"
+                  },
+                  {
+                    "name": "Handle Intent",
+                    "value": "Handle Intent"
+                  },
+                  {
+                    "name": "Handle New Lead",
+                    "value": "Handle New Lead"
+                  },
+                  {
+                    "name": "Sync Slack Logs",
+                    "value": "Sync Slack Logs"
+                  },
+                  {
+                    "name": "Sync Meeting Summary",
+                    "value": "Sync Meeting Summary"
+                  },
+                  {
+                    "name": "Handle New Discovery",
+                    "value": "Handle New Discovery"
+                  },
+                  {
+                    "name": "Handle Another Meeting",
+                    "value": "Handle Another Meeting"
+                  },
+                  {
+                    "name": "Notify Subsequent Reply",
+                    "value": "Notify Subsequent Reply"
+                  },
+                  {
+                    "name": "BounceBan Poller",
+                    "value": "BounceBan Poller"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Client",
+                "displayName": "Client",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Description",
+                "displayName": "Description",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Run at",
+                "displayName": "Run at",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "dateTime",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Target",
+                "displayName": "Target",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Duration s",
+                "displayName": "Duration s",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Execution Link",
+                "displayName": "Execution Link",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "Succeeded",
+                    "value": "Succeeded"
+                  },
+                  {
+                    "name": "Failed",
+                    "value": "Failed"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Build name",
+                "displayName": "Build name",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Attachment",
+                "displayName": "Attachment",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Country",
+                "displayName": "Country",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "United States",
+                    "value": "United States"
+                  },
+                  {
+                    "name": "United Kingdom",
+                    "value": "United Kingdom"
+                  },
+                  {
+                    "name": "Canada",
+                    "value": "Canada"
+                  },
+                  {
+                    "name": "Australia",
+                    "value": "Australia"
+                  },
+                  {
+                    "name": "Ireland",
+                    "value": "Ireland"
+                  },
+                  {
+                    "name": "Israel",
+                    "value": "Israel"
+                  },
+                  {
+                    "name": "Germany",
+                    "value": "Germany"
+                  },
+                  {
+                    "name": "France",
+                    "value": "France"
+                  },
+                  {
+                    "name": "Netherlands",
+                    "value": "Netherlands"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Platforms",
+                "displayName": "Platforms",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "shopify",
+                    "value": "shopify"
+                  },
+                  {
+                    "name": "woocommerce",
+                    "value": "woocommerce"
+                  },
+                  {
+                    "name": "bigcommerce",
+                    "value": "bigcommerce"
+                  },
+                  {
+                    "name": "wix",
+                    "value": "wix"
+                  },
+                  {
+                    "name": "squarespace",
+                    "value": "squarespace"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Monthly revenue",
+                "displayName": "Monthly revenue",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "Under $10k",
+                    "value": "Under $10k"
+                  },
+                  {
+                    "name": "$10k-50k",
+                    "value": "$10k-50k"
+                  },
+                  {
+                    "name": "$50k-100k",
+                    "value": "$50k-100k"
+                  },
+                  {
+                    "name": "$100k-500k",
+                    "value": "$100k-500k"
+                  },
+                  {
+                    "name": "$500k-1M",
+                    "value": "$500k-1M"
+                  },
+                  {
+                    "name": "$1M+",
+                    "value": "$1M+"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Employees",
+                "displayName": "Employees",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "1-10",
+                    "value": "1-10"
+                  },
+                  {
+                    "name": "11-50",
+                    "value": "11-50"
+                  },
+                  {
+                    "name": "51-200",
+                    "value": "51-200"
+                  },
+                  {
+                    "name": "200+",
+                    "value": "200+"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Product count",
+                "displayName": "Product count",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "1-50",
+                    "value": "1-50"
+                  },
+                  {
+                    "name": "51-500",
+                    "value": "51-500"
+                  },
+                  {
+                    "name": "500+",
+                    "value": "500+"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Store age",
+                "displayName": "Store age",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "Under 1 year",
+                    "value": "Under 1 year"
+                  },
+                  {
+                    "name": "1-3 years",
+                    "value": "1-3 years"
+                  },
+                  {
+                    "name": "3+ years",
+                    "value": "3+ years"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Must-have app IDs",
+                "displayName": "Must-have app IDs",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Max companies",
+                "displayName": "Max companies",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Contacts per company",
+                "displayName": "Contacts per company",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Seniority",
+                "displayName": "Seniority",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "C-Suite",
+                    "value": "C-Suite"
+                  },
+                  {
+                    "name": "Founder",
+                    "value": "Founder"
+                  },
+                  {
+                    "name": "Owner",
+                    "value": "Owner"
+                  },
+                  {
+                    "name": "President",
+                    "value": "President"
+                  },
+                  {
+                    "name": "VP",
+                    "value": "VP"
+                  },
+                  {
+                    "name": "Head",
+                    "value": "Head"
+                  },
+                  {
+                    "name": "Director",
+                    "value": "Director"
+                  },
+                  {
+                    "name": "Manager",
+                    "value": "Manager"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Departments",
+                "displayName": "Departments",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "array",
+                "options": [
+                  {
+                    "name": "ALL",
+                    "value": "ALL"
+                  },
+                  {
+                    "name": "Executive",
+                    "value": "Executive"
+                  },
+                  {
+                    "name": "Engineering",
+                    "value": "Engineering"
+                  },
+                  {
+                    "name": "Technology",
+                    "value": "Technology"
+                  },
+                  {
+                    "name": "Product",
+                    "value": "Product"
+                  },
+                  {
+                    "name": "Data",
+                    "value": "Data"
+                  },
+                  {
+                    "name": "R&D",
+                    "value": "R&D"
+                  },
+                  {
+                    "name": "Security",
+                    "value": "Security"
+                  },
+                  {
+                    "name": "Design",
+                    "value": "Design"
+                  },
+                  {
+                    "name": "Operations",
+                    "value": "Operations"
+                  },
+                  {
+                    "name": "Sales",
+                    "value": "Sales"
+                  },
+                  {
+                    "name": "Marketing",
+                    "value": "Marketing"
+                  },
+                  {
+                    "name": "Finance",
+                    "value": "Finance"
+                  },
+                  {
+                    "name": "Human Resources",
+                    "value": "Human Resources"
+                  },
+                  {
+                    "name": "Customer Success",
+                    "value": "Customer Success"
+                  },
+                  {
+                    "name": "Project Management",
+                    "value": "Project Management"
+                  },
+                  {
+                    "name": "Strategy",
+                    "value": "Strategy"
+                  },
+                  {
+                    "name": "Legal",
+                    "value": "Legal"
+                  },
+                  {
+                    "name": "Supply Chain",
+                    "value": "Supply Chain"
+                  },
+                  {
+                    "name": "Communications",
+                    "value": "Communications"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Table ID",
+                "displayName": "Table ID",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Max Rows",
+                "displayName": "Max Rows",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "View",
+                "displayName": "View",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "cb74a544-c23b-44e7-af02-26c56be30b74",
+        "name": "Log Failed Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          320
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      }
+    ],
+    "connections": {
+      "Error Trigger": {
+        "main": [
+          [
+            {
+              "node": "Post Error to Slack",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Find Run Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Run Record": {
+        "main": [
+          [
+            {
+              "node": "Prep Fail Stamp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Fail Stamp": {
+        "main": [
+          [
+            {
+              "node": "Record Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Exists?": {
+        "main": [
+          [
+            {
+              "node": "Clean Update",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Clean Create",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Update": {
+        "main": [
+          [
+            {
+              "node": "Stamp Failed",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Create": {
+        "main": [
+          [
+            {
+              "node": "Log Failed Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

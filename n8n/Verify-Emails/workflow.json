@@ -1,0 +1,1999 @@
+{
+  "updatedAt": "2026-08-14T12:09:35.665Z",
+  "createdAt": "2026-06-11T13:34:22.982Z",
+  "id": "jtBHNttawTdjG6Tv",
+  "name": "Verify Emails",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Run Verification Only",
+        "formDescription": "Verify existing emails (MillionVerifier). Catch-alls resolve in the background via the BounceBan Poller.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Clayroots Base ID",
+              "placeholder": "appXXXXXXXXXXXXXX",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table ID",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Max Rows",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "View"
+            }
+          ]
+        },
+        "options": {
+          "path": "verify-only",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/jtBHNttawTdjG6Tv/executions/{{ $execution.id }}"
+            }
+          }
+        }
+      },
+      "id": "094da402-937a-4428-b425-2d9fe34f8435",
+      "name": "Run",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        192
+      ],
+      "webhookId": "128e8794-d4b1-4858-9d29-5fc526d1dc49"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "82b17949-135b-4945-80b1-dc333cd54de9",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Email-Guard.js"
+      },
+      "id": "4bd43c96-53a8-45b4-b58c-0a077a5073c8",
+      "name": "Email Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Field-List.js"
+      },
+      "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
+      "name": "Field List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables/{{ $('Params In').first().json['Table ID'] }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.def }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "69a35c18-18db-46f2-ade1-230c67a9b44d",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params In').first().json['Clayroots Base ID'] }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params In').first().json['Table ID'] }}"
+        },
+        "filterByFormula": "NOT({Status} = 'verifying')",
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params In').first().json['View'] }}"
+          }
+        }
+      },
+      "id": "28036771-eee2-42a2-a141-0dc1de4d7d30",
+      "name": "Read Records",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        192
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b5cd2548-804d-49c3-9b6f-a2cf6324f87e",
+      "name": "MV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        96
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Verdict.js"
+      },
+      "id": "fb94b391-9290-4382-8124-d137e07cef0f",
+      "name": "Verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/To-Airtable.js"
+      },
+      "id": "07afbe46-0871-4963-99b8-83fdfe293323",
+      "name": "To Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params In').first().json['Clayroots Base ID'] }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params In').first().json['Table ID'] }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "d677791b-ccf6-4903-88fe-c146e45a8fdb",
+      "name": "Update Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        96
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "1b9ce70f-36e4-4131-8be8-e706af9e400c",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "5f8dd50c-bf78-4dd3-8748-80b49485ccdd",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        96
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Pending.js"
+      },
+      "id": "b07d8f75-c43a-4582-b4d5-88ac95b142f3",
+      "name": "Collect Pending",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tllfBn4NycLftdef",
+          "cachedResultName": "BounceBan Poller"
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "8df3920a-f6a9-4ef9-a3f1-7fcf54481518",
+      "name": "Fire Poller",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2688,
+        288
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "maxItems": "={{ $('Params In').first().json['Max Rows'] || 100000 }}"
+      },
+      "id": "0fdd1860-f056-4f97-a75e-e7d7d29795d2",
+      "name": "Cap Rows",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2bf63325-3b31-4ed4-a66a-e6c80a8cdcd4",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        192
+      ]
+    },
+    {
+      "id": "1adc505d-6eea-4ee3-a11d-7e5e49f2cf97",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2600,
+        600
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={Clayroots Base ID} = '{{ $('Params In').first().json['Clayroots Base ID'] }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "id": "3d9fb6a0-2860-40db-a775-93985f5f2e18",
+      "name": "Fix Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        600
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Fix-Client.js"
+      },
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "d78257ef-0efc-4542-a533-b8351088abc8",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        560
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-verify-emails",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "82942da1-1d1a-48f5-aa7e-b31c69f9973b"
+    },
+    {
+      "id": "5a8bfcc9-23ac-440e-98f0-c7e00ae51676",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        560
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "4f7cb093-728f-4bd3-94c3-303e34da1068",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        560
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $json.fields.Client[0] }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "e2c07d42-1640-4e5a-8efb-9577184d50e6",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        560
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      }
+    },
+    {
+      "id": "e0336f29-f4c5-4d19-a4f6-764cce74def0",
+      "name": "Params In",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        368
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f6ca498a-7078-4b4c-8314-a5c81b027ca4",
+      "name": "Launched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        368
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._launchRecordId || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "398b5c1e-a4ca-4232-b45b-72268cfc3842",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        480
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json._launchRecordId }}",
+            "Status": "Running",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "2e903be5-0f0f-49e4-b5fc-ce05e43f825a",
+      "name": "Rows Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        368
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Email Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Guard": {
+      "main": [
+        [
+          {
+            "node": "Field List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Field List": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Field": {
+      "main": [
+        [
+          {
+            "node": "Read Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "node": "To Airtable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To Airtable": {
+      "main": [
+        [
+          {
+            "node": "Update Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Record": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Pending": {
+      "main": [
+        [
+          {
+            "node": "Fire Poller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cap Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "MV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Fix Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fix Client": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run": {
+      "main": [
+        [
+          {
+            "node": "Params In",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Params In",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Params In": {
+      "main": [
+        [
+          {
+            "node": "Launched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launched?": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Records": {
+      "main": [
+        [
+          {
+            "node": "Rows Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows Found?": {
+      "main": [
+        [
+          {
+            "node": "Cap Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
+  "activeVersionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-06-11T13:34:22.985Z",
+      "createdAt": "2026-06-11T13:34:22.985Z",
+      "role": "workflow:owner",
+      "workflowId": "jtBHNttawTdjG6Tv",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-14T12:09:35.686Z",
+    "createdAt": "2026-08-14T12:09:35.686Z",
+    "versionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
+    "workflowId": "jtBHNttawTdjG6Tv",
+    "nodes": [
+      {
+        "parameters": {
+          "formTitle": "Run Verification Only",
+          "formDescription": "Verify existing emails (MillionVerifier). Catch-alls resolve in the background via the BounceBan Poller.",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Clayroots Base ID",
+                "placeholder": "appXXXXXXXXXXXXXX",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Table ID",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Max Rows",
+                "fieldType": "number"
+              },
+              {
+                "fieldLabel": "View"
+              }
+            ]
+          },
+          "options": {
+            "path": "verify-only",
+            "respondWithOptions": {
+              "values": {
+                "respondWith": "redirect",
+                "redirectUrl": "=https://n8n.flowroots.com/workflow/jtBHNttawTdjG6Tv/executions/{{ $execution.id }}"
+              }
+            }
+          }
+        },
+        "id": "094da402-937a-4428-b425-2d9fe34f8435",
+        "name": "Run",
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.6,
+        "position": [
+          0,
+          192
+        ],
+        "webhookId": "128e8794-d4b1-4858-9d29-5fc526d1dc49"
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "82b17949-135b-4945-80b1-dc333cd54de9",
+        "name": "Check Table",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          192
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const tid=$('Params In').first().json['Table ID'];\nconst baseId=$('Params In').first().json['Clayroots Base ID'];\nconst resp=$('Check Table').first().json||{};\nconst t=(resp.tables||[]).find(x=>x.id===tid);\nif(!t){ throw new Error('Table '+tid+' not found in base '+baseId+'.'); }\nconst names=(t.fields||[]).map(f=>f.name);\nif(!(names.includes('Email')||names.includes('public_emails_clean'))){ throw new Error('Table \"'+t.name+'\" has no Email or public_emails_clean field. Aborting.'); }\nreturn [{ json:{ table:t.name, hasEmail:true, startedAt:new Date().toISOString() } }];"
+        },
+        "id": "4bd43c96-53a8-45b4-b58c-0a077a5073c8",
+        "name": "Email Guard",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const MV=[{name:'ok',color:'greenBright'},{name:'catch_all',color:'yellowBright'},{name:'invalid',color:'redBright'},{name:'disposable',color:'orangeLight2'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst BB=[{name:'verifying',color:'blueBright'},{name:'deliverable',color:'greenBright'},{name:'undeliverable',color:'redBright'},{name:'risky',color:'yellowBright'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst SRC=[{name:'P0',color:'blueBright'},{name:'P1',color:'cyanBright'},{name:'P2',color:'tealBright'},{name:'P3',color:'purpleBright'},{name:'none',color:'grayBright'}];\nconst ST=[{name:'done',color:'greenBright'},{name:'verifying',color:'blueBright'},{name:'no_email_found',color:'redBright'},{name:'error',color:'orangeBright'}];\nconst sel=(name,choices)=>({name,type:'singleSelect',options:{choices}});\nconst txt=(name)=>({name,type:'singleLineText'});\n// 2026-08-12: no bare 'MV' - P0 is the pre-existing-address tier, so a verify-only pass writes MV P0,\n// the same column the waterfall uses. 'Email Source' replaces 'Source' (Operator ruling: Email Source =\n// which tier found the email; Contact Source = where the contact came from, owned by the builders).\n// SRC carries P3 so this array stays byte-identical to Waterfall Emails' Field List.\nconst defs=[ sel('MV P0',MV), sel('BB',BB), txt('Final Email'), sel('Email Source',SRC), sel('Status',ST) ];\nreturn defs.map(d=>({json:{def:d}}));"
+        },
+        "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
+        "name": "Field List",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables/{{ $('Params In').first().json['Table ID'] }}/fields",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.def }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "69a35c18-18db-46f2-ade1-230c67a9b44d",
+        "name": "Create Field",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          896,
+          192
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params In').first().json['Clayroots Base ID'] }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params In').first().json['Table ID'] }}"
+          },
+          "filterByFormula": "NOT({Status} = 'verifying')",
+          "options": {
+            "view": {
+              "__rl": true,
+              "mode": "id",
+              "value": "={{ $('Params In').first().json['View'] }}"
+            }
+          }
+        },
+        "id": "28036771-eee2-42a2-a141-0dc1de4d7d30",
+        "name": "Read Records",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          192
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "url": "https://api.millionverifier.com/api/v3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpQueryAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}"
+              },
+              {
+                "name": "timeout",
+                "value": "45"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "b5cd2548-804d-49c3-9b6f-a2cf6324f87e",
+        "name": "MV",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1344,
+          96
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "hlvOO7sfgBUVEuWM",
+            "name": "MillionVerifier"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const row=$('Read Records').item.json; const f=row.fields||{};\nconst prior=((f['Final Email']||'')+'').trim();\nconst priorSrc=((f['Email Source']||f.Source||'')+'');\nconst wasDone=((f.Status||'')+'')==='done';\nconst existing=((prior||f.Email||(f.public_emails_clean||'').split(',')[0])||'').trim();\nconst slot=priorSrc||'P0';\n// Write the verdict into the tier column the address actually came from. Fall back to MV P0 when the\n// slot is not a known tier, or when that tier column does not exist on this table.\nconst tid=$('Params In').first().json['Table ID'];\nlet cols=[]; try{ const t=((($('Check Table').first().json)||{}).tables||[]).find(x=>x.id===tid); cols=((t||{}).fields||[]).map(x=>x.name); }catch(e){}\nlet mvCol='MV '+slot;\nif(!/^P[0-3]$/.test(slot)||(cols.length&&!cols.includes(mvCol))) mvCol='MV P0';\nconst G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };\nconst mv0=G('MV');\nconst SK='skipped';\nconst MVOK=['ok','catch_all','invalid','disposable','unknown'];\nconst mvVal=(r)=> r?(MVOK.includes(r.result)?r.result:'error'):SK;\nconst mvErr=(r)=> r&&(r.resultcode===4||(r.error&&r.error!=='')||!MVOK.includes(r.result));\nconst IND=(r)=> r==='catch_all'||r==='unknown';\nlet final='',source='none',bb='skipped',pe='',ps='',resolved=false,verifying=false,errored=false;\nif(existing&&mv0){ if(mv0.result==='ok'){final=existing;source=slot;resolved=true;} else if(IND(mv0.result)){verifying=true;bb='verifying';pe=existing;ps=slot;} else if(mvErr(mv0)){errored=true;} }\nconst status= resolved?'done':(verifying?'verifying':(errored?'error':'no_email_found'));\nconst mvOut= existing?mvVal(mv0):SK;\n// A definitive negative is the only reason to clear an address. An indeterminate result (catch_all,\n// unknown), an API error, or a missing response must never blank a Final Email that was already there.\nconst definitiveBad=!!(mv0&&(mv0.result==='invalid'||mv0.result==='disposable'));\nconst out={ id:row.id, 'BB':bb, 'Status':status, _pendEmail:pe, _pendSlot:ps, _mv:mvOut, _mvCol:mvCol, _wasDone:wasDone };\nout[mvCol]=mvOut;\nif(resolved){ out['Final Email']=final; out['Email Source']=source; out._preserved=false; out._blanked=false; }\nelse if(prior&&!definitiveBad){ out['Final Email']=prior; out['Email Source']=priorSrc||'none'; out._preserved=true; out._blanked=false; }\nelse { out['Final Email']=''; out['Email Source']='none'; out._blanked=!!prior; out._preserved=false; }\nreturn { json: out };"
+        },
+        "id": "fb94b391-9290-4382-8124-d137e07cef0f",
+        "name": "Verdict",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const STRIP=['_pendEmail','_pendSlot','_mv','_mvCol','_wasDone','_preserved','_blanked'];\nreturn $input.all().map(i=>{ const j={...i.json}; for(const k of STRIP) delete j[k]; return {json:j}; });"
+        },
+        "id": "07afbe46-0871-4963-99b8-83fdfe293323",
+        "name": "To Airtable",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params In').first().json['Clayroots Base ID'] }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params In').first().json['Table ID'] }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "d677791b-ccf6-4903-88fe-c146e45a8fdb",
+        "name": "Update Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2688,
+          96
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const wfid='jtBHNttawTdjG6Tv';\nconst p=$('Params In').first().json;\nconst start=$('Email Guard').first().json.startedAt;\nlet tableName=p['Table ID']; try{ tableName=$('Email Guard').first().json.table||tableName; }catch(e){}\nlet rows=[]; try{ rows=$('Verdict').all().map(i=>i.json); }catch(e){}\nlet recIn=0; try{ recIn=$('Read Records').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\nconst c=(fn)=>rows.filter(fn).length;\nconst mv=(v)=>c(r=>r._mv===v);\nconst sd=$getWorkflowStaticData('global');\nif(!sd._wfLogTotals || sd._wfLogTotals.execId!==String($execution.id)){ sd._wfLogTotals={ execId:String($execution.id), ok:0, catchAll:0, invalid:0, disposable:0, unknown:0, errd:0, skipped:0, verifying:0, recordsOut:0, preserved:0, blanked:0, reverified:0, p0:0, p1:0, p2:0, p3:0 }; }\nconst a=sd._wfLogTotals;\na.ok+=mv('ok'); a.catchAll+=mv('catch_all'); a.invalid+=mv('invalid'); a.disposable+=mv('disposable'); a.unknown+=mv('unknown'); a.errd+=mv('error'); a.skipped+=mv('skipped');\na.verifying+=c(r=>r.Status==='verifying');\na.preserved+=c(r=>r._preserved===true);\na.blanked+=c(r=>r._blanked===true);\na.reverified+=c(r=>r._wasDone===true);\na.p0+=c(r=>r._mvCol==='MV P0'); a.p1+=c(r=>r._mvCol==='MV P1'); a.p2+=c(r=>r._mvCol==='MV P2'); a.p3+=c(r=>r._mvCol==='MV P3');\na.recordsOut+=rows.length;\nconst recordsOut=a.recordsOut;\nconst cap=Number(p['Max Rows'])||100000;\nconst isFinal=recordsOut>=Math.min(recIn,cap);\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=p['_launchRecordId']?'record':'form';\nconst pct=(n)=>recordsOut?Math.round((n/recordsOut)*1000)/10:0;\nconst desc=[\n'**'+recIn+' read, '+recordsOut+' updated, '+a.errd+' errored**',\n'',\n'**Table:** '+tableName+' ('+p['Table ID']+')'+(p['View']?' · view '+p['View']:''),\n'**Launch:** '+trig+'-launched · MillionVerifier pass, catch-alls handed to the BounceBan Poller',\n'',\n'**Verdicts**',\n'- **ok:** '+a.ok+' ('+pct(a.ok)+'%)',\n'- **catch_all:** '+a.catchAll,\n'- **invalid:** '+a.invalid,\n'- **disposable:** '+a.disposable,\n'- **unknown:** '+a.unknown,\n'- **errored:** '+a.errd+' · **skipped, no email on the row:** '+a.skipped,\n'',\n'**Verdict written into**',\n'- MV P0: '+a.p0+' · MV P1: '+a.p1+' · MV P2: '+a.p2+' · MV P3: '+a.p3,\n'',\n'**Address safety**',\n'- Existing Final Email kept through an indeterminate or errored check: '+a.preserved,\n'- Cleared, definitive invalid or disposable only: '+a.blanked,\n'- Rows already Status=done that were re-verified: '+a.reverified,\n'',\n'**Sent to BounceBan (Status=verifying):** '+a.verifying,\n'',\n'**Duration:** '+(dur!=null?dur+'s':'n/a')\n].join('\\n');\nreturn [{ json:{ 'Automation':'Verify Emails', 'Run at': start||new Date().toISOString(), 'Target': p['Table ID'], 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': String($execution.id), 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+$execution.id, 'Status': isFinal?(a.errd?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errd, 'Duration s': dur, 'Description': desc } }];"
+        },
+        "id": "1b9ce70f-36e4-4131-8be8-e706af9e400c",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2912,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "5f8dd50c-bf78-4dd3-8748-80b49485ccdd",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3136,
+          96
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "parameters": {
+          "jsCode": "const baseId=$('Params In').first().json['Clayroots Base ID']; const tableId=$('Params In').first().json['Table ID']; const out=[]; for(const it of $input.all()){ const v=it.json; if(v.Status==='verifying' && v._pendEmail){ out.push({ json:{ rowId:v.id, email:v._pendEmail, slot:v._pendSlot, tableId, baseId } }); } } return out;"
+        },
+        "id": "b07d8f75-c43a-4582-b4d5-88ac95b142f3",
+        "name": "Collect Pending",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tllfBn4NycLftdef",
+            "cachedResultName": "BounceBan Poller"
+          },
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        },
+        "id": "8df3920a-f6a9-4ef9-a3f1-7fcf54481518",
+        "name": "Fire Poller",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          2688,
+          288
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "maxItems": "={{ $('Params In').first().json['Max Rows'] || 100000 }}"
+        },
+        "id": "0fdd1860-f056-4f97-a75e-e7d7d29795d2",
+        "name": "Cap Rows",
+        "type": "n8n-nodes-base.limit",
+        "typeVersion": 1,
+        "position": [
+          1344,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ (($json.fields['Final Email'] || $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "2bf63325-3b31-4ed4-a66a-e6c80a8cdcd4",
+        "name": "Has Email?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1568,
+          192
+        ]
+      },
+      {
+        "id": "1adc505d-6eea-4ee3-a11d-7e5e49f2cf97",
+        "name": "Resolve Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2600,
+          600
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={Clayroots Base ID} = '{{ $('Params In').first().json['Clayroots Base ID'] }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "executeOnce": true
+      },
+      {
+        "id": "3d9fb6a0-2860-40db-a775-93985f5f2e18",
+        "name": "Fix Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2800,
+          600
+        ],
+        "parameters": {
+          "jsCode": "const log=Object.assign({},$('Build Log').first().json);\nlet rec=[];\ntry{ const lc=$('Fetch Launch Record').first().json.fields.Client; if(Array.isArray(lc)&&lc.length&&lc[0]) rec=[lc[0]]; }catch(e){}\nif(!rec.length){ try{const rc=$('Resolve Client').first().json; if(rc&&rc.id)rec=[rc.id];}catch(e){} }\nif(rec.length){ log['Client']=rec; } else { delete log['Client']; }\nreturn [{json:log}];"
+        },
+        "onError": "continueRegularOutput",
+        "executeOnce": true
+      },
+      {
+        "id": "d78257ef-0efc-4542-a533-b8351088abc8",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -672,
+          560
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-verify-emails",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "82942da1-1d1a-48f5-aa7e-b31c69f9973b"
+      },
+      {
+        "id": "5a8bfcc9-23ac-440e-98f0-c7e00ae51676",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -448,
+          560
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "4f7cb093-728f-4bd3-94c3-303e34da1068",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -224,
+          560
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.fields.Client[0] }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "e2c07d42-1640-4e5a-8efb-9577184d50e6",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          0,
+          560
+        ],
+        "parameters": {
+          "jsCode": "const rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst client=$('Resolve Base').first().json;\nconst cf=client.fields||{};\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table ID': ((f['Table ID']||'')+'').trim(),\n  'Max Rows': f['Max Rows'] || 0,\n  'View': ((f['View']||'')+'').trim(),\n  '_launchRecordId': rec.id,\n  'submittedAt': new Date().toISOString()\n} }];"
+        }
+      },
+      {
+        "id": "e0336f29-f4c5-4d19-a4f6-764cce74def0",
+        "name": "Params In",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          224,
+          368
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "f6ca498a-7078-4b4c-8314-a5c81b027ca4",
+        "name": "Launched?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          400,
+          368
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._launchRecordId || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "398b5c1e-a4ca-4232-b45b-72268cfc3842",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          576,
+          480
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json._launchRecordId }}",
+              "Status": "Running",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "2e903be5-0f0f-49e4-b5fc-ce05e43f825a",
+        "name": "Rows Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1232,
+          368
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.id }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Check Table": {
+        "main": [
+          [
+            {
+              "node": "Email Guard",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Email Guard": {
+        "main": [
+          [
+            {
+              "node": "Field List",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Field List": {
+        "main": [
+          [
+            {
+              "node": "Create Field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Field": {
+        "main": [
+          [
+            {
+              "node": "Read Records",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verdict": {
+        "main": [
+          [
+            {
+              "node": "To Airtable",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Collect Pending",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "To Airtable": {
+        "main": [
+          [
+            {
+              "node": "Update Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Record": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Pending": {
+        "main": [
+          [
+            {
+              "node": "Fire Poller",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cap Rows": {
+        "main": [
+          [
+            {
+              "node": "Has Email?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Email?": {
+        "main": [
+          [
+            {
+              "node": "MV",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MV": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Resolve Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Client": {
+        "main": [
+          [
+            {
+              "node": "Fix Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fix Client": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run": {
+        "main": [
+          [
+            {
+              "node": "Params In",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Params In",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Params In": {
+        "main": [
+          [
+            {
+              "node": "Launched?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launched?": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Records": {
+        "main": [
+          [
+            {
+              "node": "Rows Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rows Found?": {
+        "main": [
+          [
+            {
+              "node": "Cap Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

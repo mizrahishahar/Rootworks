@@ -1,0 +1,5 @@
+const dump=(n)=>{ try{ const items=$(n).all().map(i=>i.json); return { count: items.length, first: JSON.stringify(items[0]||null).slice(0,700) }; }catch(e){ return { err: String(e) }; } };
+let agg=null;
+try{ const rows=$('E List All').all().map(i=>i.json).filter(j=>j&&j.campaign_id!==undefined); agg={ rows: rows.length, sent: rows.reduce((s,d)=>s+(d.total_emails_sent||0),0), contacted: rows.reduce((s,d)=>s+(d.new_leads_contacted||0),0), replied: rows.reduce((s,d)=>s+(d.leads_replied||0),0) }; }catch(e){ agg={err:String(e)}; }
+const out={ probes: $('Sum Counts').first().json, E_count_jul1_15: agg, F_page2: dump('F Unibox') };
+return [{ json: { 'Automation':'PlusVibe Weekly Report', 'Status':'Succeeded', 'Run at': $now.toISO(), 'Target':'ZZ probe scratch', 'Trigger':'manual', 'Execution ID':'probe-'+$execution.id, 'Description': JSON.stringify(out).slice(0,95000) } }];

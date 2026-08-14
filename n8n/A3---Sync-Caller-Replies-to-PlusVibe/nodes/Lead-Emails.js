@@ -1,0 +1,1 @@
+return ['sales@magnummoving.com','moving@danthemovingman.com','javier@shawnandshawnmoving.com','weknowseniors@bell.net','expert@alloutmover.com'].map(function(e){return { json: { email: e } };});

@@ -1,0 +1,4389 @@
+{
+  "updatedAt": "2026-08-14T12:22:11.501Z",
+  "createdAt": "2026-07-28T08:41:24.263Z",
+  "id": "tspO2CNXtGudtSe7",
+  "name": "Handle New Lead from PlusVibe",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "plusvibe-new-reply",
+        "options": {}
+      },
+      "id": "387bf65a-ef6c-48aa-b158-ae0ee26db83a",
+      "name": "Live Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -416
+      ],
+      "webhookId": "1f43e962-85b5-4885-852a-e28e91893946"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "l1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "id": "l2",
+              "name": "pv_workspace_id",
+              "type": "string",
+              "value": "={{ $json.body.workspace_id }}"
+            },
+            {
+              "id": "l3",
+              "name": "manual",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "l4",
+              "name": "pv_campaign_name",
+              "type": "string",
+              "value": "={{ $json.body.campaign_name || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "274c27cb-1ab6-4f27-aa7a-e4762862331f",
+      "name": "Live Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "=({PlusVibe Workspace ID} = \"{{ $json.pv_workspace_id }}\")",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "0232e53b-bd58-4e43-83f9-32b3116dba6a",
+      "name": "Find Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -320
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      },
+      "id": "f5d255bc-f9ef-4622-936a-c46e5aaeb993",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "72cb3528-06c5-4b6b-bbf9-e5c852f28c50",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Normalize.js"
+      },
+      "id": "f04425f8-410d-4018-adc9-cadedffef4fe",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize').item.json.enrich_domain }}\" != \"\", {domain} = \"{{ $('Normalize').item.json.enrich_domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Normalize').item.json.company_name }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "4fe0b51e-6413-4b13-b176-cb282641c10c",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        -320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $('Client Vars').first().json.manual }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d93854d9-120f-4289-a782-ad743f8de0cd",
+      "name": "Lead in CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pvUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "bb1773c6-2e95-472c-b96e-5d1b8d4be87f",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2688,
+        -320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "acd14f0e-71a7-4b5b-b385-5851ab2ff165",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "35cb5d27-c214-42eb-a0cf-2da3a7a4dbec",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3136,
+        -320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ $('Client Vars').first().json.manual }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e2",
+              "leftValue": "={{ $('Find CRM Prospect').first().json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4b6ab8c-ca60-4f84-b836-faab2ac32bcf",
+      "name": "Existing Prospect?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4608,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Prospect.js"
+      },
+      "id": "44e7e5d2-37c8-4bd7-83e5-33ea31197f34",
+      "name": "Resolve Prospect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5280,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Dedup Key"
+          ],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Normalize').item.json.company_name || $('Normalize').item.json.full_name || $('Normalize').item.json.lead_email }}",
+            "Website": "={{ $('Normalize').item.json.is_freemail ? null : ('https://' + $('Normalize').item.json.domain) }}",
+            "Client": "={{ [ $('Find Client Row').first().json.id ] }}",
+            "Source": "Email",
+            "Conversation Thread": "={{ $('Format Thread').item.json.thread_context }}",
+            "First Engagement": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
+            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}",
+            "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
+            "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+            "Last Engaged": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
+            "Positive Reply Lead": "={{ true }}",
+            "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Normalize').first().json.is_freemail ? String($('Normalize').first().json.lead_email || '') : String($('Normalize').first().json.domain || $('Normalize').first().json.enrich_domain || String($('Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "2d14b713-c8b3-4ce5-9383-7943186c78a8",
+      "name": "Create CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4832,
+        -240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
+            "lastName": "={{ $('Normalize').item.json.last_name || null }}",
+            "position": "={{ $('Normalize').item.json.job_title || null }}",
+            "email": "={{ $('Normalize').item.json.lead_email }}",
+            "phone": "={{ $('Resolve Phone').item.json.phone || null }}",
+            "linkedin": "={{ $('Normalize').item.json.linkedin_url || null }}",
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}",
+            "Phone Source": "={{ ['signature','GPT','LeadMagic','signature-tollfree','GPT-tollfree','none'].includes(String($('Resolve Phone').first().json.phone_source || '').trim()) ? String($('Resolve Phone').first().json.phone_source).trim() : 'none' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "3ef97e1c-35d4-4c76-afb4-bbc432a7d6c6",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5056,
+        -240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRECENT EXCHANGE (our last message, then their reply — use this to interpret short replies like \"sure\"/\"yes\"):\n{{ $('Format Thread').first().json.last_two }}\n\nRun the qualification. Output structured JSON, and include a \"situation_summary\": ONE plain-English line (max 140 chars) stating what the prospect signaled and what they want next, interpreting the latest reply IN CONTEXT of our last message. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for (e.g. \"Said yes to a quick walkthrough video\" or \"Asked us to send more on how it works before a call\"). Never paste the raw reply verbatim; no names, signatures, or URLs. Also include a \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+        }
+      },
+      "id": "d2443906-aa8e-4e68-8264-1b63dd27063d",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3360,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "b8b141ee-2a20-475d-b6a1-c5ad06346f39",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3376,
+        -96
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9P7fOmZxpETeDhu8",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
+      },
+      "id": "5c2bd7e1-1c7d-4e4a-8f62-c0100194e855",
+      "name": "Parse Qualification",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3504,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten.js"
+      },
+      "id": "f88a7870-fd0c-4536-aac0-f84f2da0eb49",
+      "name": "Flatten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+            "OutreachStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+            "Qualification Brief": "={{ (function(){const t=String($('Flatten').item.json.brief_plain||'');const lines=t.split('\\n').map(s=>s.trim()).filter(Boolean);if(!lines.length)return '';const out=['**'+lines[0]+'**',''];for(let i=1;i<lines.length;i++){out.push('- '+lines[i]);}return out.join('\\n');})() }}",
+            "Source": "Email",
+            "Conversation Thread": "={{ $('Format Thread').item.json.thread_context }}",
+            "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
+            "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
+            "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "2c2eb670-5cbc-4213-bb06-85fb9c3889cb",
+      "name": "Set CRM Verdict",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5504,
+        -320
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "a93cfe9e-4edc-4e2b-a48f-46a8f75ed0f3",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5952,
+        -384
+      ],
+      "webhookId": "c7eceeb3-f3e7-4dce-ae51-4a5f47d2a529"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Slack-Blocks.js"
+      },
+      "id": "03fd8834-dd6e-47e8-b9e3-136cca8d0eb8",
+      "name": "Build Slack Blocks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6176,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Client Vars').first().json.slackChannel }}",
+          "mode": "id"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ $json.blocksJson }}",
+        "text": "=New interested lead: {{ $('Flatten').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "73b7d90c-4bdd-4701-8888-988d3c920b97",
+      "name": "Slack Client Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        6400,
+        -384
+      ],
+      "webhookId": "5ecfb0f7-059f-4105-bcd5-bdb0502404c9",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+            "Slack Thread TS": "={{ $json.message_timestamp || ($json.message && $json.message.ts) || '' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "fd3f4bf7-6db0-4dae-b014-88c3e65694da",
+      "name": "Set Thread TS",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6624,
+        -384
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "id": "4bedcc78-62f3-4c9c-8278-9e200d743487",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6848,
+        -320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "6491bb6a-6dab-47e5-ab8b-069a662de4e3",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7072,
+        -320
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Addon-Payload.js"
+      },
+      "id": "bc0ebdf5-a216-4546-b9e0-c581d1612103",
+      "name": "Addon Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7296,
+        -320
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.flowroots.com/webhook/addon-newlead-{{ $('Client Vars').first().json.clientSlug }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "cbceb11a-a5f0-49e5-b3a2-5c4fd74b279b",
+      "name": "Fire Add-on",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7520,
+        -320
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "newlead-manual",
+        "options": {}
+      },
+      "id": "35db08e6-cb5a-4d07-8b9d-41034c96915d",
+      "name": "Manual Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -224
+      ],
+      "webhookId": "9a517237-1bf7-4166-abc3-ab024c82f8ff"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "=cschwarz@revcord.com "
+            },
+            {
+              "id": "m2",
+              "name": "pv_workspace_id",
+              "type": "string",
+              "value": "=6a4a3ab6d70a593c3e3b75e5"
+            },
+            {
+              "id": "m3",
+              "name": "manual",
+              "type": "boolean",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a0168a8-d65e-45a9-bf0c-a43f73f916cb",
+      "name": "Manual Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "filterByFormula": "={Campaign ID}='{{ $json.campaign_id }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "243fe0cc-4714-4e73-983b-5e81cc757a4f",
+      "name": "Search Campaign",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cf1",
+              "leftValue": "={{ $json.id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5598dbca-77fd-450c-8e2a-8b829ce40804",
+      "name": "Campaign Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id }}",
+            "Campaign ID": "={{ $('Normalize').item.json.campaign_id }}",
+            "Client": "={{ [ $('Find Client Row').first().json.id ] }}",
+            "Sequencer": "PlusVibe",
+            "Channel": "Email"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c34c7574-fba9-49e1-81a8-a64d8af85412",
+      "name": "Create Campaign Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        -240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Campaign.js"
+      },
+      "id": "6afb490c-e625-4c5e-b9f7-f0438651089c",
+      "name": "Resolve Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -320
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "qg1",
+              "leftValue": "={{ $('Flatten').item.json.custom_qualification_status }}",
+              "rightValue": "out_of_icp",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "546161f7-1eb4-4122-b4c9-ee3c3358b35d",
+      "name": "Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5728,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lm1",
+              "leftValue": "={{ $json.custom_qualification_status }}",
+              "rightValue": "out_of_icp",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "lm2",
+              "leftValue": "={{ (($('Format Thread').first().json.signature_phone || '').trim() || ((($json.custom_phone || '').trim() && !/^\\+?1?(800|833|844|855|866|877|888)\\d{7}$/.test(($json.custom_phone || '').trim())) ? ($json.custom_phone || '').trim() : '')) ? 'have' : 'need' }}",
+              "rightValue": "need",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a8079995-1cac-4808-b7f6-e3d586f42f88",
+      "name": "Should Call LeadMagic?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3936,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.leadmagic.io/v1/people/mobile-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"work_email\": $('Normalize').first().json.lead_email } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "2acf2dc7-a79f-4488-983d-052238e9458f",
+      "name": "LeadMagic Mobile Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4160,
+        -384
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oMWq3aRIRMhIkSur",
+          "name": "Lead Magic"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Phone.js"
+      },
+      "id": "bc108a26-af70-4adf-b251-ca12b6aaae0e",
+      "name": "Resolve Phone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4384,
+        -320
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -80
+      ],
+      "id": "23b8bea4-c772-401a-a344-ec8480f948f5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Thread-URLs.js"
+      },
+      "id": "fcb25761-03ab-44ce-85e4-b4b5d6a5094c",
+      "name": "Prep Thread URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        -320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Append-Record-Link.js"
+      },
+      "id": "a6be4e45-abf1-40ec-bf52-09a89bda20c8",
+      "name": "Append Record Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6288,
+        -208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bdr1",
+              "leftValue": "={{ (($('Find Client Row').first().json.fields) || {})['BDR Slack Channel ID'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "98f12320-7274-4b9b-9a0c-4accc1dc75f0",
+      "name": "BDR Channel Set?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6832,
+        -608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-BDR-Card.js"
+      },
+      "id": "92966aaf-7881-4c71-9969-87216f977279",
+      "name": "Build BDR Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        -32
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.bdr_channel }}"
+        },
+        "text": "={{ $json.bdr_text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "c15d7229-538b-42c6-b7a8-0f83457c38fc",
+      "name": "Slack BDR Card",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        7248,
+        -32
+      ],
+      "webhookId": "548fedba-be0f-476f-8306-89376bdb70fb",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Build BDR Card').first().json.bdr_channel }}"
+        },
+        "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=zmap[tzRaw]||'Asia/Jerusalem'; let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Slack BDR Card').first().json.message_timestamp || '' }}"
+            }
+          }
+        }
+      },
+      "id": "d54d1f97-b66e-4fc7-bf53-d80fee49ec7d",
+      "name": "Slack BDR Thread",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        7456,
+        -32
+      ],
+      "webhookId": "bb366484-9119-415b-a96b-d15848036ac9",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+            "BDR Thread TS": "={{ $('Slack BDR Card').first().json.message_timestamp || '' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "7f2f6fb6-586a-4877-937d-415462569cdc",
+      "name": "Set BDR Thread TS",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7664,
+        -32
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
+      "name": "Routine URL Set?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6832,
+        -128
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
+      "name": "Fire Inbox Routine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7056,
+        -128
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ ($('Find Client Row').first().json.fields['Inbox Manager API Key'] || '').trim() }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Live Webhook": {
+      "main": [
+        [
+          {
+            "node": "Live Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live Input": {
+      "main": [
+        [
+          {
+            "node": "Find Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Lead in CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "DiscoLike BizData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 5.1 Qualifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "Build Slack Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Client Channel": {
+      "main": [
+        [
+          {
+            "node": "Set Thread TS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Run": {
+      "main": [
+        [
+          {
+            "node": "Addon Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Addon Payload": {
+      "main": [
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Webhook": {
+      "main": [
+        [
+          {
+            "node": "Manual Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Input": {
+      "main": [
+        [
+          {
+            "node": "Find Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Search Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Campaign": {
+      "main": [
+        [
+          {
+            "node": "Campaign Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Found?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Campaign Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Campaign Row": {
+      "main": [
+        [
+          {
+            "node": "Resolve Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Campaign": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CRM Verdict": {
+      "main": [
+        [
+          {
+            "node": "Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified?": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DiscoLike BizData": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten": {
+      "main": [
+        [
+          {
+            "node": "Should Call LeadMagic?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Call LeadMagic?": {
+      "main": [
+        [
+          {
+            "node": "LeadMagic Mobile Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resolve Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LeadMagic Mobile Finder": {
+      "main": [
+        [
+          {
+            "node": "Resolve Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Phone": {
+      "main": [
+        [
+          {
+            "node": "Existing Prospect?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Prospect?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prospect": {
+      "main": [
+        [
+          {
+            "node": "Set CRM Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Manual Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead in CRM?": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prep Thread URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Thread URLs": {
+      "main": [
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack Blocks": {
+      "main": [
+        [
+          {
+            "node": "Append Record Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Record Link": {
+      "main": [
+        [
+          {
+            "node": "Slack Client Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Thread TS": {
+      "main": [
+        [
+          {
+            "node": "BDR Channel Set?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Routine URL Set?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Channel Set?": {
+      "main": [
+        [
+          {
+            "node": "Build BDR Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build BDR Card": {
+      "main": [
+        [
+          {
+            "node": "Slack BDR Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack BDR Card": {
+      "main": [
+        [
+          {
+            "node": "Slack BDR Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack BDR Thread": {
+      "main": [
+        [
+          {
+            "node": "Set BDR Thread TS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set BDR Thread TS": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routine URL Set?": {
+      "main": [
+        [
+          {
+            "node": "Fire Inbox Routine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "global": {
+      "runStartedAt": 1786698007702
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {
+    "Live Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.flowroots.com",
+            "user-agent": "axios/1.13.2",
+            "content-length": "6995",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "3.146.115.135",
+            "x-forwarded-host": "n8n.flowroots.com",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "webhook_id": "6a6869e8d8664b8d217cf0b5",
+            "webhook_name": "MARKED INTERESTED - Handle New Lead (shared)",
+            "webhook_event": "LEAD_MARKED_AS_INTERESTED",
+            "campaign_name": "2026-07-17 - B2B Tech US 1-50 - Founder-CEO - pitch-led",
+            "workspace_name": "Flowroots X Dave.io",
+            "camp_id": "6a5dec165df67355a3c437f2",
+            "parent_lead_id": "",
+            "_id": "6a5e1fea8c995c590d5a4237",
+            "address_line": "",
+            "country": "",
+            "country_code": "",
+            "company_website": "",
+            "first_name": "Eugene",
+            "last_name": "Legkiy",
+            "phone_number": "",
+            "company_name": "Tabula",
+            "city": "",
+            "email": "eugene@tabula.io",
+            "organization_id": "6a018ddb85c01f5da7906693",
+            "campaign_id": "6a5dec165df67355a3c437f2",
+            "workspace_id": "6a4a3ab6d70a593c3e3b75e5",
+            "is_completed": 1,
+            "current_step": 3,
+            "email_account_id": "6a4a51251eea659ddbc348b9",
+            "created_at": "2026-07-20T13:17:30.480Z",
+            "modified_at": "2026-08-13T12:23:21.986Z",
+            "status": "REPLIED",
+            "label": "INTERESTED",
+            "parent_camp_id": "",
+            "linkedin_person_url": "",
+            "linkedin_company_url": "",
+            "job_title": "CEO & Founder",
+            "department": "",
+            "industry": "",
+            "state": "California",
+            "mx": "GOOGLE_WORKSPACE",
+            "seg": "",
+            "actual_replied_from": "eugene@tabula.io",
+            "associates": [],
+            "hubspot_id": null,
+            "hubspot_deal_id": null,
+            "ghl_lead_id": null,
+            "ghl_conv_id": null,
+            "member_id": null,
+            "domain": "tabula.io",
+            "authority_line": "",
+            "email_account_name": "seaneckhouse@daveinfraops.com",
+            "last_lead_reply": "<div dir=\"ltr\">Hi, what is the pricing?</div><br><div class=\"gmail_quote gmail_quote_container\"><div dir=\"ltr\" class=\"gmail_attr\">On Mon, Jul 27, 2026 at 7:21 AM Sean Eckhouse &lt;<a href=\"mailto:seaneckhouse@daveinfraops.com\">seaneckhouse@daveinfraops.com</a>&gt; wrote:<br></div><blockquote class=\"gmail_quote\" style=\"margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex\"><u></u><div><p>The reason Dave works from day one: it plugs right into your cloud, Git, ticketing and Slack, and maps your whole infrastructure in minutes. No ramp up, no onboarding project, just an owner already on the job.</p><p>Mind if I send more info?</p><p> </p><p></p><div>Thanks,<br>Sean Eckhouse<br>Dave.io<br>251 Little Falls Drive, Wilmington, DE 19808<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div><p></p><br><br>On Wed, Jul 22, 2026 at 12:19 PM Sean Eckhouse &lt;<a href=\"mailto:seaneckhouse@daveinfraops.com\" target=\"_blank\">seaneckhouse@daveinfraops.com</a>&gt; wrote:<br><br><blockquote style=\"border-left:2px solid rgb(221,221,221);padding-left:5px\"><p>Hi Eugene,</p><p>We can help Tabula scale output without adding headcount.</p><p>Dave is our AI agent that owns your infrastructure end to end from day one.</p><p>Teams that switched cut infrastructure costs around 45% and freed up 8x their engineering time.</p><p>Mind if I send more info?</p><p> </p><p></p><div>Thanks,<br>Sean Eckhouse<br>Dave.io<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div><p></p></blockquote></div></blockquote></div>",
+            "text_body": "Hey Eugene,\n\nWhat's the biggest line on Tabula's cloud bill right now?\n\nReason I ask, that's usually where the first savings sit, and it decides whether the number I quoted you is worth anything at all.\n\nThanks,\nSean\n\nOn Mon, Jul 27, 2026 at 7:56 PM Eugene Legky <eugene@tabula.io> wrote:\n\n\n> Hi, what is the pricing?\n> \n> On Mon, Jul 27, 2026 at 7:21 AM Sean Eckhouse <seaneckhouse@daveinfraops.com [seaneckhouse@daveinfraops.com]> wrote:\n> \n> \n> > The reason Dave works from day one: it plugs right into your cloud, Git, ticketing and Slack, and maps your whole infrastructure in minutes. No ramp up, no onboarding project, just an owner already on the job.\n> > \n> > Mind if I send more info?\n> > \n> >  \n> > \n> > \n> > \n> > Thanks,\n> > Sean Eckhouse\n> > Dave.io\n> > 251 Little Falls Drive, Wilmington, DE 19808\n> > \n> > P.S. Please reply \"no thanks\" if not interested.\n> > \n> > \n> > \n> > \n> > \n> > On Wed, Jul 22, 2026 at 12:19 PM Sean Eckhouse <seaneckhouse@daveinfraops.com [seaneckhouse@daveinfraops.com]> wrote:\n> > \n> > \n> > \n> > > Hi Eugene,\n> > > \n> > > We can help Tabula scale output without adding headcount.\n> > > \n> > > Dave is our AI agent that owns your infrastructure end to end from day one.\n> > > \n> > > Teams that switched cut infrastructure costs around 45% and freed up 8x their engineering time.\n> > > \n> > > Mind if I send more info?\n> > > \n> > >  \n> > > \n> > > \n> > > \n> > > Thanks,\n> > > Sean Eckhouse\n> > > Dave.io\n> > > \n> > > P.S. Please reply \"no thanks\" if not interested.",
+            "last_lead_reply_subject": "Re: Infrastructure at Tabula",
+            "last_email_id": "6a735aa3fb12519b736cd821",
+            "last_thread_id": "6a67b7ffe17c580c5899fc27",
+            "latest_message": "Hey Eugene,<br><br>What's the biggest line on Tabula's cloud bill right now?<br><br>Reason I ask, that's usually where the first savings sit, and it decides whether the number I quoted you is worth anything at all.<br><br>Thanks,<br>Sean<br><br>On Mon, Jul 27, 2026 at 7:56 PM Eugene Legky &lt;eugene@tabula.io&gt; wrote:<br><br><blockquote style=\"border-left: 2px solid #ddd; padding-left: 5px;\"><div dir=\"ltr\">Hi, what is the pricing?</div><br><div class=\"gmail_quote gmail_quote_container\"><div dir=\"ltr\" class=\"gmail_attr\">On Mon, Jul 27, 2026 at 7:21 AM Sean Eckhouse &lt;<a href=\"mailto:seaneckhouse@daveinfraops.com\">seaneckhouse@daveinfraops.com</a>&gt; wrote:<br></div><blockquote class=\"gmail_quote\" style=\"margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex\"><u></u><div><p>The reason Dave works from day one: it plugs right into your cloud, Git, ticketing and Slack, and maps your whole infrastructure in minutes. No ramp up, no onboarding project, just an owner already on the job.</p><p>Mind if I send more info?</p><p> </p><p></p><div>Thanks,<br>Sean Eckhouse<br>Dave.io<br>251 Little Falls Drive, Wilmington, DE 19808<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div><p></p><br><br>On Wed, Jul 22, 2026 at 12:19 PM Sean Eckhouse &lt;<a href=\"mailto:seaneckhouse@daveinfraops.com\" target=\"_blank\">seaneckhouse@daveinfraops.com</a>&gt; wrote:<br><br><blockquote style=\"border-left:2px solid rgb(221,221,221);padding-left:5px\"><p>Hi Eugene,</p><p>We can help Tabula scale output without adding headcount.</p><p>Dave is our AI agent that owns your infrastructure end to end from day one.</p><p>Teams that switched cut infrastructure costs around 45% and freed up 8x their engineering time.</p><p>Mind if I send more info?</p><p> </p><p></p><div>Thanks,<br>Sean Eckhouse<br>Dave.io<br><br>P.S. Please reply &quot;no thanks&quot; if not interested.</div><p></p></blockquote></div></blockquote></div>\n</blockquote>",
+            "latest_subject": "Re: Infrastructure at Tabula",
+            "lead_id": "6a5e1fea8c995c590d5a4237",
+            "camp_tag_ids": [],
+            "is_email_verified": -1,
+            "sender_first_name": "Sean",
+            "sender_last_name": "Eckhouse",
+            "lead_last_sent_at": "2026-07-27T11:21:12.007Z",
+            "ws_lead_last_sent_at": "2026-07-27T11:21:12.028Z",
+            "is_mx": 1,
+            "sentiment": "POSITIVE",
+            "step": 2,
+            "variation": "A"
+          },
+          "webhookUrl": "https://n8n.flowroots.com/webhook/plusvibe-new-reply",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Find Client Row": [
+      {
+        "json": {
+          "id": "reclCOYRBgMowJd8G",
+          "createdTime": "2026-07-18T14:03:30.000Z",
+          "fields": {
+            "Report Day": "Thursday",
+            "AUTOMATIONS": [
+              "recNPW1zFDuEl4b6F",
+              "rec9HvRmEtS6vyhNH",
+              "recNIAIDnmV3uw0eq",
+              "receREwLf4zQjupr0",
+              "recZ5VACgJSMNyreL",
+              "reckfTvizQncJAPBe",
+              "recXctr1CGm35WOqs",
+              "recWikp4JgDDJIbfF",
+              "recDn8bHYV690esRG",
+              "recRu8uhukcszP94O",
+              "recGCW2eHTymGeUBK",
+              "recNcZP0I2eQ6c3fP",
+              "recvOfPq80if65tAZ",
+              "recLURH2Xfk5VeM8X",
+              "recmSLWj6ZnsKi3Ku",
+              "recfvYwn0VIDCBuBX",
+              "recFix4VjRwszPXX7",
+              "rechZgpYico7rTmKM",
+              "recaDFQsfakCS1nSH",
+              "recDD0DIMcid1bQ4d",
+              "recfEkIqvZZmhr7ju",
+              "rec9SgeddbjYqXWUq",
+              "recqSZ7e0tMpUxpdI",
+              "recIFzDcf36wu8nke",
+              "rec2hPn2g0WNiHJMJ",
+              "recVh9L6PmynEipeB",
+              "rec0efGWKA93Lwtqt",
+              "rec8rbojPSx65dO7o",
+              "recAVpEpXQ0dNykin",
+              "recELyoeGpCNkSsa6",
+              "recFLGs2EBvbgsqtq",
+              "recNNC41qrqMFEJ3t",
+              "receiXeklednqMCCU",
+              "reciZAjoVxI1cewR3",
+              "recnOH1r6xPyP3CKr",
+              "recqN0r34vIAGdBbq",
+              "recqXYIXjQzzktKSz",
+              "recqwIkIT2EAjLNOF",
+              "recWO9Go8u35d3o1z",
+              "reca7HDnbX75Ix7xn",
+              "recSBKS0GzJAcfU5c",
+              "reckQexm3EbKWhTYm",
+              "recRBY1xhKMxhErtr",
+              "recNfnz00e78zalcu",
+              "recXpdrNmKGZpE8uk",
+              "rec7e568PSLqOf1Zg",
+              "recPpIuGu4foCvmHA",
+              "recYOiqx6Hb6oodgh",
+              "recQ67NN7Utkg1mug",
+              "rectReIdW3hAqtbFD",
+              "recGuM3nht2BWyTS5",
+              "recHbCVN0MdoogHI8",
+              "recQQ4xPk1e8wvys0",
+              "rec77uDXyLFQIIMoL",
+              "recRtQegw04b7cT7I",
+              "rec1tOzoNLd0ADMmy",
+              "recuWbiPd113HlkqI",
+              "recZFAPPT8J5AHPo7",
+              "rec3aNAw8d3y2TRQt",
+              "recBc7p5HVOJvcvK8",
+              "receMRvgmcMMCPNUA",
+              "recV6sE7tIOSDUeis",
+              "recblYBbAwx8zuumf",
+              "recN0aKmGQdYQNSyX",
+              "recqTKoa35jncoT8H",
+              "rec0x5Ao1orXtFFyx",
+              "recdZsaP2A5KJnwxa",
+              "recuP5fn7C9ITBTO3",
+              "recXICyEE7mS1GfF0",
+              "rec1SGxN7RTjeaQTk",
+              "recWGZKpsAEzFQf05",
+              "recbgbtVuLfdodUJg",
+              "rec74cIHMywEUThlg",
+              "rec0lvfvP7X6DfGDu",
+              "recRL8ZAv0sTo0pff",
+              "recpTlqyBAlyYsXIu",
+              "recDJABm36hXiQlct",
+              "recAhOuzeCxMeIksM",
+              "rec5sie6vleHWOVdb",
+              "recYrd03ilYw3gl63",
+              "recH5fkiTuiNOrayD",
+              "recLNSxLDU6Psum4X",
+              "recDskXDdpuMtMWr1",
+              "recVPLDzzZeRPAmOb",
+              "recVPVGYPSnINnzZq",
+              "recCNwQRjX3mz7Ry5",
+              "recp5EePziDAi5E74",
+              "recEAT6wjuYpe8vEU",
+              "rec6POcyevgo4PxtJ",
+              "reckEozO6VcFkEPOk",
+              "recM10Xo3J7M2HD5m",
+              "recA6SL7O14ilSgFl",
+              "recKhO5HlXHDSiFXI",
+              "recTGaVHUEBehBx51",
+              "rectSshbUCDg3gTFK",
+              "recJqpNCgvOcxzHRA",
+              "recCZoCsW9lvyMNyV",
+              "recZ3lOUTTcmu0MEb",
+              "recZwwiG3PpFLb8uc",
+              "recG7jdrA6LbUnfGt",
+              "rec3pRJeNyqDwQNpw",
+              "recBp87Kz3ufhrB5c",
+              "recngC9vBUWoQEqE0",
+              "rec1hJ2ceamYTAxeP",
+              "reccHRJLVsSQ6hmK6",
+              "rec23p0X28Noq1YsC",
+              "recW6QKDbBf40p4gN",
+              "recH7IkiXffIJSGFT",
+              "recYvd67GhQ604j2W",
+              "recnXcgStM8zVQ5L7",
+              "rec6NzoiJr1IrRZ9f",
+              "recfZXzeSTQ8aOppc",
+              "recOSbHKf3pSCTvuM",
+              "reclsxJPqemsPOuii",
+              "recJvZbs0nz7q15y1",
+              "recPf2BIXsZPAotZ0",
+              "recFra0qkg8TfW9KM",
+              "rec0PuIhTvPVG6S0l",
+              "recSEHhzp0KMiYli3",
+              "recNwKSGXW4uqGiH2",
+              "recrfr2rf59QbNRWn",
+              "recaCnbwQSnChRBSY",
+              "recTiSkRiaM4k9NeY",
+              "recg7A3x3c5e7hsnT",
+              "rec2NWyrVoJMaxbIF",
+              "recL9mVSXlCP4YgS8",
+              "rec7waYBVexSBQiw5",
+              "rec5qb7rwQX21y10S",
+              "recK2vG7IZDtbEkHc",
+              "recJI6uXwc6snS3Fe",
+              "recU8zhM8stVPulgH",
+              "recyRmXkDLA2O4E0P",
+              "reckuMgDvDGsUiTDM",
+              "recVg9RSyOAmcl8LF",
+              "recm0EBstLapgkD7F",
+              "reccLhckigPbyLrUq",
+              "recDzRHFexCOgg7Sm",
+              "rec7ExyPTkDIvkCdY",
+              "recLTdWTAo6EgPMJn",
+              "recJxTedvJfTCMaQj",
+              "recswQJZl4pjwOpGm",
+              "recZMhLyfIZ2WV8Ri",
+              "recMn6zN3t7h8OUfm",
+              "recHbzNgwv9m8tQJe",
+              "rec814PggkulhMqQb",
+              "recHBRGVPmBfxzozI",
+              "recQJJgQcrFkGlNGw",
+              "recHWy9RXqXwlArK8",
+              "rec8LGtIobxpE0T18",
+              "recPFNWtAz7Ek1R0Y",
+              "recYIwkEcrYWRvxT0",
+              "recxi0xQXyPczU5TR",
+              "recFGSKPLkai7Azhv",
+              "recI4JGIdx3tZxnCc",
+              "recAyoMRUdQ0ebzwd",
+              "recJwkhCbSZAqZG32",
+              "recHEq2qHUHAOGJ96",
+              "rec99K8wMMwl2EZOs",
+              "recaYIOjI96Vn6KOA",
+              "recoy43odqSwyvfIw",
+              "recn5WQq2TuQmbNec",
+              "recnMne9CsmBdIH2b",
+              "recJJfwd2lP6aAFjX",
+              "recrHv8PW1C1FLlOk",
+              "rec8pSmcOPjtzIp7w",
+              "reclr21wn4MqvnbLt",
+              "recF0HkbpCFVNaISv",
+              "recePUD2RibXuZiwI",
+              "recDKNlkocyHgSxmN",
+              "recBqv56oIOqI5vB8",
+              "recB2Ke7YunTmBRnP",
+              "rec1G1tMAtBOJlUJ7",
+              "receGXvTNZnnh4Zgi",
+              "recCn3wnBcQALAHt0",
+              "recClH8UIUWmduCYO",
+              "rec1CYKKLEQg6nlWz",
+              "recAm3mXM3p1Az5BB",
+              "recfsh9Z2OdLdUSYK",
+              "rec7s11nIGsZbFvRw",
+              "reccPrjC1PnkllZOr",
+              "recyv5ZXHL2KBov6g",
+              "recbTfSCIt7RkT4Ml",
+              "rec5dcLJIXuK1zIqj",
+              "recF7G6shdwjkNPPZ",
+              "recW1FTKMx8Wm4j50",
+              "recIlAhjbsZVZzPd8",
+              "recbVMbhZ6Stpsdvq",
+              "recalUSwdrBijDB9z",
+              "recVLGLkLKnSDDxyI",
+              "recYmBAL68OreWi57",
+              "rectlSA6phvafZgC2",
+              "reckWcrnnyIRteruB",
+              "reczDRFn4x08xc7f7",
+              "recysKlFL2QDmEeqJ",
+              "recgQWAa10N9JuzHK",
+              "reccn2Ja9VSqglrbB",
+              "recnh3rOAiZpY98dT",
+              "recVn85ScX8O0bnvA",
+              "rec6vbadnmB5ZMuPC",
+              "rec1BFXtSa2iB9KyC",
+              "rec9GFEnXYrTm0DEE",
+              "rec0vvjKvXn7MLqQF",
+              "recUNY1q9A3BKvAP6",
+              "recDm9s9Tw1ZRrNQN",
+              "recvMdtrbmMcMxsht",
+              "recjOplgkZSxHSbf9",
+              "recXuXPNmRdRE76f1",
+              "recBRrOJ6gMiSnZHp",
+              "recWmlftS6PaCWsTS",
+              "recJN0JgYccSf2bWx",
+              "recDCl0pVBV78EPDw",
+              "recibQHhRLYFF50Hk",
+              "recYrI19VkVywvFSI",
+              "recA40dBIrhHJSu0D",
+              "recC8oRu6pAcAnHx8",
+              "recF4KeoY98gDDuIy",
+              "recjEIdDNb9GB14L4",
+              "rec8HFJqBZCmBQ6bi",
+              "reckph98a2Ei0EyTC",
+              "recK0oXBSfjacCN0y",
+              "recLBbyUovG2bkd8C",
+              "recAp9bWhilp51Uys",
+              "rec94CCehkhKdfESn",
+              "recUkKGL5yPp3Q1am",
+              "recDcbMEUfOldF7ZB",
+              "receKa9UupsMEJdUf",
+              "recvurNAUtaorCo1m",
+              "recuAX7v8hcwldK3s",
+              "recvojZdUodYH5rXv",
+              "recXRoelhgZeYoOxt",
+              "reconfAfaBRK3IFW7",
+              "recThs0pOXao0RpSM",
+              "recdGEzyTvOvzv0ev",
+              "rec8K1LCPrNIPyMo7",
+              "recCam0AT4gRQ7PNn",
+              "rec0e69XzNiaxpmFj",
+              "recs0qIKZUwtZxBul",
+              "recYbbqwhOqggiASv",
+              "recFH1L3lN9XVCjqY",
+              "recWlOxsDcqNe3V0G",
+              "recUYqCbAJK7nugng",
+              "recsXFe2OzgdRIkyX",
+              "recgpf8U4i1OWbkBK",
+              "rec8EURWAQIo3rRnC",
+              "recc387s2K4Uh7j0d",
+              "recB8KOZnZ84tBDlQ",
+              "recDY5e0JTyp16roj",
+              "recpLvUhc4q96KKQ1",
+              "recYiUZUkVaevW6dK",
+              "reco5E49yshBBsIli",
+              "recO9D6OkoC5IV8gW",
+              "recTAX3rFFfctdQeH",
+              "recuJdX0vixRiVFaY",
+              "recfCpOBVwNTW64q6",
+              "recj1vqeG1jjbWdWZ",
+              "recnMKipQZTdIV2pR",
+              "recdgK3I0KRqBfMLI",
+              "rec69evJqLWrl2q5c",
+              "recrnvX6cIZrGD9vY",
+              "rec9YNLxBGt5bZ0ZY",
+              "recd5KKd0n9oOiSsf",
+              "recW1IfDvVJhLHJis",
+              "rec4ftLaRyF7TGopa",
+              "recNWCovdq2QDSnXv",
+              "rec3hbNOzJEQpG9iB",
+              "reco5xvbdbpbXtpCW",
+              "recUQcF4B259Pduct",
+              "recoTfFVlmriiLCeA",
+              "recNDZl8Jx8qZ2qcW",
+              "rec1HbK7WoAPfpdfG",
+              "reczj7wgUG1XWBtZE",
+              "recb1WNkqJ8oykMjq",
+              "reclTp0JG2K6xWpXn",
+              "receWYqZNJ84SbSy9",
+              "recaCeDbtevX3nqjS",
+              "rec7p2ijcGL2Nvwhx",
+              "recWjLqqEGztgdIbf",
+              "recK3xVDnraLl5L6M",
+              "recYYPTJfdR5G2SzU",
+              "rec2372Ne4gX1AfNO",
+              "recjDLNtLRXg9I7Hv",
+              "recBVsacqu0sJVkZD",
+              "recivvVarGL1igXa4",
+              "recz4OIE0tGazpCSd",
+              "rec0lqWZQrGyqqJSz",
+              "rec7F3SOyvar4nEVq",
+              "recilay8wMoEEphFv",
+              "recsLQr6W1VKzH8Ty",
+              "recQ5i2tH39O360dW",
+              "rec8dt6ZMYxrDKOJP",
+              "recL9Wne2nBCkjgjW",
+              "recWCFFsTQAkyu6AU",
+              "recTCEPhI9u0bGSvV",
+              "rectmOE0YUtYiroQv",
+              "recIaHccRmGDHv9Tn",
+              "recI1vkht0nzheNLf",
+              "reczOvpcNymnPSHWj",
+              "rec9ebyDAKH86tTHX",
+              "recPONKnarNBtxTzC",
+              "rec2jqpSxqjfdv4Ry",
+              "recEfyjNDuEu57iPz",
+              "rec75Iuunr6F6Pwxn",
+              "recmHErpBcXN1c0Cd",
+              "recqh5BlIP7aFiqZs",
+              "recykcehIfAy6vJX2",
+              "rece0Dt09dXbw19ln",
+              "recW6zBA5sLEBuWJG",
+              "rec0tjb366WcC6J1k",
+              "recM7kxWYxbHLDl0u",
+              "recJpv56iXhqf0BPO",
+              "rechkGkYHjXRA916c",
+              "reccjicHeQbRXyxoU",
+              "recK9jRzVXeZw2RYv",
+              "recGcL4zXv7hwzBHM",
+              "recQzd0f2ETMMAI1O",
+              "reckq1iowK7vPWdSK",
+              "recKppA8rFWAnoak3",
+              "recGdC4Oce52EC112",
+              "recZT0uIQkEYife8R",
+              "recTztuMpbkx7dxR3",
+              "rec0TAO66ss1rejtu",
+              "recS1T9f1SA1tpMbK",
+              "rec7tlp0OGSiBliNF",
+              "recTkUVY5mafk5W5p",
+              "recrjSJ3TSYfWNe7q",
+              "recz2TYaE0Dep7TFL",
+              "rec0rqqdVX9xDxEIx",
+              "recNdaqGJNZbH5msX",
+              "recsI86K4MeJ67ESq",
+              "recOFdaYqWdk2IbNu"
+            ],
+            "Intent Tables": "tblzDWfqe02Eny5QC",
+            "Inbox Manager API Key": "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",
+            "Scheduling": {
+              "label": "GO TO SCHEDULING",
+              "url": "https://meetings-na2.hubspot.com/seckhouse?uuid=77015e5b-fd97-4f7c-a578-0d92f290517c"
+            },
+            "SESSIONS": [
+              "recaxoNN2toVE9daC",
+              "rec7UqIaEykpsAs23",
+              "recR3Q9LlxDVF3OoU",
+              "recYAoCSBRc79DRvF",
+              "recDFiWMc0HnaGSP8",
+              "recWGSZrb2mAnqhkK",
+              "recPnwpAzqk3cnBJM",
+              "recXrVjpHXkIPWXiw",
+              "recM9Rxc9v3F9cgg1",
+              "recDyuzqwQBtc1SGK",
+              "rec1NFbaKzPGDuiy4",
+              "recrwXMHYV0U3p0HD",
+              "recvNkGbDKHxEXhgJ"
+            ],
+            "Campaigns": [
+              "recRTVVHu8g2BLDb6",
+              "recJdCWogtXL9avGu",
+              "recRmq8jXBlXvA7if",
+              "recfGgg85FwWLGzEG",
+              "recZNT4qxbkhDeWDc",
+              "recyxVpXJRyrqGaLM",
+              "recRwMSo29b3N34bS",
+              "recbcO6uvZutM77I2",
+              "rec5uf0UOMp0fK9g3",
+              "recnUag1rJR0bB1gY",
+              "recsk13aj23bGlEmz",
+              "recrVnTJpeHjxJlc1",
+              "rece6qlfzZthkJpfg",
+              "rec6oAL8gGjyjH3Ib"
+            ],
+            "DashboardURL": "https://airtable.com/appQG6dK0FIOhTxOl/shrq6EFVGM2RxJRMA",
+            "Qualification Prompt": "You are a senior cold email qualification analyst for Dave.io. Read a reply from a prospect and produce a TIGHT, scannable qualification brief using the Dave.io ICP rubric. You have web search; use it to verify the company and find the decision-maker.\n\nDAVE.IO ICP RUBRIC:\nWHO: companies running real infrastructure in production where infra ownership is thin, stretched, or bottlenecked, and who can afford a 50-60K/year engagement.\nMUST-HAVE (only two): real production infrastructure an autonomous cloud-infra agent could read and act on (cloud workloads, deployments, CI/CD, IaC, on-call, cloud spend - not a landing page or a no-code app); AND the ability to write a 50-60K/year check, evidenced by institutional funding (including accelerator cohorts), paying customers, or scale that makes 50-60K routine.\nSWEET SPOT: US or Canada, engineering-led, infra landing on product engineers or on one or two stretched people. A funded early-stage team is a full fit regardless of headcount.\nSTRONG SIGNALS: recent funding round; infra/DevOps/SRE/platform job post live now; AWS, GCP, or Azure in the stack; Terraform, Kubernetes, Kafka, CI/CD, observability; complaints about infra cost, reliability, or on-call load; a migration or scaling event ahead.\nNOT DISQUALIFIERS - never cut on these alone: non-US (caps the verdict at medium, never out_of_icp); not hiring (the non-hiring pool is deliberate and larger); already has an infra person or team (a bottlenecked one or two DevOps under a large eng org is a core tier - dave.io is a force multiplier, not only a first hire); not a SaaS company (agencies, consultancies, IT services, govcon, data and ML teams all qualify if they run production infra and can pay).\nOUT OF ICP: no production cloud footprint at all; an unfunded pre-revenue beginner with toy infra and no budget (a FUNDED beginner is in); a non-technical business with no engineering org; a contact with no company behind them (job-seeker, student, recruiter pitching candidates).\nDM PATTERNS: WANT VP Engineering, CTO, technical founder or co-founder, Head of Platform or Infrastructure. ACCEPTABLE senior engineering managers who own infra, and CEO or COO at a small company. NOT IDEAL recruiters or HR (web-search and name the engineering leader), junior engineers. Never label a company small.\n\nTHE PAIN DAVE.IO FIXES (use to frame the brief, never to list features):\n\nThe 200K-300K fully loaded infra hire vs dave.io on-demand senior infra at a fraction of that.\nHiring takes months while the infra work burns product engineers today.\nOn-call, maintenance, and cloud-cost cleanup pulling the team off the roadmap.\nClients have saved $200K+ per year; some kept the hire AND dave.io and still came out ahead.\nCONTACT vs COMPANY:\n\nIf the email is a person (first_name + job_title present, or contact enrichment provided): assess THAT person as the decision-maker using their title and seniority.\nIf a role inbox (info@, careers@, no person): note DM not confirmed, web-search the engineering leader or founder, and write 'confirm who owns infrastructure on the call.'\nIf no website or domain is given, resolve the company from LinkedIn, the signature, or the reply before researching it. If more than one real company matches the name and you cannot confirm which, do NOT pick one: set qualification_status to medium and write 'confirm the company on the call.'\nPERSONAL / FREEMAIL EMAILS:\n\nIf EMAIL TYPE says PERSONAL/FREEMAIL (gmail, yahoo, hotmail, outlook, icloud, aol, or an ISP), the email domain is the email PROVIDER, NOT the company. IGNORE the firmographics block.\nUse web search on the person's name, signature, reply content, and any company name to identify the ACTUAL company, verify the ICP fit, and find its phone.\nNEVER report the email provider as the company. If you cannot identify the real firm, say so and mark for manual confirmation.\nPHONE:\n\nReturn the best phone in E164 in the 'phone' field (decision-maker direct or company main line) when you can verify one; empty string if none.\nFor freemail leads, 'phone' MUST be the real company's number from web search, never the provider's.\nOUTPUT RULES for slack_brief_markdown:\n\nOne-line summary first (company, location, size/stage if known, ICP verdict).\nThen 5 to 7 ':white_check_mark: ' bullets MAX. Only the decision-relevant ones: the two must-haves with the evidence for each, the strongest signal present and what it means, DM (who + how to confirm), the infra pain dave.io fixes for them, and the play. Merge related points.\nState the buying-power evidence explicitly (round and investor, revenue, or scale). If unestablished, write 'funding/revenue unconfirmed - qualify on the call' rather than assuming.\nEach bullet one short sentence. Slack mrkdwn only. NO em dashes. NO markdown headers.\nCRITICAL: NO citation markers, source tokens, footnotes, web-search artifacts (no 'cite' or 'turn' tokens), and NO URLs.\nKeep the whole brief under 1100 characters.\nINSTRUCTIONS:\n\nInfer timezone from location (ET/CT/MT/PT/AKT/HT for US; otherwise the local zone).\nqualification_status is one of: strong, medium, weak, out_of_icp. Reserve out_of_icp for a listed disqualifier and name which one. A reply that asks how it works, asks for pricing, or offers a call is never out_of_icp and never weak.\nrecommended_action: one short line.\nOutput structured JSON only.",
+            "LinkedIn Setter Routine URL": "https://api.anthropic.com/v1/claude_code/routines/trig_016CgrKWpMmStczVdwN8ZCby/fire",
+            "Slack Channel ID": "C0BF4G4M90D",
+            "BDR Slack Channel ID": "C0BF4G4M90D",
+            "Clayroots Base ID": "appyhuYMwaGUdIs3z",
+            "driveMainFolderID": "1FLX59wq68QY9MTfcmF9UPu4Oh3f_9qTB",
+            "Dashboard Page ID": "pagdVdiFoBO21HtFu",
+            "PlusVibe Workspace ID": "6a4a3ab6d70a593c3e3b75e5",
+            "Scheduling Link": "https://meetings-na2.hubspot.com/seckhouse?uuid=77015e5b-fd97-4f7c-a578-0d92f290517c",
+            "Companies": [
+              "rechLsdtv61Xv897q",
+              "recY0laNB9QPzMeil",
+              "recMWqaMUgwgwRYTt",
+              "recOrKvOSKgQUsro1",
+              "recpmnYCAPOVDuyUj",
+              "recFVQItdpvs6hyII",
+              "rec8fWBcgJKeoc2fe",
+              "recWI4jSkAuQgx3OQ",
+              "rec2exVWFGBYQPYz0",
+              "reckRY8CC2IeoJs8f",
+              "recRox4zx3gcIkUL6",
+              "recCxmYc218bdNsKG",
+              "recculr6auBkV5hHD",
+              "rec9MZ7DeSsSTOIoZ",
+              "recy0KbUlr7LP9t7S",
+              "reczHg91AWipyaqqq",
+              "rech1IQNiFXTOcFGp",
+              "rec3BhmKJY10LcK3l",
+              "recdalOEpizgtI9xK",
+              "recyiIkaeW9pkVbrc",
+              "recofF5ESXLXZDHie",
+              "recKXx0AlcNabVzPX",
+              "recrtktaO8yff3Ggl",
+              "recKtndFCsseTRwFw",
+              "recwueWZYZwcRFLgd",
+              "recX2rn5Osb83zfjK",
+              "rec9jgKVymEp6xObC",
+              "recnIqxnqpPuw4w5J",
+              "receEOUvGdFYsQqzu",
+              "recQbDYZrkws0Vb9Y",
+              "recqMKDhzMDfPNaW9",
+              "recoObX1QMRaHZqGH",
+              "recwXt9AGCHHcy1lF",
+              "recCERKzMD4QYp1at",
+              "recFzr39393dvCT0S"
+            ],
+            "Reports": [
+              "recTYLyMxcJGVvnTd",
+              "recIJJXolkNC6kZpP",
+              "rechzyldsuF8wb23P"
+            ],
+            "Billing Date": "2026-07-06",
+            "Dashboard": {
+              "label": "GO TO DASHBOARD",
+              "url": "https://airtable.com/appQG6dK0FIOhTxOl/shrq6EFVGM2RxJRMA"
+            },
+            "Close Smart View ID": "save_D3nCym2BGC6gjyRL1cOig5CE6DAj6lkfmMcrdTYm8Ac",
+            "Clayroots Base": {
+              "label": "GO TO CLAYROOTS",
+              "url": "https://airtable.com/appyhuYMwaGUdIs3z"
+            },
+            "LinkedIn Setter API Key": "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",
+            "Clayroots shareable link": "https://airtable.com/appyhuYMwaGUdIs3z/shrY422rpQUJgncdn",
+            "Client": "Dave.io",
+            "Drive Folder": {
+              "label": "GO TO DRIVE FOLDER",
+              "url": "https://drive.google.com/drive/folders/1FLX59wq68QY9MTfcmF9UPu4Oh3f_9qTB"
+            },
+            "Recurring Templates": [
+              "recgj7Zwo0ly5rI7C",
+              "recvEfAgMHIfRSPAY"
+            ],
+            "Record ID": "reclCOYRBgMowJd8G",
+            "Transactions": [
+              "recyeMAUTKb7MEChh"
+            ],
+            "Inbox Manager Routine URL": "https://api.anthropic.com/v1/claude_code/routines/trig_01JKJRrTkGoFn7iuZw3KjXo9/fire"
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
+  "activeVersionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T08:41:24.275Z",
+      "createdAt": "2026-07-28T08:41:24.275Z",
+      "role": "workflow:owner",
+      "workflowId": "tspO2CNXtGudtSe7",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-14T12:22:11.507Z",
+    "createdAt": "2026-08-14T12:22:11.507Z",
+    "versionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
+    "workflowId": "tspO2CNXtGudtSe7",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "plusvibe-new-reply",
+          "options": {}
+        },
+        "id": "387bf65a-ef6c-48aa-b158-ae0ee26db83a",
+        "name": "Live Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          -416
+        ],
+        "webhookId": "1f43e962-85b5-4885-852a-e28e91893946"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "l1",
+                "name": "lead_email",
+                "type": "string",
+                "value": "={{ $json.body.email }}"
+              },
+              {
+                "id": "l2",
+                "name": "pv_workspace_id",
+                "type": "string",
+                "value": "={{ $json.body.workspace_id }}"
+              },
+              {
+                "id": "l3",
+                "name": "manual",
+                "type": "boolean",
+                "value": false
+              },
+              {
+                "id": "l4",
+                "name": "pv_campaign_name",
+                "type": "string",
+                "value": "={{ $json.body.campaign_name || '' }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "274c27cb-1ab6-4f27-aa7a-e4762862331f",
+        "name": "Live Input",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          224,
+          -416
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "=({PlusVibe Workspace ID} = \"{{ $json.pv_workspace_id }}\")",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "0232e53b-bd58-4e43-83f9-32b3116dba6a",
+        "name": "Find Client Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          -320
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nlet lead_email='', manual=false;\ntry{ const li=$('Live Input').first().json; lead_email=li.lead_email||''; }catch(e){}\ntry{ const mi=$('Manual Input').first().json; if(mi){ lead_email=lead_email||mi.lead_email||''; manual=(mi.manual===true||mi.manual==='true'); } }catch(e){}\nconst r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  lead_email: lead_email,\n  manual: manual,\n  recordId: r.id||'',\n  clientName: name,\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  pvWorkspace: f['PlusVibe Workspace ID']||'',\n  slackChannel: f['Slack Channel ID']||'',\n  driveFolder: f['driveMainFolderID']||'',\n  clayrootsBase: f['Clayroots Base ID']||'',\n  qualPrompt: f['Qualification Prompt']||'',\n  notifyGoalLine: f['Notify Goal Line']||''\n}}];"
+        },
+        "id": "f5d255bc-f9ef-4622-936a-c46e5aaeb993",
+        "name": "Client Vars",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&email={{ $json.lead_email }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "72cb3528-06c5-4b6b-bbf9-e5c852f28c50",
+        "name": "PV Get Lead",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          896,
+          -320
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw=$input.first().json;\nconst rec=Array.isArray(raw)?raw[0]:(raw.lead_data?raw:(raw[0]||raw));\nconst d=(rec&&rec.lead_data)?rec.lead_data:(rec||{});\nconst first=d.first_name||'';\nconst email=(d.email||'').toLowerCase();\nconst rawDomain=String(d.domain||email.split('@')[1]||'').toLowerCase();\nconst FREEMAIL=new Set(['gmail.com','googlemail.com','yahoo.com','yahoo.ca','yahoo.co.uk','ymail.com','rocketmail.com','hotmail.com','hotmail.ca','hotmail.co.uk','outlook.com','outlook.ca','live.com','live.ca','msn.com','icloud.com','me.com','mac.com','aol.com','protonmail.com','proton.me','gmx.com','gmx.net','zoho.com','mail.com','yandex.com','comcast.net','verizon.net','att.net','sbcglobal.net','bellsouth.net','cox.net','charter.net','earthlink.net','bell.net','sympatico.ca','rogers.com','rogers.ca','shaw.ca','telus.net','cogeco.ca','videotron.ca','videotron.qc.ca','nbnet.nb.ca','frontier.com','windstream.net','optonline.net','roadrunner.com','rr.com','walla.com','walla.co.il']);\nconst is_freemail=FREEMAIL.has(rawDomain);\nlet webhookCampaign='';\ntry{ webhookCampaign=$('Live Input').first().json.pv_campaign_name||''; }catch(e){}\nreturn [{ json: {\n  lead_email:d.email||'', campaign_id:d.campaign_id||'',\n  campaign_name: webhookCampaign||d.campaign_name||'',\n  domain:rawDomain, enrich_domain:is_freemail?'':rawDomain, is_freemail:is_freemail,\n  first_name:first, last_name:d.last_name||'', full_name:((first)+' '+(d.last_name||'')).trim(),\n  job_title:d.job_title||'', company_name:d.company_name||'',\n  linkedin_url:d.linkedin_person_url||'',\n  city:d.city||'', state:d.state||'', country_code:d.country_code||'',\n  existing_brief:d.custom_qualification_brief||'',\n  sending_inbox:d.email_account_name||'', email_account_id:d.email_account_id||'',\n  is_contact:(first.length>0)\n}}];"
+        },
+        "id": "f04425f8-410d-4018-adc9-cadedffef4fe",
+        "name": "Normalize",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize').item.json.enrich_domain }}\" != \"\", {domain} = \"{{ $('Normalize').item.json.enrich_domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Normalize').item.json.company_name }}\")))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "4fe0b51e-6413-4b13-b176-cb282641c10c",
+        "name": "Find CRM Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2240,
+          -320
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "c2",
+                "leftValue": "={{ $('Client Vars').first().json.manual }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "d93854d9-120f-4289-a782-ad743f8de0cd",
+        "name": "Lead in CRM?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2464,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "url": "={{ $json.pvUrl }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "bb1773c6-2e95-472c-b96e-5d1b8d4be87f",
+        "name": "PV Get Thread",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2688,
+          -320
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items=$input.all();\nconst leadEmail=($('Normalize').first().json.lead_email||'').toLowerCase();\nconst pool=[];\nfor(const it of items){ const r=(it&&it.json)||{}; const arr=r.data||r.emails||[]; if(Array.isArray(arr)) pool.push(...arr); }\nconst matched=pool.filter(m=>String(m.lead||'').toLowerCase()===leadEmail);\nconst use=matched.length?matched:pool;\nconst seen=new Set(); const uniq=[];\nfor(const m of use){ const k=m.message_id||m.id||JSON.stringify([m.sent_on,m.subject]); if(!seen.has(k)){ seen.add(k); uniq.push(m); } }\nconst fmtTs=(ts)=>{const d=new Date(ts);if(isNaN(d.getTime()))return '';return d.toLocaleString('sv-SE',{timeZone:'Asia/Jerusalem'}).slice(0,16)+' IL';};\nconst rawBody=(m)=>{if(typeof m.text_body==='string'&&m.text_body.trim())return m.text_body;let h='';if(m.body&&typeof m.body==='object')h=(typeof m.body.text==='string'&&m.body.text.trim())?m.body.text:(m.body.html||'');else if(typeof m.body==='string')h=m.body;else h=m.snippet||'';h=h.replace(/<style[\\s\\S]*?<\\/style>/gi,' ').replace(/<script[\\s\\S]*?<\\/script>/gi,' ').replace(/<br\\s*\\/?>/gi,'\\n').replace(/<\\/(?:p|div|tr|li|h[1-6])>/gi,'\\n\\n').replace(/<[^>]*>/g,' ');return h;};\nconst clean=(t)=>{\nif(!t)return '';\nlet s=String(t).replace(/\\r\\n?/g,'\\n');\ns=s.replace(/(?:\\n|^)[ \\t]*-{3,}\\s*Original Message\\s*-{3,}[\\s\\S]*$/i,'');\ns=s.replace(/(?:\\n|^)[ \\t]*_{10,}[\\s\\S]*$/,'');\ns=s.replace(/(?:\\n|\\s)On\\s+\\S[\\s\\S]{0,170}?wrote:[\\s\\S]*$/i,'');\ns=s.replace(/\\n\\s*>[\\s\\S]*$/,'');\ns=s.replace(/(?:\\n|^)From:\\s[\\s\\S]*$/i,'');\ns=s.replace(/(?:\\n|^)[ \\t]*Sent from my [^\\n]*[\\s\\S]*$/i,'');\ns=s.replace(/[a-z]+\\\\?:\\s*\\{behavior:url\\([^)]*\\)[^}]*\\}/gi,'');\ns=s.replace(/[.#]?[a-z][\\w-]*\\s*\\{[^}]*\\}/gi,'');\ns=s.replace(/&nbsp;/gi,' ').replace(/&[a-z#0-9]+;/gi,' ');\nconst SIGOFF=/^(?:thanks|thank you|thanks so much|many thanks|regards|best regards|kind regards|warm regards|best|cheers|sincerely|all the best|talk soon|speak soon)[,!.]*$/i;\nconst TITLE=/\\b(?:ceo|cto|coo|cfo|cmo|cro|cpo|vp|svp|evp|president|founder|co-?founder|director|manager|head of|partner|principal|engineer|consultant|advisor|owner|officer|chief)\\b/i;\nconst URLISH=/(?:https?:\\/\\/|www\\.|\\b[a-z0-9-]+\\.(?:com|net|org|io|ai|co|dev|app)\\b)/i;\nconst lines=s.split('\\n');\nconst looksSig=(i)=>{let score=0;let shorts=0;for(let j=i+1;j<Math.min(lines.length,i+7);j++){const L=lines[j].trim();if(!L)continue;const dg=L.replace(/\\D/g,'').length;if(dg>=9&&dg<=15&&/[\\d)]/.test(L))score+=2;if(URLISH.test(L))score+=2;if(TITLE.test(L))score+=2;if(L.length<=40)shorts++;}if(shorts>=2)score+=2;return score>=2;};\nlet cut=-1;\nfor(let i=0;i<lines.length;i++){const L=lines[i].trim();if(/^--\\s*$/.test(L)){cut=i;break;}if(SIGOFF.test(L)&&looksSig(i)){cut=i;break;}}\nif(cut>0)s=lines.slice(0,cut).join('\\n');\ns=s.split('\\n').map(x=>x.replace(/[^\\S\\n]+/g,' ').trim()).join('\\n');\ns=s.replace(/\\n{3,}/g,'\\n\\n');\nreturn s.trim();\n};\nconst fromOf=(m)=>{if(typeof m.from==='string')return m.from;if(Array.isArray(m.from_address_json)&&m.from_address_json[0])return m.from_address_json[0].address||'';return m.from_address_email||m.from_email||'';};\nconst isIn=(m)=>{if(m.current_step!==undefined)return false;const d=String(m.direction||'').toUpperCase();if(d==='IN')return true;if(d==='OUT')return false;return fromOf(m).toLowerCase().includes(leadEmail);};\nconst tsOf=(m)=>m.sent_on||m.timestamp_created||m.created_at||'';\nconst sorted=uniq.sort((a,b)=>new Date(tsOf(a))-new Date(tsOf(b)));\nconst blocks=[];\nfor(const m of sorted){\n  const body=clean(rawBody(m));\n  if(body.length<2) continue;\n  const dir=isIn(m)?'THEM':'US';\n  const t=tsOf(m);\n  blocks.push('**['+fmtTs(t)+'] '+dir+':**\\n'+body);\n}\nlet thread_context=blocks.join('\\n\\n');\nif(thread_context.length>50000)thread_context=thread_context.slice(-50000);\nif(!thread_context)thread_context='No prior thread found.';\nconst inbound=sorted.filter(isIn);\nconst reply_text=inbound.length?clean(rawBody(inbound[inbound.length-1])).slice(0,2000):'';\nconst lastIn=inbound.length?inbound[inbound.length-1]:null;\nlet reply_at='';\nif(lastIn){ const t=tsOf(lastIn); const d=new Date(t); if(t && !isNaN(d.getTime())) reply_at=d.toISOString(); }\nconst rawInbound=lastIn?String(rawBody(lastIn)||'').replace(/\\r\\n?/g,'\\n'):'';\nconst SIGSTART=/^(?:--\\s*|(?:thanks|thank you|thanks so much|many thanks|regards|best regards|kind regards|warm regards|best|cheers|sincerely|all the best|talk soon|speak soon)[,!.]*\\s*)$/i;\nconst sigRegion=(raw)=>{ const L=String(raw||'').split('\\n'); for(let i=0;i<L.length;i++){ if(SIGSTART.test(L[i].trim())) return L.slice(i).join('\\n'); } return L.slice(Math.max(0,L.length-8)).join('\\n'); };\nconst grabPhones=(txt)=>{ const out=[]; const re=/(?:\\+?\\d{1,3}[\\t .\\-]?)?(?:\\(?\\d{2,4}\\)?[\\t .\\-]?){2,4}\\d{2,4}/g; let mm; while((mm=re.exec(String(txt||'')))!==null){ const raw=mm[0].trim(); const dg=raw.replace(/\\D/g,''); if(dg.length>=9&&dg.length<=15) out.push({raw:raw,dg:dg}); } return out; };\nconst isTollFree=(dg)=>{ let x=String(dg||''); if(x.length===11&&x.charAt(0)==='1') x=x.slice(1); return x.length===10&&/^(?:800|833|844|855|866|877|888)/.test(x); };\nconst toE164=(raw,dg)=>{ const t=String(raw).trim(); if(t.charAt(0)==='+') return '+'+dg; if(dg.length===11&&dg.charAt(0)==='1') return '+'+dg; if(dg.length===10&&dg.charAt(0)!=='0') return '+1'+dg; return t; };\nconst allCand=grabPhones(rawInbound);\nconst cands=(allCand.length===1)?allCand:grabPhones(sigRegion(rawInbound));\nlet signature_phone=''; let signature_phone_tollfree='';\nfor(const c of cands){ if(isTollFree(c.dg)){ if(!signature_phone_tollfree) signature_phone_tollfree=toE164(c.raw,c.dg); } else { if(!signature_phone) signature_phone=toE164(c.raw,c.dg); } }\nconst lastOut=[...sorted].reverse().find(m=>!isIn(m));\nconst last_two=(lastOut?'US: '+clean(rawBody(lastOut)).slice(0,1500)+'\\n\\n':'')+'THEM: '+reply_text;\nconst sentPre=sorted.filter(m=>!isIn(m)&&(!reply_at||!tsOf(m)||new Date(tsOf(m))<=new Date(reply_at)));\nconst sentBlocks=[];\nfor(const m of sentPre){ const body=clean(rawBody(m)); if(body.length<2) continue; const subj=String(m.subject||m.email_subject||'').trim(); sentBlocks.push('['+fmtTs(tsOf(m))+']'+(subj?' Subject: '+subj:'')+'\\n'+body); }\nlet sent_emails_text=sentBlocks.join('\\n\\n');\nif(sent_emails_text.length>8000)sent_emails_text=sent_emails_text.slice(0,8000);\nreturn [{ json: { thread_context, reply_text, last_two, reply_at, sent_emails_text, signature_phone, signature_phone_tollfree } }];"
+        },
+        "id": "acd14f0e-71a7-4b5b-b385-5851ab2ff165",
+        "name": "Format Thread",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2912,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "35cb5d27-c214-42eb-a0cf-2da3a7a4dbec",
+        "name": "DiscoLike BizData",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3136,
+          -320
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "e1",
+                "leftValue": "={{ $('Client Vars').first().json.manual }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "e2",
+                "leftValue": "={{ $('Find CRM Prospect').first().json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c4b6ab8c-ca60-4f84-b836-faab2ac32bcf",
+        "name": "Existing Prospect?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4608,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "let pid='';\ntry{ pid=$('Create CRM Prospect').first().json.id||''; }catch(e){}\nif(!pid){ try{ pid=$('Find CRM Prospect').first().json.id||''; }catch(e){} }\nlet dash='';\ntry{ dash=String(((($('Find Client Row').first().json||{}).fields)||{})['Dashboard Page ID']||'').trim(); }catch(e){ dash=''; }\nlet pipeline_url='';\nif(pid && dash){\n  try{\n    const blob=JSON.stringify({pageId:'pagU8C93nMn6vPMTM',rowId:pid});\n    const b64=Buffer.from(blob,'utf8').toString('base64').replace(/=+$/,'');\n    pipeline_url='https://airtable.com/appQG6dK0FIOhTxOl/'+dash+'?detail='+b64;\n  }catch(e){ pipeline_url=''; }\n}\nreturn [{ json: { prospect_id: pid, pipeline_url: pipeline_url } }];"
+        },
+        "id": "44e7e5d2-37c8-4bd7-83e5-33ea31197f34",
+        "name": "Resolve Prospect",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5280,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Dedup Key"
+            ],
+            "schema": [],
+            "value": {
+              "Name": "={{ $('Normalize').item.json.company_name || $('Normalize').item.json.full_name || $('Normalize').item.json.lead_email }}",
+              "Website": "={{ $('Normalize').item.json.is_freemail ? null : ('https://' + $('Normalize').item.json.domain) }}",
+              "Client": "={{ [ $('Find Client Row').first().json.id ] }}",
+              "Source": "Email",
+              "Conversation Thread": "={{ $('Format Thread').item.json.thread_context }}",
+              "First Engagement": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
+              "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+              "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+              "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}",
+              "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
+              "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+              "Last Engaged": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
+              "Positive Reply Lead": "={{ true }}",
+              "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Normalize').first().json.is_freemail ? String($('Normalize').first().json.lead_email || '') : String($('Normalize').first().json.domain || $('Normalize').first().json.enrich_domain || String($('Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "2d14b713-c8b3-4ce5-9383-7943186c78a8",
+        "name": "Create CRM Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4832,
+          -240
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "email"
+            ],
+            "schema": [],
+            "value": {
+              "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
+              "lastName": "={{ $('Normalize').item.json.last_name || null }}",
+              "position": "={{ $('Normalize').item.json.job_title || null }}",
+              "email": "={{ $('Normalize').item.json.lead_email }}",
+              "phone": "={{ $('Resolve Phone').item.json.phone || null }}",
+              "linkedin": "={{ $('Normalize').item.json.linkedin_url || null }}",
+              "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}",
+              "Phone Source": "={{ ['signature','GPT','LeadMagic','signature-tollfree','GPT-tollfree','none'].includes(String($('Resolve Phone').first().json.phone_source || '').trim()) ? String($('Resolve Phone').first().json.phone_source).trim() : 'none' }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "3ef97e1c-35d4-4c76-afb4-bbc432a7d6c6",
+        "name": "Create CRM Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5056,
+          -240
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRECENT EXCHANGE (our last message, then their reply — use this to interpret short replies like \"sure\"/\"yes\"):\n{{ $('Format Thread').first().json.last_two }}\n\nRun the qualification. Output structured JSON, and include a \"situation_summary\": ONE plain-English line (max 140 chars) stating what the prospect signaled and what they want next, interpreting the latest reply IN CONTEXT of our last message. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for (e.g. \"Said yes to a quick walkthrough video\" or \"Asked us to send more on how it works before a call\"). Never paste the raw reply verbatim; no names, signatures, or URLs. Also include a \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor.",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+          }
+        },
+        "id": "d2443906-aa8e-4e68-8264-1b63dd27063d",
+        "name": "Qualify Lead",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          3360,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-5.1"
+          },
+          "builtInTools": {
+            "webSearch": {
+              "searchContextSize": "medium"
+            }
+          },
+          "options": {
+            "reasoningEffort": "medium"
+          }
+        },
+        "id": "b8b141ee-2a20-475d-b6a1-c5ad06346f39",
+        "name": "GPT 5.1 Qualifier",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          3376,
+          -96
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "9P7fOmZxpETeDhu8",
+            "name": "OpenAI"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
+        },
+        "id": "5c2bd7e1-1c7d-4e4a-8f62-c0100194e855",
+        "name": "Parse Qualification",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          3504,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const stripCite=(t)=>String(t||'').replace(/[-]/g,'').replace(/cite(turn\\d+\\w+?\\d+)+/gi,'').replace(/turn\\d+(?:view|search|news|image|video|product|ref)\\d+/gi,'').replace(/cite/gi,'').replace(/ {2,}/g,' ').trim();\nconst stripEmoji=(t)=>String(t||'').replace(/:[a-z0-9_+-]+:/gi,'').replace(/[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{2190}-\\u{21FF}\\u{2300}-\\u{23FF}\\u{FE0F}\\u{200D}]/gu,'').replace(/ {2,}/g,' ').trim();\nconst q=$input.first().json.output;\nconst n=$('Normalize').first().json;\nconst gptPhone=stripCite(q.phone||'').replace(/[^\\d+]/g,'').trim();\nconst phone=gptPhone||'';\nconst brief=stripCite(q.slack_brief_markdown).slice(0,2800);\nconst vlabel=({strong:'Qualified',medium:'Qualified (medium confidence)',weak:'Qualified (weak fit)',out_of_icp:'Not qualified'})[q.qualification_status]||'Needs review';\nconst vreason=stripEmoji(stripCite(q.verdict_reason||'')).slice(0,200);\nconst verdict_line=vlabel+' — '+(vreason||'see brief');\nconst brief_plain=(verdict_line+'\\n\\n'+stripEmoji(brief)).slice(0,2800);\nreturn [{ json: {\n  lead_email:n.lead_email, campaign_id:n.campaign_id, first_name:n.first_name, company_name:q.company_name||n.company_name,\n  reply_text:$('Format Thread').first().json.reply_text, thread_context:$('Format Thread').first().json.thread_context,\n  custom_qualification_brief:brief, brief_plain:brief_plain,\n  custom_qualification_status:q.qualification_status,\n  situation_summary:stripCite(q.situation_summary||'').slice(0,200),\n  verdict_reason:vreason,\n  custom_phone:phone, custom_timezone:q.timezone||'', recommended_action:stripCite(q.recommended_action).slice(0,300)\n}}];"
+        },
+        "id": "f88a7870-fd0c-4536-aac0-f84f2da0eb49",
+        "name": "Flatten",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3712,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+              "OutreachStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+              "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+              "Qualification Brief": "={{ (function(){const t=String($('Flatten').item.json.brief_plain||'');const lines=t.split('\\n').map(s=>s.trim()).filter(Boolean);if(!lines.length)return '';const out=['**'+lines[0]+'**',''];for(let i=1;i<lines.length;i++){out.push('- '+lines[i]);}return out.join('\\n');})() }}",
+              "Source": "Email",
+              "Conversation Thread": "={{ $('Format Thread').item.json.thread_context }}",
+              "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
+              "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
+              "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+              "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "2c2eb670-5cbc-4213-bb06-85fb9c3889cb",
+        "name": "Set CRM Verdict",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5504,
+          -320
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "amount": 1
+        },
+        "id": "a93cfe9e-4edc-4e2b-a48f-46a8f75ed0f3",
+        "name": "Wait 1s",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          5952,
+          -384
+        ],
+        "webhookId": "c7eceeb3-f3e7-4dce-ae51-4a5f47d2a529"
+      },
+      {
+        "parameters": {
+          "jsCode": "const F = $('Flatten').first().json;\nconst N = $('Normalize').first().json;\nlet phoneVal = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}\nlet B = {};\ntry { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }\nlet C = {};\ntry { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }\nlet dash = '';\ntry { dash = String(((($('Find Client Row').first().json || {}).fields) || {})['Dashboard Page ID'] || '').trim(); } catch (e) { dash = ''; }\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));\n\nconst companyRaw = F.company_name || N.company_name || 'Unknown';\nconst tzRaw = String(F.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch (e) { localTime = ''; }\n\nconst name = clean(((N.first_name || '') + ' ' + (N.last_name || '')).trim());\nconst title = clean(N.job_title);\nconst email = clean(N.lead_email);\n\nlet phoneLine = '_no number found_';\nif (phoneVal) {\n  const p = esc(phoneVal);\n  if (phoneSrc === 'signature') phoneLine = p + '   ✅ _direct line, from their signature_';\n  else if (phoneSrc === 'LeadMagic') phoneLine = p + '   ✅ _mobile_';\n  else if (phoneSrc === 'GPT') phoneLine = p + '   _found online_';\n  else if (phoneSrc === 'signature-tollfree' || phoneSrc === 'GPT-tollfree') phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';\n  else phoneLine = p;\n}\n\nconst who = [];\nwho.push(name ? ('*' + name + '*' + (title ? '   ' + title : '')) : '*General inbox*   confirm the decision maker');\nif (email) who.push(email);\nwho.push(phoneLine);\nwho.push('');\nconst place = [clean(N.city), tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\nif (place) who.push(place);\nconst firmo = [clean(B.employees) ? clean(B.employees) + ' staff' : '', clean(B.revenue_range), clean(N.domain)].filter(Boolean).join('   ·   ');\nif (firmo) who.push(firmo);\n\nconst reply = esc(String(F.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 900));\nconst quoted = reply ? '> ' + reply : '> _interested, see thread_';\nconst brief = esc(String(F.custom_qualification_brief || '').trim());\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: ('🔥 new interested qualified lead · ' + companyRaw).slice(0, 150), emoji: true } }];\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: who.join('\\n').slice(0, 2900) } });\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*THEY SAID*\\n\\n' + quoted).slice(0, 2900) } });\nif (brief) {\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*WHY THEY QUALIFY*\\n\\n' + brief).slice(0, 2900) } });\n}\n\nlet campName = clean(C.campaignName) || clean(N.campaign_name);\nif (!campName) { const cid = String(N.campaign_id || '').trim(); if (cid && !isUuid(cid)) campName = clean(cid); }\nif (campName) {\n  const statBits = [];\n  if (C.contacted) statBits.push(esc(C.contacted) + ' contacted');\n  if (C.replies !== '' && C.replies != null) statBits.push(esc(C.replies) + ' replies' + (C.replyRate ? ' (' + esc(C.replyRate) + ')' : ''));\n  if (C.positives !== '' && C.positives != null) statBits.push(esc(C.positives) + ' positive' + (C.positiveRate ? ' (' + esc(C.positiveRate) + ')' : ''));\n  if (C.status) statBits.push(esc(C.status));\n  const campLines = ['*WHERE THEY CAME FROM*', '', campName];\n  if (statBits.length) campLines.push(statBits.join('   ·   '));\n  if (dash && C.campaignRowId) {\n    try {\n      const blob = JSON.stringify({ pageId: 'pagnDARjFPzq5HclC', rowId: C.campaignRowId });\n      const b64 = Buffer.from(blob, 'utf8').toString('base64').replace(/=+$/, '');\n      campLines.push('');\n      campLines.push('🔗  *<https://airtable.com/appQG6dK0FIOhTxOl/' + dash + '?detail=' + b64 + '|View the campaign>*  copy and live stats');\n    } catch (e) {}\n  }\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: campLines.join('\\n').slice(0, 2900) } });\n}\n\nreturn [{ json: { blocksJson: JSON.stringify({ blocks }) } }];"
+        },
+        "id": "03fd8834-dd6e-47e8-b9e3-136cca8d0eb8",
+        "name": "Build Slack Blocks",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6176,
+          -384
+        ]
+      },
+      {
+        "parameters": {
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "value": "={{ $('Client Vars').first().json.slackChannel }}",
+            "mode": "id"
+          },
+          "messageType": "block",
+          "blocksUi": "={{ $json.blocksJson }}",
+          "text": "=New interested lead: {{ $('Flatten').first().json.company_name }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          }
+        },
+        "id": "73b7d90c-4bdd-4701-8888-988d3c920b97",
+        "name": "Slack Client Channel",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          6400,
+          -384
+        ],
+        "webhookId": "5ecfb0f7-059f-4105-bcd5-bdb0502404c9",
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+              "Slack Thread TS": "={{ $json.message_timestamp || ($json.message && $json.message.ts) || '' }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "fd3f4bf7-6db0-4dae-b014-88c3e65694da",
+        "name": "Set Thread TS",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6624,
+          -384
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst n=$('Normalize').first().json;\nconst cv=$('Client Vars').first().json;\nconst manual=!!cv.manual;\nconst clientRec=cv.recordId||'';\nconst name=(n.full_name||'').trim();\nconst base={\n 'Automation':'Handle New Lead from PlusVibe',\n 'Client': clientRec?[clientRec]:[cv.clientName||''],\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Target': n.lead_email||'',\n 'Trigger': manual?'manual':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)\n};\nlet f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f){\n // Existing-prospect path: Lead in CRM? answered yes, run ended before qualification.\n let exId=''; try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){}\n const desc=[\n '**Existing prospect, skipped**',\n '- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||'')+'>'+(n.job_title?', '+n.job_title:''),\n '- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n '- **Outcome:** existing prospect already in CRM'+(exId?' ('+exId+')':'')+'; reply not reprocessed, qualification and Slack post skipped'\n ].join('\\n').replace('**\\n','**\\n\\n');\n return [{json:Object.assign({'Status':'Succeeded','Errors':0,'Description':desc},base)}];\n}\nlet prospectId='';\ntry{prospectId=$('Resolve Prospect').first().json.prospect_id||'';}catch(e){}\nlet created=false;\ntry{ if($('Create CRM Prospect').first().json.id){created=true;} }catch(e){}\nlet verdictWritten=false;\ntry{const v=$('Set CRM Verdict').first().json; if(v&&v.id){verdictWritten=true;}}catch(e){}\nlet tsWritten=false;\ntry{const t=$('Set Thread TS').first().json; if(t&&t.id){tsWritten=true;}}catch(e){}\nlet phoneVal=''; let phoneSource='none';\ntry{ const rp=$('Resolve Phone').first().json; phoneVal=rp.phone||''; phoneSource=rp.phone_source||'none'; }catch(e){}\nconst verdict=f.custom_qualification_status||'unknown';\nconst qualified=verdict!=='out_of_icp';\nconst campaign=(n.campaign_name?n.campaign_name+(n.campaign_id?' ('+n.campaign_id+')':''):(n.campaign_id||'unknown'));\nconst failed=[];\nif(!prospectId) failed.push('prospect not created');\nif(!verdictWritten) failed.push('verdict not written');\nif(qualified && !tsWritten) failed.push('thread ts not saved');\nlet desc=[\n'**'+(f.company_name||n.company_name||n.lead_email||'unknown')+' · '+verdict+(manual?' (manual trigger, fired by the Airtable automation)':'')+'**',\n'',\n'- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||'')+'>'+(n.job_title?', '+n.job_title:''),\n'- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n'- **Source:** PlusVibe campaign '+campaign+(n.is_freemail?' (freemail address)':'')+(manual?' | manual/airtable trigger':''),\n'- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),\n'- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')',\n'- **CRM:** Prospects row '+(created?'created':'updated (existing row)')+(prospectId?' ('+prospectId+')':'')+(created?', contact row + ':', ')+'qualification brief + conversation thread written',\n'- **Pipeline:** '+(verdictWritten?('set from verdict \"'+verdict+'\" (Positive Reply / Disqualified)'):'not written'),\n'- **Slack:** qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];"
+        },
+        "id": "4bedcc78-62f3-4c9c-8278-9e200d743487",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6848,
+          -320
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "6491bb6a-6dab-47e5-ab8b-069a662de4e3",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          7072,
+          -320
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "let f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f) return [];\nconst cv=$('Client Vars').first().json||{};\nlet n={}; try{ n=$('Normalize').first().json||{}; }catch(e){}\nlet prospectId=''; try{ prospectId=$('Resolve Prospect').first().json.prospect_id||''; }catch(e){}\nlet ts=''; try{ ts=$('Slack Client Channel').first().json.ts||''; }catch(e){}\nlet phone=''; try{ phone=$('Resolve Phone').first().json.phone||''; }catch(e){}\nlet sent_emails_text='', thread_text='';\ntry{ const ft=$('Format Thread').first().json||{}; sent_emails_text=String(ft.sent_emails_text||'').slice(0,8000); thread_text=String(ft.thread_context||'').slice(0,8000); }catch(e){}\nreturn [{ json: {\n  recordId: cv.recordId||'',\n  clientSlug: cv.clientSlug||'',\n  prospectId: prospectId,\n  manual: !!cv.manual,\n  lead_email: n.lead_email||'', first_name: n.first_name||'', full_name: n.full_name||'',\n  company_name: f.company_name||'', verdict: f.custom_qualification_status||'',\n  verdict_reason: f.verdict_reason||'',\n  slack_brief_markdown: f.custom_qualification_brief||'',\n  situation_summary: f.situation_summary||'',\n  recommended_action: f.recommended_action||'',\n  phone: phone, timezone: f.custom_timezone||'',\n  reply_text: f.reply_text||'', city: n.city||'',\n  campaign_id: n.campaign_id||'', campaign_name: n.campaign_name||'', sending_inbox: n.sending_inbox||'', email_account_id: n.email_account_id||'',\n  sent_emails_text: sent_emails_text, thread_text: thread_text,\n  core_slack_ts: ts\n}}];"
+        },
+        "id": "bc0ebdf5-a216-4546-b9e0-c581d1612103",
+        "name": "Addon Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7296,
+          -320
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.flowroots.com/webhook/addon-newlead-{{ $('Client Vars').first().json.clientSlug }}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "id": "cbceb11a-a5f0-49e5-b3a2-5c4fd74b279b",
+        "name": "Fire Add-on",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          7520,
+          -320
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "newlead-manual",
+          "options": {}
+        },
+        "id": "35db08e6-cb5a-4d07-8b9d-41034c96915d",
+        "name": "Manual Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          -224
+        ],
+        "webhookId": "9a517237-1bf7-4166-abc3-ab024c82f8ff"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m1",
+                "name": "lead_email",
+                "type": "string",
+                "value": "=cschwarz@revcord.com "
+              },
+              {
+                "id": "m2",
+                "name": "pv_workspace_id",
+                "type": "string",
+                "value": "=6a4a3ab6d70a593c3e3b75e5"
+              },
+              {
+                "id": "m3",
+                "name": "manual",
+                "type": "boolean",
+                "value": true
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "3a0168a8-d65e-45a9-bf0c-a43f73f916cb",
+        "name": "Manual Input",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          224,
+          -224
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "={Campaign ID}='{{ $json.campaign_id }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "243fe0cc-4714-4e73-983b-5e81cc757a4f",
+        "name": "Search Campaign",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1344,
+          -320
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "cf1",
+                "leftValue": "={{ $json.id || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "5598dbca-77fd-450c-8e2a-8b829ce40804",
+        "name": "Campaign Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1568,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id }}",
+              "Campaign ID": "={{ $('Normalize').item.json.campaign_id }}",
+              "Client": "={{ [ $('Find Client Row').first().json.id ] }}",
+              "Sequencer": "PlusVibe",
+              "Channel": "Email"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "c34c7574-fba9-49e1-81a8-a64d8af85412",
+        "name": "Create Campaign Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1792,
+          -240
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "let id='', row=null;\ntry{ const f=$('Search Campaign').first(); if(f&&f.json&&f.json.id){ id=f.json.id; row=f.json; } }catch(e){}\nif(!id){ try{ const c=$('Create Campaign Row').first(); if(c&&c.json&&c.json.id){ id=c.json.id; row=c.json; } }catch(e){} }\nconst g=(k)=>{ try{ if(!row) return ''; if(row[k]!=null) return row[k]; if(row.fields&&row.fields[k]!=null) return row.fields[k]; }catch(e){} return ''; };\nreturn [{ json: {\n  campaignRowId: id,\n  campaignName: g('Campaign'),\n  contacted: g('Contacted'),\n  replies: g('Replies'),\n  replyRate: g('Reply Rate'),\n  positives: g('Positive Replies (CRM)'),\n  positiveRate: g('Positive Rate'),\n  status: (function(){ const s=g('Status'); return (s&&typeof s==='object')?(s.name||''):s; })()\n} }];"
+        },
+        "id": "6afb490c-e625-4c5e-b9f7-f0438651089c",
+        "name": "Resolve Campaign",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2016,
+          -320
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "qg1",
+                "leftValue": "={{ $('Flatten').item.json.custom_qualification_status }}",
+                "rightValue": "out_of_icp",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "546161f7-1eb4-4122-b4c9-ee3c3358b35d",
+        "name": "Qualified?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5728,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "lm1",
+                "leftValue": "={{ $json.custom_qualification_status }}",
+                "rightValue": "out_of_icp",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              },
+              {
+                "id": "lm2",
+                "leftValue": "={{ (($('Format Thread').first().json.signature_phone || '').trim() || ((($json.custom_phone || '').trim() && !/^\\+?1?(800|833|844|855|866|877|888)\\d{7}$/.test(($json.custom_phone || '').trim())) ? ($json.custom_phone || '').trim() : '')) ? 'have' : 'need' }}",
+                "rightValue": "need",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a8079995-1cac-4808-b7f6-e3d586f42f88",
+        "name": "Should Call LeadMagic?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3936,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.leadmagic.io/v1/people/mobile-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"work_email\": $('Normalize').first().json.lead_email } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "2acf2dc7-a79f-4488-983d-052238e9458f",
+        "name": "LeadMagic Mobile Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4160,
+          -384
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "oMWq3aRIRMhIkSur",
+            "name": "Lead Magic"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const f = $('Flatten').first().json;\nlet sig='', sigTf='';\ntry { const ft = $('Format Thread').first().json || {}; sig = String(ft.signature_phone || '').trim(); sigTf = String(ft.signature_phone_tollfree || '').trim(); } catch(e) {}\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g,''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst gpt = String(f.custom_phone || '').trim();\nlet mobile = '';\ntry { const cur = $input.first().json || {}; mobile = String(cur.mobile_number || '').trim(); } catch(e) {}\nlet phone = '';\nlet phone_source = 'none';\nif (sig) { phone = sig; phone_source = 'signature'; }\nelse if (gpt && !isTollFree(gpt)) { phone = gpt; phone_source = 'GPT'; }\nelse if (mobile) { phone = mobile; phone_source = 'LeadMagic'; }\nelse if (f.custom_qualification_status === 'out_of_icp') { phone_source = 'skipped'; }\nelse if (sigTf) { phone = sigTf; phone_source = 'signature-tollfree'; }\nelse if (gpt) { phone = gpt; phone_source = 'GPT-tollfree'; }\nreturn [{ json: { phone, phone_source } }];"
+        },
+        "id": "bc108a26-af70-4adf-b251-ca12b6aaae0e",
+        "name": "Resolve Phone",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4384,
+          -320
+        ]
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          144,
+          -80
+        ],
+        "id": "23b8bea4-c772-401a-a344-ec8480f948f5",
+        "name": "When clicking ‘Execute workflow’"
+      },
+      {
+        "parameters": {
+          "jsCode": "const ws=$('Client Vars').first().json.pvWorkspace||'';\nconst le=String($('Normalize').first().json.lead_email||'').toLowerCase();\nconst u1='https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id='+ws+'&lead='+le+'&email_type=all';\nconst u2='https://api.plusvibe.ai/api/v1/unibox/campaign-emails?workspace_id='+ws+'&lead='+le;\nreturn [{ json: { pvUrl:u1 } }, { json: { pvUrl:u2 } }];"
+        },
+        "id": "fcb25761-03ab-44ce-85e4-b4b5d6a5094c",
+        "name": "Prep Thread URLs",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2560,
+          -320
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const src = $input.first().json || {};\nlet payload = null;\ntry { payload = JSON.parse(src.blocksJson || 'null'); } catch(e) { payload = null; }\nif (!payload || !Array.isArray(payload.blocks)) return [{ json: src }];\nlet url = '';\ntry { url = String($('Resolve Prospect').first().json.pipeline_url || ''); } catch(e) { url = ''; }\nif (!url) return [{ json: src }];\ntry {\n  payload.blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: '<' + url + '|Open in Pipeline>' }] });\n  return [{ json: Object.assign({}, src, { blocksJson: JSON.stringify(payload) }) }];\n} catch(e) { return [{ json: src }]; }"
+        },
+        "id": "a6be4e45-abf1-40ec-bf52-09a89bda20c8",
+        "name": "Append Record Link",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6288,
+          -208
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "bdr1",
+                "leftValue": "={{ (($('Find Client Row').first().json.fields) || {})['BDR Slack Channel ID'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "98f12320-7274-4b9b-9a0c-4accc1dc75f0",
+        "name": "BDR Channel Set?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6832,
+          -608
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "let row = {};\ntry { row = (($('Find Client Row').first().json || {}).fields) || {}; } catch(e) { row = {}; }\nconst channel = String(row['BDR Slack Channel ID'] || '').trim();\nlet n = {}; try { n = $('Normalize').first().json || {}; } catch(e) {}\nlet f = {}; try { f = $('Flatten').first().json || {}; } catch(e) {}\nlet phone = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phone = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch(e) {}\nlet prospectId = '', url = '';\ntry { const r = $('Resolve Prospect').first().json || {}; prospectId = r.prospect_id || ''; url = String(r.pipeline_url || ''); } catch(e) {}\n\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst company = clean(f.company_name) || clean(n.company_name) || 'Unknown';\nconst email = clean(n.lead_email);\nconst tzRaw = String(f.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst city = clean(n.city);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch(e) { localTime = ''; }\n\nconst full = clean(((n.first_name || '') + ' ' + (n.last_name || '')).trim());\nconst title = clean(n.job_title);\nconst who = full ? (full + (title ? ',  ' + title : '')) : 'General inbox, confirm you have the owner';\nconst place = [city, tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\n\nlet phoneLine = '_no number found_';\nif (phone) {\n  const p = esc(phone);\n  if (phoneSrc === 'signature') phoneLine = '*' + p + '*   ✅ direct line';\n  else if (phoneSrc === 'LeadMagic') phoneLine = '*' + p + '*   ✅ mobile';\n  else if (phoneSrc === 'signature-tollfree' || phoneSrc === 'GPT-tollfree') phoneLine = '*' + p + '*   ⚠️ switchboard, you will get a receptionist';\n  else phoneLine = '*' + p + '*   found online, unverified';\n}\n\nconst briefRaw = String(f.custom_qualification_brief || '');\nconst fit = esc((briefRaw.split('\\n')[0] || '').replace(/:?white_check_mark:?/gi, '').replace(/^[ |\\-•]+/, '').trim().slice(0, 200)) || clean(f.custom_qualification_status);\nconst situation = clean(f.situation_summary) || esc(String(f.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 180)) || 'interested, see thread';\n\nlet persona = '';\ntry {\n  const acct = String(n.email_account_id || n.sending_inbox || '').toLowerCase();\n  const prefix = (acct.split('@')[0] || '').replace(/\\.[a-z0-9]+$/, '');\n  const pmap = {tomwilson:'Tom Wilson', sarahjohnson:'Sarah Johnson', mikecarter:'Mike Carter', jakemiller:'Jake Miller', chrisdavis:'Chris Davis'};\n  persona = pmap[prefix] || '';\n} catch(e) { persona = ''; }\n\nconst L = [];\nL.push('📞   *NEW LEAD TO CALL*');\nL.push('');\nL.push('*' + company + '*');\nL.push(who);\nif (place) L.push(place);\nL.push('');\nL.push('📱   ' + phoneLine);\nL.push('');\nL.push('*Fit*');\nL.push(fit);\nL.push('');\nL.push('*Where it stands*');\nL.push(situation);\nL.push('');\nif (persona) { L.push('*We email them as*   ' + persona + ', so you are consistent if it comes up'); L.push(''); }\nL.push('*Goal*   book the meeting');\nL.push('');\nif (email) { L.push('⚠️   Be very careful if you choose to email them directly, we are still working the thread as well.'); L.push(email); L.push(''); }\nif (url) { L.push('🔗   *<' + url + '|Open in Pipeline>*   to see the full prospect details'); L.push(''); }\nL.push('📬   *The full conversation so far is in the thread below.*');\nL.push('');\nL.push('_Reply in this thread as you work it (called / reached / no answer). Your notes sync onto their record._');\n\nreturn [{ json: { bdr_channel: channel, bdr_text: L.join('\\n').slice(0, 2900), prospect_id: prospectId } }];"
+        },
+        "id": "92966aaf-7881-4c71-9969-87216f977279",
+        "name": "Build BDR Card",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7040,
+          -32
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.bdr_channel }}"
+          },
+          "text": "={{ $json.bdr_text }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          }
+        },
+        "id": "c15d7229-538b-42c6-b7a8-0f83457c38fc",
+        "name": "Slack BDR Card",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          7248,
+          -32
+        ],
+        "webhookId": "548fedba-be0f-476f-8306-89376bdb70fb",
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Build BDR Card').first().json.bdr_channel }}"
+          },
+          "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=zmap[tzRaw]||'Asia/Jerusalem'; let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false,
+            "thread_ts": {
+              "replyValues": {
+                "thread_ts": "={{ $('Slack BDR Card').first().json.message_timestamp || '' }}"
+              }
+            }
+          }
+        },
+        "id": "d54d1f97-b66e-4fc7-bf53-d80fee49ec7d",
+        "name": "Slack BDR Thread",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          7456,
+          -32
+        ],
+        "webhookId": "bb366484-9119-415b-a96b-d15848036ac9",
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+              "BDR Thread TS": "={{ $('Slack BDR Card').first().json.message_timestamp || '' }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "7f2f6fb6-586a-4877-937d-415462569cdc",
+        "name": "Set BDR Thread TS",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          7664,
+          -32
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
+        "name": "Routine URL Set?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6832,
+          -128
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
+        "name": "Fire Inbox Routine",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          7056,
+          -128
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ ($('Find Client Row').first().json.fields['Inbox Manager API Key'] || '').trim() }}"
+              },
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              },
+              {
+                "name": "anthropic-beta",
+                "value": "experimental-cc-routine-2026-04-01"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
+          "options": {}
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Live Webhook": {
+        "main": [
+          [
+            {
+              "node": "Live Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Live Input": {
+        "main": [
+          [
+            {
+              "node": "Find Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Client Row": {
+        "main": [
+          [
+            {
+              "node": "Client Vars",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client Vars": {
+        "main": [
+          [
+            {
+              "node": "PV Get Lead",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Get Lead": {
+        "main": [
+          [
+            {
+              "node": "Normalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find CRM Prospect": {
+        "main": [
+          [
+            {
+              "node": "Lead in CRM?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Get Thread": {
+        "main": [
+          [
+            {
+              "node": "Format Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Thread": {
+        "main": [
+          [
+            {
+              "node": "DiscoLike BizData",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create CRM Prospect": {
+        "main": [
+          [
+            {
+              "node": "Create CRM Contact",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create CRM Contact": {
+        "main": [
+          [
+            {
+              "node": "Resolve Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Qualify Lead": {
+        "main": [
+          [
+            {
+              "node": "Flatten",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GPT 5.1 Qualifier": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Qualification": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait 1s": {
+        "main": [
+          [
+            {
+              "node": "Build Slack Blocks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Slack Client Channel": {
+        "main": [
+          [
+            {
+              "node": "Set Thread TS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run": {
+        "main": [
+          [
+            {
+              "node": "Addon Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Addon Payload": {
+        "main": [
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Webhook": {
+        "main": [
+          [
+            {
+              "node": "Manual Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Input": {
+        "main": [
+          [
+            {
+              "node": "Find Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalize": {
+        "main": [
+          [
+            {
+              "node": "Search Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Search Campaign": {
+        "main": [
+          [
+            {
+              "node": "Campaign Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Campaign Found?": {
+        "main": [
+          [
+            {
+              "node": "Resolve Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Campaign Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Campaign Row": {
+        "main": [
+          [
+            {
+              "node": "Resolve Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Campaign": {
+        "main": [
+          [
+            {
+              "node": "Find CRM Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set CRM Verdict": {
+        "main": [
+          [
+            {
+              "node": "Qualified?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Qualified?": {
+        "main": [
+          [
+            {
+              "node": "Wait 1s",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DiscoLike BizData": {
+        "main": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Flatten": {
+        "main": [
+          [
+            {
+              "node": "Should Call LeadMagic?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Call LeadMagic?": {
+        "main": [
+          [
+            {
+              "node": "LeadMagic Mobile Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Resolve Phone",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LeadMagic Mobile Finder": {
+        "main": [
+          [
+            {
+              "node": "Resolve Phone",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Phone": {
+        "main": [
+          [
+            {
+              "node": "Existing Prospect?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Existing Prospect?": {
+        "main": [
+          [
+            {
+              "node": "Resolve Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create CRM Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Prospect": {
+        "main": [
+          [
+            {
+              "node": "Set CRM Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "When clicking ‘Execute workflow’": {
+        "main": [
+          [
+            {
+              "node": "Manual Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Lead in CRM?": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prep Thread URLs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Thread URLs": {
+        "main": [
+          [
+            {
+              "node": "PV Get Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Slack Blocks": {
+        "main": [
+          [
+            {
+              "node": "Append Record Link",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append Record Link": {
+        "main": [
+          [
+            {
+              "node": "Slack Client Channel",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Thread TS": {
+        "main": [
+          [
+            {
+              "node": "BDR Channel Set?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Routine URL Set?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Channel Set?": {
+        "main": [
+          [
+            {
+              "node": "Build BDR Card",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build BDR Card": {
+        "main": [
+          [
+            {
+              "node": "Slack BDR Card",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Slack BDR Card": {
+        "main": [
+          [
+            {
+              "node": "Slack BDR Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Slack BDR Thread": {
+        "main": [
+          [
+            {
+              "node": "Set BDR Thread TS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set BDR Thread TS": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Routine URL Set?": {
+        "main": [
+          [
+            {
+              "node": "Fire Inbox Routine",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

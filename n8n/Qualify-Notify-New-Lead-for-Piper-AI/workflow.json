@@ -1,0 +1,1068 @@
+{
+  "updatedAt": "2026-07-29T08:49:00.000Z",
+  "createdAt": "2026-06-14T15:40:36.065Z",
+  "id": "Yf7IKPTpSJ1MzhZQ",
+  "name": "Qualify & Notify New Lead for Piper AI",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "piper-new-reply",
+        "options": {}
+      },
+      "id": "6d1bf279-e2cf-4933-be79-6ac984f0798c",
+      "name": "Live Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -144
+      ],
+      "webhookId": "91e6b860-dddc-4590-b881-02187e4de2a2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "l1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5f7c7dbc-257e-4e26-9f9a-9547b0cdd59a",
+      "name": "Live Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "26a3e418-c930-4a5e-a707-e3b0fa9a4ab2",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        -48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Nn0vvmKKC786UnA0",
+          "name": "Plusvibe Piper-AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Normalize.js"
+      },
+      "id": "a217177f-942a-4b1b-9710-20aa8af7e82b",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id={{ $('Client Vars').first().json.pvWorkspace }}&lead={{ $('Normalize').first().json.lead_email }}&email_type=all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "87cf2b90-2809-4aa9-ad16-5a78a107802d",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Nn0vvmKKC786UnA0",
+          "name": "Plusvibe Piper-AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "3f81dca2-2431-4178-9c42-1f7de0cb8efc",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "25160097-6f1b-400d-a59f-5e2b88155a2c",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        -48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/contacts/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"domain\": [\"{{ $('Normalize').first().json.enrich_domain }}\"], \"name\": \"{{ $('Normalize').first().json.full_name }}\", \"results_by_company\": 3, \"max_companies\": 1 }",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1b434b77-37d0-4519-b0fc-535ff756fc96",
+      "name": "Contact Discover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        -48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Extract-Contact.js"
+      },
+      "id": "b304ca7a-da1b-4365-82d2-d0d335e1f288",
+      "name": "Extract Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nCONTACT ENRICHMENT (may be empty for role inboxes or freemail):\nphone: {{ $json.contact_phone }} | seniority: {{ $json.contact_seniority }} | title: {{ $json.contact_title }} | summary: {{ $json.contact_summary }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRun the qualification. Output structured JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+        }
+      },
+      "id": "5d26094b-2f27-45fc-b59d-eb62aba1b23e",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3136,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "4aecdbe2-e026-4ad0-97e7-31a9b971120d",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3136,
+        176
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9P7fOmZxpETeDhu8",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Apollo Moving\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"recommended_action\":\"Book Sam direct\"}"
+      },
+      "id": "18baab76-0fee-4a84-8c83-0723a612c9aa",
+      "name": "Parse Qualification",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3280,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten.js"
+      },
+      "id": "e802ac04-a3c1-4618-97cc-8e6a960d3718",
+      "name": "Flatten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3488,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "23d65c4c-2902-4d8c-a902-b6fb205d565f",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4384,
+        -48
+      ],
+      "webhookId": "9cb29a49-d126-4be8-b74a-0013fb6c1812"
+    },
+    {
+      "parameters": {},
+      "id": "db6bce66-10ec-4513-b59f-8c960810c915",
+      "name": "Backfill Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "depps@envsn.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0ad035f-e85d-4c33-9850-efcb51bf1ecf",
+      "name": "Backfill Input (edit email)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.slackChannel }}"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ $json.slackBlocks }}",
+        "text": "=New interested lead: {{ $('Flatten').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "57669308-52a9-4a57-9624-546b9a151f61",
+      "name": "Slack Client Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        4752,
+        -48
+      ],
+      "webhookId": "e2662c46-d1f1-42f6-a0fa-fb193617e93e",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f129145a-6fdd-4a1a-a35b-8482d39fc453",
+      "name": "Lead in CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "recjK36ixfluCkVHu",
+        "options": {}
+      },
+      "id": "ec1c8892-1f32-4db7-85e8-308c99c91e7a",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        -320
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      },
+      "id": "5f5ccd1c-5f71-4f60-9b56-eea7b3462506",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "id": "6e11b690-b02e-4249-9d98-a9164abe5d93",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5056,
+        -48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c8f54de6-d164-457b-8fb3-df4d4b3791fb",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        -48
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d31cf48f-0ece-4844-83f6-09432c1313bc",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize').item.json.enrich_domain }}\" != \"\", {domain} = \"{{ $('Normalize').item.json.enrich_domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Normalize').item.json.company_name }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "42ea1ad1-4856-4401-b717-74810617928f",
+      "name": "Create CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Normalize').item.json.company_name || $('Normalize').item.json.full_name || $('Normalize').item.json.lead_email }}",
+            "Website": "={{ $('Normalize').item.json.is_freemail ? null : ('https://' + $('Normalize').item.json.domain) }}",
+            "Client": "={{ [ $('Get Client Row').first().json.id ] }}",
+            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "8afae0ce-9dba-458a-b4c2-490415969c99",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
+            "lastName": "={{ $('Normalize').item.json.last_name || null }}",
+            "position": "={{ $('Extract Contact').item.json.contact_title || $('Normalize').item.json.job_title || null }}",
+            "email": "={{ $('Normalize').item.json.lead_email }}",
+            "phone": "={{ $('Normalize').item.json.native_phone || $('Extract Contact').item.json.contact_phone || null }}",
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "bfa4cbb8-1a0a-4ec5-be11-c6f6c8c47d6e",
+      "name": "Set CRM Verdict",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        -48
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Create CRM Prospect').item.json.id }}",
+            "PipelineStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+            "Qualification Brief": "={{ $('Flatten').item.json.custom_qualification_brief || '' }}",
+            "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Live Webhook": {
+      "main": [
+        [
+          {
+            "node": "Live Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "DiscoLike BizData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DiscoLike BizData": {
+      "main": [
+        [
+          {
+            "node": "Contact Discover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Discover": {
+      "main": [
+        [
+          {
+            "node": "Extract Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 5.1 Qualifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Trigger": {
+      "main": [
+        [
+          {
+            "node": "Backfill Input (edit email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live Input": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Input (edit email)": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "Slack Client Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Client Channel": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead in CRM?": {
+      "main": [
+        null,
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Lead in CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Contact": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten": {
+      "main": [
+        [
+          {
+            "node": "Set CRM Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CRM Verdict": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {
+    "Live Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.flowroots.com",
+            "user-agent": "axios/1.13.2",
+            "content-length": "17799",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "3.146.115.135",
+            "x-forwarded-host": "n8n.flowroots.com",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "webhook_id": "6a440da9e069dd975b8a3cee",
+            "webhook_name": "MARKED INTERESTED PIPER",
+            "webhook_event": "LEAD_MARKED_AS_INTERESTED",
+            "campaign_name": "15.7.26 US GC-CMAR - BizDev Opportunity Hunter",
+            "workspace_name": "Flowroots X Piper AI",
+            "camp_id": "6a57ac0b42f12a64a42ee785",
+            "parent_lead_id": "",
+            "_id": "6a57b0cb1e6c053f4504b931",
+            "address_line": "",
+            "city": "",
+            "country": "",
+            "country_code": "",
+            "phone_number": "",
+            "company_website": "",
+            "first_name": "Kristian",
+            "last_name": "Sonnier",
+            "company_name": "Ryan Gootee General Contractors",
+            "email": "ksonnier@rggc.com",
+            "organization_id": "6a018ddb85c01f5da7906693",
+            "campaign_id": "6a57ac0b42f12a64a42ee785",
+            "workspace_id": "6a27bb851bffeb09ca749fd9",
+            "is_completed": 1,
+            "current_step": 2,
+            "email_account_id": "6a2807e96a2d89bf94b7426e",
+            "created_at": "2026-07-15T16:09:47.947Z",
+            "modified_at": "2026-07-23T13:23:19.408Z",
+            "status": "REPLIED",
+            "label": "INTERESTED",
+            "parent_camp_id": "",
+            "linkedin_person_url": "",
+            "linkedin_company_url": "",
+            "job_title": "Vice President, Communications and Business Development",
+            "department": "",
+            "industry": "",
+            "state": "Louisiana",
+            "mx": "MICROSOFT365",
+            "seg": "",
+            "actual_replied_from": "ksonnier@rggc.com",
+            "associates": [],
+            "hubspot_id": null,
+            "hubspot_deal_id": null,
+            "ghl_lead_id": null,
+            "ghl_conv_id": null,
+            "member_id": null,
+            "domain": "rggc.com",
+            "hebrew_first_name": "",
+            "personalized_opener": "",
+            "email_account_name": "alex.dumsky@piperaiops.info",
+            "last_lead_reply": "<html xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:w=\"urn:schemas-microsoft-com:office:word\" xmlns:m=\"http://schemas.microsoft.com/office/2004/12/omml\" xmlns=\"http://www.w3.org/TR/REC-html40\">\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\n<!--[if !mso]><style>v\\:* {behavior:url(#default#VML);}\no\\:* {behavior:url(#default#VML);}\nw\\:* {behavior:url(#default#VML);}\n.shape {behavior:url(#default#VML);}\n</style><![endif]--><style><!--\n/* Font Definitions */\n@font-face\n\t{font-family:\"Cambria Math\";\n\tpanose-1:2 4 5 3 5 4 6 3 2 4;}\n@font-face\n\t{font-family:Calibri;\n\tpanose-1:2 15 5 2 2 2 4 3 2 4;}\n@font-face\n\t{font-family:Aptos;}\n/* Style Definitions */\np.MsoNormal, li.MsoNormal, div.MsoNormal\n\t{margin:0in;\n\tfont-size:12.0pt;\n\tfont-family:\"Aptos\",sans-serif;}\nspan.EmailStyle18\n\t{mso-style-type:personal-reply;\n\tfont-family:\"Aptos\",sans-serif;\n\tcolor:windowtext;}\n.MsoChpDefault\n\t{mso-style-type:export-only;\n\tfont-size:10.0pt;\n\tmso-ligatures:none;}\n@page WordSection1\n\t{size:8.5in 11.0in;\n\tmargin:1.0in 1.0in 1.0in 1.0in;}\ndiv.WordSection1\n\t{page:WordSection1;}\n--></style><!--[if gte mso 9]><xml>\n<o:shapedefaults v:ext=\"edit\" spidmax=\"1026\" />\n</xml><![endif]--><!--[if gte mso 9]><xml>\n<o:shapelayout v:ext=\"edit\">\n<o:idmap v:ext=\"edit\" data=\"1\" />\n</o:shapelayout></xml><![endif]-->\n</head>\n<body lang=\"EN-US\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\n<div class=\"WordSection1\">\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\">I’d like to hear more. <o:p></o:p></span></p>\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\"><o:p>&nbsp;</o:p></span></p>\n<div>\n<p class=\"MsoNormal\" style=\"background:white\"><b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:#3B3838;mso-ligatures:standardcontextual\">Kristian Sonnier | VP of Communications &amp; Business Development&nbsp;&nbsp;</span></b><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:#C00000;mso-ligatures:standardcontextual\"><a href=\"http://www.rggc.com/\" title=\"http://www.rggc.com/\"><b><span style=\"color:#C00000\">Ryan Gootee\n General Contractors, L.L.C.</span></b></a></span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#262626;mso-ligatures:standardcontextual\">NOLA.com/The&nbsp;Times-Picayune Top Work Places 2026</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#262626;mso-ligatures:standardcontextual\">&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:black;mso-ligatures:standardcontextual\">1100 Ridgewood Dr.</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:black;mso-ligatures:standardcontextual\">Metairie, LA 70001</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Office: 504-832-1282</span><span style=\"font-size:11.0pt;color:#424242;mso-ligatures:standardcontextual\">&nbsp;x115&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Cell: 504-481-7933</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Like us on\n</span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.facebook.com/Ryan-Gootee-General-Contractors-LLC-115411828505880/\" title=\"https://www.facebook.com/Ryan-Gootee-General-Contractors-LLC-115411828505880/\"><span style=\"color:#96607D\">Facebook</span></a></span><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;|\n Follow us on </span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.linkedin.com/company/ryan-gootee-general-contractors-llc?trk=nav_account_sub_nav_company_admin\" title=\"https://www.linkedin.com/company/ryan-gootee-general-contractors-llc?trk=nav_account_sub_nav_company_admin\"><span style=\"color:#96607D\">LinkedIn</span></a></span><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;&amp;\n</span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.instagram.com/rggc_llc/\" title=\"https://www.instagram.com/rggc_llc/\"><span style=\"color:#96607D\">Instagram</span></a></span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\"><span style=\"color:black\">[Image]</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n</div>\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\"><o:p>&nbsp;</o:p></span></p>\n<div>\n<div style=\"border:none;border-top:solid #E1E1E1 1.0pt;padding:3.0pt 0in 0in 0in\">\n<p class=\"MsoNormal\"><b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif\">From:</span></b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif\"> Alex Dumsky &lt;alex.dumsky@piperaiops.info&gt;\n<br>\n<b>Sent:</b> Thursday, July 23, 2026 6:02 AM<br>\n<b>To:</b> Kristian Sonnier &lt;ksonnier@rggc.com&gt;<br>\n<b>Subject:</b> Ryan Gootee General Contractors bid sites<o:p></o:p></span></p>\n</div>\n</div>\n<p class=\"MsoNormal\"><o:p>&nbsp;</o:p></p>\n<p class=\"MsoNormal\" style=\"margin-bottom:12.0pt\">Hey Kristian,<br>\n<br>\nHow many bid sites is someone at Ryan Gootee General Contractors checking by hand each week?<br>\n<br>\nWe can help you spot the right opportunities without adding headcount. Every portal gets monitored, the login-gated ones included, and only the ones worth pursuing come through.<br>\n<br>\nTeams are already reclaiming about 50 hours a month.<br>\n<br>\nOpen to a short walkthrough?<o:p></o:p></p>\n<p class=\"MsoNormal\">Thanks,<br>\nAlex Dumsky<br>\nPiper AI<br>\n<br>\n1908 Thomes Ave STE 87271, Cheyenne, WY 82001<br>\n<br>\nP.S. Please reply &quot;no thanks&quot; if not interested.<o:p></o:p></p>\n</div>\n</body>\n</html>",
+            "text_body": "I’d like to hear more.\n\n\n \n\n\n\n\n\nKristian Sonnier | VP of Communications & Business Development  \n\n\nRyan Gootee\nGeneral Contractors, L.L.C. [http://www.rggc.com/]\n\n\nNOLA.com/The Times-Picayune Top Work Places 2026\n\n\n \n\n\n1100 Ridgewood Dr.\n\n\nMetairie, LA 70001\n\n\nOffice: 504-832-1282 x115 \n\n\nCell: 504-481-7933\n\n\n \n\n\nLike us on\nFacebook [https://www.facebook.com/Ryan-Gootee-General-Contractors-LLC-115411828505880/] |\nFollow us on LinkedIn [https://www.linkedin.com/company/ryan-gootee-general-contractors-llc?trk=nav_account_sub_nav_company_admin] &\nInstagram [https://www.instagram.com/rggc_llc/]\n\n\n[Image]\n\n\n\n \n\n\n\n\n\n\n\nFrom: Alex Dumsky <alex.dumsky@piperaiops.info>\n\n\nSent: Thursday, July 23, 2026 6:02 AM\n\nTo: Kristian Sonnier <ksonnier@rggc.com>\n\nSubject: Ryan Gootee General Contractors bid sites\n\n\n\n\n \n\n\nHey Kristian,\n\n\n\nHow many bid sites is someone at Ryan Gootee General Contractors checking by hand each week?\n\n\n\nWe can help you spot the right opportunities without adding headcount. Every portal gets monitored, the login-gated ones included, and only the ones worth pursuing come through.\n\n\n\nTeams are already reclaiming about 50 hours a month.\n\n\n\nOpen to a short walkthrough?\n\n\nThanks,\n\nAlex Dumsky\n\nPiper AI\n\n\n\n1908 Thomes Ave STE 87271, Cheyenne, WY 82001\n\n\n\nP.S. Please reply \"no thanks\" if not interested.",
+            "last_lead_reply_subject": "RE: Ryan Gootee General Contractors bid sites",
+            "last_email_id": "6a620f8c02d07dcaa47c30df",
+            "last_thread_id": "6a620f8ca73a317a60cf9580",
+            "latest_message": "<html xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:w=\"urn:schemas-microsoft-com:office:word\" xmlns:m=\"http://schemas.microsoft.com/office/2004/12/omml\" xmlns=\"http://www.w3.org/TR/REC-html40\">\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\n<!--[if !mso]><style>v\\:* {behavior:url(#default#VML);}\no\\:* {behavior:url(#default#VML);}\nw\\:* {behavior:url(#default#VML);}\n.shape {behavior:url(#default#VML);}\n</style><![endif]--><style><!--\n/* Font Definitions */\n@font-face\n\t{font-family:\"Cambria Math\";\n\tpanose-1:2 4 5 3 5 4 6 3 2 4;}\n@font-face\n\t{font-family:Calibri;\n\tpanose-1:2 15 5 2 2 2 4 3 2 4;}\n@font-face\n\t{font-family:Aptos;}\n/* Style Definitions */\np.MsoNormal, li.MsoNormal, div.MsoNormal\n\t{margin:0in;\n\tfont-size:12.0pt;\n\tfont-family:\"Aptos\",sans-serif;}\nspan.EmailStyle18\n\t{mso-style-type:personal-reply;\n\tfont-family:\"Aptos\",sans-serif;\n\tcolor:windowtext;}\n.MsoChpDefault\n\t{mso-style-type:export-only;\n\tfont-size:10.0pt;\n\tmso-ligatures:none;}\n@page WordSection1\n\t{size:8.5in 11.0in;\n\tmargin:1.0in 1.0in 1.0in 1.0in;}\ndiv.WordSection1\n\t{page:WordSection1;}\n--></style><!--[if gte mso 9]><xml>\n<o:shapedefaults v:ext=\"edit\" spidmax=\"1026\" />\n</xml><![endif]--><!--[if gte mso 9]><xml>\n<o:shapelayout v:ext=\"edit\">\n<o:idmap v:ext=\"edit\" data=\"1\" />\n</o:shapelayout></xml><![endif]-->\n</head>\n<body lang=\"EN-US\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\n<div class=\"WordSection1\">\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\">I’d like to hear more. <o:p></o:p></span></p>\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\"><o:p>&nbsp;</o:p></span></p>\n<div>\n<p class=\"MsoNormal\" style=\"background:white\"><b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:#3B3838;mso-ligatures:standardcontextual\">Kristian Sonnier | VP of Communications &amp; Business Development&nbsp;&nbsp;</span></b><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:#C00000;mso-ligatures:standardcontextual\"><a href=\"http://www.rggc.com/\" title=\"http://www.rggc.com/\"><b><span style=\"color:#C00000\">Ryan Gootee\n General Contractors, L.L.C.</span></b></a></span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#262626;mso-ligatures:standardcontextual\">NOLA.com/The&nbsp;Times-Picayune Top Work Places 2026</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#262626;mso-ligatures:standardcontextual\">&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:black;mso-ligatures:standardcontextual\">1100 Ridgewood Dr.</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:black;mso-ligatures:standardcontextual\">Metairie, LA 70001</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Office: 504-832-1282</span><span style=\"font-size:11.0pt;color:#424242;mso-ligatures:standardcontextual\">&nbsp;x115&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Cell: 504-481-7933</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\" style=\"background:white\"><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">Like us on\n</span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.facebook.com/Ryan-Gootee-General-Contractors-LLC-115411828505880/\" title=\"https://www.facebook.com/Ryan-Gootee-General-Contractors-LLC-115411828505880/\"><span style=\"color:#96607D\">Facebook</span></a></span><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;|\n Follow us on </span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.linkedin.com/company/ryan-gootee-general-contractors-llc?trk=nav_account_sub_nav_company_admin\" title=\"https://www.linkedin.com/company/ryan-gootee-general-contractors-llc?trk=nav_account_sub_nav_company_admin\"><span style=\"color:#96607D\">LinkedIn</span></a></span><span style=\"font-size:11.0pt;color:#3B3838;mso-ligatures:standardcontextual\">&nbsp;&amp;\n</span><span style=\"font-size:11.0pt;color:#96607D;mso-ligatures:standardcontextual\"><a href=\"https://www.instagram.com/rggc_llc/\" title=\"https://www.instagram.com/rggc_llc/\"><span style=\"color:#96607D\">Instagram</span></a></span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n<p class=\"MsoNormal\"><span style=\"color:black\">[Image]</span><span style=\"mso-ligatures:standardcontextual\"><o:p></o:p></span></p>\n</div>\n<p class=\"MsoNormal\"><span style=\"font-size:11.0pt\"><o:p>&nbsp;</o:p></span></p>\n<div>\n<div style=\"border:none;border-top:solid #E1E1E1 1.0pt;padding:3.0pt 0in 0in 0in\">\n<p class=\"MsoNormal\"><b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif\">From:</span></b><span style=\"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-serif\"> Alex Dumsky &lt;alex.dumsky@piperaiops.info&gt;\n<br>\n<b>Sent:</b> Thursday, July 23, 2026 6:02 AM<br>\n<b>To:</b> Kristian Sonnier &lt;ksonnier@rggc.com&gt;<br>\n<b>Subject:</b> Ryan Gootee General Contractors bid sites<o:p></o:p></span></p>\n</div>\n</div>\n<p class=\"MsoNormal\"><o:p>&nbsp;</o:p></p>\n<p class=\"MsoNormal\" style=\"margin-bottom:12.0pt\">Hey Kristian,<br>\n<br>\nHow many bid sites is someone at Ryan Gootee General Contractors checking by hand each week?<br>\n<br>\nWe can help you spot the right opportunities without adding headcount. Every portal gets monitored, the login-gated ones included, and only the ones worth pursuing come through.<br>\n<br>\nTeams are already reclaiming about 50 hours a month.<br>\n<br>\nOpen to a short walkthrough?<o:p></o:p></p>\n<p class=\"MsoNormal\">Thanks,<br>\nAlex Dumsky<br>\nPiper AI<br>\n<br>\n1908 Thomes Ave STE 87271, Cheyenne, WY 82001<br>\n<br>\nP.S. Please reply &quot;no thanks&quot; if not interested.<o:p></o:p></p>\n</div>\n</body>\n</html>",
+            "latest_subject": "RE: Ryan Gootee General Contractors bid sites",
+            "lead_id": "6a57b0cb1e6c053f4504b931",
+            "camp_tag_ids": [
+              "6a2eb0b5824c59961b31b8bb"
+            ],
+            "is_email_verified": -1,
+            "sender_first_name": "Alex",
+            "sender_last_name": "Dumsky",
+            "lead_last_sent_at": "2026-07-23T11:02:18.691Z",
+            "ws_lead_last_sent_at": "2026-07-23T11:02:18.710Z",
+            "is_mx": 1,
+            "sentiment": "POSITIVE",
+            "step": 1,
+            "variation": "B"
+          },
+          "webhookUrl": "https://n8n.flowroots.com/webhook/piper-new-reply",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "be8f0e88-3fad-4f4c-b4e9-8155d9ce24df",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T15:40:36.072Z",
+      "createdAt": "2026-06-14T15:40:36.072Z",
+      "role": "workflow:owner",
+      "workflowId": "Yf7IKPTpSJ1MzhZQ",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

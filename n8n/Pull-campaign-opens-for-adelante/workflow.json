@@ -1,0 +1,5756 @@
+{
+  "updatedAt": "2026-08-08T20:29:30.690Z",
+  "createdAt": "2026-08-07T11:28:29.125Z",
+  "id": "pWRtC1E8DkkGpvhN",
+  "name": "Pull campaign opens for adelante",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "943ddcb2-3464-4fe9-995e-ace40de342ff",
+      "name": "Addon Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "addon-pvsync-adelante",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "2e53ccd8-cdc5-420e-a691-242e347a5927"
+    },
+    {
+      "id": "af22fb39-189b-4d5f-825d-bb69e6778c27",
+      "name": "Get Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "b1591306-03f1-4b75-888e-5ee4d74e8dff",
+      "name": "Get Tracked Campaigns",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        192
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "filterByFormula": "{Open Tracking} = TRUE()",
+        "returnAll": true,
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "9403e9f5-eaa5-4596-8168-6fb7fe21dc4c",
+      "name": "Build Work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Work.js"
+      }
+    },
+    {
+      "id": "815152c6-9bc0-40fc-a523-ab69dfb3b732",
+      "name": "Emit Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Emit-Rows.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "3d9a04e6-9ade-4149-ac4c-75f4709973ee",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d44a5bf2-d925-4d0c-9280-56ba98ed85c9",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "executeOnce": true,
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "5debd20f-f73e-4af8-92ba-494e8eaeeda1",
+      "name": "PV List Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        192
+      ],
+      "parameters": {
+        "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.pvWorkspace }}"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.campaignId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "page",
+                    "value": "={{ $pageCount + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body || $response.body.length === 0 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 30,
+              "requestInterval": 500
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0116395d-8e7c-44d6-8aea-2ad7254ed750",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        272
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Rows.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b71ecc6e-c165-4878-b0aa-05866bea72f6",
+      "name": "Loop Campaigns",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "9af431bb-392a-44da-9d37-d0c004e3e847",
+      "name": "Upsert Openers",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1900,
+        200
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblPcilRrsiEeyIyn"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "PV Lead ID"
+          ],
+          "schema": [],
+          "value": {
+            "Email": "={{ $json.Email }}",
+            "Opens": "={{ $json.Opens }}",
+            "Company": "={{ $json.Company }}",
+            "Campaign": "={{ $json.Campaign }}",
+            "Client": "={{ $json.Client }}",
+            "Replied": "={{ $json.Replied }}",
+            "Status": "={{ $json.Status }}",
+            "MX": "={{ $json.MX }}",
+            "PV Lead ID": "={{ $json['PV Lead ID'] }}",
+            "Last Synced": "={{ $json['Last Synced'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Addon Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client": {
+      "main": [
+        [
+          {
+            "node": "Get Tracked Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tracked Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Build Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Work": {
+      "main": [
+        [
+          {
+            "node": "Loop Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV List Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Rows": {
+      "main": [
+        [
+          {
+            "node": "Loop Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Emit Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PV List Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emit Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Openers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Openers": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "global": {
+      "openRows": [
+        {
+          "leadId": "6a7886136d6c3116cdb010e2",
+          "email": "nadav@ytcom.co.il",
+          "company": "YTcom",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d5a",
+          "email": "tanya_s@optimove.com",
+          "company": "Optimove",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d59",
+          "email": "madelaine.napoleone@warnermusic.com",
+          "company": "dep",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d58",
+          "email": "shaik@cet.ac.il",
+          "company": "חנות מטח",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d57",
+          "email": "michaelp@cristalino.co.il",
+          "company": "קריסטלינו",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d53",
+          "email": "baskets@gilisgoodies.com",
+          "company": "Gili's Goodies",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d52",
+          "email": "dan.taub@beerbazaar.co.il",
+          "company": "BeerBazaar Express",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d51",
+          "email": "yarden@beerbazaar.co.il",
+          "company": "BeerBazaar Express",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d50",
+          "email": "nir@niroliva.com",
+          "company": "Nir Oliva",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d4e",
+          "email": "david@admetec.com",
+          "company": "Admetec Shop",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d49",
+          "email": "idit@biotopworld.com",
+          "company": "BIOTOP PROFESSIONAL",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d48",
+          "email": "rotem@balena.science",
+          "company": "Balena",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d46",
+          "email": "yegor@coupleschoices.com",
+          "company": "CouplesChoices",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d42",
+          "email": "naor@hollandia.co.il",
+          "company": "Hollandia",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d41",
+          "email": "tamir@marom-dolphin.com",
+          "company": "Marom",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d40",
+          "email": "maor@marom-dolphin.com",
+          "company": "Marom",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d3e",
+          "email": "moran_m@skechers.co.il",
+          "company": "Skechers",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d3c",
+          "email": "einav@carpetshop.co.il",
+          "company": "השטיח האדום",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d3b",
+          "email": "asaf@carpetshop.co.il",
+          "company": "השטיח האדום",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d3a",
+          "email": "harel.b@shilav.com",
+          "company": "Shilav",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d33",
+          "email": "mor@brightconcept.co.il",
+          "company": "Bright Concept",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d31",
+          "email": "michalefroni@loopslab.com",
+          "company": "Loops Lab",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d2e",
+          "email": "gabriella@noorliving.co.il",
+          "company": "Noor Living",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d2d",
+          "email": "assaf@doron-home.co.il",
+          "company": "Doron Home",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d25",
+          "email": "eddie@rikushet.co.il",
+          "company": "ריקושט",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d23",
+          "email": "omri@getnoosh.com",
+          "company": "Noosh",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d21",
+          "email": "michal@collectivecollection.com",
+          "company": "Collective Collection",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d1e",
+          "email": "akis@nothing.tech",
+          "company": "Nothing",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d1d",
+          "email": "closeouts@macduggal.com",
+          "company": "Mac Duggal",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d1c",
+          "email": "stuart@glyderapparel.com",
+          "company": "Glyder",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d1b",
+          "email": "kobi@maozisrael.org",
+          "company": "׳מעוז ישראל צור׳",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d19",
+          "email": "gareth@rubiconwatches.com",
+          "company": "Rubicon Watches",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d17",
+          "email": "stuart.solkow@glyderapparel.com",
+          "company": "Glyder",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d16",
+          "email": "kipbright@gmail.com",
+          "company": "BrightLife Direct",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d15",
+          "email": "mac@macduggal.com",
+          "company": "Mac Duggal",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788611578767015a577d12",
+          "email": "rowan@biotopworld.com",
+          "company": "BIOTOP Professional International",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ffa1",
+          "email": "raghad@sikkuy-aufoq.org.il",
+          "company": "סיכוי-עופוק",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff9e",
+          "email": "yossi@alumex.co.il",
+          "company": "אלומקס",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff9c",
+          "email": "yarden@inspire-int.co.il",
+          "company": "INSPIRE",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff9b",
+          "email": "michal@goodwitch.style",
+          "company": "Good Witch",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff9a",
+          "email": "hilik@magnus.co.il",
+          "company": "MAGNUS",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff99",
+          "email": "tal@magnus.co.il",
+          "company": "MAGNUS",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff98",
+          "email": "dudi@tv-spices.co.il",
+          "company": "בית",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff97",
+          "email": "yaelbe@eadventure.co.il",
+          "company": "English Adventure",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff96",
+          "email": "liat@aleadesign.co.il",
+          "company": "Alea Design",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff91",
+          "email": "looltv@looltv.com",
+          "company": "LOOLTV",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff90",
+          "email": "bar@looltv.com",
+          "company": "LOOLTV",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8f",
+          "email": "galil@pngroup.co.il",
+          "company": "פאר נשר",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8e",
+          "email": "nanny@seyman.co.il",
+          "company": "Seyman",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8d",
+          "email": "nir@mithaberet.co.il",
+          "company": "מיטחברת",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8c",
+          "email": "roi@nicklas.co.il",
+          "company": "ניקלס",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8b",
+          "email": "yuval@gazit.co.il",
+          "company": "עמוס גזית",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff8a",
+          "email": "vickybattan@gazit.co.il",
+          "company": "עמוס גזית",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff89",
+          "email": "adi@israelelwyn.org.il",
+          "company": "אלווין ישראל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff88",
+          "email": "chen@tgt.co.il",
+          "company": "Together We Invest",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff87",
+          "email": "shuki@tgt.co.il",
+          "company": "Together We Invest",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff84",
+          "email": "danlevy@kidmah.co.il",
+          "company": "קידמה",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff83",
+          "email": "nitzan@meshekmeller.co.il",
+          "company": "משק מלר",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff82",
+          "email": "shmuel@bookpod.co.il",
+          "company": "בוקפוד",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff81",
+          "email": "idanw@e-shetach.co.il",
+          "company": "איש שטח",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff7d",
+          "email": "elah@safa1.co.il",
+          "company": "שפה1",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff7c",
+          "email": "tomer@mitugon.com",
+          "company": "מיתוגון",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff7b",
+          "email": "morel@beyond3d.co.il",
+          "company": "Beyond3d",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff7a",
+          "email": "info@deshe-kavua.co.il",
+          "company": "דשא קבוע",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff78",
+          "email": "danielg@huliot.com",
+          "company": "Huliot",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff77",
+          "email": "eranf@huliot.com",
+          "company": "Huliot",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff76",
+          "email": "vitali@biamba.co.il",
+          "company": "ביאמבה",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff75",
+          "email": "eli@smart-tour.co.il",
+          "company": "סמארט תור ישראל",
+          "opens": 4,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff71",
+          "email": "eyal@getcomfy.co.il",
+          "company": "גט קומפי",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff70",
+          "email": "haimk@al-magor.co.il",
+          "company": "Al-Magor",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff6d",
+          "email": "michal@adi-system.co.il",
+          "company": "א.ד.י מערכות לרכב",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff6c",
+          "email": "yaron@adi-system.co.il",
+          "company": "א.ד.י מערכות לרכב",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff6b",
+          "email": "dani@goodlife-outdoors.com",
+          "company": "גודלייף אאוטדורס",
+          "opens": 2,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff6a",
+          "email": "oren@tuvik.co.il",
+          "company": "טוביק ספא מים",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff69",
+          "email": "erez.w@willi-food.co.il",
+          "company": "ויליפוד",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff67",
+          "email": "arbel@smartrider.co.il",
+          "company": "Smart Rider",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff63",
+          "email": "lior@jerusalemwineries.co.il",
+          "company": "Jerusalem Wineries",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff62",
+          "email": "shahar@12buy.co.il",
+          "company": "12Buy",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff60",
+          "email": "einav@sweetango.co.il",
+          "company": "sweetango",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff5c",
+          "email": "diklac@l-s.co.il",
+          "company": "ליימן שליסל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff5b",
+          "email": "yael@l-s.co.il",
+          "company": "ליימן שליסל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff5a",
+          "email": "hila@q4israel.org.il",
+          "company": "הרבעון הרביעי",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff59",
+          "email": "dani@shapirobeer.co.il",
+          "company": "Shapiro Beer",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff58",
+          "email": "itay@sourcetacticalgear.net",
+          "company": "SourceTacticalGear",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff57",
+          "email": "guy@sourcetacticalgear.net",
+          "company": "SourceTacticalGear",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff56",
+          "email": "roni@segalbaby.co.il",
+          "company": "קבוצת סגל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff54",
+          "email": "chagit@closeapp.co.il",
+          "company": "CloseApp",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff53",
+          "email": "barak.gladcov@evedge.co.il",
+          "company": "EV-Edge",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff52",
+          "email": "shraga.katz@evedge.co.il",
+          "company": "EV-Edge",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff4f",
+          "email": "stavitg@golanwines.co.il",
+          "company": "יקב רמת הגולן",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff4e",
+          "email": "talin@golanwines.co.il",
+          "company": "Golanwines",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff4d",
+          "email": "sarit_c@golanwines.co.il",
+          "company": "Golanwines",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff4b",
+          "email": "russkeitel@mac.com",
+          "company": "Technolite",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff48",
+          "email": "nimrodb@adam-milo.co.il",
+          "company": "אדם מילא",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff47",
+          "email": "shany.cohen@achva.ac.il",
+          "company": "תואר ראשון .B.A",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff43",
+          "email": "linoy@drk.co.il",
+          "company": "ד\"ר קיי",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff41",
+          "email": "moshe.poolat@netzerprecision.com",
+          "company": "Netzer Precision",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff40",
+          "email": "shachar.taragan@netzerprecision.com",
+          "company": "Netzer Precision",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff3d",
+          "email": "revitalb@tadiran-group.co.il",
+          "company": "תדיראן",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff3c",
+          "email": "niv@2sit.co.il",
+          "company": "2sit",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff3b",
+          "email": "koby@polyron.co.il",
+          "company": "פולירון",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff38",
+          "email": "marinavak@hemdat.ac.il",
+          "company": "חמדת",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff37",
+          "email": "joanna@root-source.com",
+          "company": "Root Source",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff31",
+          "email": "ramis@begincenter.org.il",
+          "company": "מרכז בגין",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff2c",
+          "email": "tamim@nirlat.com",
+          "company": "נירלט",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff2a",
+          "email": "igor@nivbook.co.il",
+          "company": "ספרי ניב",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff29",
+          "email": "ronen.yablon@geely.co.il",
+          "company": "Geely",
+          "opens": 4,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff28",
+          "email": "ronen.virt@geely.co.il",
+          "company": "Geely",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff27",
+          "email": "gali.shitrit@geely.co.il",
+          "company": "Geely",
+          "opens": 2,
+          "replied": 0,
+          "status": "BOUNCED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff26",
+          "email": "henry@trellidor.co.il",
+          "company": "טרלידור",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff24",
+          "email": "nir@netivyah.org",
+          "company": "Netivyah",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff21",
+          "email": "veronica@sabonmichal.co.il",
+          "company": "סבון מיכל",
+          "opens": 5,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff1f",
+          "email": "benjamin@integraliah.com",
+          "company": "Ulpan Integraliah",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff1e",
+          "email": "wayne@ooona.net",
+          "company": "OOONA",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff1d",
+          "email": "avishay@galooli.com",
+          "company": "Galooli",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff1c",
+          "email": "frederick.reynolds@galooli.com",
+          "company": "Galooli",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff19",
+          "email": "adam@goodpharm.co.il",
+          "company": "GOOD PHARM",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff18",
+          "email": "yoav@goodpharm.co.il",
+          "company": "GOOD PHARM",
+          "opens": 10,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff15",
+          "email": "rayzel@mosaicapress.com",
+          "company": "Mosaica Press",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff14",
+          "email": "moran@maxstock.co.il",
+          "company": "מקס סטוק",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff13",
+          "email": "shlomo@maxstock.co.il",
+          "company": "מקס",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff12",
+          "email": "ofir@maxstock.co.il",
+          "company": "מקס",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff11",
+          "email": "eli@letsai.co.il",
+          "company": "Let's AI",
+          "opens": 12,
+          "replied": 3,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff10",
+          "email": "shahar@letsai.co.il",
+          "company": "Let's AI",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0f",
+          "email": "omer@leegrebenau.com",
+          "company": "Lee Petra Grebenau",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0e",
+          "email": "whitney@oneforisrael.org",
+          "company": "ONE FOR ISRAEL Ministry",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0d",
+          "email": "boyne@oneforisrael.org",
+          "company": "ONE FOR ISRAEL Ministry",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0c",
+          "email": "guy@sarig.com",
+          "company": "שריג אלקטריק",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0b",
+          "email": "dvirk@watergen.com",
+          "company": "Watergen",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff0a",
+          "email": "annac@watergen.com",
+          "company": "Watergen",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff09",
+          "email": "dror.besserglik@terrazone.io",
+          "company": "TerraZone",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff07",
+          "email": "erez@tmt.co.il",
+          "company": "HOME",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff03",
+          "email": "avim@ledico.com",
+          "company": "Ledico Bosch",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff02",
+          "email": "itzikz@ledico.com",
+          "company": "Ledico Bosch",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138ff01",
+          "email": "mickeya@ledico.com",
+          "company": "Ledico Bosch",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feff",
+          "email": "adit@freedom-farm.org.il",
+          "company": "חוות החופש",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fefe",
+          "email": "roy@skipass.co.il",
+          "company": "Skipass",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fefd",
+          "email": "intersurf@intersurf.co.il",
+          "company": "Intersurf",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fefc",
+          "email": "itsik@intersurf.co.il",
+          "company": "Intersurf",
+          "opens": 8,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fef7",
+          "email": "eliek@adi-il.org",
+          "company": "ADI Israel",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fef6",
+          "email": "sarah@adi-il.org",
+          "company": "ADI Israel",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fef5",
+          "email": "maya@carmella.co.il",
+          "company": "כרמלה",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fef2",
+          "email": "itamar@radical.org.il",
+          "company": "רדיקל",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fef0",
+          "email": "yishay@ofnocenter.co.il",
+          "company": "אופנוסנטר",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feee",
+          "email": "stas@ronlight.co.il",
+          "company": "Ronlight",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feed",
+          "email": "dalitbl@sano.co.il",
+          "company": "סנו",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feec",
+          "email": "guys@sano.co.il",
+          "company": "סנו",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feeb",
+          "email": "ori@amigo.co.il",
+          "company": "Amigos",
+          "opens": 4,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feea",
+          "email": "noa@gagapeople.com",
+          "company": "Gaga",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee9",
+          "email": "michas@tambour.co.il",
+          "company": "Tambour",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee6",
+          "email": "yuval@carmeldirect.com",
+          "company": "Carmel Direct",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee5",
+          "email": "itamar@carmeldirect.com",
+          "company": "Carmel Direct",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee4",
+          "email": "davidgo@altman.co.il",
+          "company": "Altman Health",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee2",
+          "email": "einat@bara.co.il",
+          "company": "Bara Herbs",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee1",
+          "email": "yasmine@tod.org.il",
+          "company": "Tower of David Museum",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fee0",
+          "email": "rose@tod.org.il",
+          "company": "Tower of David Museum",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fede",
+          "email": "michald@soltam.co.il",
+          "company": "סולתם",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138fedb",
+          "email": "zeev@cityofdavid.org.il",
+          "company": "עיר דוד",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a788610021a255f1138feda",
+          "email": "alejandrad@paragon-group.com",
+          "company": "CAA Tactical",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "rec1ZaehPbo6gIKVC"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2c3",
+          "email": "amit@malkajewelry.com",
+          "company": "Malka Jewelry",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2c2",
+          "email": "shahar@shugis.com",
+          "company": "Shugis",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2bf",
+          "email": "sheryll@blushfashion.boutique",
+          "company": "Blush Fashion",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2bd",
+          "email": "oren@raven.co.il",
+          "company": "raven",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2bc",
+          "email": "guyc@floralis.co.il",
+          "company": "Floralis",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b8",
+          "email": "yaron@nimrod.co.il",
+          "company": "נמרוד",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b7",
+          "email": "talia@taliasari.com",
+          "company": "Talia Sari",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b6",
+          "email": "shahar@sweetweet.co.il",
+          "company": "העולם של Sweetweet",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b5",
+          "email": "avi@hollandia.co.il",
+          "company": "Hollandia",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b4",
+          "email": "naamao@laline.co.il",
+          "company": "Laline",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b3",
+          "email": "orig@laline.co.il",
+          "company": "Laline",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b2",
+          "email": "erez@laline.co.il",
+          "company": "Laline",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2b1",
+          "email": "shanie@sillyshiny.com",
+          "company": "Silly Shiny Diamonds – sillyshinydiamonds",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2af",
+          "email": "dalit@aminach.co.il",
+          "company": "עמינח",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2aa",
+          "email": "yael@itaybrands.co.il",
+          "company": "Itaybrands",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a9",
+          "email": "itay@itaybrands.co.il",
+          "company": "Itaybrands",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a8",
+          "email": "adi@lovelylittlehouse.com",
+          "company": "Lovely Little House",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a7",
+          "email": "tzuki@bzigo.com",
+          "company": "Bzigo",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a6",
+          "email": "yarden@strongful.co.il",
+          "company": "Strongful",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a4",
+          "email": "shannyk@femina.co.il",
+          "company": "Femina",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae2a2",
+          "email": "oriya@kualastyle.com",
+          "company": "Kuala Style",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae29d",
+          "email": "carolina@carolinalemke.com",
+          "company": "Carolina Lemke",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a7886124e10e88aad6ae29c",
+          "email": "joeys@gottex.co.il",
+          "company": "Gottex",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f5d",
+          "email": "jacob@san.co.il",
+          "company": "SAN",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f5c",
+          "email": "ran@san.co.il",
+          "company": "SAN",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f5b",
+          "email": "itai@san.co.il",
+          "company": "SAN",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f5a",
+          "email": "adamb@histadrut.org.il",
+          "company": "ההסתדרות",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f59",
+          "email": "yairb@histadrut.org.il",
+          "company": "ההסתדרות",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f58",
+          "email": "yakov@histadrut.org.il",
+          "company": "ההסתדרות",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f57",
+          "email": "laurent@anytrack.io",
+          "company": "AnyTrack Knowledge Base",
+          "opens": 6,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f56",
+          "email": "kobi@water.io",
+          "company": "Water.io",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f55",
+          "email": "igal@water.io",
+          "company": "Water.io",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f54",
+          "email": "victoria@benda.co.il",
+          "company": "Bluetti",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f4e",
+          "email": "zvika@selamedical.co.il",
+          "company": "Sela Medical",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f4a",
+          "email": "assaf@shop-shop.co.il",
+          "company": "שופ-שופ",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f45",
+          "email": "a.kaplan@dkr.co.il",
+          "company": "DKR",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f44",
+          "email": "amitz@bar-magen.com",
+          "company": "בר -מגן",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f43",
+          "email": "amirn@bar-magen.com",
+          "company": "׳בר מגן׳",
+          "opens": 4,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f42",
+          "email": "rami@bar-magen.com",
+          "company": "בר -מגן",
+          "opens": 33,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f41",
+          "email": "alalo@almi.co.il",
+          "company": "אלמי",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f40",
+          "email": "dror@adarac.co.il",
+          "company": "ADAR Group",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f3e",
+          "email": "elad.ziv@lidorr.com",
+          "company": "לידור אלמנטס",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f3d",
+          "email": "rami@icon-a.com",
+          "company": "איקון",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f3c",
+          "email": "dzartov@gmail.com",
+          "company": "פפירוס",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f3b",
+          "email": "eyal@blankpagebiz.com",
+          "company": "Blank Page Biz",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f39",
+          "email": "avi@adulim.co.il",
+          "company": "אדולים",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f37",
+          "email": "gil@thermalbeacon.com",
+          "company": "Thermal Beacon",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f36",
+          "email": "yossi.g@thermalbeacon.com",
+          "company": "Thermal Beacon",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f35",
+          "email": "zeevy@luxembourg.co.il",
+          "company": "לוכסמבורג תעשיות",
+          "opens": 8,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f34",
+          "email": "mully@plenty4u.co.il",
+          "company": "פלנטי",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f32",
+          "email": "meital@wediggit.co.il",
+          "company": "Wediggit",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f31",
+          "email": "aviad@wediggit.co.il",
+          "company": "Wediggit",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f30",
+          "email": "nadavy@goaltime.co.il",
+          "company": "גולטיים",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f2f",
+          "email": "michal@czapnik.co.il",
+          "company": "צ'פניק",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f2e",
+          "email": "benny@czapnik.co.il",
+          "company": "צ'פניק",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f2d",
+          "email": "miki@akkerman.co.il",
+          "company": "׳אקרמן׳",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f2a",
+          "email": "diane@syntezza.com",
+          "company": "Syntezza Bioscience",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f27",
+          "email": "revitals@tavdental.com",
+          "company": "TAV Dental",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f25",
+          "email": "zamir@printiv.co.il",
+          "company": "פרינטיב",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f24",
+          "email": "alon@comsee.co.il",
+          "company": "קומסי",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f23",
+          "email": "hanita.rosenthal@abonair.com",
+          "company": "ABonAir",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f22",
+          "email": "ilan@caradviser.io",
+          "company": "Car Adviser",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f21",
+          "email": "tal@infogan.co.il",
+          "company": "אינפוגן",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f1f",
+          "email": "gabi@ytcom.co.il",
+          "company": "YTcom",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f1e",
+          "email": "nissan@ytcom.co.il",
+          "company": "YTcom",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f1d",
+          "email": "omri@gekko.co.il",
+          "company": "GEKKO",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f1c",
+          "email": "itamar@levant.co.il",
+          "company": "Levant",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f1b",
+          "email": "daniel@shade-pro.co.il",
+          "company": "Shade Pro",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f19",
+          "email": "orit@megadent.co.il",
+          "company": "MegaDent",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f15",
+          "email": "dror@holylocust.com",
+          "company": "Holy Locust Biblical Snacks",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f14",
+          "email": "amitfront@tv-spices.co.il",
+          "company": "בית",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f12",
+          "email": "liranes@gmail.com",
+          "company": "Eshed",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f0c",
+          "email": "yuval.m@nicklas.co.il",
+          "company": "ניקלס",
+          "opens": 10,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f0b",
+          "email": "oded@gazit.co.il",
+          "company": "עמוס גזית",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f09",
+          "email": "marcu@israelelwyn.org.il",
+          "company": "אלווין ישראל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f07",
+          "email": "marcel@instrumetrics.com",
+          "company": "InstruMetrics",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f04",
+          "email": "dor@cligal.com",
+          "company": "קליגל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f03",
+          "email": "alexc@impleotv.com",
+          "company": "ImpleoTV",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f02",
+          "email": "dror_s@ramdor.co.il",
+          "company": "טופ רמדור",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889f00",
+          "email": "patriciai@huliot.com",
+          "company": "Huliot",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eff",
+          "email": "yuval@gonature.co.il",
+          "company": "גו נייצ'ר",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889efe",
+          "email": "oryand@ica.org.il",
+          "company": "המרכז הישראלי להתמכרויות",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef9",
+          "email": "asaf@laofek.co.il",
+          "company": "לאופק קרוואנים",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef6",
+          "email": "dikla@l-s.co.il",
+          "company": "ליימן שליסל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef5",
+          "email": "yuval@sonolevi.co.il",
+          "company": "סונול EVI",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef4",
+          "email": "shahar.ayalon@gamida.co.il",
+          "company": "גאמידה",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef3",
+          "email": "moshe@gamida.co.il",
+          "company": "גאמידה",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef2",
+          "email": "eretznoshevet@hashomer.org.il",
+          "company": "השומר החדש",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef1",
+          "email": "efrat@hashomer.org.il",
+          "company": "השומר החדש",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ef0",
+          "email": "yoel@hashomer.org.il",
+          "company": "השומר החדש",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eee",
+          "email": "assaf@golanwines.co.il",
+          "company": "Golanwines",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eea",
+          "email": "amityonatan1@gmail.com",
+          "company": "OneFamily",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee9",
+          "email": "hen@tillacare.com",
+          "company": "UriCap by TillaCare",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee8",
+          "email": "jacky@yac.co.il",
+          "company": "פתרונות איטום",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee6",
+          "email": "tomd@studentgroup.co.il",
+          "company": "סטודנט גרופ",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee3",
+          "email": "danielk@highseclabs.com",
+          "company": "HighSecLabs",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee2",
+          "email": "aviv@highseclabs.com",
+          "company": "HighSecLabs",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee1",
+          "email": "chris.langford@highseclabs.com",
+          "company": "HighSecLabs",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ee0",
+          "email": "amihai.dekel@netzerprecision.com",
+          "company": "Netzer Precision",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889edf",
+          "email": "amir@software-sources.com",
+          "company": "Software Sources",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ede",
+          "email": "chaim@software-sources.com",
+          "company": "Software Sources",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889edd",
+          "email": "sagita@tadiran-group.co.il",
+          "company": "תדיראן",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889edc",
+          "email": "bob@root-source.com",
+          "company": "Root Source",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889edb",
+          "email": "gidon@root-source.com",
+          "company": "Root Source",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eda",
+          "email": "ryan@ots.org.il",
+          "company": "Ohr Torah Stone",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ed8",
+          "email": "kfir@roychocolate.co.il",
+          "company": "ROY CHOCOLATE",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ed6",
+          "email": "amit@sel.co.il",
+          "company": "סיריוס אלקטרוניקה",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ed4",
+          "email": "hadas@artoridesign.com",
+          "company": "Artori Design",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ed3",
+          "email": "enaiman@levhatorah.org",
+          "company": "Lev Hatorah",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ed0",
+          "email": "omril@nirlat.com",
+          "company": "נירלט",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ecf",
+          "email": "tomern@nirlat.com",
+          "company": "נירלט",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ece",
+          "email": "talb@nirlat.com",
+          "company": "נירלט",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eca",
+          "email": "yehuda@nivbook.co.il",
+          "company": "ספרי ניב",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec9",
+          "email": "noa@stybel.co.il",
+          "company": "שטיבל",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec8",
+          "email": "ilanh@trellidor.co.il",
+          "company": "טרלידור",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec7",
+          "email": "david.leclaire@galooli.com",
+          "company": "Galooli",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec6",
+          "email": "amos@silver-shadow.com",
+          "company": "Silver Shadow",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec3",
+          "email": "hila@icemalleilat.co.il",
+          "company": "ICE MALL EILAT",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ec0",
+          "email": "david@oneforisrael.org",
+          "company": "ONE FOR ISRAEL Ministry",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ebf",
+          "email": "daniel@sarig.com",
+          "company": "שריג אלקטריק",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ebe",
+          "email": "shacharb@watergen.com",
+          "company": "Watergen",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ebd",
+          "email": "barakr@watergen.com",
+          "company": "Watergen",
+          "opens": 2,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ebc",
+          "email": "alexander@terrazone.io",
+          "company": "TerraZone",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb7",
+          "email": "adams@hsw.co.il",
+          "company": "הנס שטרנבך",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb6",
+          "email": "beni@shalevsoft.co.il",
+          "company": "ShalevSoft",
+          "opens": 1,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb5",
+          "email": "ilan@shalevsoft.co.il",
+          "company": "ShalevSoft",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb3",
+          "email": "assaf@globus.co.il",
+          "company": "Globus",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb1",
+          "email": "yair@haidu.net",
+          "company": "Home",
+          "opens": 3,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eb0",
+          "email": "yaniv@cheers.co.il",
+          "company": "Home",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eaf",
+          "email": "sarin@ledico.com",
+          "company": "Ledico Bosch",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eae",
+          "email": "meital@freedom-farm.org.il",
+          "company": "חוות החופש",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ead",
+          "email": "oron@befreshcorp.net",
+          "company": "BeFresh",
+          "opens": 4,
+          "replied": 0,
+          "status": "CONTACTED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889eac",
+          "email": "saar@befreshcorp.net",
+          "company": "BeFresh",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea6",
+          "email": "yaniv@carmella.co.il",
+          "company": "כרמלה",
+          "opens": 9,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea5",
+          "email": "shir@carmella.co.il",
+          "company": "כרמלה",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea4",
+          "email": "hod@ergonomicoffice.co.il",
+          "company": "רהיטי קיסר",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea3",
+          "email": "oz@pirzul.co.il",
+          "company": "יעד פרזול",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea1",
+          "email": "rotems@ronlight.co.il",
+          "company": "Ronlight",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889ea0",
+          "email": "dov@qinflow.com",
+          "company": "QinFlow",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e9f",
+          "email": "ariel.katz@gmail.com",
+          "company": "QinFlow",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e9e",
+          "email": "michael.padgett@qinflow.com",
+          "company": "QinFlow",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e9d",
+          "email": "yaniv@kiro-inc.com",
+          "company": "ZFI Inc.",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e9c",
+          "email": "zvi@zfi-inc.com",
+          "company": "ZFI Inc.",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e9b",
+          "email": "elad@castel.co.il",
+          "company": "Domaine Du Castel",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a788610e6166f4649889e99",
+          "email": "ron@caagearup.com",
+          "company": "CAA Tactical",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recIIR28AsQ2zd4Ie"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83983",
+          "email": "ayala@onnanoko.co.il",
+          "company": "On'nanoko",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83980",
+          "email": "roni@arosport.co.il",
+          "company": "AroSport",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad8397d",
+          "email": "shahar@nimrod.co.il",
+          "company": "Nimrod",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad8397c",
+          "email": "yaron@nimrod.co.il",
+          "company": "Nimrod",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83979",
+          "email": "dor@strongful.co.il",
+          "company": "Strongful",
+          "opens": 28,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83978",
+          "email": "shannyk@femina.co.il",
+          "company": "FEMINA",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83977",
+          "email": "tal@femina.co.il",
+          "company": "FEMINA",
+          "opens": 10,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a6efac8662589d0bad83976",
+          "email": "aya@femina.co.il",
+          "company": "FEMINA",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021ec",
+          "email": "sybil@comme-il-faut.com",
+          "company": "COMME IL FAUT",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021eb",
+          "email": "ron@lilibloom.co.il",
+          "company": "ליליבלום",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021ea",
+          "email": "dafna@trestlv.com",
+          "company": "TRES TLV",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e8",
+          "email": "sheryll@blushfashion.boutique",
+          "company": "Blush Fashion",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e6",
+          "email": "yoel@ronitfurst.com",
+          "company": "רונית פורסט",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e4",
+          "email": "uri@femina.co.il",
+          "company": "FEMINA",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e3",
+          "email": "ishay@femina.co.il",
+          "company": "FEMINA",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e2",
+          "email": "daniele@kualastyle.com",
+          "company": "קואלה",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e1",
+          "email": "yuval@carolinalemke.com",
+          "company": "CAROLINA LEMKE BERLIN",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021e0",
+          "email": "tal@gentleman.co.il",
+          "company": "Gentleman",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021df",
+          "email": "odeds@renuar.co.il",
+          "company": "Renuar",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021de",
+          "email": "mashar@renuar.co.il",
+          "company": "Renuar",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021dc",
+          "email": "talia@fox.co.il",
+          "company": "FOX",
+          "opens": 4,
+          "replied": 0,
+          "status": "BOUNCED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021db",
+          "email": "shmulikgo@fox.co.il",
+          "company": "FOX",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021da",
+          "email": "maya@era-active.com",
+          "company": "era active",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021d9",
+          "email": "adi@almaola.com",
+          "company": "Alma Ola",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021d8",
+          "email": "shahar@shopvolver.com",
+          "company": "Volver",
+          "opens": 2,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021d3",
+          "email": "noa@trestlv.com",
+          "company": "TRES TLV",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021d1",
+          "email": "moti@havazingboim.co.il",
+          "company": "חוה זינגבוים",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021d0",
+          "email": "oren@raven.co.il",
+          "company": "Raven",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021ce",
+          "email": "oriya@kualastyle.com",
+          "company": "קואלה",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021cc",
+          "email": "gadis@kravitz.co.il",
+          "company": "Kravitz",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b318094cac4335021cb",
+          "email": "vladimirg@renuar.co.il",
+          "company": "Renuar",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "recfHHmQusGzc8pN6"
+        },
+        {
+          "leadId": "6a5f3b098c995c590d5e56f8",
+          "email": "talia@taliasari.com",
+          "company": "Talia Sari",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "recgJ3XsJ2QtafODY"
+        },
+        {
+          "leadId": "6a6efb62eec96691b5bfb0e3",
+          "email": "eli@planetgroup.co.il",
+          "company": "Planet Group",
+          "opens": 9,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720315",
+          "email": "nofar@yalon.co.il",
+          "company": "SHOP YALON",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720313",
+          "email": "elih@echut.co.il",
+          "company": "מחסני איכות",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720312",
+          "email": "yuval@matchaready.com",
+          "company": "matcha ready",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720311",
+          "email": "tom@pittiechoy.com",
+          "company": "Pittie Choy",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720310",
+          "email": "gal@bumpersisrael.com",
+          "company": "Bumpers באמפרס",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f541272030f",
+          "email": "tzachi@asfir.co.il",
+          "company": "אספיר 4x4",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f541272030e",
+          "email": "roni@hillula.co.il",
+          "company": "hillula",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f541272030c",
+          "email": "david@sapappy.co.il",
+          "company": "ספפי",
+          "opens": 9,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720309",
+          "email": "boris@decorstyle.co.il",
+          "company": "Decor Style",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720308",
+          "email": "tzvika@asifcosmetics.co.il",
+          "company": "Asif Cosmetics",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720305",
+          "email": "shlomi@leonidas.co.il",
+          "company": "Leonidas Israel לאונידס ישראל",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720304",
+          "email": "eyal@dvakim.com",
+          "company": "אלרם",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720303",
+          "email": "tomer@cadena.co.il",
+          "company": "Cadena",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720302",
+          "email": "tami@tamiflour.com",
+          "company": "קמח תמי",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f5412720300",
+          "email": "shani@morenad.co.il",
+          "company": "מורנה",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202fe",
+          "email": "eliav@oliereparis.com",
+          "company": "OLIE'RE PARIS",
+          "opens": 28,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202fc",
+          "email": "dimitry@bluewhiteshop.com",
+          "company": "Blue White Shop",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202fb",
+          "email": "orly@primitivetribalcraft.com",
+          "company": "Primitive Tribal Craft",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202f6",
+          "email": "naamao@laline.co.il",
+          "company": "Laline",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202f5",
+          "email": "orig@laline.co.il",
+          "company": "Laline",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202f4",
+          "email": "erez@laline.co.il",
+          "company": "Laline",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202f2",
+          "email": "tom@agalease-baby.co.il",
+          "company": "עגליס",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202f1",
+          "email": "dalit@aminach.co.il",
+          "company": "עמינח",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202ed",
+          "email": "yael@itaybrands.co.il",
+          "company": "ITAY BRANDS",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202ec",
+          "email": "itay@itaybrands.co.il",
+          "company": "ITAY BRANDS",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202eb",
+          "email": "adi@lovelylittlehouse.com",
+          "company": "Lovely Little House",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202e8",
+          "email": "yulia@padani.com",
+          "company": "Padani",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202e7",
+          "email": "lea@padani.com",
+          "company": "Padani",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efb0e4d305f54127202e5",
+          "email": "eran@homecenter.co.il",
+          "company": "הום סנטר",
+          "opens": 4,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db9",
+          "email": "yosef@yosefmore.com",
+          "company": "יוסף מור",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db8",
+          "email": "shira@shushine.co.il",
+          "company": "Shushine",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db7",
+          "email": "zeev@mayuwater.com",
+          "company": "Mayu Water",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db5",
+          "email": "hila@levnaro.com",
+          "company": "Levnaro",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db4",
+          "email": "yoni@levnaro.com",
+          "company": "Levnaro",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db3",
+          "email": "zvikas@ecp.co.il",
+          "company": "Electra Impact",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42db1",
+          "email": "yoav@zahal.org",
+          "company": "Israeli Tactical Gear",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42daf",
+          "email": "tsahi@bawaco.co.il",
+          "company": "Bawaco",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42dae",
+          "email": "neil@shevet.co.il",
+          "company": "Shevet Brewing",
+          "opens": 7,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42da8",
+          "email": "mottic@carmit.com",
+          "company": "Carmit",
+          "opens": 37,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42da3",
+          "email": "daniel@ethnicmusical.com",
+          "company": "Ethnic Musical",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42da2",
+          "email": "alex@lessandmore.co.il",
+          "company": "Less and More",
+          "opens": 8,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42da1",
+          "email": "keshet@keshlimited.com",
+          "company": "Kesh Limited",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d9f",
+          "email": "yael@brightconcept.co.il",
+          "company": "Bright Concept",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d9e",
+          "email": "elroet@opticana.co.il",
+          "company": "Opticana",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d9d",
+          "email": "sarah@freedomoses.com",
+          "company": "Freedom Moses",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d9c",
+          "email": "baruch@algae.co.il",
+          "company": "SimpliiGood",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d9a",
+          "email": "liorshalev@algae.co.il",
+          "company": "SimpliiGood",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d99",
+          "email": "joshua@igold.co.il",
+          "company": "iGold",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d98",
+          "email": "michael@whitespace.co.il",
+          "company": "Whitespace Vision",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d97",
+          "email": "zohar@nano-jewelry.com",
+          "company": "Nano Jewelry",
+          "opens": 13,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d96",
+          "email": "abarki@vineagreen.com",
+          "company": "Vinea Green",
+          "opens": 6,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d95",
+          "email": "shay@slimz.co.il",
+          "company": "Slimz",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d94",
+          "email": "shahar@barefootlife.co.il",
+          "company": "Barefoot Life",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d93",
+          "email": "dudi@wineandfriends.co.il",
+          "company": "Wine and Friends",
+          "opens": 10,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d92",
+          "email": "tsafra@collectivecollection.com",
+          "company": "Collective Collection",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d91",
+          "email": "rcooper@loopslab.com",
+          "company": "Loops Lab",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d8f",
+          "email": "liran@noorliving.co.il",
+          "company": "Noor Living",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d8e",
+          "email": "roi@bluebusft.com",
+          "company": "Bluebus Fine Tools",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d8d",
+          "email": "aaron@kravitzmedia.com",
+          "company": "Kravitz Concept",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d8b",
+          "email": "shai@yanivjewelry.co.il",
+          "company": "Yaniv Jewelry",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d8a",
+          "email": "aviv@ras.land",
+          "company": "RAS",
+          "opens": 8,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d86",
+          "email": "nica@en-culture.com",
+          "company": "En Culture",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d85",
+          "email": "mattan@laavin.com",
+          "company": "Laavin",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d84",
+          "email": "joana@magnolia-silver.pt",
+          "company": "Magnolia Silver",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d83",
+          "email": "sandra@magnoliajewelers.com",
+          "company": "Magnolia Silver Jewellery",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d81",
+          "email": "ravivb@wtea.com",
+          "company": "Wissotzky",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d7f",
+          "email": "tamir@gemeraldgems.com",
+          "company": "Gemerald",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d7e",
+          "email": "ofek@esek.biz",
+          "company": "ESEK",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d7d",
+          "email": "andrew@esek.biz",
+          "company": "ESEK",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d79",
+          "email": "haim.kairy@arcanainstruments.com",
+          "company": "Arcana Instruments",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d77",
+          "email": "iris.perlman@pulliez.com",
+          "company": "Pulliez",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d76",
+          "email": "daniel@ain-ker.com",
+          "company": "Ainker",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d75",
+          "email": "royb@ain-ker.com",
+          "company": "Ainker",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d74",
+          "email": "lee@lilushbox.com",
+          "company": "Lilushbox",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d73",
+          "email": "omer@avena.co.il",
+          "company": "Avena",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d72",
+          "email": "gal@getnoosh.com",
+          "company": "Noosh",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d70",
+          "email": "andrei@israhometours.com",
+          "company": "Israel Menu",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d6f",
+          "email": "drorv@smill.co.il",
+          "company": "Stone Mill",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d6e",
+          "email": "asaf@aresco.co.il",
+          "company": "Aresco",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d6b",
+          "email": "daniel@woodeex.com",
+          "company": "Woodeex",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d6a",
+          "email": "ariel@glassworks.io",
+          "company": "Glassworks",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d69",
+          "email": "eyal@drinkripples.com",
+          "company": "Ripples",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d68",
+          "email": "yossi@drinkripples.com",
+          "company": "Ripples",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d67",
+          "email": "roy@doron-home.co.il",
+          "company": "Doron Home",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d63",
+          "email": "beauty@mimi-luzon.com",
+          "company": "מימי לוזון",
+          "opens": 9,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d62",
+          "email": "danl@rashbel.com",
+          "company": "Rashbel",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d61",
+          "email": "gan@gan-studio.co.il",
+          "company": "גן סטודיו",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d5f",
+          "email": "yafit@beautyspa-jaffa.com",
+          "company": "Ronit Raphael by L.RAPHAEL",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d5e",
+          "email": "tomer@christina.co.il",
+          "company": "כריסטינה ישראל",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d5d",
+          "email": "charles@palaisdesthes.co.il",
+          "company": "PALAIS DES THÉS",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d5b",
+          "email": "sharon@etzmaleh.co.il",
+          "company": "עצמל'ה",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d5a",
+          "email": "ariel@etzmaleh.co.il",
+          "company": "עצמל'ה",
+          "opens": 14,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d59",
+          "email": "roy@munier.co.il",
+          "company": "מונייר",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d57",
+          "email": "rami@oliereparis.com",
+          "company": "OLIE'RE PARIS",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d56",
+          "email": "michal@pastadellacasa.com",
+          "company": "פסטה דלה קזה",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d54",
+          "email": "rafi@xtra.co.il",
+          "company": "XTRA Gift Card",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d51",
+          "email": "daniel@baby-star.co.il",
+          "company": "Baby Stars",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d50",
+          "email": "revital@baby-star.co.il",
+          "company": "Baby Stars",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d4e",
+          "email": "roni@iconix.co.il",
+          "company": "ICONIX",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d4d",
+          "email": "yair@bzigo.com",
+          "company": "Bzigo",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d4b",
+          "email": "shelly@beijaflorworld.com",
+          "company": "Beija Flor",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d4a",
+          "email": "ehudza@greetingsisland.com",
+          "company": "greetingsisland",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d48",
+          "email": "doronc@carmelberry.co.il",
+          "company": "כרמל ברי",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d47",
+          "email": "shelly@jolikachocolate.com",
+          "company": "Jolika Chocolate",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d46",
+          "email": "daniel@megageex.com",
+          "company": "MegaGeex",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d43",
+          "email": "asaf@promise-cosmetics.com",
+          "company": "Promise Cosmetics",
+          "opens": 18,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d41",
+          "email": "hoh@hoh.co.il",
+          "company": "Head Over Heels",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d3d",
+          "email": "nissim@aganbarzel.com",
+          "company": "אגן ברזל",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d3c",
+          "email": "yehoda@biotopworld.com",
+          "company": "BIOTOP PROFESSIONAL INTERNATIONAL",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d3b",
+          "email": "dan@biotopworld.com",
+          "company": "BIOTOP PROFESSIONAL INTERNATIONAL",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d3a",
+          "email": "naftaly@1item.co.il",
+          "company": "1ITEM",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d39",
+          "email": "hila@1item.co.il",
+          "company": "1ITEM",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d38",
+          "email": "maor@glam42.co.il",
+          "company": "GLAM42",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d36",
+          "email": "shahar@shugis.com",
+          "company": "Shugis",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d35",
+          "email": "asaf@xtra.co.il",
+          "company": "XTRA Gift Card",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d34",
+          "email": "eliler@floralis.co.il",
+          "company": "Floralis",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d33",
+          "email": "guyc@floralis.co.il",
+          "company": "Floralis",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d32",
+          "email": "eyal@ledmarket.co.il",
+          "company": "לדמרקט",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d31",
+          "email": "elad@nanostyle.com",
+          "company": "NanoStyle Jewelry",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d2f",
+          "email": "shahar@sweetweet.co.il",
+          "company": "העולם של Sweetweet",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d2e",
+          "email": "valerin@baby-star.co.il",
+          "company": "Baby Stars",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d2d",
+          "email": "guy@lernercapital.co.il",
+          "company": "Baby Stars",
+          "opens": 6,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d2c",
+          "email": "golan@mother-ofall.com",
+          "company": "Mother of All",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d2a",
+          "email": "tzuki@bzigo.com",
+          "company": "Bzigo",
+          "opens": 4,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d28",
+          "email": "alon@carpetshop.co.il",
+          "company": "השטיח האדום",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d27",
+          "email": "tal@pandazzz.com",
+          "company": "PandaZzz",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d26",
+          "email": "adir@pandazzz.com",
+          "company": "PandaZzz",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a5f3adc845fb2d211f42d25",
+          "email": "ziv@pandazzz.com",
+          "company": "PandaZzz",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reciNP4lkMhAAk2wN"
+        },
+        {
+          "leadId": "6a6efad7a802d9d8fa4ec0e9",
+          "email": "ido@sandycup.com",
+          "company": "SandyCup",
+          "opens": 1,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a6efad7a802d9d8fa4ec0e8",
+          "email": "efrat@econawa.co",
+          "company": "econawa",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a6efad7a802d9d8fa4ec0e6",
+          "email": "rina@hollandia.co.il",
+          "company": "Hollandia",
+          "opens": 6,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a6efad7a802d9d8fa4ec0e5",
+          "email": "avi@hollandia.co.il",
+          "company": "Hollandia",
+          "opens": 5,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "MICROSOFT365",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e5304",
+          "email": "yair@advice.co.il",
+          "company": "ADVICE Electronics",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e5303",
+          "email": "yoav@creama.co.il",
+          "company": "Creama+",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e5302",
+          "email": "dvir@sellameir.com",
+          "company": "הוצאת סלע מאיר",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e5301",
+          "email": "roi@sellameir.com",
+          "company": "הוצאת סלע מאיר",
+          "opens": 11,
+          "replied": 1,
+          "status": "REPLIED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e5300",
+          "email": "danny@dannyeliav.com",
+          "company": "׳דני אליאב׳",
+          "opens": 3,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e52ff",
+          "email": "eli@advice.co.il",
+          "company": "ADVICE Electronics",
+          "opens": 7,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e52fe",
+          "email": "dor@creama.co.il",
+          "company": "Creama+",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "REGULAR_ACCOUNT",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        },
+        {
+          "leadId": "6a5f3a8c8c995c590d5e52fc",
+          "email": "shanie@sillyshiny.com",
+          "company": "Silly Shiny Diamonds",
+          "opens": 2,
+          "replied": 0,
+          "status": "COMPLETED",
+          "mx": "GOOGLE_WORKSPACE",
+          "campaignRecId": "reczHLxDjqOxXuDrp"
+        }
+      ],
+      "campSummary": [
+        {
+          "campaign": "2026-08-06 - Israeli DTC Hebrew - General - No Name - pitch-led",
+          "leads": 338,
+          "sent": 256,
+          "notSent": 82,
+          "openers": 159
+        },
+        {
+          "campaign": "2026-08-06 - Israeli DTC Hebrew - General - pitch-led",
+          "leads": 337,
+          "sent": 234,
+          "notSent": 103,
+          "openers": 145
+        },
+        {
+          "campaign": "2026-07-20 - Israeli DTC Hebrew - Fashion & Footwear - No Bot - pitch-led",
+          "leads": 51,
+          "sent": 48,
+          "notSent": 3,
+          "openers": 31
+        },
+        {
+          "campaign": "2026-07-20 - Israeli DTC Hebrew - Fashion & Footwear - Has Bot - pitch-led",
+          "leads": 1,
+          "sent": 1,
+          "notSent": 0,
+          "openers": 1
+        },
+        {
+          "campaign": "2026-07-20 - Israeli DTC Hebrew - General DTC - No Bot - pitch-led",
+          "leads": 199,
+          "sent": 184,
+          "notSent": 15,
+          "openers": 129
+        },
+        {
+          "campaign": "2026-07-20 - Israeli DTC Hebrew - General DTC - Has Bot - pitch-led",
+          "leads": 14,
+          "sent": 13,
+          "notSent": 1,
+          "openers": 12
+        }
+      ],
+      "ctx": {
+        "clientRecId": "recN79He6wwPKogUR",
+        "clientName": "Adelante"
+      },
+      "runStartedAt": 1786680069922
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "d8980f46-0950-4076-9099-ec2976ca7ab7",
+  "activeVersionId": "d8980f46-0950-4076-9099-ec2976ca7ab7",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-07T11:28:29.132Z",
+      "createdAt": "2026-08-07T11:28:29.132Z",
+      "role": "workflow:owner",
+      "workflowId": "pWRtC1E8DkkGpvhN",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:29:30.692Z",
+    "createdAt": "2026-08-08T20:29:30.692Z",
+    "versionId": "d8980f46-0950-4076-9099-ec2976ca7ab7",
+    "workflowId": "pWRtC1E8DkkGpvhN",
+    "nodes": [
+      {
+        "id": "943ddcb2-3464-4fe9-995e-ace40de342ff",
+        "name": "Addon Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          192
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "addon-pvsync-adelante",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "2e53ccd8-cdc5-420e-a691-242e347a5927"
+      },
+      {
+        "id": "af22fb39-189b-4d5f-825d-bb69e6778c27",
+        "name": "Get Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          192
+        ],
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "b1591306-03f1-4b75-888e-5ee4d74e8dff",
+        "name": "Get Tracked Campaigns",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          192
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "{Open Tracking} = TRUE()",
+          "returnAll": true,
+          "options": {}
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "9403e9f5-eaa5-4596-8168-6fb7fe21dc4c",
+        "name": "Build Work",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          192
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.openRows=[];\nsd.campSummary=[];\nconst cl=$('Get Client').first().json||{};\nconst cf=cl.fields||cl;\nconst clientRecId=cl.id||'';\nsd.ctx={clientRecId, clientName: cf['Client']||''};\nconst ws=String(cf['PlusVibe Workspace ID']||'').trim();\nconst toId=(c)=> typeof c==='string'?c:((c&&c.id)||'');\nconst out=[];\nfor(const it of $input.all()){\n  const j=it.json||{}; const f=j.fields||j;\n  if(!j.id) continue;\n  const cl2=Array.isArray(f.Client)?f.Client.map(toId):[];\n  if(!cl2.includes(clientRecId)) continue;\n  out.push({ json: { campaignRecId: j.id, campaignId: String(f['Campaign ID']||'').trim(), campaignName: f['Campaign']||'', pvWorkspace: ws } });\n}\nreturn out.filter(o=>o.json.campaignId);"
+        }
+      },
+      {
+        "id": "815152c6-9bc0-40fc-a523-ab69dfb3b732",
+        "name": "Emit Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1120,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst ctx=sd.ctx||{};\nconst rows=(sd.openRows||[]).slice().sort((a,b)=>b.opens-a.opens);\nconst now=$now.toISO();\nif(!rows.length) return [];\nreturn rows.map(r=>({ json: {\n 'Email': r.email,\n 'Opens': r.opens,\n 'Company': r.company,\n 'Campaign': r.campaignRecId?[r.campaignRecId]:[],\n 'Client': ctx.clientRecId?[ctx.clientRecId]:[],\n 'Replied': r.replied,\n 'Status': r.status,\n 'MX': r.mx,\n 'PV Lead ID': r.leadId,\n 'Last Synced': now\n}}));"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "3d9a04e6-9ade-4149-ac4c-75f4709973ee",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1792,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst rs=sd.runStartedAt||0;\nconst ctx=sd.ctx||{};\nconst sum=sd.campSummary||[];\nconst rows=sd.openRows||[];\nlet written=0;\ntry{ written=$('Upsert Openers').all().filter(i=>i&&i.json&&i.json.id).length; }catch(e){}\nconst lines=sum.map(s=> '- **'+s.campaign+':** '+s.openers+' openers · '+s.sent+' sent · '+s.notSent+' never sent');\nconst bad = rows.length>0 && written===0;\nconst descParts=['**'+(ctx.clientName?ctx.clientName+': ':'')+sum.length+' tracked campaign(s), '+rows.length+' openers, '+written+' rows upserted**'];\nif(lines.length) descParts.push('**Campaigns**\\n'+lines.join('\\n'));\nif(bad) descParts.push('**NO ROWS WRITTEN**');\nconst desc=descParts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Pull campaign opens for adelante',\n 'Status': bad ? 'Failed' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Client': ctx.clientRecId ? [ctx.clientRecId] : [],\n 'Records In': sum.reduce((s,r)=>s+(r.leads||0),0),\n 'Records Out': written,\n 'Errors': bad ? 1 : 0,\n 'Target': 'Openers table',\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "d44a5bf2-d925-4d0c-9280-56ba98ed85c9",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2016,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "executeOnce": true,
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "5debd20f-f73e-4af8-92ba-494e8eaeeda1",
+        "name": "PV List Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          192
+        ],
+        "parameters": {
+          "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.pvWorkspace }}"
+              },
+              {
+                "name": "campaign_id",
+                "value": "={{ $json.campaignId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "page",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body || $response.body.length === 0 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 30,
+                "requestInterval": 500
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0116395d-8e7c-44d6-8aea-2ad7254ed750",
+        "name": "Collect Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          272
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst cw=$('Loop Campaigns').first().json||{};\nconst pool=[];\nfor(const it of $input.all()){ const r=(it&&it.json)||{}; if(Array.isArray(r)){ pool.push(...r); } else if(Array.isArray(r.data)){ pool.push(...r.data); } else if(r.email!==undefined){ pool.push(r); } }\nlet opened=0, sent=0, notSent=0;\nfor(const l of pool){\n  const st=String(l.status||'').toUpperCase();\n  if(!((l.sent_step||0)>0 && st!=='SKIPPED')){ notSent++; continue; }\n  sent++;\n  const o=Number(l.opened_count||0);\n  if(o>0){ opened++; sd.openRows.push({ leadId:String(l._id||l.id||''), email:String(l.email||''), company:String(l.company_name||''), opens:o, replied:Number(l.replied_count||0), status:st, mx:String(l.mx||''), campaignRecId:cw.campaignRecId||'' }); }\n}\nsd.campSummary.push({ campaign:cw.campaignName||'', leads:pool.length, sent, notSent, openers:opened });\nreturn [{ json: { campaign: cw.campaignName||'', openers: opened } }];"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b71ecc6e-c165-4878-b0aa-05866bea72f6",
+        "name": "Loop Campaigns",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          896,
+          192
+        ],
+        "parameters": {
+          "batchSize": 1
+        }
+      },
+      {
+        "id": "9af431bb-392a-44da-9d37-d0c004e3e847",
+        "name": "Upsert Openers",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1900,
+          200
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblPcilRrsiEeyIyn"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "PV Lead ID"
+            ],
+            "schema": [],
+            "value": {
+              "Email": "={{ $json.Email }}",
+              "Opens": "={{ $json.Opens }}",
+              "Company": "={{ $json.Company }}",
+              "Campaign": "={{ $json.Campaign }}",
+              "Client": "={{ $json.Client }}",
+              "Replied": "={{ $json.Replied }}",
+              "Status": "={{ $json.Status }}",
+              "MX": "={{ $json.MX }}",
+              "PV Lead ID": "={{ $json['PV Lead ID'] }}",
+              "Last Synced": "={{ $json['Last Synced'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Addon Webhook": {
+        "main": [
+          [
+            {
+              "node": "Get Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Client": {
+        "main": [
+          [
+            {
+              "node": "Get Tracked Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Tracked Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Build Work",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Work": {
+        "main": [
+          [
+            {
+              "node": "Loop Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV List Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Rows": {
+        "main": [
+          [
+            {
+              "node": "Loop Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Emit Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "PV List Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Emit Rows": {
+        "main": [
+          [
+            {
+              "node": "Upsert Openers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Openers": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

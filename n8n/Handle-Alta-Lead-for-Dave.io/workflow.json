@@ -1,0 +1,884 @@
+{
+  "updatedAt": "2026-07-29T08:38:55.000Z",
+  "createdAt": "2026-07-22T09:59:28.143Z",
+  "id": "3mSwuaHONSRBl6l9",
+  "name": "Handle Alta Lead for Dave.io",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alta-dave-new-reply",
+        "options": {}
+      },
+      "id": "6c542874-ad27-4a42-a115-1f21f132ed4c",
+      "name": "Alta Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "f69da4d1-96f9-4c18-893f-93b0fc9869a1"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Capture-Payload.js"
+      },
+      "id": "785bff97-3938-4e5c-ac51-49625ad4529d",
+      "name": "Capture Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "reclCOYRBgMowJd8G",
+        "options": {}
+      },
+      "id": "35977ca2-19dd-4600-b4f6-83de1e52b9dd",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Vars.js"
+      },
+      "id": "f8e13f98-3c07-43e5-a1d2-7c4e1002ae8b",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Alta-Normalize.js"
+      },
+      "id": "f3629faa-5d0e-4a17-b742-dff8bda7d856",
+      "name": "Alta Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Execution ID": "={{ $execution.id }}",
+            "Automation": "Handle New Lead",
+            "Client": "={{ [$('Client Vars').first().json.clientRecId] }}",
+            "Run at": "={{ $now.toISO() }}",
+            "Status": "Running",
+            "Target": "Alta",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/3mSwuaHONSRBl6l9/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "3dd3878a-def8-485d-8a52-998f45e29363",
+      "name": "Log Run Start",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec67c935-1b5f-4038-a577-66fe8b4c665a",
+      "name": "Lead in CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LEAD: {{ $('Alta Normalize').first().json.first_name }} {{ $('Alta Normalize').first().json.last_name }} | {{ $('Alta Normalize').first().json.job_title }} | {{ $('Alta Normalize').first().json.company_name }} | {{ $('Alta Normalize').first().json.lead_email || $('Alta Normalize').first().json.linkedin_url }}\nSOURCE: Alta ({{ $('Alta Normalize').first().json.reply_channel }} reply)\nEMAIL TYPE: {{ $('Alta Normalize').first().json.is_freemail ? 'PERSONAL/FREEMAIL, the domain is the email provider, NOT the company; web-search the real company + phone' : ($('Alta Normalize').first().json.lead_email ? 'business domain' : 'no email, LinkedIn lead') }}\nLOCATION: {{ $('Alta Normalize').first().json.city }}, {{ $('Alta Normalize').first().json.state }}, {{ $('Alta Normalize').first().json.country_code }}\nDOMAIN: {{ $('Alta Normalize').first().json.domain }}\nLINKEDIN: {{ $('Alta Normalize').first().json.linkedin_url }}\n\nCOMPANY DATA (from Alta enrichment; fields may be missing, verify with web search):\nindustry: {{ $('Alta Normalize').first().json.company_industry }} | size: {{ $('Alta Normalize').first().json.company_size }} | revenue: {{ $('Alta Normalize').first().json.company_revenue }} | founded: {{ $('Alta Normalize').first().json.company_founded }} | HQ: {{ $('Alta Normalize').first().json.company_hq }}\nDescription: {{ $('Alta Normalize').first().json.company_description }}\nTechnologies: {{ $('Alta Normalize').first().json.company_tech }}\n\nCONTACT ENRICHMENT (may be empty):\nphone: {{ $('Alta Normalize').first().json.native_phone }} | seniority: {{ $('Alta Normalize').first().json.seniority }} | title: {{ $('Alta Normalize').first().json.job_title }}\n\nPROSPECT LATEST REPLY:\n{{ $('Alta Normalize').first().json.reply_text }}\n\nRun the qualification. Output structured JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
+        }
+      },
+      "id": "3cf8ddb5-8349-428e-bb72-97753395e770",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "cd081e63-abfc-4346-8615-8f1c8dbbf45f",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2256,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9P7fOmZxpETeDhu8",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Apollo Moving\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"recommended_action\":\"Book Sam direct\"}",
+        "autoFix": true
+      },
+      "id": "438e1b7d-56ea-454a-a9f1-779f50daa9fc",
+      "name": "Parse Qualification",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2384,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten.js"
+      },
+      "id": "43b2c84a-24b8-4420-b777-a27a9ff22d61",
+      "name": "Flatten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.slackChannel }}"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ (function(){ var F=$('Flatten').first().json; var N=$('Alta Normalize').first().json; var company=F.company_name||'Unknown'; var tz=F.custom_timezone||''; var zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AKT:'America/Anchorage',HT:'Pacific/Honolulu'}; var zone=zmap[tz]||'America/New_York'; var localTime=$now.setZone(zone).toFormat('cccc h:mma'); var name=N.full_name; var title=(N.job_title||'').trim(); var contact=N.lead_email||N.linkedin_url||''; var whoParts=[]; if(name)whoParts.push(name); if(title)whoParts.push(title); if(contact)whoParts.push(contact); var who=name?whoParts.join(' · '):('General inbox ('+contact+'), confirm the decision-maker'); var city=(N.city||'').trim(); var where=(city?city+', ':'')+tz+' · now '+localTime; var reply=(F.reply_text||'').replace(/\\s+/g,' ').trim().slice(0,600)||'interested, see thread'; var head='🔥 New interested lead, '+company+'\\nVia: Alta · '+(F.reply_channel||'reply')+'\\nWho: '+who+'\\nWhere: '+where+'\\nTheir reply: '+reply; var brief=(F.custom_qualification_brief||'').slice(0,2900); var t1={type:'mrkdwn',text:head.slice(0,2900)}; var b1={type:'section',text:t1}; var blocks=[b1]; if(brief){ blocks.push({type:'divider'}); var t2={type:'mrkdwn',text:brief}; var b2={type:'section',text:t2}; blocks.push(b2); } return JSON.stringify({blocks:blocks}); })() }}",
+        "text": "=New interested lead (Alta): {{ $('Flatten').first().json.company_name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "20312031-a806-493c-8566-ef71a78b5ed8",
+      "name": "Slack Client Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        3488,
+        0
+      ],
+      "webhookId": "6ceafe4f-07f5-4d7e-b316-b561a59fb863",
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Execution ID": "={{ $execution.id }}",
+            "Status": "Succeeded",
+            "Records In": 1,
+            "Records Out": 1,
+            "Description": "=Handle Alta Lead run — {{ $('Flatten').item.json.company_name }} ({{ $('Flatten').item.json.reply_channel }} reply).\n• Verdict: {{ $('Flatten').item.json.custom_qualification_status }}\n• Next: {{ $('Flatten').item.json.recommended_action }}"
+          },
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "37d0fa41-919d-49d1-8c76-33653fa2d436",
+      "name": "Log Run Done",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "01bc507b-8699-4de0-b527-9b3b2526b40a",
+      "name": "Screen Reply",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1100,
+        -200
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=REPLY (via Alta, {{ $('Alta Normalize').first().json.reply_channel }}), from {{ $('Alta Normalize').first().json.full_name }} at {{ $('Alta Normalize').first().json.company_name }}:\n\n{{ $('Alta Normalize').first().json.reply_text }}\n\nClassify it. Output JSON only.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You classify a prospect's reply to cold outreach. Output JSON only, one field: verdict.\n\nverdict = INTERESTED when the reply shows any openness: questions, curiosity, timing interest (even 'maybe later this quarter'), asks for more info, booking talk, or forwarding to a SPECIFIC named person with a door open.\nverdict = PASS when they clearly decline: not interested, we are good, stop reaching out, unsubscribe, remove me, a firm no with no door open - AND ALSO when the person says they left the company or are no longer the right person, unless they hand over a specific named colleague to continue with. A polite sign-off like 'best of luck' or 'let me know if you have questions' does NOT make a pass interested.\nverdict = AUTO for out-of-office and automated replies.\n\nWhen otherwise uncertain, choose INTERESTED - a human reviews everything downstream, and losing a real lead costs more than reviewing a pass."
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "701804b7-3173-43ff-a0f2-afa2ee7e3b96",
+      "name": "Parse Screen",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1260,
+        -20
+      ],
+      "parameters": {
+        "jsonSchemaExample": "{\"verdict\":\"INTERESTED\"}"
+      }
+    },
+    {
+      "id": "5d7a8d0e-f5d9-4e7f-89df-d4bb5241ae5d",
+      "name": "Interested?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        -200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "s1",
+              "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "PASS"
+            },
+            {
+              "id": "s2",
+              "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "AUTO"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a35308a3-4225-428c-8af7-a60d0baeecef",
+      "name": "Log Pass",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        -360
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Execution ID": "={{ $execution.id }}",
+            "Automation": "Handle New Lead",
+            "Client": "={{ [$('Get Client Row').first().json.id] }}",
+            "Run at": "={{ $now.toISO() }}",
+            "Status": "Succeeded",
+            "Records In": 1,
+            "Records Out": 0,
+            "Errors": 0,
+            "Trigger": "event",
+            "Target": "={{ $('Alta Normalize').first().json.lead_email || $('Alta Normalize').first().json.linkedin_url }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/3mSwuaHONSRBl6l9/executions/{{ $execution.id }}",
+            "Description": "=Alta reply screened as {{ $json.output ? $json.output.verdict : 'UNKNOWN' }} — {{ $('Alta Normalize').first().json.full_name }} at {{ $('Alta Normalize').first().json.company_name }}: \"{{ $('Alta Normalize').first().json.reply_text }}\"\nNot treated as interested: no CRM artifacts, no card. Opt-out stays a human call — review in the Alta inbox / next Inbox run."
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d6ecd512-5376-4022-988e-f38b6d6efeb4",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"{{ $('Client Vars').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Alta Normalize').item.json.is_freemail ? '' : $('Alta Normalize').item.json.domain }}\" != \"\", {domain} = \"{{ $('Alta Normalize').item.json.is_freemail ? '' : $('Alta Normalize').item.json.domain }}\"), LOWER({Name}) = LOWER(\"{{ $('Alta Normalize').item.json.company_name }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "645839f4-ec6a-4317-ac98-cf142cb1a4e1",
+      "name": "Create CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Alta Normalize').item.json.company_name || $('Alta Normalize').item.json.full_name || $('Alta Normalize').item.json.lead_email }}",
+            "Website": "={{ ($('Alta Normalize').item.json.domain && !$('Alta Normalize').item.json.is_freemail) ? ('https://' + $('Alta Normalize').item.json.domain) : null }}",
+            "Client": "={{ [ $('Client Vars').first().json.clientRecId ] }}",
+            "Headcount": "={{ $('Alta Normalize').item.json.company_size || null }}",
+            "ARR": "={{ $('Alta Normalize').item.json.company_revenue || null }}",
+            "LinkedIn": "={{ $('Alta Normalize').item.json.company_linkedin || null }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "857f69a7-3e4c-4c84-9230-aa4d6a7fc553",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Alta Normalize').item.json.first_name || $('Alta Normalize').item.json.lead_email }}",
+            "lastName": "={{ $('Alta Normalize').item.json.last_name || null }}",
+            "position": "={{ $('Alta Normalize').item.json.job_title || null }}",
+            "email": "={{ $('Alta Normalize').item.json.lead_email || null }}",
+            "phone": "={{ $('Alta Normalize').item.json.native_phone || null }}",
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b29ef52e-ff15-4aad-9e05-8196d3e01132",
+      "name": "Set CRM Verdict",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2816,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Create CRM Prospect').item.json.id }}",
+            "PipelineStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
+            "Qualification Brief": "={{ $('Flatten').item.json.custom_qualification_brief || '' }}",
+            "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied via Alta outreach (' + ($('Alta Normalize').item.json.reply_channel || 'reply') + ($('Alta Normalize').item.json.alta_campaign_id ? ', campaign ' + $('Alta Normalize').item.json.alta_campaign_id : '') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Alta Webhook": {
+      "main": [
+        [
+          {
+            "node": "Capture Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Payload": {
+      "main": [
+        [
+          {
+            "node": "Get Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Row": {
+      "main": [
+        [
+          {
+            "node": "Client Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Vars": {
+      "main": [
+        [
+          {
+            "node": "Alta Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 5.1 Qualifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Parse Qualification",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Screen Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Client Channel": {
+      "main": [
+        [
+          {
+            "node": "Log Run Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Normalize": {
+      "main": [
+        [
+          {
+            "node": "Screen Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Screen": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Screen Reply",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Screen Reply": {
+      "main": [
+        [
+          {
+            "node": "Interested?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interested?": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Pass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead in CRM?": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Log Run Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Lead in CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Run Start": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten": {
+      "main": [
+        [
+          {
+            "node": "Set CRM Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CRM Verdict": {
+      "main": [
+        [
+          {
+            "node": "Slack Client Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "9f32b911-ebe2-4b33-9a94-30b817cd76cb",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-22T09:59:28.150Z",
+      "createdAt": "2026-07-22T09:59:28.150Z",
+      "role": "workflow:owner",
+      "workflowId": "3mSwuaHONSRBl6l9",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

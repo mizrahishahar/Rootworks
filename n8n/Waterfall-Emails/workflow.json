@@ -1,0 +1,4488 @@
+{
+  "updatedAt": "2026-08-14T12:09:11.480Z",
+  "createdAt": "2026-06-11T13:32:36.773Z",
+  "id": "iNzuePWU2UoByJ7U",
+  "name": "Waterfall Emails",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Run Full Waterfall",
+        "formDescription": "Find + verify emails. Catch-alls resolve in the background via the BounceBan Poller.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Clayroots Base ID",
+              "placeholder": "appXXXXXXXXXXXXXX",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table ID",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Max Rows",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "View"
+            }
+          ]
+        },
+        "options": {
+          "path": "notebook",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/iNzuePWU2UoByJ7U/executions/{{ $execution.id }}"
+            }
+          }
+        }
+      },
+      "id": "057b9c9e-c4a2-466d-814f-131020be82e9",
+      "name": "Run",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -32,
+        128
+      ],
+      "webhookId": "cd219fee-0c15-4a47-9f68-7028db7c0927"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json['Clayroots Base ID'] }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "43837612-9fd2-457e-95c5-f1c121c45670",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        32
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Email-Guard.js"
+      },
+      "id": "d227eea2-c7da-416e-abcc-a752df1aed34",
+      "name": "Email Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Field-List.js"
+      },
+      "id": "a3326d94-9857-48fd-b7a4-fd85d3d5f8b7",
+      "name": "Field List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json['Clayroots Base ID'] }}/tables/{{ $('Params').first().json['Table ID'] }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.def }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6c111717-a230-4df0-b075-00f235c3deec",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1536,
+        32
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json['Clayroots Base ID'] }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json['Table ID'] }}"
+        },
+        "filterByFormula": "=AND(NOT({Status} = 'done'), NOT({Status} = 'verifying'), OR('{{ $('Params').first().json.recordId }}' = '', RECORD_ID() = '{{ $('Params').first().json.recordId }}'))",
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params').first().json['View'] }}"
+          }
+        }
+      },
+      "id": "ba3a3c75-071b-482b-afdb-01bbbb36e350",
+      "name": "Fetch Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        32
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0].trim() }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 500
+            }
+          }
+        }
+      },
+      "id": "a042825b-ea80-4afd-844c-2a89c07f1cb8",
+      "name": "MV P0",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2656,
+        -48
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "ok"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "catch_all"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "catch_all"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "unknown"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "0dc056bd-6a0a-445b-911d-9d608f2a8d70",
+      "name": "Route P0",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Verdict.js"
+      },
+      "id": "24404ebd-34f2-4887-a434-e3d759efa596",
+      "name": "Verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/To-Airtable.js"
+      },
+      "id": "38a74e8d-be2d-4f70-9851-16b577a90ca8",
+      "name": "To Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5120,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Read Records').first().json._baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Read Records').first().json._tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "081f5f23-ca4c-4b11-b401-2a584ab9ea26",
+      "name": "Update Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5344,
+        -64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "401e7696-7df5-49d9-abfa-c372875fce78",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "f38b05b8-805b-4b3c-9df1-09288afd61e0",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6016,
+        -160
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Pending.js"
+      },
+      "id": "a89e0cd8-cf64-4902-82f9-89e0b4279f69",
+      "name": "Collect Pending",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5120,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tllfBn4NycLftdef",
+          "cachedResultName": "BounceBan Poller"
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "e248c894-87f3-4bd3-8540-57cd5a93ce24",
+      "name": "Fire Poller",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        5344,
+        208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.trykitt.ai/job/find_email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"fullName\": $('Read Records').item.json.fields.Name, \"domain\": $('Read Records').item.json.fields.Domain, \"realtime\": true } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "4ab2d92b-d7df-4ee3-9e59-668c9bbac8fb",
+      "name": "Trykitt Find",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3104,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xA9qeeOfp7lxqy7V",
+          "name": "Trykitt"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Trykitt Find').item.json.email }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 500
+            }
+          }
+        }
+      },
+      "id": "a3411e65-7a75-4882-877c-a50f84dd6fb9",
+      "name": "MV P1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3552,
+        96
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "ok"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "catch_all"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "catch_all"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "unknown"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "4ae8d277-9b0a-49b5-b61f-7d1f239f8849",
+      "name": "Route P1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        3776,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.leadmagic.io/v1/people/email-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"first_name\": $('Read Records').item.json.fields.first_name, \"last_name\": $('Read Records').item.json.fields.last_name, \"domain\": $('Read Records').item.json.fields.Domain } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "b79afeca-d470-4ba4-a606-d5900763bd3e",
+      "name": "LeadMagic Find",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4000,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oMWq3aRIRMhIkSur",
+          "name": "Lead Magic"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('LeadMagic Find').item.json.email }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 500
+            }
+          }
+        }
+      },
+      "id": "82f59205-8b10-441c-95ba-b33af07b809b",
+      "name": "MV P2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4448,
+        208
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "ok"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "catch_all"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "catch_all"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "unknown"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "4dcc3f85-608d-4afe-a128-ecf31c016b13",
+      "name": "Route P2",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": "={{ $('Params').first().json['Max Rows'] || 100000 }}"
+      },
+      "id": "9794dd70-c7f5-4442-bdc8-e791bc4ae042",
+      "name": "Cap Rows",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        112
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (($json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1037427b-5144-4a67-a40b-c480607b3ee4",
+      "name": "Has P0 Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.email || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            },
+            {
+              "leftValue": "={{ $json.email || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "no-results-found"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "be02d16d-3568-4ff9-8f32-026b891a8a6f",
+      "name": "Trykitt Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3328,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.email || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0efa6a2c-5e98-46eb-83ae-28790f4a95ea",
+      "name": "LeadMagic Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4224,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waterfall-record",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "4bde0ac9-58f3-433e-9021-222acc118beb",
+      "name": "Record Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -704,
+        208
+      ],
+      "webhookId": "f681311d-94cf-488c-ae61-d0ece6f8a751"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "Table ID",
+              "value": "={{ $json['Table ID'] || ($json.body && $json.body.tableId) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "Max Rows",
+              "value": "={{ $json['Max Rows'] || ($json.body && $json.body.maxRows) || 100000 }}",
+              "type": "number"
+            },
+            {
+              "id": "p3",
+              "name": "View",
+              "value": "={{ $json['View'] || ($json.body && $json.body.view) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "recordId",
+              "value": "={{ $json.recordId || ($json.body && $json.body.recordId) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "Clayroots Base ID",
+              "value": "={{ $json['Clayroots Base ID'] || ($json.body && $json.body.baseId) || 'appSTTKOc9Afqer9d' }}",
+              "type": "string"
+            },
+            {
+              "id": "p6",
+              "name": "_launchRecordId",
+              "value": "={{ $json._launchRecordId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p7",
+              "name": "clientRecordId",
+              "value": "={{ $json.clientRecordId || ($json.body && $json.body.clientRecordId) || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2bdaa04-56a4-49df-b964-17126834ba51",
+      "name": "Params",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={Clayroots Base ID} = '{{ $('Params').first().json['Clayroots Base ID'] }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "6f9ffb07-23c2-4302-93dd-55954d02a305",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        224
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Fix-Client.js"
+      },
+      "id": "7221fd3b-a013-4f22-8d59-f25cdb02b71b",
+      "name": "Fix Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5792,
+        -160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-waterfall-emails",
+        "options": {}
+      },
+      "id": "6bee95ce-9a07-428b-9cf7-fef5a02f92ca",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -704,
+        -64
+      ],
+      "webhookId": "5fc367c5-a25d-435f-ae49-1d8af53e645e"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "a6dfc124-4527-4ad2-a2a9-9697dd98540b",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $json.fields.Client[0] }}",
+        "options": {}
+      },
+      "id": "721641a6-fa96-4267-9cf3-5f22e61df43f",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        -64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "89fa9504-ca76-4cab-86aa-8ff82f1bad96",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._launchRecordId || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a86833df-94db-4485-95fd-de46fce9c774",
+      "name": "Launched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json._launchRecordId }}",
+            "Status": "Running",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "359cadbc-7ab0-495c-afde-3c4afbff1bf2",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -48
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "342c14c4-9210-40e5-8b16-f11759c1f48c",
+      "name": "Rows Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.prospeo.io/enrich-person",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"data\": { \"first_name\": $('Read Records').item.json.fields.first_name, \"last_name\": $('Read Records').item.json.fields.last_name, \"company_website\": $('Read Records').item.json.fields.Domain } } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "ee414b91-0960-4007-b6ac-b1f93ece9336",
+      "name": "Prospeo Find",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4448,
+        464
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uFPdaX8JAe5KLQdL",
+          "name": "Prospeo"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "P3 tier. Attach the \"Prospeo\" Header Auth credential manually: the n8n API cannot set credentials on httpRequest nodes."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.email) || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": ""
+            },
+            {
+              "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.email) || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              },
+              "rightValue": "*"
+            },
+            {
+              "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.revealed === true) ? 'yes' : 'no' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "96855a43-9c92-40c5-9c42-9bfebbb9aec2",
+      "name": "Prospeo Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4640,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Prospeo Find').item.json.person.email.email }}"
+            },
+            {
+              "name": "timeout",
+              "value": "45"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 500
+            }
+          }
+        }
+      },
+      "id": "9dcdeab2-cd66-49c4-9f4e-1dfd7c78c4f6",
+      "name": "MV P3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4832,
+        464
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "MillionVerifier gate for the Prospeo tier. Uses the same MillionVerifier query-auth credential as MV P0 / MV P1 / MV P2; attach it manually."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "ok"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.result }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "catch_all"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "catch_all"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "06156f4c-2c76-4dfa-9bd3-2725cb7f87b3",
+      "name": "Route P3",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        5024,
+        464
+      ]
+    },
+    {
+      "id": "156734af-e1a3-42d4-8a01-f4d8bbda4025",
+      "name": "Pack Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        200
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Pack-Rows.js"
+      },
+      "notes": "Carries parent-run context into each batch item so the sub-execution can resolve base, table, client, run id and start time without reaching back to Params / Email Guard / Resolve Client."
+    },
+    {
+      "id": "7eb7c318-9138-4ef5-af22-24acf833f90c",
+      "name": "Batch",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3550,
+        200
+      ],
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "notes": "100 rows per sub-execution. Keeps every $('Read Records').item lookup resolving against 100 items instead of the whole table."
+    },
+    {
+      "id": "33e3d70d-5808-4e7f-9725-989a35b3712d",
+      "name": "Run Batch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3700,
+        280
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "iNzuePWU2UoByJ7U",
+          "cachedResultName": "Waterfall Emails"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "Calls this same workflow. Entry point on the other side is Batch Trigger, which never reaches Fetch Rows, so there is no recursion."
+    },
+    {
+      "id": "200e6eca-def4-4208-baac-7d14406aa8ef",
+      "name": "Batch Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        3200,
+        700
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "59982a75-1dab-4ecb-a6a4-3f22aa039d70",
+      "name": "Read Records",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3350,
+        700
+      ],
+      "parameters": {},
+      "notes": "Deliberately named Read Records so every existing $('Read Records').item expression in the finder and Verdict nodes keeps resolving, now against one batch."
+    },
+    {
+      "id": "5473a786-d5c2-449a-b0b4-3583cdbc2e2f",
+      "name": "Read Log Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5230,
+        -64
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "={Execution ID} = '{{ $('Read Records').first().json._execId }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Durable accumulator. Static data written inside a sub-execution is not persisted back, so each batch reads the run's Hub row, adds its slice, and writes it again. Batches are sequential, so no race.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2131259c-83c7-482b-abaa-326be81fa6d7",
+      "name": "Batch Tick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3700,
+        400
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Tick.js"
+      },
+      "notes": "Always emits exactly one item so the Split In Batches loop advances regardless of what the sub-execution returned. The sub's last node is Collect Pending, which is empty whenever a batch sends nobody to BounceBan; feeding that straight back stopped the loop after one batch.",
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Email Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Guard": {
+      "main": [
+        [
+          {
+            "node": "Field List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Field List": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Field": {
+      "main": [
+        [
+          {
+            "node": "Fetch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route P0": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trykitt Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "node": "To Airtable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To Airtable": {
+      "main": [
+        [
+          {
+            "node": "Update Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Pending": {
+      "main": [
+        [
+          {
+            "node": "Fire Poller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route P1": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LeadMagic Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route P2": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prospeo Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has P0 Email?": {
+      "main": [
+        [
+          {
+            "node": "MV P0",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trykitt Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trykitt Find": {
+      "main": [
+        [
+          {
+            "node": "Trykitt Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trykitt Found?": {
+      "main": [
+        [
+          {
+            "node": "MV P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LeadMagic Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LeadMagic Find": {
+      "main": [
+        [
+          {
+            "node": "LeadMagic Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LeadMagic Found?": {
+      "main": [
+        [
+          {
+            "node": "MV P2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prospeo Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV P0": {
+      "main": [
+        [
+          {
+            "node": "Route P0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV P1": {
+      "main": [
+        [
+          {
+            "node": "Route P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV P2": {
+      "main": [
+        [
+          {
+            "node": "Route P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Webhook": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Params": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Launched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Fix Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fix Client": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launched?": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows Found?": {
+      "main": [
+        [
+          {
+            "node": "Cap Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Find": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Found?": {
+      "main": [
+        [
+          {
+            "node": "MV P3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MV P3": {
+      "main": [
+        [
+          {
+            "node": "Route P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route P3": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Rows": {
+      "main": [
+        [
+          {
+            "node": "Rows Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cap Rows": {
+      "main": [
+        [
+          {
+            "node": "Pack Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack Rows": {
+      "main": [
+        [
+          {
+            "node": "Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Run Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Records": {
+      "main": [
+        [
+          {
+            "node": "Has P0 Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Record": {
+      "main": [
+        [
+          {
+            "node": "Read Log Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Log Row": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Batch": {
+      "main": [
+        [
+          {
+            "node": "Batch Tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Tick": {
+      "main": [
+        [
+          {
+            "node": "Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "global": {
+      "_wfLogTotals": {
+        "execId": "3434",
+        "resolved": 2722,
+        "verifying": 1830,
+        "noEmail": 1160,
+        "errored": 288,
+        "p0": 503,
+        "p1": 1028,
+        "p2": 952,
+        "p3": 239
+      },
+      "_wfFinderFails": {
+        "execId": "3846",
+        "p1": 19,
+        "p2": 19,
+        "p3": 2,
+        "causes": {
+          "P1:no-credits": 19,
+          "P2:no-credits": 17,
+          "P2:validation_error": 2,
+          "P3:INVALID_DATAPOINTS": 2
+        }
+      }
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {
+    "Run": [
+      {
+        "json": {
+          "Clayroots Base ID": "appyhuYMwaGUdIs3z",
+          "Table ID": "tblMZ6xsl3g2x2JgU",
+          "Max Rows": 0,
+          "View": "",
+          "submittedAt": "2026-07-19T16:52:18.938+03:00",
+          "formMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "77433874-407f-4acb-8f9c-8a1b7e543dd2",
+  "activeVersionId": "77433874-407f-4acb-8f9c-8a1b7e543dd2",
+  "triggerCount": 3,
+  "shared": [
+    {
+      "updatedAt": "2026-06-11T13:32:36.821Z",
+      "createdAt": "2026-06-11T13:32:36.821Z",
+      "role": "workflow:owner",
+      "workflowId": "iNzuePWU2UoByJ7U",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-14T12:09:11.484Z",
+    "createdAt": "2026-08-14T12:09:11.484Z",
+    "versionId": "77433874-407f-4acb-8f9c-8a1b7e543dd2",
+    "workflowId": "iNzuePWU2UoByJ7U",
+    "nodes": [
+      {
+        "parameters": {
+          "formTitle": "Run Full Waterfall",
+          "formDescription": "Find + verify emails. Catch-alls resolve in the background via the BounceBan Poller.",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Clayroots Base ID",
+                "placeholder": "appXXXXXXXXXXXXXX",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Table ID",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Max Rows",
+                "fieldType": "number"
+              },
+              {
+                "fieldLabel": "View"
+              }
+            ]
+          },
+          "options": {
+            "path": "notebook",
+            "respondWithOptions": {
+              "values": {
+                "respondWith": "redirect",
+                "redirectUrl": "=https://n8n.flowroots.com/workflow/iNzuePWU2UoByJ7U/executions/{{ $execution.id }}"
+              }
+            }
+          }
+        },
+        "id": "057b9c9e-c4a2-466d-814f-131020be82e9",
+        "name": "Run",
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.6,
+        "position": [
+          -32,
+          128
+        ],
+        "webhookId": "cd219fee-0c15-4a47-9f68-7028db7c0927"
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json['Clayroots Base ID'] }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "43837612-9fd2-457e-95c5-f1c121c45670",
+        "name": "Check Table",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          864,
+          32
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const tid=$('Params').first().json['Table ID'];\nconst baseId=$('Params').first().json['Clayroots Base ID'];\nconst resp=$('Check Table').first().json||{};\nconst t=(resp.tables||[]).find(x=>x.id===tid);\nif(!t){ throw new Error('Table '+tid+' not found in base '+baseId+'.'); }\nconst names=(t.fields||[]).map(f=>f.name);\nif(!(names.includes('Email')||names.includes('public_emails_clean'))){ throw new Error('Table \"'+t.name+'\" has no Email or public_emails_clean field. Aborting.'); }\nreturn [{ json:{ table:t.name, hasEmail:true, startedAt:new Date().toISOString() } }];"
+        },
+        "id": "d227eea2-c7da-416e-abcc-a752df1aed34",
+        "name": "Email Guard",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1088,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const MV=[{name:'ok',color:'greenBright'},{name:'catch_all',color:'yellowBright'},{name:'invalid',color:'redBright'},{name:'disposable',color:'orangeLight2'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst BB=[{name:'verifying',color:'blueBright'},{name:'deliverable',color:'greenBright'},{name:'undeliverable',color:'redBright'},{name:'risky',color:'yellowBright'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst SRC=[{name:'P0',color:'blueBright'},{name:'P1',color:'cyanBright'},{name:'P2',color:'tealBright'},{name:'P3',color:'purpleBright'},{name:'none',color:'grayBright'}];\nconst ST=[{name:'done',color:'greenBright'},{name:'verifying',color:'blueBright'},{name:'no_email_found',color:'redBright'},{name:'error',color:'orangeBright'}];\nconst sel=(name,choices)=>({name,type:'singleSelect',options:{choices}});\nconst txt=(name)=>({name,type:'singleLineText'});\n// 2026-08-12 Operator ruling: the tier verdict lives in 'Email Source' (which waterfall tier found the\n// email). 'Contact Source' (where the CONTACT came from) is owned by the builders. 'Source' is retired.\nconst defs=[ sel('MV P0',MV), txt('P1 (Trykitt)'), sel('MV P1',MV), txt('P2 (LeadMagic)'), sel('MV P2',MV), txt('P3 (Prospeo)'), sel('MV P3',MV), sel('BB',BB), txt('Final Email'), sel('Email Source',SRC), sel('Status',ST) ];\nreturn defs.map(d=>({json:{def:d}}));"
+        },
+        "id": "a3326d94-9857-48fd-b7a4-fd85d3d5f8b7",
+        "name": "Field List",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1312,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json['Clayroots Base ID'] }}/tables/{{ $('Params').first().json['Table ID'] }}/fields",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.def }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "6c111717-a230-4df0-b075-00f235c3deec",
+        "name": "Create Field",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1536,
+          32
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params').first().json['Clayroots Base ID'] }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params').first().json['Table ID'] }}"
+          },
+          "filterByFormula": "=AND(NOT({Status} = 'done'), NOT({Status} = 'verifying'), OR('{{ $('Params').first().json.recordId }}' = '', RECORD_ID() = '{{ $('Params').first().json.recordId }}'))",
+          "options": {
+            "view": {
+              "__rl": true,
+              "mode": "id",
+              "value": "={{ $('Params').first().json['View'] }}"
+            }
+          }
+        },
+        "id": "ba3a3c75-071b-482b-afdb-01bbbb36e350",
+        "name": "Fetch Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1760,
+          32
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://api.millionverifier.com/api/v3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpQueryAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ $json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0].trim() }}"
+              },
+              {
+                "name": "timeout",
+                "value": "45"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "id": "a042825b-ea80-4afd-844c-2a89c07f1cb8",
+        "name": "MV P0",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2656,
+          -48
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "hlvOO7sfgBUVEuWM",
+            "name": "MillionVerifier"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "ok"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ok"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "catch_all"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "catch_all"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "unknown"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "unknown"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra"
+          }
+        },
+        "id": "0dc056bd-6a0a-445b-911d-9d608f2a8d70",
+        "name": "Route P0",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          2880,
+          -80
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const row=$('Read Records').item.json; const f=row.fields||{};\nconst existing=((f.Email||(f.public_emails_clean||'').split(',')[0])||'').trim();\nconst G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };\nconst mv0=G('MV P0'),tk=G('Trykitt Find'),mv1=G('MV P1'),lm=G('LeadMagic Find'),mv2=G('MV P2'),pr=G('Prospeo Find'),mv3=G('MV P3');\nconst SK='skipped';\nconst body=(o)=>{ if(o&&typeof o.data==='string'){ try{ return JSON.parse(o.data); }catch(e){ return null; } } return o; };\nconst failed=(o)=>{ if(!o) return false; if(typeof o.data==='string') return true; if(o.error===true) return true; if(typeof o.error==='string'&&o.error!=='') return true; if(o.success===false) return true; if(Array.isArray(o.errors)&&o.errors.length) return true; if(o.code&&o.title&&o.detail) return true; const st=Number(o.status); if(Number.isFinite(st)&&(st<200||st>=300)) return true; if(Object.keys(o).length===0) return true; return false; };\nconst cause=(o)=>{ const b=body(o); if(!b) return 'unparseable_body'; const c=b.code||b.error_code||b.title||b.message||(typeof b.error==='string'?b.error:'')||('http_'+(b.status!==undefined?b.status:'unknown')); return String(c).slice(0,40); };\n// A finder with no credits is not an error and never blocks a row. The tier records \"no-credits\",\n// the run log flags it, and the waterfall carries on to the next provider.\nconst DRY=(o)=>{ if(!o||typeof o!=='object') return false; const b=body(o)||{}; const s=Number(b.status||b.statusCode||0); const t=(String(b.code||'')+' '+String(b.error_code||'')+' '+String(b.title||'')+' '+String(b.detail||'')+' '+String(b.message||'')+' '+(typeof b.error==='string'?b.error:'')).toLowerCase(); if(s===402) return true; return t.indexOf('insufficient_credit')>=0||t.indexOf('insufficient credit')>=0||t.indexOf('out of credits')>=0||t.indexOf('no credits')>=0; };\n// MillionVerifier is the exception: it gates every tier, so without it nothing can resolve at all.\nconst MVDRY=(r)=>{ if(!r||typeof r!=='object') return false; const e=String(r.error||'').toLowerCase(); if(e.indexOf('insufficient credit')>=0||e.indexOf('no credit')>=0||e.indexOf('out of credit')>=0) return true; const c=Number(r.credits); return Number.isFinite(c)&&c<0; };\nfor(const p of [['MV P0',mv0],['MV P1',mv1],['MV P2',mv2],['MV P3',mv3]]){ if(MVDRY(p[1])){ throw new Error('MillionVerifier is out of credits ('+p[0]+', balance '+String((p[1]||{}).credits)+'). Nothing can be verified without it, so the run is stopping here. Top up and relaunch.'); } }\nconst tkDry=DRY(tk), lmDry=DRY(lm), prDry=DRY(pr);\nconst NEGATIVE=(o)=>{ const c=cause(o).toLowerCase(); return c.indexOf('no_match')>=0||c.indexOf('not_found')>=0||c.indexOf('no-results-found')>=0||c.indexOf('no results')>=0||c.indexOf('find a verified email')>=0||c.indexOf(\"couldn't find\")>=0||c.indexOf('could not find')>=0||c.indexOf('unable to verify email')>=0; };\nconst tkFail=tk?(failed(tk)||!tk.jobId||typeof tk.email!=='string'):false;\nconst lmFail=lm?failed(lm):false;\nconst prFail=pr?failed(pr):false;\nconst lmNeg=lmFail&&NEGATIVE(lm);\nconst prNeg=prFail&&NEGATIVE(pr);\n// out of credits never counts as a hard failure, so it can never make the row an error\nconst lmHard=lmFail&&!lmNeg&&!lmDry;\nconst prHard=prFail&&!prNeg&&!prDry;\nconst tkE=(tk&&!tkFail)?((tk.email&&tk.email!=='no-results-found')?tk.email:''):'';\nconst lmE=(lm&&!lmFail)?(lm.email||''):'';\nconst prPick=(o)=>{ const e=o&&o.person&&o.person.email; return (e&&e.revealed===true&&e.email&&e.email.indexOf('*')===-1)?e.email:''; };\nconst prE=(pr&&!prFail)?prPick(pr):'';\nconst answered=(!!tk&&!tkFail)||(!!lm&&!lmFail)||lmNeg||(!!pr&&!prFail)||prNeg;\nconst MVOK=['ok','catch_all','invalid','disposable','unknown'];\nconst mvVal=(r)=> r?(MVOK.includes(r.result)?r.result:'error'):SK;\nconst mvErr=(r)=> r&&(r.resultcode===4||(r.error&&r.error!=='')||!MVOK.includes(r.result));\nconst IND=(r)=> r==='catch_all'||r==='unknown';\nlet final='',source='none',bb='skipped',pe='',ps='',resolved=false,verifying=false,errored=false;\nif(existing&&mv0){ if(mv0.result==='ok'){final=existing;source='P0';resolved=true;} else if(IND(mv0.result)){verifying=true;bb='verifying';pe=existing;ps='P0';} else if(mvErr(mv0)){errored=true;} }\nif(!resolved&&!verifying&&tkE&&mv1){ if(mv1.result==='ok'){final=tkE;source='P1';resolved=true;} else if(IND(mv1.result)){verifying=true;bb='verifying';pe=tkE;ps='P1';} else if(mvErr(mv1)){errored=true;} }\nif(!resolved&&!verifying&&lmE&&mv2){ if(mv2.result==='ok'){final=lmE;source='P2';resolved=true;} else if(IND(mv2.result)){verifying=true;bb='verifying';pe=lmE;ps='P2';} else if(mvErr(mv2)){errored=true;} }\nif(!resolved&&!verifying&&prE&&mv3){ if(mv3.result==='ok'){final=prE;source='P3';resolved=true;} else if(IND(mv3.result)){verifying=true;bb='verifying';pe=prE;ps='P3';} else if(mvErr(mv3)){errored=true;} }\nconst finderFail=(lmHard||prHard)&&!answered;\nconst status= resolved?'done':(verifying?'verifying':((errored||finderFail)?'error':'no_email_found'));\nconst causes=[];\nif(tkDry)causes.push('P1:no-credits');\nif(lmDry)causes.push('P2:no-credits'); else if(lmHard)causes.push('P2:'+cause(lm));\nif(prDry)causes.push('P3:no-credits'); else if(prHard)causes.push('P3:'+cause(pr));\nconst tkCell = tk?(tkDry?'no-credits':(tkFail?'no-results-found':(tk.email||'no-results-found'))):SK;\nconst lmCell = lm?(lmDry?'no-credits':(lmFail?(lmHard?'error':'no-results-found'):(lmE||'no-results-found'))):SK;\nconst prCell = pr?(prDry?'no-credits':(prFail?(prHard?'error':'no-results-found'):(prE||'no-results-found'))):SK;\nreturn { json:{ id:row.id, 'MV P0': existing?mvVal(mv0):SK, 'P1 (Trykitt)': tkCell, 'MV P1': tkE?mvVal(mv1):SK, 'P2 (LeadMagic)': lmCell, 'MV P2': lmE?mvVal(mv2):SK, 'P3 (Prospeo)': prCell, 'MV P3': prE?mvVal(mv3):SK, 'BB':bb, 'Final Email':final, 'Email Source':source, 'Status':status, _pendEmail:pe, _pendSlot:ps, _errP1:tkDry?1:0, _errP2:(lmHard||lmDry)?1:0, _errP3:(prHard||prDry)?1:0, _failCauses:causes.join('|') } };"
+        },
+        "id": "24404ebd-34f2-4887-a434-e3d759efa596",
+        "name": "Verdict",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4896,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nlet eid=String($execution.id); try{ eid=String($('Read Records').first().json._execId||eid); }catch(e){}\nif(!sd._wfFinderFails||sd._wfFinderFails.execId!==eid){ sd._wfFinderFails={execId:eid,p1:0,p2:0,p3:0,causes:{}}; }\nconst a=sd._wfFinderFails;\nreturn $input.all().map(i=>{ const j={...i.json};\n if(j._errP1) a.p1++;\n if(j._errP2) a.p2++;\n if(j._errP3) a.p3++;\n if(j._failCauses){ for(const c of String(j._failCauses).split('|')){ if(c) a.causes[c]=(a.causes[c]||0)+1; } }\n for(const k of Object.keys(j)){ if(k.charAt(0)==='_') delete j[k]; }\n return {json:j}; });"
+        },
+        "id": "38a74e8d-be2d-4f70-9851-16b577a90ca8",
+        "name": "To Airtable",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5120,
+          -64
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Read Records').first().json._baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Read Records').first().json._tableId }}"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "081f5f23-ca4c-4b11-b401-2a584ab9ea26",
+        "name": "Update Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5344,
+          -64
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const wfid='iNzuePWU2UoByJ7U';\nlet r=null;\ntry{ r=$('Read Records').first().json; }catch(e){ r=null; }\nif(!r||!r._execId){ let p={}; try{ p=$('Params').first().json||{}; }catch(e){}\n  let st=''; try{ st=$('Email Guard').first().json.startedAt||''; }catch(e){}\n  r={ _execId:String($execution.id), _tableId:p['Table ID']||'', _view:p['View']||'', _startedAt:st||new Date().toISOString(), _trigger:'form', _total:0, _clientId:'' }; }\nconst eid=String(r._execId);\nconst start=r._startedAt||new Date().toISOString();\nconst recIn=Number(r._total)||0;\n\n// Prior totals come from the run's own Hub row, not from static data.\n// Static data written inside a sub-execution is not persisted back; the row is.\nconst BLANK={resolved:0,verifying:0,noEmail:0,errored:0,p0:0,p1:0,p2:0,p3:0,ffP2:0,ffP3:0,causes:{}};\nlet a=Object.assign({},BLANK);\ntry{\n  const prior=$('Read Log Row').first().json;\n  const raw=prior&&prior.fields?prior.fields.Tally:null;\n  if(raw){ const parsed=JSON.parse(String(raw)); if(parsed&&String(parsed.execId)===eid){ a=Object.assign({},BLANK,parsed); a.causes=parsed.causes||{}; } }\n}catch(e){ a=Object.assign({},BLANK); }\n\nlet rows=[]; try{ rows=$('To Airtable').all().map(i=>i.json); }catch(e){}\nconst c=(f)=>rows.filter(f).length;\na.resolved+=c(x=>x.Status==='done');\na.verifying+=c(x=>x.Status==='verifying');\na.noEmail+=c(x=>x.Status==='no_email_found');\na.errored+=c(x=>x.Status==='error');\na.p0+=c(x=>x.Status==='done'&&x.Source==='P0');\na.p1+=c(x=>x.Status==='done'&&x.Source==='P1');\na.p2+=c(x=>x.Status==='done'&&x.Source==='P2');\na.p3+=c(x=>x.Status==='done'&&x.Source==='P3');\n\n// This batch's finder refusals, taken from the in-memory counter which IS reliable within one execution.\ntry{\n  const sd=$getWorkflowStaticData('global');\n  const ff=sd._wfFinderFails;\n  if(ff&&String(ff.execId)===String($execution.id)){\n    a.ffP2+=(ff.p2||0); a.ffP3+=(ff.p3||0);\n    for(const k of Object.keys(ff.causes||{})){ a.causes[k]=(a.causes[k]||0)+ff.causes[k]; }\n    ff.p1=0; ff.p2=0; ff.p3=0; ff.causes={};\n  }\n}catch(e){}\n\na.execId=eid;\nconst ffTotal=a.ffP2+a.ffP3;\nconst topCause=(tier)=>{ const m=a.causes||{}; let best='',n=0; for(const k of Object.keys(m)){ if(k.indexOf(tier+':')===0&&m[k]>n){ n=m[k]; best=k.slice(tier.length+1); } } return best; };\nconst ffLine=(tier,label,n)=>{ const tc=n?topCause(tier):''; return '- **'+tier+' '+label+':** '+n+' call'+(n===1?'':'s')+' failed'+(tc?' ('+tc+')':''); };\nconst recordsOut=a.resolved+a.verifying;\nconst accounted=a.resolved+a.verifying+a.noEmail+a.errored;\nconst isFinal=recIn===0 || accounted>=recIn;\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=r._trigger||'form';\nconst viewTxt=r._view?(' · view: '+r._view):'';\nconst desc=[\n'**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':''),\n'',\n'**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan)',\n'',\n'**Progress:** '+accounted+' of '+recIn+' accounted',\n'',\n'**Results**',\n'- **Resolved (Status=done):** '+a.resolved+' · P0 existing '+a.p0+' · P1 Trykitt '+a.p1+' · P2 LeadMagic '+a.p2+' · P3 Prospeo '+a.p3,\n'- **Handed to BounceBan (pending async verdicts):** '+a.verifying,\n'- **No email found (finder answered, nothing there):** '+a.noEmail,\n'- **Errored (never actually looked up, retryable):** '+a.errored,\n'- **Rows written (resolved+verifying):** '+recordsOut\n].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[]).concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\\n');\nreturn [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': r._tableId, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];"
+        },
+        "id": "401e7696-7df5-49d9-abfa-c372875fce78",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5568,
+          -160
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "f38b05b8-805b-4b3c-9df1-09288afd61e0",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6016,
+          -160
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const r=$('Read Records').first().json; const baseId=r._baseId; const tableId=r._tableId; const out=[]; for(const it of $input.all()){ const v=it.json; if(v.Status==='verifying' && v._pendEmail){ out.push({ json:{ rowId:v.id, email:v._pendEmail, slot:v._pendSlot, tableId, baseId } }); } } return out;"
+        },
+        "id": "a89e0cd8-cf64-4902-82f9-89e0b4279f69",
+        "name": "Collect Pending",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5120,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tllfBn4NycLftdef",
+            "cachedResultName": "BounceBan Poller"
+          },
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        },
+        "id": "e248c894-87f3-4bd3-8540-57cd5a93ce24",
+        "name": "Fire Poller",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          5344,
+          208
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.trykitt.ai/job/find_email",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"fullName\": $('Read Records').item.json.fields.Name, \"domain\": $('Read Records').item.json.fields.Domain, \"realtime\": true } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "4ab2d92b-d7df-4ee3-9e59-668c9bbac8fb",
+        "name": "Trykitt Find",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3104,
+          208
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "xA9qeeOfp7lxqy7V",
+            "name": "Trykitt"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "url": "https://api.millionverifier.com/api/v3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpQueryAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ $('Trykitt Find').item.json.email }}"
+              },
+              {
+                "name": "timeout",
+                "value": "45"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "id": "a3411e65-7a75-4882-877c-a50f84dd6fb9",
+        "name": "MV P1",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3552,
+          96
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "hlvOO7sfgBUVEuWM",
+            "name": "MillionVerifier"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "ok"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ok"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "catch_all"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "catch_all"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "unknown"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "unknown"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra"
+          }
+        },
+        "id": "4ae8d277-9b0a-49b5-b61f-7d1f239f8849",
+        "name": "Route P1",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          3776,
+          64
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.leadmagic.io/v1/people/email-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"first_name\": $('Read Records').item.json.fields.first_name, \"last_name\": $('Read Records').item.json.fields.last_name, \"domain\": $('Read Records').item.json.fields.Domain } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 5,
+                "batchInterval": 1000
+              }
+            }
+          }
+        },
+        "id": "b79afeca-d470-4ba4-a606-d5900763bd3e",
+        "name": "LeadMagic Find",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4000,
+          288
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "oMWq3aRIRMhIkSur",
+            "name": "Lead Magic"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "url": "https://api.millionverifier.com/api/v3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpQueryAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ $('LeadMagic Find').item.json.email }}"
+              },
+              {
+                "name": "timeout",
+                "value": "45"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "id": "82f59205-8b10-441c-95ba-b33af07b809b",
+        "name": "MV P2",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4448,
+          208
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "hlvOO7sfgBUVEuWM",
+            "name": "MillionVerifier"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "ok"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ok"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "catch_all"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "catch_all"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "unknown"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "unknown"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra"
+          }
+        },
+        "id": "4dcc3f85-608d-4afe-a128-ecf31c016b13",
+        "name": "Route P2",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          4672,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "maxItems": "={{ $('Params').first().json['Max Rows'] || 100000 }}"
+        },
+        "id": "9794dd70-c7f5-4442-bdc8-e791bc4ae042",
+        "name": "Cap Rows",
+        "type": "n8n-nodes-base.limit",
+        "typeVersion": 1,
+        "position": [
+          2208,
+          112
+        ],
+        "onError": "stopWorkflow"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ (($json.fields.Email || ($json.fields.public_emails_clean || '').split(',')[0]) || '').trim() }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1037427b-5144-4a67-a40b-c480607b3ee4",
+        "name": "Has P0 Email?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2432,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.email || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": ""
+              },
+              {
+                "leftValue": "={{ $json.email || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": "no-results-found"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "be02d16d-3568-4ff9-8f32-026b891a8a6f",
+        "name": "Trykitt Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3328,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.email || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "0efa6a2c-5e98-46eb-83ae-28790f4a95ea",
+        "name": "LeadMagic Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4224,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "waterfall-record",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "id": "4bde0ac9-58f3-433e-9021-222acc118beb",
+        "name": "Record Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -704,
+          208
+        ],
+        "webhookId": "f681311d-94cf-488c-ae61-d0ece6f8a751"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "p1",
+                "name": "Table ID",
+                "value": "={{ $json['Table ID'] || ($json.body && $json.body.tableId) || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "p2",
+                "name": "Max Rows",
+                "value": "={{ $json['Max Rows'] || ($json.body && $json.body.maxRows) || 100000 }}",
+                "type": "number"
+              },
+              {
+                "id": "p3",
+                "name": "View",
+                "value": "={{ $json['View'] || ($json.body && $json.body.view) || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "p4",
+                "name": "recordId",
+                "value": "={{ $json.recordId || ($json.body && $json.body.recordId) || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "p5",
+                "name": "Clayroots Base ID",
+                "value": "={{ $json['Clayroots Base ID'] || ($json.body && $json.body.baseId) || 'appSTTKOc9Afqer9d' }}",
+                "type": "string"
+              },
+              {
+                "id": "p6",
+                "name": "_launchRecordId",
+                "value": "={{ $json._launchRecordId || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "p7",
+                "name": "clientRecordId",
+                "value": "={{ $json.clientRecordId || ($json.body && $json.body.clientRecordId) || '' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "e2bdaa04-56a4-49df-b964-17126834ba51",
+        "name": "Params",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          192,
+          128
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={Clayroots Base ID} = '{{ $('Params').first().json['Clayroots Base ID'] }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "6f9ffb07-23c2-4302-93dd-55954d02a305",
+        "name": "Resolve Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          416,
+          224
+        ],
+        "alwaysOutputData": true,
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const j=Object.assign({},$json);\nlet rec=[];\ntry{ const cid=$('Read Records').first().json._clientId; if(cid) rec=[cid]; }catch(e){}\nif(rec.length){ j['Client']=rec; } else { delete j['Client']; }\nreturn {json:j};"
+        },
+        "id": "7221fd3b-a013-4f22-8d59-f25cdb02b71b",
+        "name": "Fix Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5792,
+          -160
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-waterfall-emails",
+          "options": {}
+        },
+        "id": "6bee95ce-9a07-428b-9cf7-fef5a02f92ca",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -704,
+          -64
+        ],
+        "webhookId": "5fc367c5-a25d-435f-ae49-1d8af53e645e"
+      },
+      {
+        "parameters": {
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "a6dfc124-4527-4ad2-a2a9-9697dd98540b",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -480,
+          -64
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.fields.Client[0] }}",
+          "options": {}
+        },
+        "id": "721641a6-fa96-4267-9cf3-5f22e61df43f",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -256,
+          -64
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst client=$('Resolve Base').first().json;\nconst cf=client.fields||{};\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table ID': ((f['Table ID']||'')+'').trim(),\n  'Max Rows': f['Max Rows'] || 0,\n  'View': ((f['View']||'')+'').trim(),\n  '_launchRecordId': rec.id,\n  'submittedAt': new Date().toISOString()\n} }];"
+        },
+        "id": "89fa9504-ca76-4cab-86aa-8ff82f1bad96",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -32,
+          -64
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._launchRecordId || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a86833df-94db-4485-95fd-de46fce9c774",
+        "name": "Launched?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          416,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json._launchRecordId }}",
+              "Status": "Running",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "359cadbc-7ab0-495c-afde-3c4afbff1bf2",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          640,
+          -48
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.id }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "342c14c4-9210-40e5-8b16-f11759c1f48c",
+        "name": "Rows Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1984,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.prospeo.io/enrich-person",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"data\": { \"first_name\": $('Read Records').item.json.fields.first_name, \"last_name\": $('Read Records').item.json.fields.last_name, \"company_website\": $('Read Records').item.json.fields.Domain } } }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 2,
+                "batchInterval": 1000
+              }
+            }
+          }
+        },
+        "id": "ee414b91-0960-4007-b6ac-b1f93ece9336",
+        "name": "Prospeo Find",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4448,
+          464
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "uFPdaX8JAe5KLQdL",
+            "name": "Prospeo"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "notes": "P3 tier. Attach the \"Prospeo\" Header Auth credential manually: the n8n API cannot set credentials on httpRequest nodes."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.email) || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "rightValue": ""
+              },
+              {
+                "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.email) || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notContains"
+                },
+                "rightValue": "*"
+              },
+              {
+                "leftValue": "={{ ($json.person && $json.person.email && $json.person.email.revealed === true) ? 'yes' : 'no' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "yes"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "96855a43-9c92-40c5-9c42-9bfebbb9aec2",
+        "name": "Prospeo Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4640,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://api.millionverifier.com/api/v3",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpQueryAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "email",
+                "value": "={{ $('Prospeo Find').item.json.person.email.email }}"
+              },
+              {
+                "name": "timeout",
+                "value": "45"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 500
+              }
+            }
+          }
+        },
+        "id": "9dcdeab2-cd66-49c4-9f4e-1dfd7c78c4f6",
+        "name": "MV P3",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4832,
+          464
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "hlvOO7sfgBUVEuWM",
+            "name": "MillionVerifier"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "notes": "MillionVerifier gate for the Prospeo tier. Uses the same MillionVerifier query-auth credential as MV P0 / MV P1 / MV P2; attach it manually."
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "ok"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ok"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 1
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.result }}",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "rightValue": "catch_all"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "catch_all"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra"
+          }
+        },
+        "id": "06156f4c-2c76-4dfa-9bd3-2725cb7f87b3",
+        "name": "Route P3",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          5024,
+          464
+        ]
+      },
+      {
+        "id": "156734af-e1a3-42d4-8a01-f4d8bbda4025",
+        "name": "Pack Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3400,
+          200
+        ],
+        "parameters": {
+          "jsCode": "const p=$('Params').first().json;\nlet started=''; try{ started=$('Email Guard').first().json.startedAt||''; }catch(e){}\nlet cid=''; try{ cid=p.clientRecordId||''; }catch(e){}\nif(!cid){ try{ const rc=$('Resolve Client').first().json; if(rc&&rc.id) cid=rc.id; }catch(e){} }\nlet trig='form';\nif(!p._launchRecordId){ try{ if($('Record Webhook').first().json) trig='webhook'; }catch(e){} }\nlet total=0; try{ total=$('Fetch Rows').all().filter(i=>i.json&&i.json.id).length; }catch(e){}\nconst cap=Number(p['Max Rows'])||100000;\nconst ctx={ _baseId:p['Clayroots Base ID'], _tableId:p['Table ID'], _view:String(p['View']||''), _execId:String($execution.id), _startedAt:started||new Date().toISOString(), _clientId:cid, _trigger:trig, _total:Math.min(total,cap) };\nreturn $input.all().map(i=>({ json:Object.assign({},i.json,ctx) }));"
+        },
+        "notes": "Carries parent-run context into each batch item so the sub-execution can resolve base, table, client, run id and start time without reaching back to Params / Email Guard / Resolve Client."
+      },
+      {
+        "id": "7eb7c318-9138-4ef5-af22-24acf833f90c",
+        "name": "Batch",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          3550,
+          200
+        ],
+        "parameters": {
+          "batchSize": 100,
+          "options": {}
+        },
+        "notes": "100 rows per sub-execution. Keeps every $('Read Records').item lookup resolving against 100 items instead of the whole table."
+      },
+      {
+        "id": "33e3d70d-5808-4e7f-9725-989a35b3712d",
+        "name": "Run Batch",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          3700,
+          280
+        ],
+        "parameters": {
+          "source": "database",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "iNzuePWU2UoByJ7U",
+            "cachedResultName": "Waterfall Emails"
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "notes": "Calls this same workflow. Entry point on the other side is Batch Trigger, which never reaches Fetch Rows, so there is no recursion."
+      },
+      {
+        "id": "200e6eca-def4-4208-baac-7d14406aa8ef",
+        "name": "Batch Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          3200,
+          700
+        ],
+        "parameters": {
+          "inputSource": "passthrough"
+        }
+      },
+      {
+        "id": "59982a75-1dab-4ecb-a6a4-3f22aa039d70",
+        "name": "Read Records",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          3350,
+          700
+        ],
+        "parameters": {},
+        "notes": "Deliberately named Read Records so every existing $('Read Records').item expression in the finder and Verdict nodes keeps resolving, now against one batch."
+      },
+      {
+        "id": "5473a786-d5c2-449a-b0b4-3583cdbc2e2f",
+        "name": "Read Log Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5230,
+          -64
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "={Execution ID} = '{{ $('Read Records').first().json._execId }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Durable accumulator. Static data written inside a sub-execution is not persisted back, so each batch reads the run's Hub row, adds its slice, and writes it again. Batches are sequential, so no race.",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "2131259c-83c7-482b-abaa-326be81fa6d7",
+        "name": "Batch Tick",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3700,
+          400
+        ],
+        "parameters": {
+          "jsCode": "// The loop must never depend on the sub-execution's output shape.\nreturn [{ json: { tick: true } }];"
+        },
+        "notes": "Always emits exactly one item so the Split In Batches loop advances regardless of what the sub-execution returned. The sub's last node is Collect Pending, which is empty whenever a batch sends nobody to BounceBan; feeding that straight back stopped the loop after one batch.",
+        "alwaysOutputData": true
+      }
+    ],
+    "connections": {
+      "Check Table": {
+        "main": [
+          [
+            {
+              "node": "Email Guard",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Email Guard": {
+        "main": [
+          [
+            {
+              "node": "Field List",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Field List": {
+        "main": [
+          [
+            {
+              "node": "Create Field",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Field": {
+        "main": [
+          [
+            {
+              "node": "Fetch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route P0": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Trykitt Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verdict": {
+        "main": [
+          [
+            {
+              "node": "To Airtable",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Collect Pending",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "To Airtable": {
+        "main": [
+          [
+            {
+              "node": "Update Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Pending": {
+        "main": [
+          [
+            {
+              "node": "Fire Poller",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route P1": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "LeadMagic Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route P2": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prospeo Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has P0 Email?": {
+        "main": [
+          [
+            {
+              "node": "MV P0",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Trykitt Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Trykitt Find": {
+        "main": [
+          [
+            {
+              "node": "Trykitt Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Trykitt Found?": {
+        "main": [
+          [
+            {
+              "node": "MV P1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "LeadMagic Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LeadMagic Find": {
+        "main": [
+          [
+            {
+              "node": "LeadMagic Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LeadMagic Found?": {
+        "main": [
+          [
+            {
+              "node": "MV P2",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prospeo Find",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MV P0": {
+        "main": [
+          [
+            {
+              "node": "Route P0",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MV P1": {
+        "main": [
+          [
+            {
+              "node": "Route P1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MV P2": {
+        "main": [
+          [
+            {
+              "node": "Route P2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Webhook": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Params": {
+        "main": [
+          [
+            {
+              "node": "Resolve Client",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Launched?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Fix Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fix Client": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launched?": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rows Found?": {
+        "main": [
+          [
+            {
+              "node": "Cap Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospeo Find": {
+        "main": [
+          [
+            {
+              "node": "Prospeo Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospeo Found?": {
+        "main": [
+          [
+            {
+              "node": "MV P3",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MV P3": {
+        "main": [
+          [
+            {
+              "node": "Route P3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route P3": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Rows": {
+        "main": [
+          [
+            {
+              "node": "Rows Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cap Rows": {
+        "main": [
+          [
+            {
+              "node": "Pack Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pack Rows": {
+        "main": [
+          [
+            {
+              "node": "Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch": {
+        "main": [
+          null,
+          [
+            {
+              "node": "Run Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Trigger": {
+        "main": [
+          [
+            {
+              "node": "Read Records",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Records": {
+        "main": [
+          [
+            {
+              "node": "Has P0 Email?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Record": {
+        "main": [
+          [
+            {
+              "node": "Read Log Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Log Row": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Batch": {
+        "main": [
+          [
+            {
+              "node": "Batch Tick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Tick": {
+        "main": [
+          [
+            {
+              "node": "Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

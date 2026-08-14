@@ -1,0 +1,1 @@
+return [{ json: { employees: '1-10', revenue_range: '<1M' } }];

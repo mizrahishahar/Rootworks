@@ -1,0 +1,3494 @@
+{
+  "updatedAt": "2026-08-12T12:12:40.223Z",
+  "createdAt": "2026-08-08T20:41:34.889Z",
+  "id": "JuWIbF6YCeRibhyg",
+  "name": "Deploy View to Campaign",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "8e421b08-8ee3-4b04-a2c3-f51891a32363",
+      "name": "Deploy Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1400,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deploy-view-to-campaign",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "d4da1898-15df-47fa-800c-8bc358848ed6"
+    },
+    {
+      "id": "90d891e1-360c-4666-a99d-89e113fd4d46",
+      "name": "Read Launch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1180,
+        200
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.query?.recordId || $json.body?.recordId || 'recMISSING' }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "126bd2cf-0b59-40bc-a459-809415b9023e",
+      "name": "Init Deploy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Deploy.js"
+      }
+    },
+    {
+      "id": "1c99fb11-8fa5-4b3c-b1b9-555369f8e0f3",
+      "name": "Get Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -740,
+        200
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ $json.clientId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c2c3bdea-4987-425b-9016-6bcf09148525",
+      "name": "Check Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Check-Client.js"
+      }
+    },
+    {
+      "id": "b8b40765-2a4f-4985-9f8d-3d8cbe296e83",
+      "name": "List PV Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -300,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.ws }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3f53a414-3fea-4c67-b0c5-fd58936a6e4a",
+      "name": "Check Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Check-Campaign.js"
+      }
+    },
+    {
+      "id": "bab4534b-61d2-437f-85cc-c7c20c6e8a9a",
+      "name": "Valid Launch?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        140,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "vl1",
+              "leftValue": "={{ $json.abort ? 'no' : 'yes' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3f70678a-c977-43a7-9b67-1658fa419e17",
+      "name": "Get Base Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        360,
+        100
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.metaUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "38351b27-f408-4edf-a0e7-ef57f78dd855",
+      "name": "Plan Variables",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Plan-Variables.js"
+      }
+    },
+    {
+      "id": "eeb21e88-f163-4a7e-b9a9-15ef55b96ff0",
+      "name": "Need DE Field?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "nd1",
+              "leftValue": "={{ $json.needDe ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2b9edb57-e4b4-4593-b508-3ce26db8f9cf",
+      "name": "Create DE Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1020,
+        20
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables/{{ $json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"name\":\"Deploy Error\",\"type\":\"singleLineText\",\"description\":\"Deploy outcome of the last attempt; empty = deployed clean or never deployed; written by Deploy View to Campaign only\"}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "9f4b48b5-95be-4191-a8a2-9acb7af75503",
+      "name": "Read View Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1240,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $(\"Plan Variables\").first().json.crBase }}/{{ $(\"Plan Variables\").first().json.tableId }}/listRecords",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({view: $(\"Plan Variables\").first().json.view, pageSize: 100}) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "offset",
+                    "value": "={{ $response?.body?.offset ?? '' }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d1965dec-9331-4250-af71-a17cc89823c0",
+      "name": "Collect View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-View.js"
+      }
+    },
+    {
+      "id": "8bd78e54-a773-4747-a8e0-890bd9d4a717",
+      "name": "Has DNC?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1680,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hd1",
+              "leftValue": "={{ $json.hasDnc ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e8540de0-7fab-4b26-b169-5bb8b503a419",
+      "name": "Read DNC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1900,
+        20
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $(\"Plan Variables\").first().json.crBase }}/{{ $(\"Plan Variables\").first().json.dncTableId }}/listRecords",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"pageSize\":100,\"fields\":[\"Domain\"]}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "offset",
+                    "value": "={{ $response?.body?.offset ?? '' }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6ba3a994-bb32-44a4-8e6b-51a28fa7e9e2",
+      "name": "Build Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Leads.js"
+      }
+    },
+    {
+      "id": "630eb3ba-caa5-42de-b0dd-7252b93d6263",
+      "name": "Leads Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2340,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lr1",
+              "leftValue": "={{ $json.ready ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "11197f97-4dd3-429f-b87d-2f257f1e0275",
+      "name": "Send Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2560,
+        40
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "a31711c6-5390-47d2-8df2-1779e4a9b58e"
+    },
+    {
+      "id": "e6b821ee-83cd-4028-acb7-23fbc450dcf0",
+      "name": "PV Add Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2780,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.plusvibe.ai/api/v1/lead/add",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ff193c2f-8a41-4590-bea5-a9868d0416cd",
+      "name": "Collect Send",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Send.js"
+      }
+    },
+    {
+      "id": "d9570a98-fb94-49bd-8695-37b4ac1fcf1e",
+      "name": "Send Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3220,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "af6555bb-ccac-47c8-89aa-a8e6b128433d",
+      "name": "Init Readback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Readback.js"
+      }
+    },
+    {
+      "id": "c490653e-d01d-4f88-9dbf-bdbad8d96861",
+      "name": "RB Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3660,
+        140
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "8ee6cc76-6c47-4e79-adc7-9050c09ad705"
+    },
+    {
+      "id": "1717a52b-0302-4f04-bd5d-a9f80c32aef3",
+      "name": "Pull Campaign Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3880,
+        140
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.ws }}"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.campaign_id }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "page",
+              "value": "={{ $json.page }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "95b35fde-179f-4b61-9273-6a674cfa10fc",
+      "name": "Collect RB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4100,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-RB.js"
+      }
+    },
+    {
+      "id": "b117045f-a074-41db-aa0b-666e0380a839",
+      "name": "RB Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4320,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4ebdff04-d0a0-42b4-aa5c-0140cf6dbb07",
+      "name": "Build Stamps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4540,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Stamps.js"
+      }
+    },
+    {
+      "id": "118eeb82-ec81-4138-bbda-26ad9539616d",
+      "name": "Any Stamps?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4760,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "as1",
+              "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "24491a22-7a89-411a-bd2d-27ac6b00e981",
+      "name": "Patch Deploy Errors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4980,
+        60
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f40df02a-6c5e-445a-8512-09a9739f35cb",
+      "name": "Collect Stamps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5200,
+        60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Stamps.js"
+      }
+    },
+    {
+      "id": "395f8468-04eb-4333-8283-a1bfc054c717",
+      "name": "Find Hub Campaign",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5420,
+        140
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "688b1e03-94e7-46d9-b11b-6d5914525c05",
+      "name": "Build Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5640,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Receipt.js"
+      }
+    },
+    {
+      "id": "8039cab2-5e7f-4ffe-a607-5bb23328fc09",
+      "name": "Create Lead List",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5860,
+        140
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblpy5Qt0j6TyDhqF"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Campaign": "={{ $json.Campaign }}",
+            "List CSV": "={{ $json.ViewLink }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f4de00c4-be32-443d-82a2-4c43e1bbf0ac",
+      "name": "Finalize Launch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6080,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Finalize-Launch.js"
+      }
+    },
+    {
+      "id": "e0c73882-6b44-4921-93d4-adef01ca0f57",
+      "name": "Update Launch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6300,
+        300
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "115c1acf-f1bb-469f-8c37-0d18d69b0d60",
+      "name": "Aborted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2340,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ab1",
+              "leftValue": "={{ $json.abort ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "85366389-2458-4693-b9a9-771ceeb85bbd",
+      "name": "Meta Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        470,
+        240
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Meta-Router.js"
+      }
+    },
+    {
+      "id": "0e28e4c0-6250-452f-b0d6-bd944eb69baf",
+      "name": "Fetch Again?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        470,
+        60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fa1",
+              "leftValue": "={{ $json.again ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3e606520-e159-445e-ba59-0d73b3a6450e",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1070,
+        200
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "5853c86c-c3fc-4eb6-ac93-170638da983f",
+      "name": "Stamp Progress",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3120,
+        48
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json._lid }}",
+            "Status": "Running",
+            "Description": "={{ $json._prog }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Writes live upload progress onto the launch row after every chunk, so a long deploy is readable while it runs instead of only at the end.",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Deploy Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read Launch Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Deploy": {
+      "main": [
+        [
+          {
+            "node": "Get Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client": {
+      "main": [
+        [
+          {
+            "node": "Check Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Client": {
+      "main": [
+        [
+          {
+            "node": "List PV Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List PV Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Check Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Campaign": {
+      "main": [
+        [
+          {
+            "node": "Valid Launch?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Launch?": {
+      "main": [
+        [
+          {
+            "node": "Get Base Schema",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Variables": {
+      "main": [
+        [
+          {
+            "node": "Need DE Field?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need DE Field?": {
+      "main": [
+        [
+          {
+            "node": "Create DE Field",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read View Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create DE Field": {
+      "main": [
+        [
+          {
+            "node": "Read View Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read View Rows": {
+      "main": [
+        [
+          {
+            "node": "Collect View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect View": {
+      "main": [
+        [
+          {
+            "node": "Has DNC?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has DNC?": {
+      "main": [
+        [
+          {
+            "node": "Read DNC",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read DNC": {
+      "main": [
+        [
+          {
+            "node": "Build Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Leads": {
+      "main": [
+        [
+          {
+            "node": "Leads Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads Ready?": {
+      "main": [
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aborted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Pace": {
+      "main": [
+        [
+          {
+            "node": "PV Add Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Add Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Done?": {
+      "main": [
+        [
+          {
+            "node": "Init Readback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Readback": {
+      "main": [
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Pace": {
+      "main": [
+        [
+          {
+            "node": "Pull Campaign Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Campaign Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect RB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect RB": {
+      "main": [
+        [
+          {
+            "node": "RB Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Done?": {
+      "main": [
+        [
+          {
+            "node": "Build Stamps",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Stamps": {
+      "main": [
+        [
+          {
+            "node": "Any Stamps?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Stamps?": {
+      "main": [
+        [
+          {
+            "node": "Patch Deploy Errors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Hub Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patch Deploy Errors": {
+      "main": [
+        [
+          {
+            "node": "Collect Stamps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Stamps": {
+      "main": [
+        [
+          {
+            "node": "Find Hub Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hub Campaign": {
+      "main": [
+        [
+          {
+            "node": "Build Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Receipt": {
+      "main": [
+        [
+          {
+            "node": "Create Lead List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead List": {
+      "main": [
+        [
+          {
+            "node": "Finalize Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Launch": {
+      "main": [
+        [
+          {
+            "node": "Update Launch Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aborted?": {
+      "main": [
+        [
+          {
+            "node": "Finalize Launch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Init Readback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Base Schema": {
+      "main": [
+        [
+          {
+            "node": "Meta Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Router": {
+      "main": [
+        [
+          {
+            "node": "Fetch Again?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Again?": {
+      "main": [
+        [
+          {
+            "node": "Get Base Schema",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Plan Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Launch Row": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Init Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Send": {
+      "main": [
+        [
+          {
+            "node": "Stamp Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Progress": {
+      "main": [
+        [
+          {
+            "node": "Send Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "global": {
+      "deploy": null
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "ba7b0970-f378-47f8-8cc0-dd9296ec8c21",
+  "activeVersionId": "ba7b0970-f378-47f8-8cc0-dd9296ec8c21",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-08T20:41:34.896Z",
+      "createdAt": "2026-08-08T20:41:34.896Z",
+      "role": "workflow:owner",
+      "workflowId": "JuWIbF6YCeRibhyg",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-12T12:12:40.227Z",
+    "createdAt": "2026-08-12T12:12:40.227Z",
+    "versionId": "ba7b0970-f378-47f8-8cc0-dd9296ec8c21",
+    "workflowId": "JuWIbF6YCeRibhyg",
+    "nodes": [
+      {
+        "id": "8e421b08-8ee3-4b04-a2c3-f51891a32363",
+        "name": "Deploy Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1400,
+          200
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "deploy-view-to-campaign",
+          "responseMode": "onReceived"
+        },
+        "webhookId": "d4da1898-15df-47fa-800c-8bc358848ed6"
+      },
+      {
+        "id": "90d891e1-360c-4666-a99d-89e113fd4d46",
+        "name": "Read Launch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1180,
+          200
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.query?.recordId || $json.body?.recordId || 'recMISSING' }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "126bd2cf-0b59-40bc-a459-809415b9023e",
+        "name": "Init Deploy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -960,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst r=($input.first()||{}).json||{};\nconst f=r.fields||r;\nconst clientIds=Array.isArray(f['Client'])?f['Client']:[];\nconst D={launchId:r.id||'', clientId:clientIds[0]||'', tableId:String(f['Table ID']||'').trim(), view:String(f['View']||'').trim(), target:String(f['Target']||'').trim(), dedupe:String(f['Dedupe Mode']||'Strict').trim()||'Strict', ws:'', crBase:'', clientName:'', tableName:'', campName:'', receiptName:'', errors:[], warnings:[], counters:[], uploadedNew:0, deployed:0, missing:0, rowsTotal:0, rows:{}, emailToRow:{}, inCamp:{}, skipCounts:{}, rbFailed:false, abort:null, startedAt:Date.now(), runAt:$now.toISO()};\nif(!D.launchId){ D.abort='launch row not found'; D.errors.push('launch row not found (recordId missing or invalid)'); }\nif(!D.abort&&!D.clientId){ D.abort='no client link'; D.errors.push('launch row has no Client link'); }\nif(!D.abort&&!D.tableId){ D.abort='no Table ID'; D.errors.push('launch row has no Table ID'); }\nif(!D.abort&&!D.view){ D.abort='no View'; D.errors.push('launch row has no View'); }\nif(!D.abort&&!/^[0-9a-f]{24}$/i.test(D.target)){ D.abort='invalid Target'; D.errors.push('Target \"'+D.target+'\" is not a plausible PlusVibe campaign id (24 hex)'); }\nsd.deploy=D;\nreturn [{json:{clientId:D.clientId||'recMISSING'}}];"
+        }
+      },
+      {
+        "id": "1c99fb11-8fa5-4b3c-b1b9-555369f8e0f3",
+        "name": "Get Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -740,
+          200
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.clientId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c2c3bdea-4987-425b-9016-6bcf09148525",
+        "name": "Check Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -520,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nconst r=($input.first()||{}).json||{};\nconst f=r.fields||r;\nD.clientName=String(f['Client name']||f['Client']||'').trim();\nD.ws=String(f['PlusVibe Workspace ID']||'').trim();\nD.crBase=String(f['Clayroots Base ID']||'').trim();\n// Shared-base link, used to build a deep link to the exact deployed view on the receipt.\nD.share=String(f['Clayroots shareable link']||f['Clayroots Shareable Link']||'').trim().replace(/\\/+$/,'');\nif(!D.abort&&(!D.ws||!D.crBase)){ D.abort='client not deployable'; D.errors.push('client missing PlusVibe Workspace ID or Clayroots Base ID'); }\nreturn [{json:{ws:D.ws||'none'}}];"
+        }
+      },
+      {
+        "id": "b8b40765-2a4f-4985-9f8d-3d8cbe296e83",
+        "name": "List PV Campaigns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -300,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.ws }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "3f53a414-3fea-4c67-b0c5-fd58936a6e4a",
+        "name": "Check Campaign",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -80,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nif(!D.abort){\n  const camps=[];\n  for(const it of $input.all()){\n    const j=it.json||{};\n    const arr=Array.isArray(j)?j:(Array.isArray(j.campaigns)?j.campaigns:(Array.isArray(j.data)?j.data:((j.id||j._id)?[j]:[])));\n    for(const x of arr){ if(x&&(x.id||x._id)) camps.push(x); }\n  }\n  const hit=camps.find(x=>String(x.id||x._id)===D.target);\n  if(!hit){ D.abort='campaign not found'; D.errors.push('campaign '+D.target+' not found in workspace '+D.ws+' ('+camps.length+' campaigns listed); nothing was sent'); }\n  else { D.campName=hit.camp_name||hit.name||D.target; }\n}\nreturn [{json:{abort:!!D.abort, crBase:D.crBase||'', target:D.target||'', metaUrl:'https://api.airtable.com/v0/meta/bases/'+(D.crBase||'missing')+'/tables'}}];"
+        }
+      },
+      {
+        "id": "bab4534b-61d2-437f-85cc-c7c20c6e8a9a",
+        "name": "Valid Launch?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          140,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "vl1",
+                "leftValue": "={{ $json.abort ? 'no' : 'yes' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "3f70678a-c977-43a7-9b67-1658fa419e17",
+        "name": "Get Base Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          360,
+          100
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.metaUrl }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "38351b27-f408-4edf-a0e7-ef57f78dd855",
+        "name": "Plan Variables",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          580,
+          100
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nif(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst tables=D.schemaTables||[];\nconst t=tables.find(x=>x.id===D.tableId);\nif(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');\nD.dncTableId=dncT?dncT.id:'';\nconst vm=D.viewMeta||{};\nconst visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;\n// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.\n// IGNORE never blocks. IDENTITY is checked separately as a hard requirement.\n// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.\nconst IGNORE=new Set(['last_name','Title','Social','Phone']);\nconst IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);\nconst CORE_LEAD=new Set(['State','State Full','City','Country']);\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst fields=t.fields||[];\nlet hasDe=false;\nfor(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }\nconst varCols=[]; const requiredCore=[];\nconst consider=(name)=>{\n  if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;\n  if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }\n  varCols.push({name:name, key:snake(name)});\n};\nif(visible){\n  const byId={};\n  for(const f of fields) byId[f.id]=f;\n  for(const fid of visible){ const f=byId[fid]; if(f) consider(f.name); }\n} else {\n  let why='view metadata unavailable';\n  if(!D.viewId) why='view \"'+D.view+'\" not found in table views list';\n  else if(D.viewType&&D.viewType!=='grid') why='view \"'+D.view+'\" is type '+D.viewType+', not grid';\n  else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);\n  D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan={varCols};\nD.requiredCore=requiredCore;\nD.schemaTables=null; D.viewMeta=null;\nreturn [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId}}];"
+        }
+      },
+      {
+        "id": "eeb21e88-f163-4a7e-b9a9-15ef55b96ff0",
+        "name": "Need DE Field?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          800,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "nd1",
+                "leftValue": "={{ $json.needDe ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "2b9edb57-e4b4-4593-b508-3ce26db8f9cf",
+        "name": "Create DE Field",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1020,
+          20
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables/{{ $json.tableId }}/fields",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "{\"name\":\"Deploy Error\",\"type\":\"singleLineText\",\"description\":\"Deploy outcome of the last attempt; empty = deployed clean or never deployed; written by Deploy View to Campaign only\"}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "9f4b48b5-95be-4191-a8a2-9acb7af75503",
+        "name": "Read View Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1240,
+          100
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $(\"Plan Variables\").first().json.crBase }}/{{ $(\"Plan Variables\").first().json.tableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({view: $(\"Plan Variables\").first().json.view, pageSize: 100}) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "d1965dec-9331-4250-af71-a17cc89823c0",
+        "name": "Collect View",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1460,
+          100
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nconst rows=[];\nfor(const it of $input.all()){\n  const j=it.json||{};\n  if(Array.isArray(j.records)) rows.push(...j.records);\n  else if(j.error) D.errors.push('view read: '+JSON.stringify(j.error).slice(0,200));\n}\nD.viewRows=rows;\nreturn [{json:{hasDnc:!!D.dncTableId}}];"
+        }
+      },
+      {
+        "id": "8bd78e54-a773-4747-a8e0-890bd9d4a717",
+        "name": "Has DNC?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1680,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "hd1",
+                "leftValue": "={{ $json.hasDnc ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "e8540de0-7fab-4b26-b169-5bb8b503a419",
+        "name": "Read DNC",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1900,
+          20
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $(\"Plan Variables\").first().json.crBase }}/{{ $(\"Plan Variables\").first().json.dncTableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "{\"pageSize\":100,\"fields\":[\"Domain\"]}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "6ba3a994-bb32-44a4-8e6b-51a28fa7e9e2",
+        "name": "Build Leads",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2120,
+          100
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nif(D.abort){ return [{json:{ready:false, abort:true}}]; }\nconst rowsArr=D.viewRows||[];\nD.rowsTotal=rowsArr.length;\nif(!rowsArr.length){ D.abort='view empty or not found'; D.errors.push('view empty or not found: \"'+(D.view||'')+'\"; nothing was sent'); return [{json:{ready:false, abort:true}}]; }\nconst dnc={};\nif(D.dncTableId){\n  try{\n    for(const it of $('Read DNC').all()){\n      const j=it.json||{};\n      const recs=Array.isArray(j.records)?j.records:[];\n      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }\n    }\n  }catch(e){}\n}\nconst plan=D.plan||{varCols:[]};\nconst requiredCore=D.requiredCore||[];\nconst emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu)||[]).length>=2; };\nD.rows={}; D.emailToRow={}; D.varMisses={};\nconst leads=[];\nfor(const r of rowsArr){\n  const f=r.fields||{};\n  const email=String(f['Final Email']||'').trim();\n  const rec={email:email.toLowerCase(), skip:null};\n  D.rows[r.id]=rec;\n  if(!email){ rec.skip='missing Final Email'; continue; }\n  if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }\n  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();\n  if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }\n  const fn=val(f['first_name']);\n  const fnHe=val(f['first_name_he']);\n  if(!fn&&!fnHe){ rec.skip='missing first name'; continue; }\n  if(!NAME_OK(fn)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fn||fnHe).slice(0,40); continue; }\n  const comp=val(f['company_clean'])||val(f['Company']);\n  if(!comp){ rec.skip='missing company name'; continue; }\n  // Visible standard fields must be filled too.\n  let coreMiss='';\n  for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }\n  if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }\n  const lead={email:email};\n  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};\n  const soc=val(f['Social']);\n  if(/^https?:\\/\\//i.test(soc)) core.linkedin_person_url=soc;\n  for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }\n  const cv={}; const missVars=[];\n  for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }\n  if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }\n  if(Object.keys(cv).length) lead.custom_variables=cv;\n  D.emailToRow[email.toLowerCase()]=r.id;\n  leads.push(lead);\n}\nD.viewRows=null;\nconst chunks=[];\nfor(let i=0;i<leads.length;i+=200) chunks.push(leads.slice(i,i+200));\nD.send={queue:chunks, idx:0, attempts:0};\nconst flagMap={'Standard':{skip_lead_in_active_pause_camp:true},'Strict':{skip_if_in_workspace:true},'Active-only':{skip_lead_for_active_only_camp:true},'None':{}};\nD.flags=Object.assign({is_overwrite:true}, flagMap[D.dedupe]||flagMap['Strict']);\nif(!chunks.length) return [{json:{ready:false, abort:false}}];\nreturn [{json:{ready:true, abort:false, body:Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunks[0]}, D.flags), wait:0}}];"
+        }
+      },
+      {
+        "id": "630eb3ba-caa5-42de-b0dd-7252b93d6263",
+        "name": "Leads Ready?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2340,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "lr1",
+                "leftValue": "={{ $json.ready ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "11197f97-4dd3-429f-b87d-2f257f1e0275",
+        "name": "Send Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2560,
+          40
+        ],
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "webhookId": "a31711c6-5390-47d2-8df2-1779e4a9b58e"
+      },
+      {
+        "id": "e6b821ee-83cd-4028-acb7-23fbc450dcf0",
+        "name": "PV Add Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2780,
+          40
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.plusvibe.ai/api/v1/lead/add",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "ff193c2f-8a41-4590-bea5-a9868d0416cd",
+        "name": "Collect Send",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3000,
+          40
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy; const S=D.send;\nconst j=($input.first()||{}).json||{};\nconst hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\nconst rb=hasWrap?j.body:j;\nconst status=Number(j.statusCode||0);\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\n// Live progress written to the launch row after every chunk.\nconst emit=(o)=>{ const P=D.pv||{}; const total=S.queue.length||1; const doneChunks=Math.min(S.idx,total);\n  const lines=['**Uploading to '+(D.campName||'?')+'**','','- Chunk '+fmt(doneChunks)+' of '+fmt(total),'- Sent so far: '+fmt(P.sent),'- Accepted so far: '+fmt(P.uploaded)];\n  if(P.skipped) lines.push('- Already in the workspace, blocked by dedupe: '+fmt(P.skipped));\n  if(P.duplicate) lines.push('- Same email twice in the upload: '+fmt(P.duplicate));\n  lines.push('','Read-back and the full report follow once uploading finishes.');\n  return [{json:Object.assign({_lid:D.launchId||'', _prog:lines.join('\\n')}, o)}]; };\nconst mkBody=(chunk)=>Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunk}, D.flags||{});\nconst advance=()=>{ S.queue[S.idx]=null; S.idx++; S.attempts=0; if(S.idx<S.queue.length) return emit({body:mkBody(S.queue[S.idx]), wait:2}); return emit({done:true, wait:0}); };\nconst cur=S.queue[S.idx]||[];\nconst ok=status>=200&&status<300&&rb&&typeof rb==='object'&&!Array.isArray(rb);\nif(ok){\n  D.pv=D.pv||{sent:0,uploaded:0,duplicate:0,already:0,invalid:0,skipped:0,overwritten:0,overflowed:0,remaining:null};\n  const P=D.pv;\n  const num=(v)=>{ const n=Number(v); return Number.isFinite(n)?n:0; };\n  P.sent+=num(rb.totalsent!==undefined?rb.totalsent:rb.total_sent);\n  const up=num(rb.leadsuploaded!==undefined?rb.leadsuploaded:(rb.leads_uploaded!==undefined?rb.leads_uploaded:rb.uploaded_count));\n  P.uploaded+=up;\n  P.duplicate+=num(rb.duplicateemailcount!==undefined?rb.duplicateemailcount:rb.duplicate_email_count);\n  P.already+=num(rb.alreadyincampaign!==undefined?rb.alreadyincampaign:rb.already_in_campaign);\n  P.invalid+=num(rb.invalidemailcount!==undefined?rb.invalidemailcount:rb.invalid_email_count);\n  P.skipped+=num(rb.skipped);\n  P.overwritten+=num(rb.overwritten);\n  P.overflowed+=num(rb.overflowedleadcount!==undefined?rb.overflowedleadcount:rb.overflowed_lead_count);\n  const rem=rb.remaininginplan!==undefined?rb.remaininginplan:rb.remaining_in_plan;\n  if(rem!==undefined&&rem!==null&&Number.isFinite(Number(rem))) P.remaining=Number(rem);\n  D.uploadedNew+=up;\n  return advance();\n}\nlet idxs=[];\nif(rb&&Array.isArray(rb.invalid_indexes)) idxs=rb.invalid_indexes.filter(Number.isFinite);\nelse if(rb&&Array.isArray(rb.errors)) idxs=rb.errors.map(e=>(e&&(e.index!==undefined?e.index:e.lead_index))).filter(Number.isFinite);\nif(status===400&&idxs.length){\n  const bad=new Set(idxs);\n  const keep=[];\n  cur.forEach((l,i)=>{\n    if(bad.has(i)){\n      D.errors.push('lead rejected by PV validation, dropped: '+((l&&l.email)||('index '+i)));\n      const rid=D.emailToRow[String((l&&l.email)||'').toLowerCase()];\n      if(rid&&D.rows[rid]&&!D.rows[rid].skip) D.rows[rid].skip='rejected by PV validation';\n    } else keep.push(l);\n  });\n  if(keep.length){ S.queue[S.idx]=keep; return emit({body:mkBody(keep), wait:2}); }\n  return advance();\n}\nconst bs=JSON.stringify(rb||{}).toLowerCase();\nif((status===413||status===400)&&cur.length>25&&/too large|payload|entity|body size|request size/.test(bs)){\n  const half=Math.ceil(cur.length/2);\n  const a=cur.slice(0,half), b=cur.slice(half);\n  S.queue.splice(S.idx,1,a,b);\n  return emit({body:mkBody(a), wait:2});\n}\nS.attempts++;\nif(S.attempts<=3) return emit({body:mkBody(cur), wait:Math.pow(2,S.attempts)});\nD.errors.push('lead/add chunk '+(S.idx+1)+'/'+S.queue.length+' failed after 3 retries (status '+(status||'?')+'): '+JSON.stringify(rb).slice(0,200));\nreturn advance();"
+        }
+      },
+      {
+        "id": "d9570a98-fb94-49bd-8695-37b4ac1fcf1e",
+        "name": "Send Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3220,
+          40
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "af6555bb-ccac-47c8-89aa-a8e6b128433d",
+        "name": "Init Readback",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3440,
+          140
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nD.rb={page:1, attempts:0};\nreturn [{json:{ws:D.ws, campaign_id:D.target, page:1, wait:5}}];"
+        }
+      },
+      {
+        "id": "c490653e-d01d-4f88-9dbf-bdbad8d96861",
+        "name": "RB Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          3660,
+          140
+        ],
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "webhookId": "8ee6cc76-6c47-4e79-adc7-9050c09ad705"
+      },
+      {
+        "id": "1717a52b-0302-4f04-bd5d-a9f80c32aef3",
+        "name": "Pull Campaign Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3880,
+          140
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/lead/workspace-leads",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.ws }}"
+              },
+              {
+                "name": "campaign_id",
+                "value": "={{ $json.campaign_id }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "page",
+                "value": "={{ $json.page }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "95b35fde-179f-4b61-9273-6a674cfa10fc",
+        "name": "Collect RB",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4100,
+          140
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy; const R=D.rb;\nconst j=($input.first()||{}).json||{};\nconst hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\nconst body=hasWrap?j.body:j;\nconst status=Number(j.statusCode||0);\nlet arr=null;\nif(Array.isArray(body)) arr=body;\nelse if(body&&Array.isArray(body.data)) arr=body.data;\nelse if(body&&Array.isArray(body.leads)) arr=body.leads;\nif(status&&(status<200||status>=300)) arr=null;\nconst emit=o=>[{json:o}];\nif(arr===null){\n  R.attempts++;\n  if(R.attempts<=5){\n    let w=Math.pow(2,R.attempts);\n    const h=j.headers||{};\n    const ra=Number(h['retry-after']||h['Retry-After']||0);\n    if(ra>0) w=Math.max(w,Math.min(ra,120));\n    return emit({ws:D.ws, campaign_id:D.target, page:R.page, wait:w});\n  }\n  D.rbFailed=true;\n  D.errors.push('read-back failed at page '+R.page+' after 5 retries (status '+(status||'?')+'); unconfirmed rows left unstamped');\n  return emit({done:true, wait:0});\n}\nR.attempts=0;\nfor(const l of arr){ const e=String(l.email||l.lead_email||'').toLowerCase().trim(); if(e) D.inCamp[e]=1; }\nif(arr.length===100){\n  R.page++;\n  if(R.page>500){ D.rbFailed=true; D.errors.push('read-back aborted: exceeded 500 pages'); return emit({done:true, wait:0}); }\n  return emit({ws:D.ws, campaign_id:D.target, page:R.page, wait:2});\n}\nreturn emit({done:true, wait:0});"
+        }
+      },
+      {
+        "id": "b117045f-a074-41db-aa0b-666e0380a839",
+        "name": "RB Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4320,
+          140
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "rd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "4ebdff04-d0a0-42b4-aa5c-0140cf6dbb07",
+        "name": "Build Stamps",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4540,
+          140
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nconst patches=[];\nlet deployed=0, missing=0;\nconst skipCounts={};\nfor(const rid of Object.keys(D.rows||{})){\n  const r=D.rows[rid];\n  let v='';\n  if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }\n  else if(D.rbFailed){ continue; }\n  else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; }\n  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; }\n  patches.push({id:rid, fields:{'Deploy Error':v}});\n}\nD.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts;\nD.inCamp={}; D.emailToRow={};\nconst out=[];\nfor(let i=0;i<patches.length;i+=10) out.push({json:{crBase:D.crBase, tableId:D.tableId, body:{records:patches.slice(i,i+10), typecast:true}}});\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+        }
+      },
+      {
+        "id": "118eeb82-ec81-4138-bbda-26ad9539616d",
+        "name": "Any Stamps?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4760,
+          140
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "as1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "24491a22-7a89-411a-bd2d-27ac6b00e981",
+        "name": "Patch Deploy Errors",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4980,
+          60
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "f40df02a-6c5e-445a-8512-09a9739f35cb",
+        "name": "Collect Stamps",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5200,
+          60
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nfor(const it of $input.all()){ const j=it.json||{}; if(j.error) D.errors.push('stamp write: '+JSON.stringify(j.error).slice(0,200)); }\nreturn [{json:{stamped:true}}];"
+        }
+      },
+      {
+        "id": "395f8468-04eb-4333-8283-a1bfc054c717",
+        "name": "Find Hub Campaign",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5420,
+          140
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "688b1e03-94e7-46d9-b11b-6d5914525c05",
+        "name": "Build Receipt",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5640,
+          140
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nlet hubId='';\ntry{ const r=($('Find Hub Campaign').first()||{}).json||{}; if(r.id) hubId=r.id; }catch(e){}\nD.receiptName=(D.tableName||D.tableId||'table')+' - '+(D.view||'view');\nif(!hubId) D.warnings.push('no Hub Campaigns row for '+D.target+'; receipt created without campaign link');\n// <shareable link>/<tableId>/<viewId> opens the exact view that was deployed.\nlet viewLink='';\nif(D.share && D.tableId && D.viewId){ viewLink=D.share+'/'+D.tableId+'/'+D.viewId; }\nelse if(!D.share){ D.warnings.push('client has no Clayroots shareable link; receipt written without a View Link'); }\nelse if(!D.viewId){ D.warnings.push('view id unresolved; receipt written without a View Link'); }\nD.viewLink=viewLink;\nreturn [{json:{Name:D.receiptName, Campaign:hubId?[hubId]:[], ViewLink:viewLink}}];"
+        }
+      },
+      {
+        "id": "8039cab2-5e7f-4ffe-a607-5bb23328fc09",
+        "name": "Create Lead List",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5860,
+          140
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblpy5Qt0j6TyDhqF"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Name": "={{ $json.Name }}",
+              "Campaign": "={{ $json.Campaign }}",
+              "List CSV": "={{ $json.ViewLink }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "f4de00c4-be32-443d-82a2-4c43e1bbf0ac",
+        "name": "Finalize Launch",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6080,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst D=sd.deploy||{errors:['deploy state missing'],warnings:[],counters:[],rows:{},skipCounts:{},launchId:''};\ntry{ const r=($('Create Lead List').first()||{}).json||{}; if(!r.id&&!D.abort) D.warnings.push('Lead Lists receipt creation failed'); }catch(e){ if(!D.abort) D.warnings.push('Lead Lists receipt not created'); }\nconst failed=D.errors||[];\nconst sc=D.skipCounts||{};\nconst skipTotal=Object.keys(sc).reduce((s,k)=>s+sc[k],0);\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst md=[];\nmd.push('**Deployed '+fmt(D.deployed||0)+' of '+fmt(D.rowsTotal||0)+' view rows to '+(D.campName||'?')+'**');\nmd.push('');\nmd.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+')');\nmd.push('**View:** '+(D.view||'?'));\nif(D.viewLink) md.push('**Link:** '+D.viewLink);\nmd.push('**Dedupe mode:** '+(D.dedupe||'Strict'));\nconst P=D.pv;\nif(P){\n  md.push('');\n  md.push('**Sent to PlusVibe**');\n  md.push('- Sent: '+fmt(P.sent));\n  md.push('- Accepted: '+fmt(P.uploaded));\n  const diff=(P.sent||0)-(P.uploaded||0);\n  md.push('- Not accepted: '+fmt(diff));\n  if(P.skipped) md.push('   - Already in the workspace, blocked by dedupe mode \"'+(D.dedupe||'Strict')+'\": '+fmt(P.skipped));\n  if(P.already) md.push('   - Already in this campaign: '+fmt(P.already));\n  if(P.duplicate) md.push('   - Same email twice in the upload: '+fmt(P.duplicate));\n  if(P.invalid) md.push('   - PlusVibe judged the email invalid: '+fmt(P.invalid));\n  if(P.overflowed) md.push('   - Over your plan limit: '+fmt(P.overflowed));\n  if(P.overwritten) md.push('   - Existing lead refreshed instead of added: '+fmt(P.overwritten));\n  if(P.remaining!==null&&P.remaining!==undefined) md.push('- Leads left in plan: '+fmt(P.remaining));\n}\nif(D.missing){ md.push('- Sent but not found in the campaign afterwards: '+fmt(D.missing)); }\nconst vm=D.varMisses||{};\nconst vmKeys=Object.keys(vm).sort((a,b)=>vm[b]-vm[a]);\nif(vmKeys.length){\n  md.push('');\n  md.push('**Not sent: a required column was empty**');\n  md.push('These rows never left Airtable. Fill the column or hide it from the view.');\n  for(const k of vmKeys) md.push('- '+k+' was empty on '+fmt(vm[k])+' row'+(vm[k]===1?'':'s'));\n}\nif(skipTotal){\n  md.push('');\n  md.push('**Not sent: other reasons ('+fmt(skipTotal)+')**');\n  for(const k of Object.keys(sc)) md.push('- '+k+': '+fmt(sc[k]));\n}\nif(D.receiptName){ md.push(''); md.push('**Lead list receipt:** '+D.receiptName); }\nif((D.warnings||[]).length){ md.push(''); md.push('**Warnings ('+D.warnings.length+')**'); for(const w of D.warnings) md.push('- '+w); }\nif(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }\nconst desc=md.join('\\n');\nconst durS=Math.round((Date.now()-(D.startedAt||Date.now()))/1000);\nsd.deploy=null;\nconst row={\n  'Status':failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Run at':D.runAt||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':D.rowsTotal||0,\n  'Records Out':D.deployed||0,\n  'Errors':failed.length,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':desc.slice(0,95000)\n};\nreturn [{json:row}];"
+        }
+      },
+      {
+        "id": "e0c73882-6b44-4921-93d4-adef01ca0f57",
+        "name": "Update Launch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6300,
+          300
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": [],
+            "value": {}
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "115c1acf-f1bb-469f-8c37-0d18d69b0d60",
+        "name": "Aborted?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2340,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ab1",
+                "leftValue": "={{ $json.abort ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "85366389-2458-4693-b9a9-771ceeb85bbd",
+        "name": "Meta Router",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          470,
+          240
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const D=sd.deploy;\nconst j=($input.first()||{}).json||{};\nif(!D.metaPhase||D.metaPhase==='schema'){\n  const tables=Array.isArray(j.tables)?j.tables:[];\n  D.schemaTables=tables;\n  let viewUrl='';\n  if(!tables.length){\n    if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }\n  } else {\n    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);\n    if(!t){\n      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }\n    } else {\n      D.tableId=t.id; D.tableName=t.name;\n      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);\n      if(v){\n        D.viewId=v.id; D.viewType=v.type||'';\n        if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }\n      }\n    }\n  }\n  if(viewUrl && !D.abort){ D.metaPhase='view'; return [{json:{metaUrl:viewUrl, again:true}}]; }\n  D.metaPhase='done'; D.viewMeta=null;\n  return [{json:{again:false}}];\n}\nD.metaPhase='done';\nD.viewMeta=j;\nreturn [{json:{again:false}}];"
+        }
+      },
+      {
+        "id": "0e28e4c0-6250-452f-b0d6-bd944eb69baf",
+        "name": "Fetch Again?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          470,
+          60
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "fa1",
+                "leftValue": "={{ $json.again ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "3e606520-e159-445e-ba59-0d73b3a6450e",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1070,
+          200
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "5853c86c-c3fc-4eb6-ac93-170638da983f",
+        "name": "Stamp Progress",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3120,
+          48
+        ],
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json._lid }}",
+              "Status": "Running",
+              "Description": "={{ $json._prog }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Writes live upload progress onto the launch row after every chunk, so a long deploy is readable while it runs instead of only at the end.",
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Deploy Webhook": {
+        "main": [
+          [
+            {
+              "node": "Read Launch Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Deploy": {
+        "main": [
+          [
+            {
+              "node": "Get Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Client": {
+        "main": [
+          [
+            {
+              "node": "Check Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Client": {
+        "main": [
+          [
+            {
+              "node": "List PV Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List PV Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Check Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Campaign": {
+        "main": [
+          [
+            {
+              "node": "Valid Launch?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valid Launch?": {
+        "main": [
+          [
+            {
+              "node": "Get Base Schema",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finalize Launch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Variables": {
+        "main": [
+          [
+            {
+              "node": "Need DE Field?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Need DE Field?": {
+        "main": [
+          [
+            {
+              "node": "Create DE Field",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Read View Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create DE Field": {
+        "main": [
+          [
+            {
+              "node": "Read View Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read View Rows": {
+        "main": [
+          [
+            {
+              "node": "Collect View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect View": {
+        "main": [
+          [
+            {
+              "node": "Has DNC?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has DNC?": {
+        "main": [
+          [
+            {
+              "node": "Read DNC",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read DNC": {
+        "main": [
+          [
+            {
+              "node": "Build Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Leads": {
+        "main": [
+          [
+            {
+              "node": "Leads Ready?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Leads Ready?": {
+        "main": [
+          [
+            {
+              "node": "Send Pace",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Aborted?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Pace": {
+        "main": [
+          [
+            {
+              "node": "PV Add Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Add Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Done?": {
+        "main": [
+          [
+            {
+              "node": "Init Readback",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Send Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Readback": {
+        "main": [
+          [
+            {
+              "node": "RB Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RB Pace": {
+        "main": [
+          [
+            {
+              "node": "Pull Campaign Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Campaign Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect RB",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect RB": {
+        "main": [
+          [
+            {
+              "node": "RB Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RB Done?": {
+        "main": [
+          [
+            {
+              "node": "Build Stamps",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "RB Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Stamps": {
+        "main": [
+          [
+            {
+              "node": "Any Stamps?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Stamps?": {
+        "main": [
+          [
+            {
+              "node": "Patch Deploy Errors",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Find Hub Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Patch Deploy Errors": {
+        "main": [
+          [
+            {
+              "node": "Collect Stamps",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Stamps": {
+        "main": [
+          [
+            {
+              "node": "Find Hub Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Hub Campaign": {
+        "main": [
+          [
+            {
+              "node": "Build Receipt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Receipt": {
+        "main": [
+          [
+            {
+              "node": "Create Lead List",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Lead List": {
+        "main": [
+          [
+            {
+              "node": "Finalize Launch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Finalize Launch": {
+        "main": [
+          [
+            {
+              "node": "Update Launch Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aborted?": {
+        "main": [
+          [
+            {
+              "node": "Finalize Launch",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Init Readback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Base Schema": {
+        "main": [
+          [
+            {
+              "node": "Meta Router",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Meta Router": {
+        "main": [
+          [
+            {
+              "node": "Fetch Again?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Again?": {
+        "main": [
+          [
+            {
+              "node": "Get Base Schema",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Plan Variables",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Launch Row": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Init Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Send": {
+        "main": [
+          [
+            {
+              "node": "Stamp Progress",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Progress": {
+        "main": [
+          [
+            {
+              "node": "Send Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

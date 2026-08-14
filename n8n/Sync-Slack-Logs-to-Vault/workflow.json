@@ -1,0 +1,2783 @@
+{
+  "updatedAt": "2026-08-11T23:11:23.432Z",
+  "createdAt": "2026-07-28T06:55:20.211Z",
+  "id": "VrCFq5xwiYtcmEIc",
+  "name": "Sync Slack Logs to Vault",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Config.js"
+      },
+      "id": "54b66a25-15c0-47df-9405-a615bd3517c3",
+      "name": "Client Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "operation": "history",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Config').item.json.slackChannelId }}"
+        },
+        "filters": {
+          "oldest": "={{ new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }}"
+        }
+      },
+      "id": "372d680f-85e8-4e7a-9e42-9011e08d619c",
+      "name": "Get channel messages",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        400,
+        0
+      ],
+      "webhookId": "deb758a0-d102-49b4-932f-221b9507e505",
+      "alwaysOutputData": true,
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $('Client Config').item.json.slackChannelId }}"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json.ts }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "27b7eced-ff8f-461a-9ecd-31f30f4fe5b5",
+      "name": "Fetch thread replies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        608,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Attach-replies-to-parent.js"
+      },
+      "id": "17c51f24-fd06-4bcc-bdb7-eeb82c71b994",
+      "name": "Attach replies to parent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "operation": "member",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Config').item.json.slackChannelId }}"
+        },
+        "returnAll": true
+      },
+      "id": "380f980a-fa96-4998-b19b-f30cf30501c2",
+      "name": "Get Channel Members",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1008,
+        0
+      ],
+      "executeOnce": true,
+      "webhookId": "1da010c7-e368-4fe9-b6ed-6068577d7f6d",
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "user": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.member }}"
+        }
+      },
+      "id": "392d057e-7732-44c1-a068-1e0d8c400e86",
+      "name": "Get User Details",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1200,
+        0
+      ],
+      "webhookId": "0f831cd9-f739-4727-8ca3-db5b1b6fa8c5",
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-messages.js"
+      },
+      "id": "8df7e8c2-8213-4077-ac97-9d7b7dc6f478",
+      "name": "Format messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Logs",
+        "limit": 5,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Config').item.json.driveFolderId }}"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name"
+          ]
+        }
+      },
+      "id": "08d41182-23ba-4227-a411-c7378fd61c97",
+      "name": "Find Logs Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Format messages').item.json.content }}",
+        "name": "={{ $('Format messages').item.json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Logs Folder').first().json.id }}"
+        },
+        "options": {}
+      },
+      "id": "e37ecffb-116d-4d93-bf83-7afe8114c4ae",
+      "name": "Create file from text",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "id": "545f697c-d78e-464d-b117-6261d03633aa",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        304
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "1fc7beed-f824-4851-82e1-8477cb21a4e7",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        304
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.flowroots.com/webhook/addon-slacksync-{{ $('Client Config').first().json.clientSlug }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recordId",
+              "value": "={{ $('Client Config').first().json.recordId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4349dcd5-a458-44b7-b1b4-a00cfc9b5db8",
+      "name": "Fire Add-on",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2128,
+        0
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "id": "37515188-93e6-4532-90a0-9b9e18651beb",
+      "name": "Daily 23:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "{Slack Sync} = TRUE()",
+        "options": {}
+      },
+      "id": "9616dd3a-5775-4914-aa8f-c73d43a40c57",
+      "name": "Get Enabled Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Results.js"
+      },
+      "id": "1e4aa2b4-fd2d-40b0-a810-7f467a94f0e3",
+      "name": "Init Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "58967870-12de-467b-b7f1-bb310e0265fe",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        32,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      },
+      "id": "76c34a4c-ec7a-465c-8a33-d373c4a95dab",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bdr1",
+              "leftValue": "={{ $('Client Config').first().json.bdrChannelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bb51475d-b71b-4085-b532-588cdc2cd634",
+      "name": "BDR Enabled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.history",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $('Client Config').first().json.bdrChannelId }}"
+            },
+            {
+              "name": "oldest",
+              "value": "={{ Math.floor($now.minus({ hours: 24 }).toSeconds()) }}"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "e75cca41-1f75-4f45-a458-85b9236a60b4",
+      "name": "BDR History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        528
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BDR-Split.js"
+      },
+      "id": "ff14edf1-4eab-4357-bb43-b70f329832f0",
+      "name": "BDR Split",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        528
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://slack.com/api/conversations.replies?channel={{ $('Client Config').first().json.bdrChannelId }}&ts={{ $json.ts }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1100
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "e2ddf461-00c8-430c-987a-00c3cc10118d",
+      "name": "BDR Replies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2608,
+        528
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BDR-Attach.js"
+      },
+      "id": "ccb755c0-7a1b-4e99-ac59-f544d36066d0",
+      "name": "BDR Attach",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        528
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-BDR-File.js"
+      },
+      "id": "fc8650ed-b89e-4f5c-a160-5efc59f9fb62",
+      "name": "Format BDR File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        528
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ok1",
+              "leftValue": "={{ $json.slackOk }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a5dafcc3-c20b-4d5e-80d6-a9b08bbb86aa",
+      "name": "BDR Fetch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3200,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Format BDR File').item.json.content }}",
+        "name": "={{ $('Format BDR File').item.json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Logs Folder').first().json.id }}"
+        },
+        "options": {}
+      },
+      "id": "0d55eb4f-dff9-4dd4-849a-e23029abfbef",
+      "name": "Create BDR Log File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3408,
+        432
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BDR-Cards-With-Replies.js"
+      },
+      "id": "4a2c1d94-aa62-45da-9d96-b393e39c8bdf",
+      "name": "BDR Cards With Replies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        432
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(\"{{ $json.ts }}\" != \"\", {BDR Thread TS} = \"{{ $json.ts }}\", FIND(\"{{ $('Client Config').first().json.clientName }}\", ARRAYJOIN({Client})) > 0)",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "c1b14039-73b0-4159-a0f6-3d005042a80f",
+      "name": "Find CRM Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3808,
+        432
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Attach-Card.js"
+      },
+      "id": "c8652e32-c3df-4722-a7cb-4d43f7543b08",
+      "name": "Attach Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        432
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/{{ $json.record_id }}/comments?pageSize=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "offset",
+                    "value": "={{ $response.body.offset }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "limitPagesFetched": true,
+              "maxRequests": 25,
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "id": "c5115b6f-1ddd-40e6-b4a4-0e8be7454e2e",
+      "name": "Get Prospect Comments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4208,
+        432
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Collect-Comment-Pages.js"
+      },
+      "id": "9d08c220-d7c6-4461-82d9-b7dc4cdf1b7d",
+      "name": "Collect Comment Pages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        432
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Diff-New-Replies.js"
+      },
+      "id": "df6efb78-3042-4b5b-9093-864600d7d586",
+      "name": "Diff New Replies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4608,
+        432
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "nr1",
+              "leftValue": "={{ $json.record_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9cd0fb02-1a01-4fda-bb7a-55db1e0a6c72",
+      "name": "New Replies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/{{ $json.record_id }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "32fdc03c-8821-4b91-967c-6efc4733280a",
+      "name": "Create Prospect Comment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5008,
+        352
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-BDR-Outcome.js"
+      },
+      "id": "906c2d00-f13c-46cc-8254-00bb61562db1",
+      "name": "Record BDR Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5200,
+        528
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-BDR-Run-Log.js"
+      },
+      "id": "b5e07029-8287-47bd-8297-aa50a8d7fe63",
+      "name": "Build BDR Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        304
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "3553acb2-4dec-478c-a002-302ea1f9b7c6",
+      "name": "Log BDR Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Client Config": {
+      "main": [
+        [
+          {
+            "node": "Get channel messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get channel messages": {
+      "main": [
+        [
+          {
+            "node": "Fetch thread replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch thread replies": {
+      "main": [
+        [
+          {
+            "node": "Attach replies to parent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach replies to parent": {
+      "main": [
+        [
+          {
+            "node": "Get Channel Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Channel Members": {
+      "main": [
+        [
+          {
+            "node": "Get User Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Details": {
+      "main": [
+        [
+          {
+            "node": "Format messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format messages": {
+      "main": [
+        [
+          {
+            "node": "Find Logs Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Logs Folder": {
+      "main": [
+        [
+          {
+            "node": "Create file from text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 23:00": {
+      "main": [
+        [
+          {
+            "node": "Get Enabled Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Enabled Clients": {
+      "main": [
+        [
+          {
+            "node": "Init Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Results": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Client Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Add-on": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create file from text": {
+      "main": [
+        [
+          {
+            "node": "BDR Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Enabled?": {
+      "main": [
+        [
+          {
+            "node": "BDR History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR History": {
+      "main": [
+        [
+          {
+            "node": "BDR Split",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Split": {
+      "main": [
+        [
+          {
+            "node": "BDR Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Replies": {
+      "main": [
+        [
+          {
+            "node": "BDR Attach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Attach": {
+      "main": [
+        [
+          {
+            "node": "Format BDR File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format BDR File": {
+      "main": [
+        [
+          {
+            "node": "BDR Fetch OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Fetch OK?": {
+      "main": [
+        [
+          {
+            "node": "Create BDR Log File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record BDR Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create BDR Log File": {
+      "main": [
+        [
+          {
+            "node": "BDR Cards With Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDR Cards With Replies": {
+      "main": [
+        [
+          {
+            "node": "Find CRM Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CRM Prospect": {
+      "main": [
+        [
+          {
+            "node": "Attach Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Card": {
+      "main": [
+        [
+          {
+            "node": "Get Prospect Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prospect Comments": {
+      "main": [
+        [
+          {
+            "node": "Collect Comment Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Comment Pages": {
+      "main": [
+        [
+          {
+            "node": "Diff New Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diff New Replies": {
+      "main": [
+        [
+          {
+            "node": "New Replies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Replies?": {
+      "main": [
+        [
+          {
+            "node": "Create Prospect Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record BDR Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Prospect Comment": {
+      "main": [
+        [
+          {
+            "node": "Record BDR Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record BDR Outcome": {
+      "main": [
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Run": {
+      "main": [
+        [
+          {
+            "node": "Build BDR Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build BDR Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log BDR Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Daily 23:00": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "slackSyncResults": [
+        {
+          "client": "Adelante",
+          "channel": "C0BFHMGUHT3",
+          "msgs": 4,
+          "file": "1XBpMmqODQp8zqfNNUH54IVHc2-I9ZaS_",
+          "ok": true,
+          "error": ""
+        },
+        {
+          "client": "Piper AI",
+          "channel": "C0B8XHDAMND",
+          "msgs": 1,
+          "file": "1uWiLLsD2xXoAvl6QEayhX1h3FURwwgTF",
+          "ok": true,
+          "error": ""
+        },
+        {
+          "client": "Move PLNR",
+          "channel": "C0B4HECTU3A",
+          "msgs": 0,
+          "file": "1cuI2JDAu5MSslRng0KpVAWNoPVm67jUl",
+          "ok": true,
+          "error": ""
+        }
+      ],
+      "runStartedAt": 1786651222613,
+      "bdrResults": [
+        {
+          "recordId": "recN79He6wwPKogUR",
+          "client": "Adelante",
+          "channel": "C0BFHMGUHT3",
+          "msgs": 26,
+          "threads": 3,
+          "filename": "2026-08-12 - Slack BDR.md",
+          "fileId": "1oxPZIKoBKBL1Dk4slsL8S72mFaRCxuSs",
+          "matched": false,
+          "comments": 0,
+          "slackOk": true,
+          "slackErr": "",
+          "runAt": "2026-08-12T23:00:33.766+03:00"
+        },
+        {
+          "recordId": "recyZTRr7Hb5S6Ozr",
+          "client": "Move PLNR",
+          "channel": "C0AQ013Q8FN",
+          "msgs": 0,
+          "threads": 0,
+          "filename": "2026-08-12 - Slack BDR.md",
+          "fileId": "1oxPZIKoBKBL1Dk4slsL8S72mFaRCxuSs",
+          "matched": false,
+          "comments": 0,
+          "slackOk": false,
+          "slackErr": "not_in_channel",
+          "runAt": "2026-08-12T23:00:44.055+03:00"
+        },
+        {
+          "recordId": "recN79He6wwPKogUR",
+          "client": "Adelante",
+          "channel": "C0BFHMGUHT3",
+          "msgs": 4,
+          "threads": 2,
+          "filename": "2026-08-13 - Slack BDR.md",
+          "fileId": "1W61IyJs9mhWakXyVjS85PV5JNHtU-4NR",
+          "matched": false,
+          "comments": 0,
+          "slackOk": true,
+          "slackErr": "",
+          "runAt": "2026-08-13T23:00:32.332+03:00"
+        },
+        {
+          "recordId": "recyZTRr7Hb5S6Ozr",
+          "client": "Move PLNR",
+          "channel": "C0AQ013Q8FN",
+          "msgs": 0,
+          "threads": 0,
+          "filename": "2026-08-13 - Slack BDR.md",
+          "fileId": "1W61IyJs9mhWakXyVjS85PV5JNHtU-4NR",
+          "matched": false,
+          "comments": 0,
+          "slackOk": false,
+          "slackErr": "not_in_channel",
+          "runAt": "2026-08-13T23:00:42.551+03:00"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
+  "activeVersionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T06:55:20.234Z",
+      "createdAt": "2026-07-28T06:55:20.234Z",
+      "role": "workflow:owner",
+      "workflowId": "VrCFq5xwiYtcmEIc",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-11T23:11:26.000Z",
+    "createdAt": "2026-08-11T23:11:23.436Z",
+    "versionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
+    "workflowId": "VrCFq5xwiYtcmEIc",
+    "nodes": [
+      {
+        "parameters": {
+          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  recordId: r.id||'',\n  slackChannelId: f['Slack Channel ID']||'',\n  bdrChannelId: f['BDR Slack Channel ID']||'',\n  driveFolderId: f['driveMainFolderID']||'',\n  clientName: name,\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g, '')\n}}];"
+        },
+        "id": "54b66a25-15c0-47df-9405-a615bd3517c3",
+        "name": "Client Config",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "channel",
+          "operation": "history",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Config').item.json.slackChannelId }}"
+          },
+          "filters": {
+            "oldest": "={{ new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }}"
+          }
+        },
+        "id": "372d680f-85e8-4e7a-9e42-9011e08d619c",
+        "name": "Get channel messages",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.5,
+        "position": [
+          400,
+          0
+        ],
+        "webhookId": "deb758a0-d102-49b4-932f-221b9507e505",
+        "alwaysOutputData": true,
+        "credentials": {
+          "slackApi": {
+            "id": "jpI5mdJbONB0MrL2",
+            "name": "General Slack"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "url": "https://slack.com/api/conversations.replies",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "slackApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "channel",
+                "value": "={{ $('Client Config').item.json.slackChannelId }}"
+              },
+              {
+                "name": "ts",
+                "value": "={{ $json.ts }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "27b7eced-ff8f-461a-9ecd-31f30f4fe5b5",
+        "name": "Fetch thread replies",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          608,
+          0
+        ],
+        "credentials": {
+          "slackApi": {
+            "id": "jpI5mdJbONB0MrL2",
+            "name": "General Slack"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "return $input.all()\n  .filter(item => (item.json.messages || []).length > 0)\n  .map(item => {\n    const messages = item.json.messages;\n    const parent = Object.assign({}, messages[0]);\n    parent.replies = messages.slice(1);\n    return { json: parent };\n  });"
+        },
+        "id": "17c51f24-fd06-4bcc-bdb7-eeb82c71b994",
+        "name": "Attach replies to parent",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          800,
+          0
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "channel",
+          "operation": "member",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Config').item.json.slackChannelId }}"
+          },
+          "returnAll": true
+        },
+        "id": "380f980a-fa96-4998-b19b-f30cf30501c2",
+        "name": "Get Channel Members",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.5,
+        "position": [
+          1008,
+          0
+        ],
+        "executeOnce": true,
+        "webhookId": "1da010c7-e368-4fe9-b6ed-6068577d7f6d",
+        "credentials": {
+          "slackApi": {
+            "id": "jpI5mdJbONB0MrL2",
+            "name": "General Slack"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "user",
+          "user": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.member }}"
+          }
+        },
+        "id": "392d057e-7732-44c1-a068-1e0d8c400e86",
+        "name": "Get User Details",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.5,
+        "position": [
+          1200,
+          0
+        ],
+        "webhookId": "0f831cd9-f739-4727-8ca3-db5b1b6fa8c5",
+        "credentials": {
+          "slackApi": {
+            "id": "jpI5mdJbONB0MrL2",
+            "name": "General Slack"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const names = {};\n$input.all().forEach(item => {\n  const m = item.json;\n  names[m.id] = m.real_name || (m.profile && m.profile.display_name) || m.name || m.id;\n});\nconst messages = $('Attach replies to parent').all().filter(m => m.json && m.json.ts).reverse();\nconst date = new Date().toISOString().split('T')[0];\nconst resolve = (t) => String(t || '').replace(/<@([A-Z0-9]+)>/g, (_, id) => '@' + (names[id] || id));\nconst lines = messages.map(m => {\n  const name = names[m.json.user] || m.json.user || 'Unknown';\n  const text = resolve(m.json.text);\n  let block = '**' + name + '**: ' + text;\n  const replies = m.json.replies || [];\n  if (replies.length > 0) {\n    const replyLines = replies.map(r => {\n      const rName = names[r.user] || r.user || 'Unknown';\n      const rText = resolve(r.text);\n      return '  > **' + rName + '**: ' + rText;\n    });\n    block += '\\n' + replyLines.join('\\n');\n  }\n  return block;\n}).join('\\n\\n');\nconst content = '# ' + date + ' — Slack\\n\\n' + (lines || '_No activity._');\nreturn [{ json: { content, filename: date + ' - Slack.md' } }];"
+        },
+        "id": "8df7e8c2-8213-4077-ac97-9d7b7dc6f478",
+        "name": "Format messages",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1408,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "fileFolder",
+          "queryString": "Logs",
+          "limit": 5,
+          "filter": {
+            "folderId": {
+              "__rl": true,
+              "mode": "id",
+              "value": "={{ $('Client Config').item.json.driveFolderId }}"
+            },
+            "whatToSearch": "folders"
+          },
+          "options": {
+            "fields": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "id": "08d41182-23ba-4227-a411-c7378fd61c97",
+        "name": "Find Logs Folder",
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          1600,
+          0
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "5BMl4AGSvtAP9QbV",
+            "name": "Flowroots Drive"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "createFromText",
+          "content": "={{ $('Format messages').item.json.content }}",
+          "name": "={{ $('Format messages').item.json.filename }}",
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Logs Folder').first().json.id }}"
+          },
+          "options": {}
+        },
+        "id": "e37ecffb-116d-4d93-bf83-7afe8114c4ae",
+        "name": "Create file from text",
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          1808,
+          0
+        ],
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "5BMl4AGSvtAP9QbV",
+            "name": "Flowroots Drive"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "let results=[];\nlet rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.slackSyncResults||[]; rs=sd.runStartedAt||0; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst okOnes=results.filter(r=>r.ok);\nconst totalMsgs=results.reduce((s,r)=>s+(r.msgs||0),0);\nconst files=results.filter(r=>r.file).length;\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=okOnes.map(r=> '- **'+r.client+' ('+(r.channel||'?')+'):** '+nf(r.msgs)+' msgs · '+(r.file?'file written':'no file'));\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**'];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+' ('+(r.channel||'?')+'): '+(r.error||'unknown')).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{json:{\n 'Automation':'Sync Slack Logs to Vault',\n 'Status': failed.length>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalMsgs,\n 'Records Out': files,\n 'Errors': failed.length,\n 'Target': results.length+' client channel(s) -> Drive Logs folders',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+        },
+        "id": "545f697c-d78e-464d-b117-6261d03633aa",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          304
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "1fc7beed-f824-4851-82e1-8477cb21a4e7",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          432,
+          304
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.flowroots.com/webhook/addon-slacksync-{{ $('Client Config').first().json.clientSlug }}",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "recordId",
+                "value": "={{ $('Client Config').first().json.recordId }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "4349dcd5-a458-44b7-b1b4-a00cfc9b5db8",
+        "name": "Fire Add-on",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          2128,
+          0
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 23
+              }
+            ]
+          }
+        },
+        "id": "37515188-93e6-4532-90a0-9b9e18651beb",
+        "name": "Daily 23:00",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -496,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "{Slack Sync} = TRUE()",
+          "options": {}
+        },
+        "id": "9616dd3a-5775-4914-aa8f-c73d43a40c57",
+        "name": "Get Enabled Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -320,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.slackSyncResults=[];\nreturn $input.all();"
+        },
+        "id": "1e4aa2b4-fd2d-40b0-a810-7f467a94f0e3",
+        "name": "Init Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -144,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "58967870-12de-467b-b7f1-bb310e0265fe",
+        "name": "Loop Over Items",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          32,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nif(!Array.isArray(sd.slackSyncResults)) sd.slackSyncResults=[];\nlet cfg={}; try{cfg=$('Client Config').first().json||{};}catch(e){}\nlet ok=true, err='';\nlet msgs=0;\ntry{ msgs=$('Attach replies to parent').all().map(i=>i.json).filter(m=>m&&m.ts).length; }catch(e){}\ntry{ const h=$('Get channel messages').first().json||{}; if(h.error){ ok=false; err=String((h.error&&h.error.message)||h.error); } }catch(e){ ok=false; err=err||'channel fetch failed'; }\nlet fileId='';\ntry{ const f=$('Create file from text').first().json||{}; if(f.id){ fileId=f.id; } else { ok=false; err=err||String((f.error&&(f.error.message||f.error))||'file not written'); } }catch(e){ ok=false; err=err||'file not written'; }\nsd.slackSyncResults.push({client:cfg.clientName||'(unknown)', channel:cfg.slackChannelId||'', msgs:msgs, file:fileId, ok:ok, error:String(err).slice(0,140)});\nreturn [{json:{client:cfg.clientName||'', ok:ok}}];"
+        },
+        "id": "76c34a4c-ec7a-465c-8a33-d373c4a95dab",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2320,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "bdr1",
+                "leftValue": "={{ $('Client Config').first().json.bdrChannelId }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "bb51475d-b71b-4085-b532-588cdc2cd634",
+        "name": "BDR Enabled?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2000,
+          432
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://slack.com/api/conversations.history",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "slackApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "channel",
+                "value": "={{ $('Client Config').first().json.bdrChannelId }}"
+              },
+              {
+                "name": "oldest",
+                "value": "={{ Math.floor($now.minus({ hours: 24 }).toSeconds()) }}"
+              },
+              {
+                "name": "limit",
+                "value": "200"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "e75cca41-1f75-4f45-a458-85b9236a60b4",
+        "name": "BDR History",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2208,
+          528
+        ],
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const msgs=($json.messages)||[];\nconst threaded=msgs.filter(m=>(m.reply_count||0)>0).map(m=>({json:{ts:m.ts}}));\nreturn threaded.length?threaded:[{json:{ts:'0'}}];"
+        },
+        "id": "ff14edf1-4eab-4357-bb43-b70f329832f0",
+        "name": "BDR Split",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2400,
+          528
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "url": "=https://slack.com/api/conversations.replies?channel={{ $('Client Config').first().json.bdrChannelId }}&ts={{ $json.ts }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "slackApi",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1100
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "e2ddf461-00c8-430c-987a-00c3cc10118d",
+        "name": "BDR Replies",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2608,
+          528
+        ],
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const threads={};\nfor(const i of $input.all()){ const m=(i.json&&i.json.messages)||[]; if(m.length>1){ threads[m[0].ts]=m.slice(1); } }\nlet all=[];\ntry{ all=($('BDR History').first().json.messages)||[]; }catch(e){ all=[]; }\nif(!all.length) return [{json:{channel:'BDR',msg:null}}];\nreturn all.map(m=>{ const p=Object.assign({},m); p.replies=threads[m.ts]||[]; return {json:{channel:'BDR',msg:p}}; });"
+        },
+        "id": "ccb755c0-7a1b-4e99-ac59-f544d36066d0",
+        "name": "BDR Attach",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2800,
+          528
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const date=new Date().toISOString().split('T')[0];\nlet client='';\ntry{ client=$('Client Config').first().json.clientName||''; }catch(e){}\nlet slackOk=false, slackErr='';\ntry{ const h=$('BDR History').first().json||{}; if(h.ok===true){ slackOk=true; } else { slackErr=String(h.error||h.message||'slack fetch failed (no ok:true)'); } }catch(e){ slackErr='no slack response'; }\ntry {\n  const names={};\n  try{ $('Get User Details').all().forEach(i=>{const u=(i&&i.json)||{}; if(u.id) names[u.id]=u.real_name||(u.profile&&u.profile.display_name)||u.name||u.id;}); }catch(e){}\n  const resolve=(t)=>String(t||'').replace(/<@([A-Z0-9]+)>/g,(_,id)=>'@'+(names[id]||id));\n  const nm=(m)=>{if(!m)return 'Unknown';const p=m.user_profile||{};const bp=m.bot_profile||{};return p.real_name||p.display_name||bp.name||m.username||names[m.user]||m.user||'Unknown';};\n  const fmt=(m)=>{let b='**'+nm(m)+'**: '+resolve(m&&m.text);const reps=(m&&m.replies)||[];if(reps.length){b+='\\n'+reps.map(r=>'  > **'+nm(r)+'**: '+resolve(r&&r.text)).join('\\n');}return b;};\n  const bdr=$input.all().map(i=>i.json).filter(x=>x&&x.channel==='BDR').map(x=>x.msg).filter(Boolean).reverse();\n  const content='# '+date+' — Slack BDR ('+(client||'client')+')\\n\\n'+(bdr.length?bdr.map(fmt).join('\\n\\n'):'_No activity._');\n  return [{json:{content, filename: date+' - Slack BDR.md', slackOk, slackErr}}];\n} catch(e){\n  return [{json:{content:'# '+date+' — Slack BDR ('+(client||'client')+')\\n\\nFORMAT ERROR: '+String((e&&e.message)||e), filename: date+' - Slack BDR.md', slackOk:false, slackErr:String((e&&e.message)||e)}}];\n}"
+        },
+        "id": "fc8650ed-b89e-4f5c-a160-5efc59f9fb62",
+        "name": "Format BDR File",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3008,
+          528
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ok1",
+                "leftValue": "={{ $json.slackOk }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a5dafcc3-c20b-4d5e-80d6-a9b08bbb86aa",
+        "name": "BDR Fetch OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3200,
+          528
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "createFromText",
+          "content": "={{ $('Format BDR File').item.json.content }}",
+          "name": "={{ $('Format BDR File').item.json.filename }}",
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Logs Folder').first().json.id }}"
+          },
+          "options": {}
+        },
+        "id": "0d55eb4f-dff9-4dd4-849a-e23029abfbef",
+        "name": "Create BDR Log File",
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          3408,
+          432
+        ],
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "5BMl4AGSvtAP9QbV",
+            "name": "Flowroots Drive"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const isBotMsg=(m)=>!!(m&&(m.bot_id||m.app_id||m.subtype));\nconst items=$input.all().map(i=>i.json).filter(x=>x&&x.msg);\nconst out=[];\nfor(const x of items){\n  const p=x.msg;\n  const botUsers=new Set();\n  if(isBotMsg(p)&&p.user) botUsers.add(p.user);\n  const human=((p.replies)||[]).filter(r=>r&&!r.bot_id&&!r.app_id&&!r.subtype&&r.user&&!botUsers.has(r.user)&&String(r.text||'').trim());\n  if(!human.length) continue;\n  out.push({json:{ts:String(p.ts||''), replies:human}});\n}\nreturn out.length?out:[{json:{ts:'', replies:[]}}];"
+        },
+        "id": "4a2c1d94-aa62-45da-9d96-b393e39c8bdf",
+        "name": "BDR Cards With Replies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3600,
+          432
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=AND(\"{{ $json.ts }}\" != \"\", {BDR Thread TS} = \"{{ $json.ts }}\", FIND(\"{{ $('Client Config').first().json.clientName }}\", ARRAYJOIN({Client})) > 0)",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "c1b14039-73b0-4159-a0f6-3d005042a80f",
+        "name": "Find CRM Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3808,
+          432
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const rec=$json||{};\nconst f=rec.fields||rec;\nconst ts=String(f['BDR Thread TS']||'');\nlet card=null;\ntry{ card=$('BDR Cards With Replies').all().map(i=>i.json).find(c=>c&&ts!==''&&String(c.ts||'')===ts)||null; }catch(e){}\nreturn { json: { record_id: rec.id||'', prospect_name: f.Name||'', ts: ts, replies: (card&&card.replies)||[] } };"
+        },
+        "id": "c8652e32-c3df-4722-a7cb-4d43f7543b08",
+        "name": "Attach Card",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4000,
+          432
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/{{ $json.record_id }}/comments?pageSize=100",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "offset",
+                      "value": "={{ $response.body.offset }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "limitPagesFetched": true,
+                "maxRequests": 25,
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "id": "c5115b6f-1ddd-40e6-b4a4-0e8be7454e2e",
+        "name": "Get Prospect Comments",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4208,
+          432
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const resp=$json||{};\nconst comments=resp.comments||[];\nlet rid='';\ntry{ rid=$('Attach Card').item.json.record_id||''; }\ncatch(e){ try{ const a=$('Attach Card').all(); if(a.length===1) rid=(a[0].json&&a[0].json.record_id)||''; }catch(e2){} }\nreturn { json: { record_id: rid, seen: comments.map(c=>String((c&&c.text)||'')).join('\\n') } };"
+        },
+        "id": "9d08c220-d7c6-4461-82d9-b7dc4cdf1b7d",
+        "name": "Collect Comment Pages",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4400,
+          432
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const seenBy={};\nfor(const i of $input.all()){ const j=(i&&i.json)||{}; const rid=j.record_id||''; if(!rid) continue; seenBy[rid]=(seenBy[rid]||'')+'\\n'+(j.seen||''); }\nconst names={};\ntry{ $('Get User Details').all().forEach(i=>{const u=(i&&i.json)||{}; if(u.id) names[u.id]=u.real_name||(u.profile&&u.profile.display_name)||u.name||u.id;}); }catch(e){}\nconst resolve=(t)=>String(t||'').replace(/<@([A-Z0-9]+)>/g,(_,id)=>'@'+(names[id]||id));\nlet cards=[];\ntry{ cards=$('Attach Card').all().map(i=>(i&&i.json)||{}); }catch(e){}\nconst out=[]; const posted=new Set();\nfor(const a of cards){\n  const rid=a.record_id||''; if(!rid) continue;\n  if(!Object.prototype.hasOwnProperty.call(seenBy,rid)) continue;\n  const seen=seenBy[rid]||'';\n  const nm=a.prospect_name||'';\n  for(const r of (a.replies||[])){\n    const ts=String((r&&r.ts)||''); if(!ts) continue;\n    const marker='⟦bdr:'+ts+'⟧';\n    if(seen.indexOf(marker)!==-1) continue;\n    const key=rid+marker; if(posted.has(key)) continue;\n    const txt=resolve((r&&r.text)||'').trim(); if(!txt) continue;\n    posted.add(key);\n    const d=new Date((parseFloat(ts)||0)*1000).toISOString().slice(0,10);\n    out.push({json:{record_id:rid, text:'BDR call update — '+d+' — '+nm+'\\n\\n'+txt+'\\n\\n'+marker}});\n  }\n}\nreturn out;"
+        },
+        "id": "df6efb78-3042-4b5b-9093-864600d7d586",
+        "name": "Diff New Replies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4608,
+          432
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "nr1",
+                "leftValue": "={{ $json.record_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "9cd0fb02-1a01-4fda-bb7a-55db1e0a6c72",
+        "name": "New Replies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4800,
+          432
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/{{ $json.record_id }}/comments",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "32fdc03c-8821-4b91-967c-6efc4733280a",
+        "name": "Create Prospect Comment",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5008,
+          352
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nif(!Array.isArray(sd.bdrResults)) sd.bdrResults=[];\nlet cfg={}; try{ cfg=$('Client Config').first().json||{}; }catch(e){}\nlet msgs=0, threads=0;\ntry{ const it=$('BDR Attach').all().map(i=>i.json).filter(x=>x&&x.msg); msgs=it.length; threads=it.filter(x=>((x.msg.replies)||[]).length>0).length; }catch(e){}\nlet filename='', slackOk=true, slackErr='';\ntry{ const f=$('Format BDR File').first().json||{}; filename=f.filename||''; slackOk=f.slackOk!==false; slackErr=f.slackErr||''; }catch(e){}\nlet fileId=''; try{ fileId=($('Create BDR Log File').first().json||{}).id||''; }catch(e){}\nlet matched=false; try{ matched=$('Attach Card').all().some(i=>i.json&&i.json.record_id); }catch(e){}\nlet comments=0; try{ comments=$('Diff New Replies').all().filter(i=>i.json&&i.json.record_id).length; }catch(e){}\nsd.bdrResults.push({recordId:cfg.recordId||'', client:cfg.clientName||'', channel:cfg.bdrChannelId||'', msgs:msgs, threads:threads, filename:filename, fileId:fileId, matched:matched, comments:comments, slackOk:slackOk, slackErr:String(slackErr).slice(0,140), runAt:$now.toISO()});\nreturn [{json:{bdr:true, client:cfg.clientName||''}}];"
+        },
+        "id": "906c2d00-f13c-46cc-8254-00bb61562db1",
+        "name": "Record BDR Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5200,
+          528
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "let rows=[]; let rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); rows=sd.bdrResults||[]; rs=sd.runStartedAt||0; }catch(e){}\nreturn rows.map(r=>{\n  const failed=[];\n  if(!r.slackOk) failed.push('Slack fetch failed: '+(r.slackErr||'unknown'));\n  else if(!r.fileId) failed.push('log file not written to Drive');\n  let desc=[\n    '**'+r.msgs+' messages, '+r.threads+' with threads, '+r.comments+' CRM comments**',\n    '',\n    '- **Fired by:** Sync Slack Logs to Vault',\n    '- **Channel synced:** '+(r.channel||'?'),\n    '- **Pulled:** '+r.msgs+' message(s), '+r.threads+' with threads',\n    '- **File:** '+(r.fileId?((r.filename||'(unnamed)')+' (Drive id '+r.fileId+') in the client Logs folder'):'NOT written ('+(r.filename||'no file')+')'),\n    '- **CRM:** '+(r.matched?(r.comments+' new BDR thread repl(ies) pushed as Hub Prospects record comments'):'no prospect matched, no comments pushed')\n  ].join('\\n');\n  if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n  return {json:{\n    'Automation':'Sync BDR Channel',\n    'Client': r.recordId?[r.recordId]:[],\n    'Status': failed.length?'Succeeded with errors':'Succeeded',\n    'Run at': r.runAt||$now.toISO(),\n    'Records In': r.msgs,\n    'Records Out': (r.fileId?1:0)+r.comments,\n    'Errors': failed.length,\n    'Target': (r.channel||'?')+' -> '+(r.filename||'')+' + Prospect comments',\n    'Trigger':'schedule',\n    'Execution ID': String($execution.id),\n    'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n    'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n    'Description': desc\n  }};\n});"
+        },
+        "id": "b5e07029-8287-47bd-8297-aa50a8d7fe63",
+        "name": "Build BDR Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          640,
+          304
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "3553acb2-4dec-478c-a002-302ea1f9b7c6",
+        "name": "Log BDR Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          848,
+          304
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Client Config": {
+        "main": [
+          [
+            {
+              "node": "Get channel messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get channel messages": {
+        "main": [
+          [
+            {
+              "node": "Fetch thread replies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch thread replies": {
+        "main": [
+          [
+            {
+              "node": "Attach replies to parent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach replies to parent": {
+        "main": [
+          [
+            {
+              "node": "Get Channel Members",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Channel Members": {
+        "main": [
+          [
+            {
+              "node": "Get User Details",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get User Details": {
+        "main": [
+          [
+            {
+              "node": "Format messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format messages": {
+        "main": [
+          [
+            {
+              "node": "Find Logs Folder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Logs Folder": {
+        "main": [
+          [
+            {
+              "node": "Create file from text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Daily 23:00": {
+        "main": [
+          [
+            {
+              "node": "Get Enabled Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Enabled Clients": {
+        "main": [
+          [
+            {
+              "node": "Init Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Results": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Items": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Client Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Add-on": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create file from text": {
+        "main": [
+          [
+            {
+              "node": "BDR Enabled?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Enabled?": {
+        "main": [
+          [
+            {
+              "node": "BDR History",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR History": {
+        "main": [
+          [
+            {
+              "node": "BDR Split",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Split": {
+        "main": [
+          [
+            {
+              "node": "BDR Replies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Replies": {
+        "main": [
+          [
+            {
+              "node": "BDR Attach",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Attach": {
+        "main": [
+          [
+            {
+              "node": "Format BDR File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format BDR File": {
+        "main": [
+          [
+            {
+              "node": "BDR Fetch OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Fetch OK?": {
+        "main": [
+          [
+            {
+              "node": "Create BDR Log File",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record BDR Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create BDR Log File": {
+        "main": [
+          [
+            {
+              "node": "BDR Cards With Replies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BDR Cards With Replies": {
+        "main": [
+          [
+            {
+              "node": "Find CRM Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find CRM Prospect": {
+        "main": [
+          [
+            {
+              "node": "Attach Card",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Card": {
+        "main": [
+          [
+            {
+              "node": "Get Prospect Comments",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Prospect Comments": {
+        "main": [
+          [
+            {
+              "node": "Collect Comment Pages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Comment Pages": {
+        "main": [
+          [
+            {
+              "node": "Diff New Replies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Diff New Replies": {
+        "main": [
+          [
+            {
+              "node": "New Replies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "New Replies?": {
+        "main": [
+          [
+            {
+              "node": "Create Prospect Comment",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record BDR Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Prospect Comment": {
+        "main": [
+          [
+            {
+              "node": "Record BDR Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record BDR Outcome": {
+        "main": [
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run": {
+        "main": [
+          [
+            {
+              "node": "Build BDR Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build BDR Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log BDR Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": "Version e8894e0d",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": []
+}

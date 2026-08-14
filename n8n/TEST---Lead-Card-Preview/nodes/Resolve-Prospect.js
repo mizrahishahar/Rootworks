@@ -1,0 +1,1 @@
+return [{ json: { prospect_id: 'recZNvbB60ZaSQRGH', pipeline_url: 'https://airtable.com/appQG6dK0FIOhTxOl/pagdmt6DznOwK9Cv7?detail=eyJwYWdlSWQiOiJwYWdVOEM5M25NbjZ2UE1UTSIsInJvd0lkIjoicmVjWk52YkI2MFphU1FSR0gifQ' } }];

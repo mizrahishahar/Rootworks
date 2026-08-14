@@ -1,0 +1,10 @@
+const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const r=($input.first()||{}).json||{};
+const f=r.fields||r;
+D.clientName=String(f['Client name']||f['Client']||'').trim();
+D.ws=String(f['PlusVibe Workspace ID']||'').trim();
+D.crBase=String(f['Clayroots Base ID']||'').trim();
+// Shared-base link, used to build a deep link to the exact deployed view on the receipt.
+D.share=String(f['Clayroots shareable link']||f['Clayroots Shareable Link']||'').trim().replace(/\/+$/,'');
+if(!D.abort&&(!D.ws||!D.crBase)){ D.abort='client not deployable'; D.errors.push('client missing PlusVibe Workspace ID or Clayroots Base ID'); }
+return [{json:{ws:D.ws||'none'}}];

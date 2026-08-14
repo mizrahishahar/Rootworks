@@ -1,0 +1,320 @@
+{
+  "updatedAt": "2026-07-23T06:34:25.000Z",
+  "createdAt": "2026-07-22T16:26:13.257Z",
+  "id": "SLQfuNq0AWQQVhDV",
+  "name": "Scrape Hiring Intent for Dave",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "2b912c6c-6ec1-4eec-87bf-1c0c35fdf7ad",
+      "name": "Apify Run Finished",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apify-hiring-dave",
+        "options": {}
+      },
+      "webhookId": "44b94aed-c66d-42de-a49b-bcd72b19b20d"
+    },
+    {
+      "id": "e11ed288-d894-4a29-a86e-10563f633427",
+      "name": "Get Scraped Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.body.resource.defaultDatasetId }}/items?clean=true&format=json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "ab1d2aa8-e0af-4ec1-a552-3ed9a28d17be",
+      "name": "Filter & Qualify Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Filter-Qualify-Jobs.js"
+      }
+    },
+    {
+      "id": "73999d96-26c8-40f7-9d89-a7c91aae77ee",
+      "name": "Only New Companies",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "OHGcMhFk10XC7L6e"
+        },
+        "matchType": "anyCondition",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "domain",
+              "condition": "eq",
+              "keyValue": "={{ $json.domain }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c69744a1-ee95-4247-90df-401cb0fa2a31",
+      "name": "Get Decision Makers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supersoniq.app/v1/companies/enrich",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"companies\": $(\"Only New Companies\").all().map(i => ({ domain: i.json.domain })), \"filters\": { \"seniority\": [\"C-Suite\",\"VP\",\"Founder\",\"Owner\",\"President\",\"EVP / SVP\",\"Head\",\"Director\"], \"function\": [\"Executive\",\"Engineering\",\"R&D\",\"Technology\"], \"has_linkedin\": true }, \"tier\": \"naked\", \"per_company_limit\": 10, \"confirm\": true } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "513be1e6-af5e-415c-86ce-46245b01f67f",
+      "name": "Build Intent Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Build-Intent-Leads.js"
+      }
+    },
+    {
+      "id": "1a8603cd-a714-4c42-acde-3614ee45510a",
+      "name": "Relay to Intent Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/intent-dave",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"leads\": $json.leads } }}",
+        "options": {}
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "240555c8-9c9e-4657-90f4-f3d46904bffb",
+      "name": "Mark Companies Seen",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "OHGcMhFk10XC7L6e"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "domain": "={{ $json.domain }}",
+            "company": "={{ $json.company }}",
+            "first_seen": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "first_seen",
+              "displayName": "first_seen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a2dc2759-2f66-472a-a213-06df48ccb703",
+      "name": "Sticky Note 88ba7171",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -50,
+        250
+      ],
+      "parameters": {
+        "content": "## Scrape Hiring Intent for Dave\nApify (scheduled daily) posts its run-finished webhook here, then we pull the scraped jobs, drop staffing firms + non-US, dedupe by company via the Seen table, pull ALL execs + eng/R&D decision makers from Supersoniq, and relay every one into the single hiring campaign through the intent-dave pipeline.\n\nBefore activating:\n1. Create n8n credential \"Apify\" (Bearer token from Apify console).\n2. Create n8n credential \"Supersoniq\" (Bearer token) and VERIFY the enrich endpoint URL and response shape on Get Decision Makers.\n3. On Apify: schedule the curious_coder/linkedin-jobs-scraper task daily and add a webhook integration (event ACTOR.RUN.SUCCEEDED) pointing at this webhook URL. First run past month (f_TPR r2592000); daily past 24h (r86400).",
+        "color": 4,
+        "width": 960,
+        "height": 200
+      }
+    }
+  ],
+  "connections": {
+    "Apify Run Finished": {
+      "main": [
+        [
+          {
+            "node": "Get Scraped Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scraped Jobs": {
+      "main": [
+        [
+          {
+            "node": "Filter & Qualify Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Qualify Jobs": {
+      "main": [
+        [
+          {
+            "node": "Only New Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only New Companies": {
+      "main": [
+        [
+          {
+            "node": "Get Decision Makers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mark Companies Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Decision Makers": {
+      "main": [
+        [
+          {
+            "node": "Build Intent Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Intent Leads": {
+      "main": [
+        [
+          {
+            "node": "Relay to Intent Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "8269a1c7-305e-4205-8c09-5f6ad039e40a",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-07-22T16:26:13.264Z",
+      "createdAt": "2026-07-22T16:26:13.264Z",
+      "role": "workflow:owner",
+      "workflowId": "SLQfuNq0AWQQVhDV",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

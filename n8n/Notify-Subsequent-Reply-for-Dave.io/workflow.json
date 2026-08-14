@@ -1,0 +1,327 @@
+{
+  "updatedAt": "2026-07-29T08:38:55.000Z",
+  "createdAt": "2026-07-07T22:20:18.738Z",
+  "id": "m4vcUjIXNINE4hG6",
+  "name": "Notify Subsequent Reply for Dave.io",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "1407588b-9a49-49fc-8b60-bfc890e3d86e",
+      "name": "Sub Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "daveio-reply",
+        "options": {}
+      },
+      "webhookId": "1167e119-d893-4633-9d2e-bdbde59725ea"
+    },
+    {
+      "id": "d9e43f56-998d-41e9-a7fb-fc893c2a4aae",
+      "name": "Sub Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.from_email }}"
+            },
+            {
+              "id": "s2",
+              "name": "current_reply",
+              "type": "string",
+              "value": "={{ $json.body.text_body }}"
+            },
+            {
+              "id": "s3",
+              "name": "label",
+              "type": "string",
+              "value": "={{ $json.body.label }}"
+            },
+            {
+              "id": "s4",
+              "name": "campaign_id",
+              "type": "string",
+              "value": "={{ $json.body.camp_id }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1e0c4fb-1978-417e-89d9-d90202635982",
+      "name": "PV Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/lead/get?workspace_id=6a4a3ab6d70a593c3e3b75e5&email={{ $json.lead_email }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "id": "d8f8abe7-63bc-42e4-a745-f9c0afe064a3",
+      "name": "Sub Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Sub-Normalize.js"
+      }
+    },
+    {
+      "id": "3e8718dd-bb9a-43a8-9727-60d44acf8af7",
+      "name": "Subsequent & Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.replied_count }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 1
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.existing_brief }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b943a97a-e6a0-4634-9e12-e9b5a9c3451a",
+      "name": "PV Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "url": "=https://api.plusvibe.ai/api/v1/unibox/emails?workspace_id=6a4a3ab6d70a593c3e3b75e5&lead={{ $json.lead_email }}&email_type=all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "id": "eec20b65-68bb-49c4-b843-2d78d890a7e4",
+      "name": "Format Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      }
+    },
+    {
+      "id": "9a007606-1e3e-49ec-9d0c-637398785f8d",
+      "name": "Slack Subreply",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "C0B8KTG38JX"
+        },
+        "messageType": "block",
+        "text": "=Subreply: {{ $('Sub Normalize').first().json.company_name }}",
+        "blocksUi": "={{ JSON.stringify({ blocks: [ { type:\"header\", text:{ type:\"plain_text\", text:\"💬 Subreply: \" + $('Sub Normalize').first().json.company_name } }, { type:\"section\", text:{ type:\"mrkdwn\", text: (\"*Latest exchange:*\\n\" + $('Format Thread').first().json.last_two).slice(0,2900) } }, { type:\"context\", elements:[ { type:\"mrkdwn\", text: (\"Label: \" + $('Sub Normalize').first().json.label + \" · Status: \" + $('Sub Normalize').first().json.custom_qualification_status + \" · \" + $('Sub Normalize').first().json.first_name).slice(0,2900) } ] } ] }) }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jpI5mdJbONB0MrL2",
+          "name": "General Slack"
+        }
+      },
+      "webhookId": "290417ef-062d-4436-86a4-e25d5e7c87e3"
+    }
+  ],
+  "connections": {
+    "Sub Webhook": {
+      "main": [
+        [
+          {
+            "node": "Sub Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub Input": {
+      "main": [
+        [
+          {
+            "node": "PV Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Sub Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub Normalize": {
+      "main": [
+        [
+          {
+            "node": "Subsequent & Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subsequent & Qualified?": {
+      "main": [
+        [
+          {
+            "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Format Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread": {
+      "main": [
+        [
+          {
+            "node": "Slack Subreply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "8b9d53be-ec2d-410b-8057-cd73cbfb16f6",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-07T22:20:18.742Z",
+      "createdAt": "2026-07-07T22:20:18.742Z",
+      "role": "workflow:owner",
+      "workflowId": "m4vcUjIXNINE4hG6",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

@@ -1,0 +1,1 @@
+return $('Rows Contacts').all().map(i=>{ const j=Object.assign({}, i.json); delete j._sheet_id; return { json:j }; });

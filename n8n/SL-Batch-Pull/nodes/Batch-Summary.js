@@ -1,0 +1,2 @@
+const m = $('Process Batch').first().json;
+return [{ json: { next_cursor: m.next_cursor || '', has_next_page: !!m.has_next_page, pulled: m.pulled || 0, inserted: m.inserted || 0, withEmails: m.withEmails || 0, errorPages: m.errorPages || 0, skipped: m.skipped || 0 } }];

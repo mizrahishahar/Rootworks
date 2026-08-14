@@ -1,0 +1,1 @@
+return { json:{ email:$json.email, id:$json.id, result:$json.result, state:$json.state, raw:$json.raw } };

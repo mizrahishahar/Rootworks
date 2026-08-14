@@ -1,0 +1,12 @@
+const members=(($('Users List').first().json.members)||[]);
+const names={};
+members.forEach(u=>{names[u.id]=u.real_name||(u.profile&&u.profile.display_name)||u.name||u.id;});
+const resolve=(t)=>String(t||'').replace(/<@([A-Z0-9]+)>/g,(_,id)=>'@'+(names[id]||id));
+const fmt=(m)=>{const name=names[m.user]||m.user||'Unknown';let b='**'+name+'**: '+resolve(m.text);const reps=m.replies||[];if(reps.length){b+='\n'+reps.map(r=>{const rn=names[r.user]||r.user||'Unknown';return '  > **'+rn+'**: '+resolve(r.text);}).join('\n');}return b;};
+const main=$('Main Attach').all().map(i=>i.json.msg).reverse();
+const bdr=$('BDR Attach').all().map(i=>i.json.msg).reverse();
+const date=new Date().toISOString().split('T')[0];
+let content='# '+date+' \u2014 Slack\n';
+content+='\n## Main\n\n'+(main.length?main.map(fmt).join('\n\n'):'_No activity._');
+content+='\n\n## BDR (moveplnr-bdr)\n\n'+(bdr.length?bdr.map(fmt).join('\n\n'):'_No activity._');
+return [{json:{content, filename: date+' - Slack.md'}}];

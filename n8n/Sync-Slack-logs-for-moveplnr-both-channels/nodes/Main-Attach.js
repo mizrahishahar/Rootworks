@@ -1,0 +1,1 @@
+return $input.all().filter(i=>(i.json.messages||[]).length>0).map(i=>{const m=i.json.messages;const p=Object.assign({},m[0]);p.replies=m.slice(1);return {json:{channel:'Main',msg:p}};});

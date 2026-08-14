@@ -1,0 +1,873 @@
+{
+  "updatedAt": "2026-07-29T08:40:08.475Z",
+  "createdAt": "2026-06-09T21:52:24.054Z",
+  "id": "34diYOZ5uKmUN75b",
+  "name": "Handle another meeting for flowroots",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9851c15f-256a-425c-9771-8690be97bf8b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        0
+      ],
+      "id": "dc971f21-ee71-40ec-a5e5-99cc1f2ca1f5",
+      "name": "Catch Discovery Meeting",
+      "webhookId": "9851c15f-256a-425c-9771-8690be97bf8b"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Extract-normalize.js"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "0a139dc0-e603-4c8c-b807-193d70db827f",
+      "name": "Extract & normalize"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "id": "7c222448-125f-46f9-ac6d-709a9ac78695",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        0
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "44c2663e-ccc0-44a5-ac93-e4cc9f4dfad9",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1de616a3-03d6-4baf-867d-46be4d756f35",
+      "name": "Find Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "filterByFormula": "=AND(FIND(\"Flowroots\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Extract & normalize').item.json.domain }}\" != \"\", {domain} = \"{{ $('Extract & normalize').item.json.domain }}\"), LOWER({Name}) = LOWER(\"{{ ($('Extract & normalize').item.json.domain || (($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() || $('Extract & normalize').item.json.email) }}\")))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "2f52288a-67f7-4b5c-9056-3b2ecfd2d60c",
+      "name": "Prospect Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2ba642a-f4d5-4513-a85a-dae380880b3a",
+      "name": "Create Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        160
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Extract & normalize').item.json.domain || (($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() || $('Extract & normalize').item.json.email }}",
+            "Website": "={{ $('Extract & normalize').item.json.domain ? ('https://' + $('Extract & normalize').item.json.domain) : null }}",
+            "Client": "={{ [ 'recl27rmyOlVg7fxb' ] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "092257e5-3c05-487d-a348-0f565478341c",
+      "name": "Resolve Prospect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Prospect.js"
+      }
+    },
+    {
+      "id": "1def30b4-9008-4466-aa3d-2e09d6c20016",
+      "name": "Create Meeting",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblAo6SfTPTOJrnbX"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Title": "={{ $('Extract & normalize').item.json.title || 'Flowroots Meeting' }}",
+            "Date": "={{ $('Extract & normalize').item.json.startTime }}",
+            "Participants": "={{ ((($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() + ' <' + ($('Extract & normalize').item.json.email||'') + '>').trim() }}",
+            "MeetingLink": "={{ $('Extract & normalize').item.json.meetingUrl || null }}",
+            "Company": "={{ $('Resolve Prospect').item.json.prospect_id ? [ $('Resolve Prospect').item.json.prospect_id ] : [] }}",
+            "Additional Notes (Scheduler)": "={{ $('Extract & normalize').item.json.notes || null }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3cff7e7d-5830-45ff-bad3-85e734db478f",
+      "name": "Set Scheduled Call",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1952,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+            "PipelineStatus": "Scheduled Call",
+            "contextNotes": "={{ (($('Resolve Prospect').item.json.prior_notes || '') ? ($('Resolve Prospect').item.json.prior_notes + '\\n\\n') : '') + 'Another meeting booked via Cal.com: ' + ($('Extract & normalize').item.json.title || '(untitled)') + ' at ' + ($('Extract & normalize').item.json.startTime || '') + ($('Extract & normalize').item.json.notes ? ('\\nBooking notes: ' + $('Extract & normalize').item.json.notes) : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Catch Discovery Meeting": {
+      "main": [
+        [
+          {
+            "node": "Extract & normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract & normalize": {
+      "main": [
+        [
+          {
+            "node": "Find Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Prospect": {
+      "main": [
+        [
+          {
+            "node": "Prospect Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Found?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Prospect": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Meeting": {
+      "main": [
+        [
+          {
+            "node": "Set Scheduled Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Scheduled Call": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "7ad1e09d-15f4-450d-82f7-563537b63d52",
+  "activeVersionId": "7ad1e09d-15f4-450d-82f7-563537b63d52",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-09T21:52:24.058Z",
+      "createdAt": "2026-06-09T21:52:24.058Z",
+      "role": "workflow:owner",
+      "workflowId": "34diYOZ5uKmUN75b",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-07-25T16:46:45.765Z",
+    "createdAt": "2026-07-25T16:46:45.765Z",
+    "versionId": "7ad1e09d-15f4-450d-82f7-563537b63d52",
+    "workflowId": "34diYOZ5uKmUN75b",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "9851c15f-256a-425c-9771-8690be97bf8b",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          320,
+          0
+        ],
+        "id": "dc971f21-ee71-40ec-a5e5-99cc1f2ca1f5",
+        "name": "Catch Discovery Meeting",
+        "webhookId": "9851c15f-256a-425c-9771-8690be97bf8b"
+      },
+      {
+        "parameters": {
+          "jsCode": "const p = $json.body.payload;\nconst attendee = p.attendees[0];\n\nconst domain = attendee.email.split('@')[1]?.toLowerCase() || '';\n\nreturn [{json: {\n  domain,\n  firstName: attendee.firstName,\n  lastName: attendee.lastName,\n  email: attendee.email,\n  title: p.title || '',\n  meetingUrl: p.videoCallData?.url,\n  startTime: p.startTime,\n  bookingUid: p.uid,\n  notes: p.responses?.notes?.value || ''\n}}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          576,
+          0
+        ],
+        "id": "0a139dc0-e603-4c8c-b807-193d70db827f",
+        "name": "Extract & normalize"
+      },
+      {
+        "parameters": {
+          "jsCode": "let v={};\ntry{v=$('Extract & normalize').first().json||{};}catch(e){}\nlet existed=false, prospectId='';\ntry{const r=$('Resolve Prospect').first().json; existed=!!r.existed; prospectId=r.prospect_id||'';}catch(e){}\nlet meetingId='';\ntry{meetingId=$('Create Meeting').first().json.id||'';}catch(e){}\nlet statusWritten=false;\ntry{const u=$('Set Scheduled Call').first().json; if(u&&u.id){statusWritten=true;}}catch(e){}\nconst who=((v.firstName||'')+' '+(v.lastName||'')).trim();\nconst prospectUrl=prospectId?('https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/'+prospectId):'';\nconst desc=[\n'Handle Another Meeting run (Cal.com booking -> Airtable CRM)',\n'- Meeting: '+(v.title||'(untitled)')+' at '+(v.startTime||'(unknown time)'),\n'- Attendee: '+(who?who+' ':'')+'<'+(v.email||'')+'>'+(v.domain?' ('+v.domain+')':''),\n'- Prospect: '+(existed?'matched existing row':'created new row')+(prospectUrl?' '+prospectUrl:''),\n'- Meetings row: '+(meetingId?'created ('+meetingId+') with Title/Date/Participants/MeetingLink, linked to Company':'not created'),\n'- Pipeline: '+(statusWritten?'PipelineStatus set to Scheduled Call, contextNotes updated':'not written'),\n'- Booking UID: '+(v.bookingUid||'(none)')+(v.meetingUrl?' | video: '+v.meetingUrl:''),\n(v.notes?'- Booking notes: '+String(v.notes).slice(0,300):'- Booking notes: (none)')\n].join('\\n');\nreturn [{json:{\n 'Automation':'Handle Another Meeting',\n 'Client': ['recl27rmyOlVg7fxb'],\n 'Status':'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Errors': 0,\n 'Target': v.title||v.email||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': desc\n}}];"
+        },
+        "id": "7c222448-125f-46f9-ac6d-709a9ac78695",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1328,
+          0
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "44c2663e-ccc0-44a5-ac93-e4cc9f4dfad9",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1552,
+          0
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "1de616a3-03d6-4baf-867d-46be4d756f35",
+        "name": "Find Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          832,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "filterByFormula": "=AND(FIND(\"Flowroots\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Extract & normalize').item.json.domain }}\" != \"\", {domain} = \"{{ $('Extract & normalize').item.json.domain }}\"), LOWER({Name}) = LOWER(\"{{ ($('Extract & normalize').item.json.domain || (($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() || $('Extract & normalize').item.json.email) }}\")))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "2f52288a-67f7-4b5c-9056-3b2ecfd2d60c",
+        "name": "Prospect Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1056,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2ba642a-f4d5-4513-a85a-dae380880b3a",
+        "name": "Create Prospect",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1280,
+          160
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Name": "={{ $('Extract & normalize').item.json.domain || (($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() || $('Extract & normalize').item.json.email }}",
+              "Website": "={{ $('Extract & normalize').item.json.domain ? ('https://' + $('Extract & normalize').item.json.domain) : null }}",
+              "Client": "={{ [ 'recl27rmyOlVg7fxb' ] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "092257e5-3c05-487d-a348-0f565478341c",
+        "name": "Resolve Prospect",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1504,
+          0
+        ],
+        "parameters": {
+          "jsCode": "let prospect_id='', prior_notes='', existed=false;\ntry{const f=$('Find Prospect').first().json; if(f&&f.id){prospect_id=f.id; prior_notes=f.contextNotes||''; existed=true;}}catch(e){}\nif(!prospect_id){try{prospect_id=$('Create Prospect').first().json.id||'';}catch(e){}}\nreturn [{json:{prospect_id, prior_notes, existed}}];"
+        }
+      },
+      {
+        "id": "1def30b4-9008-4466-aa3d-2e09d6c20016",
+        "name": "Create Meeting",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1728,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblAo6SfTPTOJrnbX"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Title": "={{ $('Extract & normalize').item.json.title || 'Flowroots Meeting' }}",
+              "Date": "={{ $('Extract & normalize').item.json.startTime }}",
+              "Participants": "={{ ((($('Extract & normalize').item.json.firstName||'')+' '+($('Extract & normalize').item.json.lastName||'')).trim() + ' <' + ($('Extract & normalize').item.json.email||'') + '>').trim() }}",
+              "MeetingLink": "={{ $('Extract & normalize').item.json.meetingUrl || null }}",
+              "Company": "={{ $('Resolve Prospect').item.json.prospect_id ? [ $('Resolve Prospect').item.json.prospect_id ] : [] }}",
+              "Additional Notes (Scheduler)": "={{ $('Extract & normalize').item.json.notes || null }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "3cff7e7d-5830-45ff-bad3-85e734db478f",
+        "name": "Set Scheduled Call",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1952,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Resolve Prospect').item.json.prospect_id }}",
+              "PipelineStatus": "Scheduled Call",
+              "contextNotes": "={{ (($('Resolve Prospect').item.json.prior_notes || '') ? ($('Resolve Prospect').item.json.prior_notes + '\\n\\n') : '') + 'Another meeting booked via Cal.com: ' + ($('Extract & normalize').item.json.title || '(untitled)') + ' at ' + ($('Extract & normalize').item.json.startTime || '') + ($('Extract & normalize').item.json.notes ? ('\\nBooking notes: ' + $('Extract & normalize').item.json.notes) : '') }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Catch Discovery Meeting": {
+        "main": [
+          [
+            {
+              "node": "Extract & normalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract & normalize": {
+        "main": [
+          [
+            {
+              "node": "Find Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Prospect": {
+        "main": [
+          [
+            {
+              "node": "Prospect Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospect Found?": {
+        "main": [
+          [
+            {
+              "node": "Resolve Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Prospect": {
+        "main": [
+          [
+            {
+              "node": "Resolve Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Prospect": {
+        "main": [
+          [
+            {
+              "node": "Create Meeting",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Meeting": {
+        "main": [
+          [
+            {
+              "node": "Set Scheduled Call",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Scheduled Call": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

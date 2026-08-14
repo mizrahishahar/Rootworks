@@ -1,0 +1,15 @@
+const sd=$getWorkflowStaticData('global');
+sd.runStartedAt=$now.toMillis();
+const body = $json.body;
+const title = body.title || body.meeting_title || 'Meeting';
+const date = new Date(body.recording_start_time || body.created_at).toISOString().slice(0, 10);
+const summary = body.default_summary?.markdown_formatted || '';
+const actionItems = Array.isArray(body.action_items) ? body.action_items.map(i => `- [${i.completed ? 'x' : ' '}] ${i.description}${i.assignee?.name ? ` *(${i.assignee.name})*` : ''}`).join('\n') : '';
+const transcript = Array.isArray(body.transcript) ? body.transcript.map(t => `**${t.speaker?.display_name || 'Unknown'}** [${t.timestamp}]: ${t.text}`).join('\n\n') : '';
+const filename = `${date} - ${title}.md`;
+const content = `---\nType: Meeting\ndate: ${date}\n---\n# Summary\n\n${summary}\n\n# Action Items\n\n${actionItems}\n\n# Full Transcript\n\n${transcript}\n`;
+const ext = Array.isArray(body.calendar_invitees) ? (body.calendar_invitees.find(i => i && i.is_external) || {}) : {};
+const extDomain = ((ext.email || '').split('@')[1] || '').toLowerCase();
+const extFirst = (ext.name || '').trim().split(/\s+/)[0] || '';
+const meetingTitle = (body.title || body.meeting_title) || (extFirst ? ('Flowroots Discovery - Shahar X ' + extFirst) : 'Flowroots Meeting');
+return [{ json: { filename, content, externalEmail: (ext.email || ''), extDomain, extFirst, meetingTitle, recording: (body.share_url || body.url || ''), summaryMd: summary, meetingUrl: (body.meeting_url || ''), startTime: (body.recording_start_time || body.created_at || ''), participants: (Array.isArray(body.calendar_invitees) ? body.calendar_invitees.map(i => i.name || i.email).join(', ') : '') } }];

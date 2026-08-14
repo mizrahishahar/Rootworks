@@ -1,0 +1,1293 @@
+{
+  "updatedAt": "2026-08-08T20:31:17.341Z",
+  "createdAt": "2026-07-28T12:12:50.566Z",
+  "id": "8oCb1lkbgeujqRz0",
+  "name": "Add Intent Leads to Alta",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "99d09cb7-f765-4955-961b-5e2be484fdc4",
+      "name": "Daily 13:30 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d14c71e0-60a4-4ac1-839c-ef79984380f4",
+      "name": "Get Intent Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -180,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={Intent Tables} != ''",
+        "returnAll": true,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "ecd64d77-3085-4f56-9fa1-42d93263f916",
+      "name": "Parse Client Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Parse-Client-Config.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "425dc367-390c-482e-a904-967e8a18fc00",
+      "name": "Get Ready Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        -160
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.tableId }}"
+        },
+        "filterByFormula": "=AND({Status}='done', OR({Intent Status}='NEW', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))), {Target Campaign}!='', FIND(\"http\", {Target Campaign}) = 1)",
+        "returnAll": true,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b8913565-e685-4334-9015-1c9c9bd91468",
+      "name": "Prep Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Rows.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b5e369da-455f-4915-8c60-8c60820fd39d",
+      "name": "Route Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Route-Rows.js"
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "608c1b35-7855-4117-a48b-f2ce77e65f73",
+      "name": "Can Enroll?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        -260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ $json.action || '' }}",
+              "rightValue": "enroll",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b7b513bf-993c-4809-b404-f1b91e947759",
+      "name": "Enroll to Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1360,
+        -340
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.campaign_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.enroll_body }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 8000
+            }
+          },
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e0c3dca1-4f44-43f5-b8bc-99851884d65e",
+      "name": "Stamp Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        -340
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Stamp-Results.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ca55303a-99bd-40cf-b78e-db7285eee040",
+      "name": "Enroll OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1800,
+        -340
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "65cda8ac-2a95-4164-8bcf-22877858bbc3",
+      "name": "Mark ROUTED",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2020,
+        -420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.recordId }}",
+            "Intent Status": "ROUTED",
+            "routed_at": "={{ $now.toISO() }}",
+            "Enroll Confirmed": true
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0d4fec29-2271-413e-9f13-52fbe05b3650",
+      "name": "Mark FAILED",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2020,
+        -260
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.recordId }}",
+            "Intent Status": "FAILED",
+            "Enroll Error": "={{ $json.reason || 'enroll failed' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "aa88363e-2fea-42cf-9316-420d5aed6598",
+      "name": "Mark NO EMAIL / FAILED",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        -140
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.recordId || '' }}",
+            "Intent Status": "={{ $json.action === 'no_email' ? 'NO EMAIL' : 'FAILED' }}",
+            "Enroll Error": "={{ $json.action === 'failed_precheck' ? ($json.reason || 'precheck failed') : '' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "913b83e9-2e01-4be2-ac6d-1a4123a7cdf6",
+      "name": "Build Client Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        40
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Client-Log.js"
+      },
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1e5d41fd-9161-49a5-9a72-c4ccee1f2199",
+      "name": "Log Run Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        40
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": false,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "9a4a9f78-312d-4a12-9f78-92419647602f",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        40,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Get Intent Clients": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Client Config": {
+      "main": [
+        [
+          {
+            "node": "Get Ready Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Ready Rows": {
+      "main": [
+        [
+          {
+            "node": "Prep Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Rows": {
+      "main": [
+        [
+          {
+            "node": "Route Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Rows": {
+      "main": [
+        [
+          {
+            "node": "Can Enroll?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Client Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can Enroll?": {
+      "main": [
+        [
+          {
+            "node": "Enroll to Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark NO EMAIL / FAILED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enroll to Campaign": {
+      "main": [
+        [
+          {
+            "node": "Stamp Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Results": {
+      "main": [
+        [
+          {
+            "node": "Enroll OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enroll OK?": {
+      "main": [
+        [
+          {
+            "node": "Mark ROUTED",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark FAILED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Client Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Run Client": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Parse Client Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 13:30 IL": {
+      "main": [
+        [
+          {
+            "node": "Get Intent Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Daily 11:00": {
+      "recurrenceRules": []
+    },
+    "node:Daily 13:30 IL": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "runStartedAt": 1786692650327
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
+  "activeVersionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T12:12:50.572Z",
+      "createdAt": "2026-07-28T12:12:50.572Z",
+      "role": "workflow:owner",
+      "workflowId": "8oCb1lkbgeujqRz0",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-08T20:31:17.343Z",
+    "createdAt": "2026-08-08T20:31:17.343Z",
+    "versionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
+    "workflowId": "8oCb1lkbgeujqRz0",
+    "nodes": [
+      {
+        "id": "99d09cb7-f765-4955-961b-5e2be484fdc4",
+        "name": "Daily 13:30 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -400,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 10,
+                "triggerAtMinute": 30
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d14c71e0-60a4-4ac1-839c-ef79984380f4",
+        "name": "Get Intent Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -180,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={Intent Tables} != ''",
+          "returnAll": true,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "ecd64d77-3085-4f56-9fa1-42d93263f916",
+        "name": "Parse Client Config",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          260,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst r=$input.first().json||{};\nconst f=r.fields||r;\nconst clientBase=String(f['Clayroots Base ID']||'').trim();\nconst raw=String(f['Intent Tables']||'');\nconst lines=raw.split('\\n').map(s=>s.trim()).filter(Boolean);\nconst tables=[];\nfor(const ln of lines){\n  let t=ln;\n  if(ln.includes('/')){ const parts=ln.split('/').map(s=>s.trim()).filter(Boolean); t=parts.find(p=>/^tbl/.test(p))||''; }\n  if(/^tbl/.test(t) && clientBase) tables.push({ baseId: clientBase, tableId: t });\n}\nconst clientRecId=r.id||'';\nconst clientName=f['Client']||'';\nif(!tables.length) return [{ json: { clientRecId, clientName, baseId:'', tableId:'' } }];\nreturn tables.map(t=>({ json: { clientRecId, clientName, baseId:t.baseId, tableId:t.tableId } }));"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "425dc367-390c-482e-a904-967e8a18fc00",
+        "name": "Get Ready Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          480,
+          -160
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.tableId }}"
+          },
+          "filterByFormula": "=AND({Status}='done', OR({Intent Status}='NEW', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))), {Target Campaign}!='', FIND(\"http\", {Target Campaign}) = 1)",
+          "returnAll": true,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b8913565-e685-4334-9015-1c9c9bd91468",
+        "name": "Prep Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          700,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "let tables=[]; try{ tables=$('Parse Client Config').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst rows=$input.all();\nconst out=[];\nfor(const it of rows){\n  const j=it.json||{};\n  let src=null;\n  try{ const pi=it.pairedItem; const idx=(typeof pi==='number')?pi:(pi&&pi.item); if(idx!==undefined&&idx!==null) src=tables[idx]||null; }catch(e){}\n  if(!src && tables.length===1) src=tables[0];\n  if(!src) src=tables[0]||{};\n  if(j.error){ out.push({ json: { _readError:true, tableId:src.tableId||'', errorMessage:String((j.error&&(j.error.message||j.error))||'read failed').slice(0,160) } }); continue; }\n  if(!j.id) continue;\n  out.push({ json: { recordId:j.id, baseId:src.baseId||'', tableId:src.tableId||'', clientRecId:src.clientRecId||'', clientName:src.clientName||'', row:(j.fields||j) } });\n}\nreturn out;"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b5e369da-455f-4915-8c60-8c60820fd39d",
+        "name": "Route Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          920,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const email=String(f['Final Email']||'').trim();\n  const linkedinUrl=String(f['LinkedIn URL']||'').trim();\n  const url=String(f['Target Campaign']||'').trim();\n  const name=String(f['Name']||email||linkedinUrl||'').trim();\n  if(!/^https?:\\/\\//i.test(url)){\n    out.push({ json: { action:'failed_precheck', reason:'Target Campaign is not a valid URL', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  if(!email && !linkedinUrl){\n    out.push({ json: { action:'no_email', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  const dom=String(f['Domain']||'').trim();\n  const companyWebsite=dom?(/^https?:\\/\\//i.test(dom)?dom:'https://'+dom):'';\n  const body={\n    firstName: f['first_name']||'',\n    lastName: f['last_name']||'',\n    company: f['Company']||'',\n    extraInfoData: {\n      'Source': 'Apify Intent Scrape',\n      'Signal': f['Event Type']||'',\n      'Signal Detail': f['Signal Detail']||'',\n      'Sourced At': f['detected_at']||''\n    }\n  };\n  if(companyWebsite) body.companyWebsite=companyWebsite;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: { action:'enroll', campaign_url:url, enroll_body:body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n}\nreturn out;"
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "608c1b35-7855-4117-a48b-f2ce77e65f73",
+        "name": "Can Enroll?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1140,
+          -260
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "e1",
+                "leftValue": "={{ $json.action || '' }}",
+                "rightValue": "enroll",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b7b513bf-993c-4809-b404-f1b91e947759",
+        "name": "Enroll to Campaign",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1360,
+          -340
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.campaign_url }}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.enroll_body }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 8000
+              }
+            },
+            "response": {
+              "response": {}
+            }
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "e0c3dca1-4f44-43f5-b8bc-99851884d65e",
+        "name": "Stamp Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1580,
+          -340
+        ],
+        "parameters": {
+          "jsCode": "const enrolls=$input.all();\nlet resolved=[]; try{ resolved=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.action==='enroll'); }catch(e){}\nconst out=[];\nfor(let i=0;i<enrolls.length;i++){\n  const e=(enrolls[i]&&enrolls[i].json)||{};\n  const r=resolved[i]||{};\n  if(!r.recordId) continue;\n  const ok=!(e&&e.error);\n  out.push({ json: {\n    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name,\n    ok: ok,\n    reason: ok?'':String((e.error&&(e.error.message||e.error))||'enroll failed after retries').slice(0,160)\n  }});\n}\nreturn out;"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "ca55303a-99bd-40cf-b78e-db7285eee040",
+        "name": "Enroll OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1800,
+          -340
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "k1",
+                "leftValue": "={{ $json.ok }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "65cda8ac-2a95-4164-8bcf-22877858bbc3",
+        "name": "Mark ROUTED",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2020,
+          -420
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.tableId }}"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.recordId }}",
+              "Intent Status": "ROUTED",
+              "routed_at": "={{ $now.toISO() }}",
+              "Enroll Confirmed": true
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0d4fec29-2271-413e-9f13-52fbe05b3650",
+        "name": "Mark FAILED",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2020,
+          -260
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.tableId }}"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.recordId }}",
+              "Intent Status": "FAILED",
+              "Enroll Error": "={{ $json.reason || 'enroll failed' }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "aa88363e-2fea-42cf-9316-420d5aed6598",
+        "name": "Mark NO EMAIL / FAILED",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1360,
+          -140
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.baseId }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.tableId }}"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.recordId || '' }}",
+              "Intent Status": "={{ $json.action === 'no_email' ? 'NO EMAIL' : 'FAILED' }}",
+              "Enroll Error": "={{ $json.action === 'failed_precheck' ? ($json.reason || 'precheck failed') : '' }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "913b83e9-2e01-4be2-ac6d-1a4123a7cdf6",
+        "name": "Build Client Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1140,
+          40
+        ],
+        "parameters": {
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nlet tables=[]; try{ tables=$('Parse Client Config').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst clientRecId=(tables[0]&&tables[0].clientRecId)||'';\nconst clientName=(tables[0]&&tables[0].clientName)||'';\nlet prep=[]; try{ prep=$('Prep Rows').all().map(i=>i.json); }catch(e){}\nconst ready=prep.filter(r=>r&&r.recordId).length;\nconst readErrors=prep.filter(r=>r&&r._readError).map(r=>({ name:'table '+(r.tableId||'?')+': read failed', reason:r.errorMessage||'' }));\nlet routes=[]; try{ routes=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.recordId); }catch(e){}\nlet results=[]; try{ results=$('Stamp Results').all().map(i=>i.json); }catch(e){}\nconst ok=results.filter(r=>r.ok);\nconst failed=results.filter(r=>!r.ok).concat(routes.filter(r=>r.action==='failed_precheck')).concat(readErrors);\nconst noEmail=routes.filter(r=>r.action==='no_email');\nconst byTable={};\nfor(const t of tables){ byTable[t.tableId]={ ready:0, enrolled:0, failed:0, noEmail:0 }; }\nfor(const r of routes){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); b.ready++; if(r.action==='no_email')b.noEmail++; if(r.action==='failed_precheck')b.failed++; }\nfor(const r of results){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); if(r.ok)b.enrolled++; else b.failed++; }\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst parts=['**'+nf(ready)+' ready, '+nf(ok.length)+' enrolled, '+failed.length+' failed**'];\nif(!tables.length) parts.push('No usable Intent Tables lines (need tbl ids + Clayroots Base ID on the row); nothing to do.');\nconst tLines=Object.keys(byTable).map(tid=>{ const b=byTable[tid]; return '- **'+tid+':** '+nf(b.ready)+' ready · '+nf(b.enrolled)+' enrolled · '+nf(b.failed)+' failed · '+nf(b.noEmail)+' no email'; });\nif(tLines.length) parts.push('**Tables**\\n'+tLines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.slice(0,5).map(f=>'- '+(f.name||f.recordId||'?')+': '+(f.reason?String(f.reason).slice(0,120):'enroll failed')).join('\\n')+(failed.length>5?'\\n- ...and '+(failed.length-5)+' more':''));\nif(noEmail.length) parts.push('**Skipped ('+noEmail.length+', no email)**\\n'+noEmail.map(r=>r.name||r.recordId||'?').join(', '));\nreturn [{json:{\n 'Automation':'Add Intent Leads to Alta',\n 'Client': clientRecId?[clientRecId]:[],\n 'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': ready,\n 'Records Out': ok.length,\n 'Errors': failed.length,\n 'Target': tables.map(t=>t.tableId).join(', '),\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id)+'-'+(clientRecId||'x'),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': parts.join('\\n\\n')\n}}];"
+        },
+        "executeOnce": false,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "1e5d41fd-9161-49a5-9a72-c4ccee1f2199",
+        "name": "Log Run Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1360,
+          40
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": false,
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "9a4a9f78-312d-4a12-9f78-92419647602f",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          40,
+          0
+        ],
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Get Intent Clients": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Client Config": {
+        "main": [
+          [
+            {
+              "node": "Get Ready Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Ready Rows": {
+        "main": [
+          [
+            {
+              "node": "Prep Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Rows": {
+        "main": [
+          [
+            {
+              "node": "Route Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Rows": {
+        "main": [
+          [
+            {
+              "node": "Can Enroll?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Build Client Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Can Enroll?": {
+        "main": [
+          [
+            {
+              "node": "Enroll to Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Mark NO EMAIL / FAILED",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enroll to Campaign": {
+        "main": [
+          [
+            {
+              "node": "Stamp Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Results": {
+        "main": [
+          [
+            {
+              "node": "Enroll OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enroll OK?": {
+        "main": [
+          [
+            {
+              "node": "Mark ROUTED",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Mark FAILED",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Client Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run Client": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Parse Client Config",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Daily 13:30 IL": {
+        "main": [
+          [
+            {
+              "node": "Get Intent Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

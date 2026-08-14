@@ -1,0 +1,1 @@
+return [{ json: { campaignRowId: 'rec6HjkycuNNWIP0o', campaignName: '2026-07-28 - Home and Garden - No Bot - pitch-led', contacted: 331, replies: 5, replyRate: '1.5%', positives: 1, positiveRate: '0.3%', status: 'ACTIVE' } }];

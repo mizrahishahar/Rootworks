@@ -1,0 +1,481 @@
+{
+  "updatedAt": "2026-06-11T10:05:00.000Z",
+  "createdAt": "2026-06-10T16:03:15.475Z",
+  "id": "TGtFmk2BbvPZrzSF",
+  "name": "List Builder - Notebook",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Notebook - Find + Verify",
+        "formDescription": "Paste a Contacts sheet URL. Finds + verifies an email per row and writes an enriched copy into the Leads folder.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "List name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Contacts sheet URL",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "notebook"
+        }
+      },
+      "id": "c683e2fd-fdf0-431c-94f3-80bec2248b11",
+      "name": "Run Notebook",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        80
+      ],
+      "webhookId": "5607d288-4732-4b1d-ac3a-96230f8212c1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $json['Contacts sheet URL'] }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "options": {}
+      },
+      "id": "1c01f645-f29a-4f27-aedc-0d67d544f063",
+      "name": "Read Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.trykitt.ai/job/find_email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"fullName\": $json.Name, \"domain\": $json.Domain, \"realtime\": true, \"customData\": $json.Domain } }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "5f7dacb8-ca55-4dcc-8fb6-9e6f04a963d2",
+      "name": "Trykitt Find",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FxpbAjoAjPEy8fBu",
+          "name": "BounceBan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.millionverifier.com/api/v3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Trykitt Find').item.json.email }}"
+            },
+            {
+              "name": "timeout",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1aff245e-b7c2-44a2-86d7-ec65ab371baf",
+      "name": "MillionVerifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        80
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "hlvOO7sfgBUVEuWM",
+          "name": "MillionVerifier"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.result }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "catch_all"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "da4d4398-3d61-4413-b92d-531a6dfbcff3",
+      "name": "Is Catch-all",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api-waterfall.bounceban.com/v1/verify/single",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Trykitt Find').item.json.email }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "id": "ab90aa3d-4481-43c0-b469-f73614dfcc8f",
+      "name": "BounceBan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FxpbAjoAjPEy8fBu",
+          "name": "BounceBan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Verdict.js"
+      },
+      "id": "c202b17b-edf8-4c48-a39c-f9f7887866e7",
+      "name": "Verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Run Notebook').first().json['List name'] }} - Contacts ENRICHED - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "options": {},
+        "operation": "create"
+      },
+      "id": "a235eb9c-4102-49c9-ad97-a200808f0058",
+      "name": "Create Enriched Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        80
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheetId || $json.id }}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1Y7t1fmXJme2JGtty0U12e1SfkgBLoc1O"
+        }
+      },
+      "id": "3a5205f4-34ea-4ea7-8bc9-cf03bdbe28bb",
+      "name": "Move Enriched",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1792,
+        80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5BMl4AGSvtAP9QbV",
+          "name": "Flowroots Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Rows-Sheet-ID.js"
+      },
+      "id": "4af9a4a0-6ed3-413c-9ea6-6ddd8ef40b02",
+      "name": "Rows + Sheet ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json._sheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "schema": []
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "43c2e4aa-a454-4547-97db-1585bbd173fc",
+      "name": "Write Enriched",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "38QbEVEDUPlvHTwj",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run Notebook": {
+      "main": [
+        [
+          {
+            "node": "Read Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Contacts": {
+      "main": [
+        [
+          {
+            "node": "Trykitt Find",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trykitt Find": {
+      "main": [
+        [
+          {
+            "node": "MillionVerifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MillionVerifier": {
+      "main": [
+        [
+          {
+            "node": "Is Catch-all",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Catch-all": {
+      "main": [
+        [
+          {
+            "node": "BounceBan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BounceBan": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "node": "Create Enriched Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Enriched Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move Enriched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Enriched": {
+      "main": [
+        [
+          {
+            "node": "Rows + Sheet ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows + Sheet ID": {
+      "main": [
+        [
+          {
+            "node": "Write Enriched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "7f990853-eb8d-483e-9fec-eb5e8d28becb",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-10T16:03:15.528Z",
+      "createdAt": "2026-06-10T16:03:15.528Z",
+      "role": "workflow:owner",
+      "workflowId": "TGtFmk2BbvPZrzSF",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

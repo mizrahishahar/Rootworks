@@ -1,0 +1,1 @@
+const raw=$json; const rec=Array.isArray(raw)?raw[0]:(raw&&raw.lead_data?raw:((raw&&raw[0])||raw||{})); const d=(rec&&rec.lead_data)?rec.lead_data:(rec||{}); return { json: { email:d.email||'', campaign_id:d.campaign_id||'', slackThreadId:d.custom_slackthreadid||'', caller_log:d.custom_caller_log||'', last_ts:d.custom_caller_last_ts||'' } };

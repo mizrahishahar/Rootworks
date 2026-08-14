@@ -42,11 +42,16 @@ for (const node of doc.nodes || []) {
   }
 }
 
+// The PUT schema rejects settings keys the GET returns (availableInMCP, binaryMode...).
+const ALLOWED_SETTINGS = ['saveExecutionProgress', 'saveManualExecutions', 'saveDataErrorExecution', 'saveDataSuccessExecution', 'executionTimeout', 'errorWorkflow', 'timezone', 'executionOrder'];
+const settings = {};
+for (const k of ALLOWED_SETTINGS) if (doc.settings && doc.settings[k] !== undefined) settings[k] = doc.settings[k];
+
 const payload = {
   name: doc.name,
   nodes: doc.nodes,
   connections: doc.connections,
-  settings: doc.settings || {},
+  settings,
 };
 
 console.log(`workflow: ${doc.name} (${doc.id})`);

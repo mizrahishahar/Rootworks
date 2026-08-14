@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-14T12:22:11.501Z",
+  "updatedAt": "2026-08-14T13:55:49.632Z",
   "createdAt": "2026-07-28T08:41:24.263Z",
   "id": "tspO2CNXtGudtSe7",
   "name": "Handle New Lead from PlusVibe",
+  "description": "Shared PlusVibe positive-reply intake. Webhooks: plusvibe-new-reply (PV) + newlead-manual (Airtable; bypasses dedup, updates existing prospect). Duplicates end silently. SQ contact enrich, qualify+notify, fires addon-newlead-{slug}.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1961,6 +1962,7 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": {
     "Live Webhook": [
       {
@@ -2513,22 +2515,36 @@
       }
     ]
   },
-  "versionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
-  "activeVersionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
+  "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+  "activeVersionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+  "versionCounter": 58,
   "triggerCount": 2,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-07-28T08:41:24.275Z",
       "createdAt": "2026-07-28T08:41:24.275Z",
       "role": "workflow:owner",
       "workflowId": "tspO2CNXtGudtSe7",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-14T12:22:11.507Z",
-    "createdAt": "2026-08-14T12:22:11.507Z",
-    "versionId": "5da75248-054b-4227-812b-7d0c04b6b7c8",
+    "updatedAt": "2026-08-14T13:55:49.636Z",
+    "createdAt": "2026-08-14T13:55:49.636Z",
+    "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
     "workflowId": "tspO2CNXtGudtSe7",
     "nodes": [
       {
@@ -2624,7 +2640,42 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nlet lead_email='', manual=false;\ntry{ const li=$('Live Input').first().json; lead_email=li.lead_email||''; }catch(e){}\ntry{ const mi=$('Manual Input').first().json; if(mi){ lead_email=lead_email||mi.lead_email||''; manual=(mi.manual===true||mi.manual==='true'); } }catch(e){}\nconst r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  lead_email: lead_email,\n  manual: manual,\n  recordId: r.id||'',\n  clientName: name,\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  pvWorkspace: f['PlusVibe Workspace ID']||'',\n  slackChannel: f['Slack Channel ID']||'',\n  driveFolder: f['driveMainFolderID']||'',\n  clayrootsBase: f['Clayroots Base ID']||'',\n  qualPrompt: f['Qualification Prompt']||'',\n  notifyGoalLine: f['Notify Goal Line']||''\n}}];"
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblJAWVcCaW6TmfbC"
+          },
+          "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $json.Client || $json.fields.Client }}\", ARRAYJOIN({Client})))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "7f3e4a90-1c2d-4e5f-9a6b-08d21c4b9e01",
+        "name": "Find Qual Prompt",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          560,
+          -416
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nlet lead_email='', manual=false;\ntry{ const li=$('Live Input').first().json; lead_email=li.lead_email||''; }catch(e){}\ntry{ const mi=$('Manual Input').first().json; if(mi){ lead_email=lead_email||mi.lead_email||''; manual=(mi.manual===true||mi.manual==='true'); } }catch(e){}\nconst r=$('Find Client Row').first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\n// Qualification prompt lives in KB Files (Type=qualification-prompt); the\n// Clients field is the legacy fallback until it is deleted.\nlet kbPrompt='';\ntry{ const kb=$input.first().json||{}; const kf=kb.fields||kb; kbPrompt=String(kf['Content']||'').trim(); }catch(e){}\nreturn [{ json: {\n  lead_email: lead_email,\n  manual: manual,\n  recordId: r.id||'',\n  clientName: name,\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  pvWorkspace: f['PlusVibe Workspace ID']||'',\n  slackChannel: f['Slack Channel ID']||'',\n  driveFolder: f['driveMainFolderID']||'',\n  clayrootsBase: f['Clayroots Base ID']||'',\n  qualPrompt: kbPrompt || f['Qualification Prompt'] || '',\n  notifyGoalLine: f['Notify Goal Line']||''\n}}];"
         },
         "id": "f5d255bc-f9ef-4622-936a-c46e5aaeb993",
         "name": "Client Vars",
@@ -3897,6 +3948,17 @@
         "main": [
           [
             {
+              "node": "Find Qual Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Qual Prompt": {
+        "main": [
+          [
+            {
               "node": "Client Vars",
               "type": "main",
               "index": 0
@@ -4429,7 +4491,40 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-14T13:55:49.942Z",
+        "id": 1353,
+        "workflowId": "tspO2CNXtGudtSe7",
+        "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:56:04.411Z",
+        "id": 1357,
+        "workflowId": "tspO2CNXtGudtSe7",
+        "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:55:49.856Z",
+        "id": 1352,
+        "workflowId": "tspO2CNXtGudtSe7",
+        "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:56:04.345Z",
+        "id": 1356,
+        "workflowId": "tspO2CNXtGudtSe7",
+        "versionId": "c89e821a-cfed-439e-a2ce-08ddfa52cf67",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

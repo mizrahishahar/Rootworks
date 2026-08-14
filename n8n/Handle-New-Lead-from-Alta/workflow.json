@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-14T12:22:05.706Z",
+  "updatedAt": "2026-08-14T13:55:51.084Z",
   "createdAt": "2026-07-28T08:55:27.839Z",
   "id": "AwlfoUuXzi86isEe",
   "name": "Handle New Lead from Alta",
+  "description": "Dave.io Alta reply intake (hardcoded Dave row). POST /webhook/alta-dave-new-reply. GPT screen gate: PASS/AUTO and CRM duplicates end silently. DiscoLike+Supersoniq enrich, qualify+notify, Slack card + thread ts, run log, fires addon-newlead-alta-{slug}.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1871,6 +1872,17 @@
       "main": [
         [
           {
+            "node": "Find Qual Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Qual Prompt": {
+      "main": [
+        [
+          {
             "node": "Client Vars",
             "type": "main",
             "index": 0
@@ -2368,6 +2380,7 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": {
     "Alta Webhook": [
       {
@@ -2434,22 +2447,36 @@
       }
     ]
   },
-  "versionId": "ac27232d-f761-459b-a4bb-1916cc13d76f",
-  "activeVersionId": "ac27232d-f761-459b-a4bb-1916cc13d76f",
+  "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+  "activeVersionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+  "versionCounter": 43,
   "triggerCount": 1,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-07-28T08:55:27.848Z",
       "createdAt": "2026-07-28T08:55:27.848Z",
       "role": "workflow:owner",
       "workflowId": "AwlfoUuXzi86isEe",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-14T12:22:05.711Z",
-    "createdAt": "2026-08-14T12:22:05.711Z",
-    "versionId": "ac27232d-f761-459b-a4bb-1916cc13d76f",
+    "updatedAt": "2026-08-14T13:55:51.089Z",
+    "createdAt": "2026-08-14T13:55:51.089Z",
+    "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
     "workflowId": "AwlfoUuXzi86isEe",
     "nodes": [
       {
@@ -2514,7 +2541,42 @@
       },
       {
         "parameters": {
-          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  clientName: name,\n  clientRecId: r.id||'',\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  slackChannel: f['Slack Channel ID']||'',\n  qualPrompt: f['Qualification Prompt']||'',\n  notifyGoalLine: f['Notify Goal Line']||''\n}}];"
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblJAWVcCaW6TmfbC"
+          },
+          "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $json.Client || $json.fields.Client }}\", ARRAYJOIN({Client})))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "id": "8a4f5b01-2d3e-4f60-8b7c-19e32d5c0f12",
+        "name": "Find Qual Prompt",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          560,
+          -240
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const r=$('Get Client Row').first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\n// Qualification prompt lives in KB Files (Type=qualification-prompt); the\n// Clients field is the legacy fallback until it is deleted.\nlet kbPrompt='';\ntry{ const kb=$input.first().json||{}; const kf=kb.fields||kb; kbPrompt=String(kf['Content']||'').trim(); }catch(e){}\nreturn [{ json: {\n  clientName: name,\n  clientRecId: r.id||'',\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  slackChannel: f['Slack Channel ID']||'',\n  qualPrompt: kbPrompt || f['Qualification Prompt'] || '',\n  notifyGoalLine: f['Notify Goal Line']||''\n}}];"
         },
         "id": "50a38719-9c67-4a35-beb0-daf30ddf3919",
         "name": "Client Vars",
@@ -4282,6 +4344,17 @@
         "main": [
           [
             {
+              "node": "Find Qual Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Qual Prompt": {
+        "main": [
+          [
+            {
               "node": "Client Vars",
               "type": "main",
               "index": 0
@@ -4768,7 +4841,40 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-14T13:55:51.256Z",
+        "id": 1355,
+        "workflowId": "AwlfoUuXzi86isEe",
+        "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:56:10.051Z",
+        "id": 1359,
+        "workflowId": "AwlfoUuXzi86isEe",
+        "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:55:51.210Z",
+        "id": 1354,
+        "workflowId": "AwlfoUuXzi86isEe",
+        "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-14T13:56:09.993Z",
+        "id": 1358,
+        "workflowId": "AwlfoUuXzi86isEe",
+        "versionId": "8f9578c6-099a-47d3-8338-b8b2692cffa9",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

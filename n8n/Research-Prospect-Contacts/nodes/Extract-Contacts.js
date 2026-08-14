@@ -1,1 +1,0 @@
-return $input.first().json.output.contacts

@@ -1,1 +1,0 @@
-return ['MV existing','BB existing','Trykitt P1','MV P1','BB P1','Final Email','Source','Status'].map(f=>({json:{fieldName:f}}));

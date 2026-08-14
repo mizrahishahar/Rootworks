@@ -1,1 +1,0 @@
-const seen=new Set(); const out=[]; for(const it of $input.all()){ let r=it.json; let arr=Array.isArray(r)?r:(r.data||r.leads||(r.email?[r]:[])); if(!Array.isArray(arr))arr=[]; for(const l of arr){ const em=String((l&&l.email)||'').toLowerCase(); if(em&&!seen.has(em)){ seen.add(em); out.push({ json: { email: em } }); } } } return out;

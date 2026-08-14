@@ -1,1 +1,0 @@
-return $input.all().map(i=>{ const j={...i.json}; delete j._pendEmail; delete j._pendSlot; return {json:j}; });

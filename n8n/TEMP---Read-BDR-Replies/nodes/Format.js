@@ -1,1 +1,0 @@
-const co=$('Threads').item.json.co; const msgs=$json.messages||[]; const replies=msgs.slice(1).map(function(m){return { user: m.user, text: String(m.text||'').slice(0,250) };}); return { json: { co: co, reply_count: replies.length, replies: replies } };

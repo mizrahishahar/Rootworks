@@ -1,1 +1,0 @@
-const c=$('Create Contacts Sheet').first().json; const sid=c.spreadsheetId||c.id; return $('Supersoniq Handler').all().filter(i=>i.json.segment==='contacts').map(i=>({json:{...i.json,_sheet_id:sid}}));

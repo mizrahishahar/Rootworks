@@ -80,7 +80,9 @@ function decompile(wf) {
     workflows = [];
     for (const id of ids) workflows.push(await api(`/workflows/${id}`));
   } else {
-    workflows = await listAll();
+    // Archived workflows are retired; the repo mirrors the living app only.
+    workflows = (await listAll()).filter((wf) => !wf.isArchived);
+    fs.rmSync(OUT, { recursive: true, force: true });
   }
   workflows.sort((a, b) => a.name.localeCompare(b.name));
 

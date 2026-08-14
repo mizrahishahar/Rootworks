@@ -1,1 +1,0 @@
-return [{ json: { count: $input.all().length, first: ($input.first().json.fields||$input.first().json).Name||'' } }];

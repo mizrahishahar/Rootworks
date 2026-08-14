@@ -1,1 +1,0 @@
-const c=$('Create NoContacts Sheet').first().json; const sid=c.spreadsheetId||c.id; return $('Contacts Handler').all().filter(i=>i.json.segment==='no_contacts').map(i=>({json:{...i.json,_sheet_id:sid}}));

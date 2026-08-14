@@ -1,2 +1,0 @@
-if ($json.id) return [{ json: { resolved: true, folderId: $json.id, created: false, needCreate: false } }];
-return [{ json: { resolved: true, needCreate: true, reportsId: $('Reports Guard').first().json.reportsId } }];

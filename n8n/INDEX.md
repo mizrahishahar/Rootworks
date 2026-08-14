@@ -4,37 +4,37 @@ Decompiled n8n source. One folder per workflow: `workflow.json` is the graph,
 `nodes/*.js` are the Code nodes. Pull with `tools/n8n/pull.js`, push one workflow
 back with `tools/n8n/push.js <folder>`. n8n is the runtime; this is the version history.
 
-| Workflow | ID | Active | Nodes | Code files |
-|---|---|---|---|---|
-| [Add Intent Leads to Alta](Add-Intent-Leads-to-Alta/workflow.json) | `8oCb1lkbgeujqRz0` | yes | 16 | 5 |
-| [Add Intent Leads to PlusVibe](Add-Intent-Leads-to-PlusVibe/workflow.json) | `low8PseCeZgfIqEu` | yes | 16 | 5 |
-| [Add rank in company to table](Add-rank-in-company-to-table/workflow.json) | `d87Ic9RuAV9Yorc4` | yes | 29 | 13 |
-| [Alta OAuth Callback](Alta-OAuth-Callback/workflow.json) | `SG6Ua5yHFnIBhxPN` | yes | 4 | 1 |
-| [Append fields to table](Append-fields-to-table/workflow.json) | `wOkccv1wDzBSO99d` | yes | 27 | 9 |
-| [Backfill Build Date (one-off)](Backfill-Build-Date-one-off/workflow.json) | `M0IvVrjXaGT1K6Fs` | yes | 20 | 9 |
-| [BounceBan Poller](BounceBan-Poller/workflow.json) | `tllfBn4NycLftdef` | yes | 9 | 3 |
-| [Clean Company Names on table](Clean-Company-Names-on-table/workflow.json) | `bjsEX1KZ9vnHzUlJ` | yes | 23 | 7 |
-| [Contagen -> Supersoniq -> Clayroots](Contagen---Supersoniq---Clayroots/workflow.json) | `jJTD9xgbA0kKYqna` | yes | 53 | 23 |
-| [Create PlusVibe Weekly Report](Create-PlusVibe-Weekly-Report/workflow.json) | `S9BWGKyIMjCUhKiF` | yes | 14 | 4 |
-| [Deploy View to Campaign](Deploy-View-to-Campaign/workflow.json) | `JuWIbF6YCeRibhyg` | yes | 41 | 14 |
-| [Discolike Domains -> Clayroots](Discolike-Domains---Clayroots/workflow.json) | `vTMckuoU61r9GXfa` | yes | 33 | 14 |
-| [Error Logger](Error-Logger/workflow.json) | `gqm6HzVNzEMQ8Ml0` | yes | 9 | 3 |
-| [Handle another meeting for flowroots](Handle-another-meeting-for-flowroots/workflow.json) | `34diYOZ5uKmUN75b` | yes | 10 | 3 |
-| [Handle Intent Signal](Handle-Intent-Signal/workflow.json) | `9iMXBGRlPk3O6pDZ` | yes | 24 | 9 |
-| [Handle new discovery for flowroots](Handle-new-discovery-for-flowroots/workflow.json) | `G0mmjVJeWEUuAx2m` | yes | 14 | 3 |
-| [Handle New Lead from Alta](Handle-New-Lead-from-Alta/workflow.json) | `AwlfoUuXzi86isEe` | yes | 44 | 14 |
-| [Handle New Lead from PlusVibe](Handle-New-Lead-from-PlusVibe/workflow.json) | `tspO2CNXtGudtSe7` | yes | 48 | 13 |
-| [Onboard Client](Onboard-Client/workflow.json) | `ZJzzgxrERrOM3Z5e` | yes | 24 | 4 |
-| [Pull campaign opens for adelante](Pull-campaign-opens-for-adelante/workflow.json) | `pWRtC1E8DkkGpvhN` | yes | 11 | 4 |
-| [SL Batch Pull](SL-Batch-Pull/workflow.json) | `3r2DqbY2IAapeehX` | yes | 7 | 3 |
-| [Stamp Tag on table](Stamp-Tag-on-table/workflow.json) | `U9qVEf5oCyL6rYFX` | yes | 24 | 8 |
-| [Storeleads Domains -> Clayroots](Storeleads-Domains---Clayroots/workflow.json) | `UYGZblamekkSgat4` | yes | 38 | 16 |
-| [Storeleads Domains -> Supersoniq -> Clayroots](Storeleads-Domains---Supersoniq---Clayroots/workflow.json) | `7jqOsQh43ODQWQZ9` | yes | 50 | 22 |
-| [Sync Alta Campaigns to Hub](Sync-Alta-Campaigns-to-Hub/workflow.json) | `up8Yll6huq06h1DE` | yes | 28 | 8 |
-| [Sync Meeting Summaries to Vault](Sync-Meeting-Summaries-to-Vault/workflow.json) | `KtNxT5zsbNeLL0Vp` | yes | 9 | 2 |
-| [Sync PlusVibe Campaigns to Hub](Sync-PlusVibe-Campaigns-to-Hub/workflow.json) | `211QkQG8TUF9ctcO` | yes | 23 | 8 |
-| [Sync PlusVibe Leads to Clayroots](Sync-PlusVibe-Leads-to-Clayroots/workflow.json) | `TTRm3gldn3jiVgkp` | yes | 36 | 16 |
-| [Sync Slack Logs to Vault](Sync-Slack-Logs-to-Vault/workflow.json) | `VrCFq5xwiYtcmEIc` | yes | 36 | 15 |
-| [TEST - Lead Card Preview](TEST---Lead-Card-Preview/workflow.json) | `nQy1wk7qQbGIu9RW` | no | 15 | 11 |
-| [Verify Emails](Verify-Emails/workflow.json) | `jtBHNttawTdjG6Tv` | yes | 26 | 8 |
-| [Waterfall Emails](Waterfall-Emails/workflow.json) | `iNzuePWU2UoByJ7U` | yes | 47 | 10 |
+| Workflow | What it does / when to use it | Active |
+|---|---|---|
+| [Add Intent Leads to Alta](Add-Intent-Leads-to-Alta/workflow.json) | Daily 11:00 Alta enroller. Loops Clients with Intent Tables (base from Clayroots Base ID); pulls done+NEW rows with a webhook-URL Target Campaign and POSTs each lead to it. ROUTED/FAILED/NO EMAIL stamped; one log row per client. | yes |
+| [Add Intent Leads to PlusVibe](Add-Intent-Leads-to-PlusVibe/workflow.json) | Daily 11:00 PlusVibe enroller. Loops Clients with Intent Tables; pulls done+NEW rows whose Target Campaign is a PV campaign id and adds each lead by Final Email via PV lead/add. ROUTED/FAILED/NO EMAIL stamped; one log row per client. | yes |
+| [Add rank in company to table](Add-rank-in-company-to-table/workflow.json) | Ranks contacts within each company on an existing ClayRoots table or view: groups by Domain, orders by seniority, writes RankInCompany 1..n per company. Creates the column if missing. Hub run log. | yes |
+| [Alta OAuth Callback](Alta-OAuth-Callback/workflow.json) | One-time Alta MCP OAuth: receives the authorize redirect at /webhook/alta-oauth-callback, exchanges the code (PKCE), stores access+refresh tokens in the alta_oauth data table. | yes |
+| [Append fields to table](Append-fields-to-table/workflow.json) | CSV merge onto existing ClayRoots rows, keyed by Domain (default), Final Email or Contact Key. Non-key columns appended to all rows sharing the key, lower(trim) both sides; missing fields created as text. Additive only. Hub run log. | yes |
+| [Backfill Build Date (one-off)](Backfill-Build-Date-one-off/workflow.json) | One-off backfill: fills Build Date on every row of an existing ClayRoots table. Precedence: existing Build Date (skip) -> ingested_at -> Created. Hub run log. | yes |
+| [BounceBan Poller](BounceBan-Poller/workflow.json) | Background poller resolving BounceBan catch-all verification jobs: checks pending verifications and writes final verdicts back onto the rows that queued them. | yes |
+| [Clean Company Names on table](Clean-Company-Names-on-table/workflow.json) | Normalises the Company column on an existing ClayRoots table. Paged 100 at a time, writes company_clean too when it is writable. Skips already-correct rows, quarantines destructive results. Hub run log. | yes |
+| [Contagen -> Supersoniq -> Clayroots](Contagen---Supersoniq---Clayroots/workflow.json) | ContaGen CSV as Source 1 + Supersoniq net-new as Source 2 into one ClayRoots Contacts build table. Creates a table from a Build name, or appends to an Existing Table ID (guards: domains-table name, missing Contact Key, type clash). Hub run log. | yes |
+| [Create PlusVibe Weekly Report](Create-PlusVibe-Weekly-Report/workflow.json) | Daily 10:00 IL: for each PV client whose Report Day is today (empty = Friday), pulls trailing-7-day PV stats, writes a Reports row, posts the weekly Slack card, logs one run-log row. Manual runs include all PV clients. | yes |
+| [Deploy View to Campaign](Deploy-View-to-Campaign/workflow.json) | On-demand webhook: deploys an Airtable view's leads into a PlusVibe campaign (replaces manual CSV upload). Pre-validates emails, honors DNC, verifies by read-back, stamps Deploy Error, writes a Lead Lists receipt, updates the launch row. | yes |
+| [Discolike Domains -> Clayroots](Discolike-Domains---Clayroots/workflow.json) | DiscoLike companies CSV -> verification-ready Domains table (ALL domains, segment-tagged) in the client's ClayRoots base: public_emails_clean + MV P0/BB/Final Email/Status. Hub run log. | yes |
+| [Error Logger](Error-Logger/workflow.json) | Global n8n error handler: catches failed executions across the instance and logs them. | yes |
+| [Handle another meeting for flowroots](Handle-another-meeting-for-flowroots/workflow.json) | Cal.com additional-meeting booking -> Hub. Match/create Flowroots Prospect by email domain/name, create Meetings row, set PipelineStatus=Scheduled Call + contextNotes. Logs run. | yes |
+| [Handle Intent Signal](Handle-Intent-Signal/workflow.json) | Shared intent-signal play. POST /webhook/intent-signal (client, table, campaign + knobs); base from the client's Clayroots Base ID. Head guard fails fast. Apify jobs, Supersoniq DMs, DNC gate, upsert, one batched waterfall call. | yes |
+| [Handle new discovery for flowroots](Handle-new-discovery-for-flowroots/workflow.json) | Cal.com discovery booking -> Hub. Match/create Flowroots Prospect (by domain/name), create Meetings row, set PipelineStatus=Scheduled Call + contextNotes. Logs run. | yes |
+| [Handle New Lead from Alta](Handle-New-Lead-from-Alta/workflow.json) | Dave.io Alta reply intake (hardcoded Dave row). POST /webhook/alta-dave-new-reply. GPT screen gate: PASS/AUTO and CRM duplicates end silently. DiscoLike+Supersoniq enrich, qualify+notify, Slack card + thread ts, run log, fires addon-newlead-alta-{slug}. | yes |
+| [Handle New Lead from PlusVibe](Handle-New-Lead-from-PlusVibe/workflow.json) | Shared PlusVibe positive-reply intake. Webhooks: plusvibe-new-reply (PV) + newlead-manual (Airtable; bypasses dedup, updates existing prospect). Duplicates end silently. SQ contact enrich, qualify+notify, fires addon-newlead-{slug}. | yes |
+| [Onboard Client](Onboard-Client/workflow.json) | Onboarding scaffolder: reads the Hub Prospects row (?recordId=), Drive anatomy + Overrides stub, {slug}-private Slack channel, Shared/ share, ClayRoots base attempt (DNC table), full Hub Clients registry row. | yes |
+| [Pull campaign opens for adelante](Pull-campaign-opens-for-adelante/workflow.json) | Adelante add-on: fired by Sync PlusVibe Campaigns via /webhook/addon-pvsync-adelante. Walks lead/list-all for campaigns with Open Tracking on and writes a dated CSV of leads who opened to the client Logs folder. Own run-log row. | yes |
+| [SL Batch Pull](SL-Batch-Pull/workflow.json) | Sub-workflow of the Storeleads builders: pulls one batch of Storeleads pages for a cursor, upserts formatted company rows into the ClayRoots Domains table, and returns a tiny batch summary to the parent loop. | yes |
+| [Stamp Tag on table](Stamp-Tag-on-table/workflow.json) | Writes a Tag value onto every row of a ClayRoots table, optionally limited to one Build Date. Never creates the Tag column: a table without one fails loudly. Paged, plain record updates, skips rows already tagged. Hub run log. | yes |
+| [Storeleads Domains -> Clayroots](Storeleads-Domains---Clayroots/workflow.json) | Storeleads API pull -> verification-ready Domains table (ALL domains, segment-tagged) in the client's ClayRoots base: public_emails_clean + MV P0/BB/Final Email/Status. Hub run log. | yes |
+| [Storeleads Domains -> Supersoniq -> Clayroots](Storeleads-Domains---Supersoniq---Clayroots/workflow.json) | Storeleads domains CSV -> Supersoniq contacts -> ClayRoots Contacts build table. Creates a table from a Build name, or appends to an Existing Table ID (guards: domains-name, missing Contact Key, type clash). Hub run log. | yes |
+| [Sync Alta Campaigns to Hub](Sync-Alta-Campaigns-to-Hub/workflow.json) | Daily 07:30 Alta campaign sync (Dave.io hardcoded). Pulls active campaigns from the Alta API, counts enrolled prospects per campaign, upserts Campaigns by Campaign ID, one run-log row. | yes |
+| [Sync Meeting Summaries to Vault](Sync-Meeting-Summaries-to-Vault/workflow.json) | Fathom meeting sync -> Drive summary file + Hub Meetings row (Title/Summary/Date/Participants/Links), links Company via domain match on Flowroots Prospects, sets PipelineStatus=Call Completed when matched. Logs run. | yes |
+| [Sync PlusVibe Campaigns to Hub](Sync-PlusVibe-Campaigns-to-Hub/workflow.json) | Daily 07:00 PlusVibe sync, two phases in one run: per-client campaign stats upsert into Campaigns, then a full conversation-thread refresh for every prospect with a contact email. One combined run-log row. | yes |
+| [Sync PlusVibe Leads to Clayroots](Sync-PlusVibe-Leads-to-Clayroots/workflow.json) | Nightly/on-demand sync of per-lead outreach truth from PlusVibe onto ClayRoots contact rows. Streams one client at a time (pull, compute, write, log, free). Update-on-match only, idempotent, self-checking. | yes |
+| [Sync Slack Logs to Vault](Sync-Slack-Logs-to-Vault/workflow.json) | Nightly 23:00 shared Slack->Drive log sync. Loops every Hub Clients row with Slack Sync checked; a client failure is recorded and skipped. Writes one run-log row with per-client outcomes and fires each client's add-on webhook. | yes |
+| [TEST - Lead Card Preview](TEST---Lead-Card-Preview/workflow.json) | Isolated test workflow: pinned Tribu lead data through the real Build Slack Blocks and Append Record Link code, posting the lead card to a test Slack channel. | no |
+| [Verify Emails](Verify-Emails/workflow.json) | MillionVerifier pass over a table: verifies Final Email if present, else raw Email; catch-alls resolve in the background via the BounceBan Poller. Writes MV / Status / Final Email back and logs the run to the Hub run-log. | yes |
+| [Waterfall Emails](Waterfall-Emails/workflow.json) | Find + verify email waterfall: MV on existing, then Trykitt + LeadMagic + Prospeo finders, MillionVerifier gates each tier, catch-alls resolve via BounceBan Poller. Self-batching (100/batch). Writes Final Email/Source/Status back and logs the run to the Hub run-log. | yes |

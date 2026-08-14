@@ -17,6 +17,9 @@ const path = require('path');
 
 const BASE = process.env.N8N_URL || 'https://n8n.flowroots.com';
 const OUT = path.join(__dirname, '..', '..', 'n8n');
+// The public API returns description:null; the real ones live only in the MCP layer.
+// This map (id -> description) fills the INDEX; add a line when a workflow is born.
+const DESC = JSON.parse(fs.readFileSync(path.join(__dirname, 'descriptions.json'), 'utf8'));
 
 function apiKey() {
   if (process.env.N8N_API_KEY) return process.env.N8N_API_KEY.trim();
@@ -89,7 +92,7 @@ function decompile(wf) {
   const rows = [];
   for (const wf of workflows) {
     const r = decompile(wf);
-    rows.push({ name: wf.name, id: wf.id, active: wf.active, updatedAt: wf.updatedAt, ...r });
+    rows.push({ name: wf.name, id: wf.id, active: wf.active, updatedAt: wf.updatedAt, description: wf.description || DESC[wf.id] || '', ...r });
     console.log(`${wf.name}  (${wf.id})  nodes:${r.nodes}  code files:${r.codeFiles}`);
   }
 
@@ -101,9 +104,9 @@ function decompile(wf) {
       '`nodes/*.js` are the Code nodes. Pull with `tools/n8n/pull.js`, push one workflow',
       'back with `tools/n8n/push.js <folder>`. n8n is the runtime; this is the version history.',
       '',
-      '| Workflow | ID | Active | Nodes | Code files |',
-      '|---|---|---|---|---|',
-      ...rows.map(r => `| [${r.name}](${encodeURI(r.dir)}/workflow.json) | \`${r.id}\` | ${r.active ? 'yes' : 'no'} | ${r.nodes} | ${r.codeFiles} |`),
+      '| Workflow | What it does / when to use it | Active |',
+      '|---|---|---|',
+      ...rows.map(r => `| [${r.name}](${encodeURI(r.dir)}/workflow.json) | ${(r.description || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim()} | ${r.active ? 'yes' : 'no'} |`),
       '',
     ];
     fs.writeFileSync(path.join(OUT, 'INDEX.md'), lines.join('\n'));

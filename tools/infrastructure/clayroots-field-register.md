@@ -98,6 +98,37 @@ Live proof, exec 3415: the diff computed `missing = [Business Model, Contact Sou
 
 ---
 
+## 2c. The standard, as shipped 2026-08-12
+
+Every schema-touching workflow now conforms. Final published versions:
+
+| Workflow | Version |
+|---|---|
+| Contagen `jJTD9xgbA0kKYqna` | `dcacd4d7` |
+| Storeleads -> Supersoniq `7jqOsQh43ODQWQZ9` | `150858a4` |
+| Storeleads Domains `UYGZblamekkSgat4` | `ea7d8026` |
+| SL Batch Pull `3r2DqbY2IAapeehX` | `62537eff` |
+| Discolike `vTMckuoU61r9GXfa` | `48a34021` |
+| Waterfall Emails `iNzuePWU2UoByJ7U` | `77433874` |
+| Verify Emails `jtBHNttawTdjG6Tv` | `649b16f3` |
+| BounceBan Poller `tllfBn4NycLftdef` | `d5d6ae8b` |
+
+The rules, machine-wide:
+
+- **`company_clean` is dead.** No contract declares it, no writer emits it. Cleaning happens on `Company` itself via the shared `cleanCompany`. (Discolike domains tables clean into `Name`.)
+- **`Source` is dead.** `Contact Source` = where the record came from (builders). `Email Source` = which tier found the email (verification lane: P0/P1/P2/P3/none, choice set byte-identical in Waterfall and Verify). Existing `Source` columns renamed to `Email Source` on Dave (Accelerator Contacts, Intent, Finance, Accelerator Domains) and Adelante (Shopify Contacts/Domains, UK Contacts/Domains); Move PLNR and Flowroots get `Email Source` created by the lane on first touch, their stale `Source` joins the deletion pass.
+- **`State` is the only location column**; strip nodes fold a `State Full` value into it (full name wins).
+- **Banned from contact payloads and contracts:** `Score`, `Similarity`, `Valid`, `Start Date`, `Redirect Domain`, `Update Date`, `Run ID`, `Seniority Rank`, `State Full`, `company_clean`, `MV`, writable `Build Date`. All fine on Discolike domains tables (Operator ruling), where the source data legitimately carries them.
+- **Write-boundary strips enforce the ban** in Contagen (S1/S2), SL->Supersoniq, and SL Batch Pull (`Split Rows`), so a CSV or formatter can never resurrect a banned column or 422 a fresh table.
+- **`Build Date`** is the only formula field in every contract, `CREATED_TIME()`.
+- **`Tag`** is in every builder contract; only the Operator sets its value.
+- **Verify Emails** writes its verdict into the real tier column (`MV P0` by default), never a bare `MV`.
+- **Nothing blanks a `Final Email` except a definitive negative** (`invalid`/`disposable` from MillionVerifier, `undeliverable` from BounceBan). Indeterminate and errored checks leave the address untouched, in Verify Emails and in the Poller both.
+
+**None of this is proven by a live run yet.** The proof is the next real build and the next verification pass: new tables must carry the trimmed contract, `Contact Source` populated, `Email Source` created by the lane, and no banned column anywhere.
+
+---
+
 ## 3. Open defects
 
 **Verify Emails destroys resolved emails.** Its `Verdict` node writes `Final Email: ''` and `Source: 'none'` on any row it cannot resolve. Its only guard is `NOT({Status} = 'verifying')`, which excludes in-flight BounceBan rows but not already-resolved ones. Running Verify Emails over a table that Waterfall Emails already filled wipes `Final Email` on catch-all rows that were good. Silent, no error, no counter. **Do not point Verify Emails at a waterfalled table until this is fixed.**

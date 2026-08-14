@@ -19,7 +19,7 @@ What the tables MEAN is in CLAUDE.md; this file is what they ARE.
 | Clayroots Base ID | `fldRAiazbtIutFb7s` | singleLineText |  |
 | Qualification Prompt | `fldN4HT0rGmNXNp78` | multilineText | The client-specific ICP qualification rubric, read at runtime by the client's Handle-new-lead automation and injected as the system prompt of the GPT qualifier. One per client. |
 | Close Smart View ID | `fldlSMNRyuLZn3qiP` | singleLineText | The Close saved-search (smart view) ID for this client's '{Client} — Prospects' view. Written by the Onboard Client automation when it creates the view. |
-| SESSIONS | `fldJy6MsPHAXKKVFn` | multipleRecordLinks |  |
+| SESSIONS | `fldJy6MsPHAXKKVFn` | singleLineText |  |
 | AUTOMATIONS | `fld6hL8EhoXx2TxZd` | multipleRecordLinks |  |
 | Companies | `fldcH6aX0naSrHcJh` | multipleRecordLinks |  |
 | Transactions | `fldvniUaYfQTh5t98` | multipleRecordLinks |  |
@@ -43,6 +43,20 @@ What the tables MEAN is in CLAUDE.md; this file is what they ARE.
 | LinkedIn Setter API Key | `fldpuAB5jiyBxliuj` | singleLineText |  |
 | LinkedIn Setter Routine URL | `fldOQlJRrYvJMPiyr` | singleLineText | The full fire URL for this client's LINKEDIN routine, a separate session from the email inbox. Handle New Lead from Alta POSTs to this at the end of every run, with Authorization: Bearer {LinkedIn Setter API Key}. Empty = this client has no LinkedIn routine and the intake skips the fire step. |
 | Overrides | `fldxzRsL1Cx0WlBky` | multilineText | Client-specific behavioral deltas the skills read at run time (the old INBOX-MANAGEMENT Overrides file, moved into the database 2026-08-14). Only deltas the doctrine cannot derive: sender quirks, tone constraints, channel rules. Read by mining sessions and routines through the registry, never from files. |
+| Client KB | `fldVBndImTxRl9lSO` | multipleRecordLinks |  |
+| Logs | `fldevnA1BWrHhvfal` | multipleRecordLinks |  |
+
+## KB Files (`tblJAWVcCaW6TmfbC`)
+
+The client knowledge base. One row per document the machine reads: onboarding forms, product KBs, research, intel. Text in cells, never attachments (attachments are for human-sent deliverables, in Drive). Sessions retrieve by Client + Type, never the whole KB. Verified = numbers in this doc are confirmed with the client, use verbatim.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Name | `fldW8rLvifWteVpQB` | singleLineText | Document name, e.g. Onboarding Form, Product Marketing KB |
+| Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
+| Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
+| Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, qualification-prompt, product, research, intel |
 
 ## Messages (`tblh7G8aW63vEg6S3`)
 
@@ -168,7 +182,6 @@ What the tables MEAN is in CLAUDE.md; this file is what they ARE.
 |---|---|---|---|
 | Session | `fldmydw5lYnmMxSak` | singleLineText |  |
 | Type | `fldqPYWvOvH3yZaMd` | singleSelect | Choices: List Build, Email Campaign, Linkedin Campaign, Infra Plumbing, Analysis / Strategy, Onboarding |
-| Client | `fldWulAcndRYDbh5m` | multipleRecordLinks |  |
 | Date | `fldsREbasPlRl6XU8` | dateTime |  |
 | Log | `fldfvrtHMvGvzkFOO` | multilineText |  |
 | Deliverables | `fldpPdyu0U5zLhFCN` | multilineText |  |
@@ -388,3 +401,14 @@ One row per deployed final view: {table} - {view}. Created by the Deploy View to
 | Campaign | `fldeLPjBDcQ9pCdLy` | multipleRecordLinks | Exactly one campaign per row |
 | List CSV | `fldx7jBAH2o1XuIqH` | url | Client-facing link to the list (share view / CSV). Mechanism TBD; Operator-pasted for now |
 | View Link | `fldQSPR23nP39jXvl` | url | Deep link to the exact Airtable view this list was deployed from. Built by Deploy View to Campaign as <client Clayroots shareable link>/<tableId>/<viewId>. |
+
+## Logs (`tbl70VAPYGBUhkyAp`)
+
+Session journal, replaces the deprecated Sessions table. One row per working session (local or cloud): what happened, what was decided, what is open. Written at session close. Durable decisions still go to their real homes (Overrides row, KB Files, GitHub issues); this is the narrative record that lets the next session pick up the thread.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Session | `fldxBGAc7WYVwIHMo` | singleLineText | Short name of the session, e.g. 'Inbox Dave.io', 'List Adelante UK' |
+| Client | `fldlVaqQgiriwgXOk` | multipleRecordLinks |  |
+| Log | `fld4wmjzFCRaTAVf9` | richText | What happened, what was decided, what is open. Written at session close. |
+| Date | `fldLN7SOc1G0cUSUJ` | dateTime |  |

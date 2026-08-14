@@ -26,8 +26,10 @@ There are three kinds of things, and you connect them:
 1. **Records** live in Airtable: the Flowroots Hub (the database) and each client's ClayRoots base (lead tables, a list-building tool: its patterns live in `tools/infrastructure/clayroots.md`). State is read live. Never trust a copy in a note. The Hub's full field-level schema is compiled into **`hub/SCHEMA.md`**; what the tables mean:
    - **Clients** - the registry and address book. Every job starts here.
    - **Prospects** - the CRM. Everyone in play through a held meeting. Upserts merge on `Dedup Key` ({client slug}|{domain}).
+   - **KB Files** - the client knowledge base. One row per document, pulled by Client + Type: `onboarding-form`, `overrides`, `qualification-prompt`, `product`, `research`, `intel`. Verified checked = numbers usable verbatim in copy.
    - **Campaigns** - one row per campaign instance, upserted on Campaign ID by the nightly syncs and the reply intakes. Carries the copy and the agent config.
    - **Automations** - the run log. Every machine writes its runs here; verify by cell values, never by a run log alone.
+   - **Logs** - the session journal. Every session writes one row at close.
    - **Meetings, Reports, Openers, Lead Lists** - what their names say. **Sessions is deprecated.**
 2. **Machines** live in n8n. Some run alone on schedules; some wait for a button (webhook or form). Their full source is in `n8n/`, compiled from the live instance - **`n8n/INDEX.md` is the catalog and says what each machine does and when to use it.** Read source freely; never edit it here.
 3. **Knowledge** lives in this repo as plain files:
@@ -66,8 +68,8 @@ Running locally inside The Vault, use the `obsidian` CLI (load the `obsidian-cli
 
 There are no client folders. A client is a row in the **Hub Clients registry**, and that row is the entry point:
 
-- **Overrides** field: what differs for this client from the default. Read it first, every session.
-- **Qualification Prompt**, workspace IDs, Slack channel, ClayRoots base, scheduler link, routine URLs and keys: all on the row.
+- Workspace IDs, Slack channel, ClayRoots base, scheduler link, routine URLs and keys: on the row.
+- **KB Files** table holds the client's documents, pulled by Client + Type. **Read the client's `overrides` row first, every session** - it is what differs for this client from the default. The `qualification-prompt` rows are read live by the reply intakes; edit them there, never in a file.
 - **Campaigns** table: one row per campaign instance - stats, status, copy, agent config.
 - **Prospects** table: everyone in play, with the full conversation thread on the record.
 - **Meetings**: on the Hub; transcripts live in Fathom, read live.
@@ -77,10 +79,10 @@ There are no client folders. A client is a row in the **Hub Clients registry**, 
 ---
 ## Working a client
 
-1. **Load the client from the registry.** Overrides first. Then the live state the task needs: campaign rows, prospect records, the Slack channel, sender stats. You never touch a client's outbound without knowing where they stand.
+1. **Load the client from the registry row, then their KB.** The `overrides` KB row first, then the KB docs and live state the task needs: campaign rows, prospect records, the Slack channel, sender stats. You never touch a client's outbound without knowing where they stand.
 2. **Read the relevant `tools/infrastructure/` file** before working a system you have not touched this session.
 3. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
-4. **Close loud.** End by stating what happened and what was decided. A lesson goes into `tools/infrastructure/`; a defect goes to a GitHub issue; a durable client change goes into their Overrides on the registry.
+4. **Close loud.** Write one row to the Hub **Logs** table: what happened, what was decided, what is open. A lesson goes into `tools/infrastructure/`; a defect goes to a GitHub issue; a durable client change goes into their `overrides` KB row.
 
 ---
 ## Response style

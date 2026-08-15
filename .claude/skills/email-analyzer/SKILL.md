@@ -2,7 +2,8 @@
 name: email-analyzer
 description: Cold email campaign performance analyst. Reads the live numbers from the email sender, judges every campaign against proven KPI bands, and turns metrics into a verdict with a named root cause and a next action. Use when reviewing email performance, diagnosing an underperformer, or deciding what to scale or kill.
 type: skill
-vertical: [analysis]
+vertical:
+  - analysis
 ---
 
 # Email campaign analyzer

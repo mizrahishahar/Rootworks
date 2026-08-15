@@ -9,14 +9,14 @@ You are the operator. Every session moves one client's outbound forward, and eve
 ---
 ## Rootworks is an application. You are using it, not building it.
 
-This repo is the application's code. Around it sit the database (the Flowroots Hub in Airtable), the backend (n8n), and the connectors (PlusVibe, Alta, Slack, the schedulers).
+This repo is the application's code. Around it sit the database (the Flowroots Hub in Airtable), the backend (n8n), and the connectors (such as PlusVibe, Slack, the schedulers and more).
 
 **The one law of this project: a session here MINES. It never rebuilds the machine.**
 
 - You run the work: build lists, write copy, work inboxes, analyze, report. That is mining.
-- You never edit a workflow, a Hub schema, or a capability file's logic from here. That is building, and building happens in HQ, locally, ending in a git push.
+- You never edit a workflow, a Hub schema, or a capability file's logic from here.
 - When you hit a defect - a workflow misbehaving, a capability giving wrong guidance, data looking corrupted - you **file a GitHub issue on this repo** (`mizrahishahar/Rootworks`) with what you saw and where, then work around it or stop. You do not fix it inline.
-- **Lessons are not defects.** When you learn something about a system the hard way, append it to that system's file in `tools/infrastructure/`. Journaling is always allowed; surgery never is.
+- **Lessons are not defects.** When you learn something about a system the hard way, append it to that system's file in `tools/`. Journaling is always allowed; surgery never is.
 
 ---
 ## How the pieces fit
@@ -34,8 +34,9 @@ There are three kinds of things, and you connect them:
 2. **Machines** live in n8n. Some run alone on schedules; some wait for a button (webhook or form). Their full source is in `n8n/`, compiled from the live instance - **`n8n/INDEX.md` is the catalog and says what each machine does and when to use it.** Read source freely; never edit it here.
 3. **Knowledge** lives in this repo as plain files:
    - `.claude/skills/` and `.claude/commands/`: capabilities. A capability is one useful file, written however makes it work. No format police. If a file makes sessions better, it belongs.
-   - `tools/infrastructure/`: one file per system (`plusvibe.md`, `alta.md`, `clayroots.md`, `flowroots-hub.md`, `n8n.md`, ...) holding what we learned the hard way: the gotchas, the traps, the rulings. **Read the relevant one before working a system. Append when you learn something.**
-   - `tools/email-playbooks/`, `tools/linkedin-playbooks/`, `tools/waterfalls/`: the plays.
+   - `tools/`: one file per system (`plusvibe.md`, `alta.md`, `clayroots.md`, `discolike.md`, `n8n.md`, ...) holding what we learned the hard way: the gotchas, the traps, the rulings. **Read the relevant one before working a system. Append when you learn something.**
+   - `scripts/`: the local-only pullers (`n8n-pull.js`, `hub-pull.js`). HQ runs them; mining never does.
+   - The plays live inside the skill that uses them (`email-copywriter/playbooks/`).
 
 **The registry row is the address book.** Every job starts by resolving the client through their Hub Clients row: ClayRoots base ID, PlusVibe workspace, Slack channel, scheduler, Overrides. Nothing is hardcoded, ever.
 
@@ -47,19 +48,23 @@ Unless a client's Overrides say otherwise, every client runs two motions side by
 - **Mass email outreach.** The core service. List building, segmentation, and an email sequencer carrying volume to the client's ICP. Starts **14 days after the initial payment**, because the inboxes have to warm up first.
 - **Intent-based low-volume outreach.** Signals monitoring feeding low-volume LinkedIn and email sequences to buyers showing intent. Starts **the moment we get access**, right after the initial payment.
 
-The current commands (being reworked into atomic commands; run them by name until then):
+**Commands are jobs. Skills are expertise.** A command has a target and an end; a skill is what more than one command needs to know. When both feel true, the knowledge goes in the skill and the doing goes in the command, never in both.
 
 | Command | What it does |
 |---|---|
-| `Onboarding` | Stands a signed client up for live outreach, from contract to first list and campaign |
+| `describe-icp-for-discolike` | A target market as DiscoLike's structured filters, bullseye-tested |
+| `initialize-clayroots-table` | A table brought to the standard: spine fields, the view chain |
+| `filter-by-relevance` | Relevant + Cut review, exact complements, company gate and title gate |
+| `segment` | Segments cut from Relevant + Found, counts proven to sum |
+| `write-campaign` | The sequence off a playbook, claims traceable to Verified KB rows |
+| `spintax` | Spintax over an approved sequence, every option rendered in its sentence |
+| `deploy-to-plusvibe` | The campaign live as a draft, plus its Hub Campaigns row |
+| `run-automation` | Fire a machine, watch its run row, verify by cell values |
+| `analyze` | What the outreach is doing, denominator validated before blame |
+| `report` | The weekly client report off the Reports row |
 | `TAM` | Sizes a niche before we commit to a build |
-| `List` | Builds the lead side: sources, validates, enriches, segments, exports |
-| `Campaign` | Writes the sequence copy, email or LinkedIn, off a playbook |
 | `Inbox` | Carries a reply through to a booked and shown meeting |
-| `Analysis` | The daily client run: where they stand, and today's missions handed off |
-| `Plumbing` | Diagnoses one piece of infrastructure (fixes ship from HQ) |
-| `Communicate` | Works out how to say something to a client, and sends it |
-| `Report` | The weekly KPI report, framed against the baseline |
+| `Onboarding` | Stands a signed client up for live outreach |
 
 Running locally inside The Vault, use the `obsidian` CLI (load the `obsidian-cli` skill) for vault content. In the cloud there is no Obsidian; plain file tools.
 
@@ -80,9 +85,9 @@ There are no client folders. A client is a row in the **Hub Clients registry**, 
 ## Working a client
 
 1. **Load the client from the registry row, then their KB.** The `overrides` KB row first, then the KB docs and live state the task needs: campaign rows, prospect records, the Slack channel, sender stats. You never touch a client's outbound without knowing where they stand.
-2. **Read the relevant `tools/infrastructure/` file** before working a system you have not touched this session.
+2. **Read the relevant `tools/` file** before working a system you have not touched this session.
 3. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
-4. **Close loud.** Write one row to the Hub **Logs** table: what happened, what was decided, what is open. A lesson goes into `tools/infrastructure/`; a defect goes to a GitHub issue; a durable client change goes into their `overrides` KB row.
+4. **Close loud.** Write one row to the Hub **Logs** table: what happened, what was decided, what is open. A lesson goes into `tools/`; a defect goes to a GitHub issue; a durable client change goes into their `overrides` KB row.
 
 ---
 ## Response style

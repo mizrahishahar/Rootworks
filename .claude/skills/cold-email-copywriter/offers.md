@@ -1,11 +1,6 @@
----
-name: offer-builder
-type: skill
-vertical: [copy]
-description: Frames a client's offer to read as a no-brainer to a cold stranger, and grades it against the pillars. Mostly sharpening within fixed borders, since we rarely control the offer, with construction principles for when we do. Use before writing copy, to sharpen the offer and produce the offer table the Campaign SOP shows.
----
+# Offers
 
-# Offer builder
+Frame the client's offer to read as a no-brainer to a cold stranger, and grade it against the pillars. Run this before writing a sequence: the offer decides the argument, the copy only carries it.
 
 The offer reaches you as words: a number, a proof point, a guarantee, a deliverable. We rarely control it, so the job is mostly to make whatever we are handed read as a no-brainer to a cold stranger, using nothing but language, inside fixed borders. When we do have leverage to change the offer, the pillars tell us how.
 

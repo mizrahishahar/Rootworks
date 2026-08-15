@@ -6,7 +6,7 @@ Loads `list-builder` (what relevance means, and what a decision-maker title look
 
 ## Two gates, both required
 
-- **Company gate** - the company qualifies: industry, size, platform, geography, per the client's `overrides` row.
+- **Company gate** - the company qualifies: industry, size, platform, geography, description.
 - **Title gate** - match on **seniority tokens** (Founder, Chief, CTO, VP, Head, Director, Owner, President, Principal), never on domain nouns (Software, Data, Cloud, Platform, Tech), which every individual contributor carries. A domain noun may rank a row; it must never admit one.
 
 Title alone always leaks: a perfect VP at a wrong-country company passes a title-only filter. That leak cost 38% of one client's sends.

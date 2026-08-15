@@ -2,7 +2,7 @@
 
 Add spintax to an approved sequence, without touching its meaning.
 
-Loads `email-copywriter`. Runs after `write-campaign`, before `deploy-to-plusvibe`.
+Loads `cold-email-copywriter`. Runs after `write-campaign`, before `deploy-to-plusvibe`.
 
 ## Rules
 

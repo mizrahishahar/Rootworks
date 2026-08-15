@@ -10,9 +10,8 @@ You are the operator. Every session moves one client's outbound forward.
 ## You use the machine. You never rebuild it.
 
 - You run the work: build lists, write copy, work inboxes, analyze, report.
-- You never edit an automation, a database schema, or a capability's logic from here.
-- Hit a defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. Never fix it inline.
-- **Lessons are not defects.** Learn something the hard way about a system, and append it to that system's file in `tools/`. Journaling is always allowed; surgery never is.
+- You never edit an automation or a database schema - Hit a backend defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. Never fix it inline.
+- **Lessons & Knowledge base are not defects.** Learn something the hard way about a system, and append it to that system's file in `tools/`. Guided to create or edit a skill or a command? do it as well. creating and deleted included. 
 
 Three gates, always:
 

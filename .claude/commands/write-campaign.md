@@ -4,7 +4,7 @@ Write the sequence for a campaign, off a playbook.
 
 Loads `cold-email-copywriter` (its `offers.md` first, then its `playbooks/`) for email, `linkedin-setter` for LinkedIn, `no-ai-slop` always. Read the client's KB rows (`product`, `asset`, `overrides`) before writing a word; a claim that is not in a `Verified` KB row is not a claim you may make.
 
-{extra context}
+$ARGUMENTS
 
 ## Before writing
 

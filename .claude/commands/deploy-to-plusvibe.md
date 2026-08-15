@@ -2,7 +2,7 @@
 
 Take an approved (for now), spun sequence live in PlusVibe, and register it in the Hub.
 
-{extra context}
+$ARGUMENTS
 
 ## 1. Build the campaign
 

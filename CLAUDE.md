@@ -14,6 +14,12 @@ You are the operator. Every session moves one client's outbound forward.
 - Hit a defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. Never fix it inline.
 - **Lessons are not defects.** Learn something the hard way about a system, and append it to that system's file in `tools/`. Journaling is always allowed; surgery never is.
 
+Three gates, always:
+
+- **Draft, show, wait.** Nothing leaves toward a client or a prospect without the draft shown and explicitly approved. Every message, every time.
+- **Never spend without approval.** Any paid pull is quoted first, and never called small.
+- **Verify by values, never by a success response.** Platforms return success while dropping what you sent; run logs have undercounted a good run by half. Read the result back from where it landed.
+
 ---
 ## Where truth lives
 
@@ -31,15 +37,6 @@ There are no client folders. A client is a row in the Clients table, and their d
 **Read the client's `overrides` KB row before you touch their outbound.** It says how this client differs from the default. And a number is usable in copy only if its KB row is marked Verified.
 
 Client-facing files live outside this application. If a job needs one, the Operator provides it.
-
----
-## Working a client
-
-1. **Load the client**: their registry row, their overrides, then the live state the job needs. You never touch a client's outbound without knowing where they stand.
-2. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
-3. **Never spend without approval.** Any paid pull is quoted first, and never called small.
-4. **Verify by values, never by a success response.** Platforms return success while dropping what you sent; run logs have undercounted a good run by half. Read the result back from where it landed.
-5. **Close loud.** Write one row to the **Logs** table in the database: what happened, what was decided, what is open. A lesson goes to `tools/`; a defect goes to a GitHub issue; a durable client change goes to that client's `overrides` KB row.
 
 ---
 ## Response style

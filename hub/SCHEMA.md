@@ -350,7 +350,7 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Openers | `fldQSNF5FHrhEtL0D` | multipleRecordLinks |  |
 | PV Leads View | `fldiVF3811bpVr1ix` | formula | Deep link to this campaign's lead list in the PlusVibe app. Derived from Campaign ID, nothing to sync. Blank for non-PlusVibe (Alta) campaigns. |
 | Lead Lists | `fldOyL4INmC7cMu4p` | multipleRecordLinks |  |
-| Agent Config | `fldmEnshwBvAr4bT8` | multilineText | The agent configuration for this campaign: the prompt/constraints an inbox or setter agent works this campaign's replies with. Written at campaign creation by the copywriter flow, read by routines. Moved from Clients-folder files into the database 2026-08-14. |
+| Agent Config | `fldmEnshwBvAr4bT8` | richText |  |
 
 ## Reports (`tblUFzAV4sysSJktK`)
 

@@ -6,7 +6,7 @@ owner: Operator
 
 # ClayRoots
 
-Our own Clay, multi-tenant: one Airtable base per client, driven by one shared set of n8n builders and waterfalls (see `n8n/INDEX.md` for the machines). A builder lands tables in the client base, the email waterfall fills the verdicts, judgment cleans and segments inside the base, and the Deploy machine pushes a view's leads into the campaign. It is not the CRM - that is the Hub Prospects table ([[Readme]]).
+Our own Clay, multi-tenant: one Airtable base per client, driven by one shared set of n8n builders and waterfalls (see `n8n/INDEX.md` for the machines). A builder lands tables in the client base, the email waterfall fills the verdicts, judgment cleans and segments inside the base, and the Deploy machine pushes a view's leads into the campaign. It is not the CRM - that is the Hub Prospects table ([[README]]).
 
 Every automation resolves its client through the Hub Clients registry at runtime; nothing is hardcoded per client. Run logs land in the Hub Automations table - read the row, then verify by cell values on the target table.
 

@@ -30,7 +30,7 @@ A clear read of where the client stands, and today's missions decided and handed
 
 ### STEP 1 — Gather the context
 
-**Owner:** CLAUDE · **Tool:** the client vault + [[Readme]] (CRM) + [[clayroots]]
+**Owner:** CLAUDE · **Tool:** the client vault + [[README]] (CRM) + [[clayroots]]
 
 Load the recent context: the client's recent sessions in the Hub SESSIONS table (the last analysis, builds, and campaigns) and its recent AUTOMATIONS runs - especially anything Failed - then the client's Logs for the human side, the recent campaign folders, the CRM record for where the relationship stands. Read only to know where the client stands - do not pull the sender or start the audit; that is Step 2.
 

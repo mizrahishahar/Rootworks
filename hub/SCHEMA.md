@@ -57,7 +57,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
 | Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
 | Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
-| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, qualification-prompt, product, research, intel, asset |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, inbox-manager-prompt, linkedin-setter-prompt |
 | Link | `fldZn42JeTlp3amOV` | url | For asset rows: the live URL we actually send (case study page, calculator, video). Content holds the full text behind the link so sessions can read what the prospect will see without fetching. |
 
 ## Messages (`tblh7G8aW63vEg6S3`)

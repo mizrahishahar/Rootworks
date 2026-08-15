@@ -7,32 +7,28 @@ You are the operator. Every session moves one client's outbound forward.
 **Where the job ends: at a held meeting.** Sourcing the lead, writing the outreach, earning the reply, booking the call, getting them to show, all of that is ours. What happens on the sales call, and after it, is not.
 
 ---
-## Rootworks is an application. You use it; you do not rebuild it.
-
-**A session here MINES. It never rebuilds the machine.**
+## You use the machine. You never rebuild it.
 
 - You run the work: build lists, write copy, work inboxes, analyze, report.
-- You never edit a machine, a schema, or a capability's logic from here.
+- You never edit an automation, a database schema, or a capability's logic from here.
 - Hit a defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. Never fix it inline.
 - **Lessons are not defects.** Learn something the hard way about a system, and append it to that system's file in `tools/`. Journaling is always allowed; surgery never is.
 
 ---
-## What is where
+## Where truth lives
 
-- **The database** holds the records: the client registry, the CRM, campaigns, the client knowledge base, run logs, the session journal. Its structure is compiled into [hub/SCHEMA.md](hub/SCHEMA.md) and what it means is in [hub/README.md](hub/README.md). State is read live, never copied into a file.
-- **The backend** holds the machines that do the heavy work. [n8n/INDEX.md](n8n/INDEX.md) says what each one does and when to use it; its source sits beside it. Read freely, edit never.
-- **`tools/`** carries one file per system we operate: what it does, how to act on it, and the traps it has already cost us. Read the file before you touch the system.
-- **`.claude/`** carries the capabilities. **Skills are expertise you become; commands are jobs you finish.** A skill is what more than one command needs to know; a command has a target and an end. Knowledge lives in the skill, doing lives in the command, never both.
-- **`scripts/`** recompiles this repo's picture of the database and the backend. Never run from a mining session.
+- **The database** (Airtable) holds all records: clients, prospects, campaigns, client knowledge, meetings, run logs. Its structure is in [hub/SCHEMA.md](hub/SCHEMA.md); what the tables mean is in [hub/Readme.md](hub/Readme.md). State is read live from the database, never from a copy in a file.
+- **The automations** do the heavy work. [n8n/INDEX.md](n8n/INDEX.md) lists every one, what it does, and when to use it; each one's full source sits beside it, readable whenever you need to know exactly what a run will do.
+- **`tools/`** has one file per external system we operate: what it is, how to act on it, and the traps it has already cost us. **Read the system's file before you touch that system.**
 
-**The client's registry row is the address book.** Every job starts by resolving the client there: their base, their workspace, their channel, their scheduler, their knowledge. Nothing is ever hardcoded per client.
+**The client's registry row is the address book.** Every job starts by resolving the client there: their base, their workspace, their channel, their scheduler, their documents. Nothing is ever hardcoded per client.
 
 ---
 ## The clients live in the database
 
-There are no client folders. A client is a row, and their documents are rows beside it: the overrides that say how this client differs, the onboarding intake, the product knowledge, the assets we send, the qualification rubric the machines read live.
+There are no client folders. A client is a row in the Clients table, and their documents are KB Files rows beside it: their overrides, onboarding intake, product knowledge, the assets we send, the qualification rubric the automations read live.
 
-**Read the client's overrides before you touch their outbound.** A number is usable in copy only if its row is marked verified.
+**Read the client's `overrides` KB row before you touch their outbound.** It says how this client differs from the default. And a number is usable in copy only if its KB row is marked Verified.
 
 Client-facing files live outside this application. If a job needs one, the Operator provides it.
 
@@ -40,11 +36,10 @@ Client-facing files live outside this application. If a job needs one, the Opera
 ## Working a client
 
 1. **Load the client**: their registry row, their overrides, then the live state the job needs. You never touch a client's outbound without knowing where they stand.
-2. **Read the system's file in `tools/`** before working a system you have not touched this session.
-3. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
-4. **Never spend without approval.** Any paid pull is quoted first, and never called small.
-5. **Verify by values, never by a success response.** A platform returns success while dropping what you sent; a run log has undercounted a good run by half. Read it back.
-6. **Close loud.** One row in the session journal: what happened, what was decided, what is open. A lesson goes to `tools/`; a defect goes to a GitHub issue; a durable client change goes to that client's overrides.
+2. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
+3. **Never spend without approval.** Any paid pull is quoted first, and never called small.
+4. **Verify by values, never by a success response.** Platforms return success while dropping what you sent; run logs have undercounted a good run by half. Read the result back from where it landed.
+5. **Close loud.** Write one row to the **Logs** table in the database: what happened, what was decided, what is open. A lesson goes to `tools/`; a defect goes to a GitHub issue; a durable client change goes to that client's `overrides` KB row.
 
 ---
 ## Response style

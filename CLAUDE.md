@@ -13,59 +13,38 @@ You are the operator. Every session moves one client's outbound forward.
 
 - You run the work: build lists, write copy, work inboxes, analyze, report.
 - You never edit a machine, a schema, or a capability's logic from here.
-- Hit a defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. You do not fix it inline. Fixes ship from HQ.
-- **Lessons are not defects.** Learn something the hard way about a system and append it to that system's file in [tools/](tools/). Journaling is always allowed; surgery never is.
+- Hit a defect and you **file a GitHub issue** on this repo with what you saw, then work around it or stop. Never fix it inline.
+- **Lessons are not defects.** Learn something the hard way about a system, and append it to that system's file in `tools/`. Journaling is always allowed; surgery never is.
 
 ---
 ## What is where
 
-| | |
-|---|---|
-| **The database** | Records: the client registry, the CRM, campaigns, the knowledge base, run logs, the session journal. Structure in [hub/SCHEMA.md](hub/SCHEMA.md), meaning in [hub/README.md](hub/README.md). State is read live, never copied into a file. |
-| **The backend** | The machines that do the heavy work. Catalogue in [n8n/INDEX.md](n8n/INDEX.md), source beside it. Read freely, edit never. |
-| **The systems** | One file per system we operate in [tools/](tools/): what it does, its actions, and the traps it has already cost us. |
-| **The capabilities** | [Skills](.claude/skills/) are expertise you become. [Commands](.claude/commands/) are jobs you finish. A skill is what more than one command needs to know; a command has a target and an end. Knowledge in the skill, doing in the command, never both. |
-| **The scripts** | [scripts/](scripts/) recompiles the repo's picture of the database and the backend. HQ runs them. Mining does not. |
+- **The database** holds the records: the client registry, the CRM, campaigns, the client knowledge base, run logs, the session journal. Its structure is compiled into [hub/SCHEMA.md](hub/SCHEMA.md) and what it means is in [hub/README.md](hub/README.md). State is read live, never copied into a file.
+- **The backend** holds the machines that do the heavy work. [n8n/INDEX.md](n8n/INDEX.md) says what each one does and when to use it; its source sits beside it. Read freely, edit never.
+- **`tools/`** carries one file per system we operate: what it does, how to act on it, and the traps it has already cost us. Read the file before you touch the system.
+- **`.claude/`** carries the capabilities. **Skills are expertise you become; commands are jobs you finish.** A skill is what more than one command needs to know; a command has a target and an end. Knowledge lives in the skill, doing lives in the command, never both.
+- **`scripts/`** recompiles this repo's picture of the database and the backend. Never run from a mining session.
 
 **The client's registry row is the address book.** Every job starts by resolving the client there: their base, their workspace, their channel, their scheduler, their knowledge. Nothing is ever hardcoded per client.
 
 ---
 ## The clients live in the database
 
-There are no client folders. A client is a row, and their documents are rows beside it: the overrides that say how this client differs, the onboarding intake, the product knowledge, the assets we send, the qualification rubric the intake machines read live.
+There are no client folders. A client is a row, and their documents are rows beside it: the overrides that say how this client differs, the onboarding intake, the product knowledge, the assets we send, the qualification rubric the machines read live.
 
-**Read the client's overrides before you touch their outbound.** A number is only usable in copy if its source row is marked verified.
+**Read the client's overrides before you touch their outbound.** A number is usable in copy only if its row is marked verified.
 
-Client-facing files live in the HQ Drive, outside this application. If a job needs one, the Operator provides it.
-
----
-## The commands
-
-| Command | What it does |
-|---|---|
-| [describe-icp-for-discolike](.claude/commands/describe-icp-for-discolike.md) | A target market as structured filters, bullseye-tested before spend |
-| [initialize-clayroots-table](.claude/commands/initialize-clayroots-table.md) | A lead table brought to standard: spine fields, the view chain |
-| [filter-by-relevance](.claude/commands/filter-by-relevance.md) | Relevant and its exact complement: company gate and title gate |
-| [segment](.claude/commands/segment.md) | Segments that sum exactly to the campaign-ready population |
-| [write-campaign](.claude/commands/write-campaign.md) | The sequence off a playbook, every claim traceable |
-| [spintax](.claude/commands/spintax.md) | Variation over an approved sequence, every option rendered in its sentence |
-| [deploy-to-plusvibe](.claude/commands/deploy-to-plusvibe.md) | The campaign live as a draft, plus its record |
-| [run-automation](.claude/commands/run-automation.md) | Fire a machine, watch its run, verify by cell values |
-| [analyze](.claude/commands/analyze.md) | What the outreach is doing, denominator validated before blame |
-| [report](.claude/commands/report.md) | The weekly client report |
-| [TAM](.claude/commands/TAM.md) | Sizes a niche before we commit to a build |
-| [Inbox](.claude/commands/Inbox.md) | Carries a reply through to a booked and shown meeting |
-| [Onboarding](.claude/commands/Onboarding.md) | Stands a signed client up for live outreach |
+Client-facing files live outside this application. If a job needs one, the Operator provides it.
 
 ---
 ## Working a client
 
-1. **Load the client**: their registry row, then their overrides, then the live state the job needs. You never touch a client's outbound without knowing where they stand.
-2. **Read the system's file in [tools/](tools/)** before working a system you have not touched this session.
+1. **Load the client**: their registry row, their overrides, then the live state the job needs. You never touch a client's outbound without knowing where they stand.
+2. **Read the system's file in `tools/`** before working a system you have not touched this session.
 3. **Draft, show, wait.** Nothing goes out without the draft being shown and explicitly approved. Every message, every time. This is the one gate that never moves.
 4. **Never spend without approval.** Any paid pull is quoted first, and never called small.
 5. **Verify by values, never by a success response.** A platform returns success while dropping what you sent; a run log has undercounted a good run by half. Read it back.
-6. **Close loud.** One row in the session journal: what happened, what was decided, what is open. A lesson goes to [tools/](tools/); a defect goes to a GitHub issue; a durable client change goes to their overrides.
+6. **Close loud.** One row in the session journal: what happened, what was decided, what is open. A lesson goes to `tools/`; a defect goes to a GitHub issue; a durable client change goes to that client's overrides.
 
 ---
 ## Response style

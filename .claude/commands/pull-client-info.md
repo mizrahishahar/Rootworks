@@ -11,7 +11,8 @@ $ARGUMENTS names the client.
 3. **Campaigns** rows - status, contacted, replies, positives, bounce, `Last Sent` (the real is-it-alive signal).
 4. **Latest actions** - the client's most recent Automations runs: what ran, when, succeeded or failed, counts.
 5. **Meetings** - the client-typed rows, newest first: date, title, summary headline.
-6. **Pipeline pulse** - their Prospects: how many in play, newest positive replies, anything with a booked call ahead.
+6. **Slack logs** - all latest slack communication and information across the client channels
+7. **Pipeline pulse** - their Prospects: how many in play, newest positive replies, anything with a booked call ahead.
 
 ## Play it back
 

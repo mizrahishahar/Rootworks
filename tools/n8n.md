@@ -1,38 +1,32 @@
 ---
-vertical: [list-building, inbox-management, analysis]
 type: infrastructure
 owner: Operator
 ---
 
 # n8n
 
-The automation platform: every pipe in Rootworks runs here - the list-building ingests and waterfalls, and each client standing flows (reply notify, meeting sync, Slack-to-logs). A skill reaches n8n over its MCP to inspect, clone, and configure workflows; it never hand-edits a live workflow unless asked.
+The backend. Every pipe runs here: the list-building builders and waterfalls, the reply intakes, the syncs, the deploys, the reports.
 
-## Actions
+**You consume machines here. You never build or edit one.** Fixes ship from HQ as a push; from this project a defect becomes a GitHub issue. That line is not a preference, it is what keeps a mining session from breaking production.
 
-- **Read:** `search_workflows` to find one by name, `get_workflow_details` for its trigger and nodes, `search_executions` / `get_execution` to see a run.
-- **Read a live form:** a form-triggered workflow declares its current fields in `get_workflow_details` trigger info; read them fresh each run instead of trusting a cached field list, since forms change.
-- **Build:** read the SDK reference first, then `search_nodes` and `get_node_types` for exact params, `validate_workflow`, `create_workflow_from_code`, `publish_workflow`. Never guess node params.
-- **Clone per client:** standing flows are cloned from the `[template]`-prefixed workflows. A clone carries exactly one hardcoded value - the client's record ID in the Hub Clients table (plus its own webhook path where the template names one). Every other client value (PV workspace, Slack channel, Drive folder, qualification prompt) resolves from the registry row at runtime. Never rebuild from stored JSON.
+## Knowing what exists
 
-## The standardized automation
+- **`n8n/INDEX.md`** is the catalogue: every live machine, what it does, when to use it.
+- **`n8n/<machine>/`** is its actual source, compiled from the live instance: the graph in `workflow.json`, each code node as a real `.js` file. Read it when you need to know exactly what a machine will do to a table before you fire it.
+- Archived machines are not in the repo. If a name is missing from INDEX, it is retired.
 
-Every automation meets one contract, on-demand and event-driven alike:
+## Running one
 
-- **One run record in the Hub runs table ([[clayroots]]), and the record is the lifecycle:** Running, then Succeeded or Failed. On-demand runs are born from the Airtable creation form - the automation fires off the new record and reads every parameter, attachments included, from it. Event-driven flows create their own record at start, already stamped Running, which is also what keeps them out of the launcher lane.
-- **The finish stamps the log on the same record:** counts in and out, credits, duration, Status, and the per-run Description.
-- **Failure stamps too.** The shared `Error Logger` is every workflow's Error Workflow; a crash stamps Failed with the error on the run record and pings Slack. No run vanishes without a row.
-- **The client is resolved from the registry, never hardcoded,** and artifacts land with the client: sheet outputs carry only what did not enter the base, into the client Reports folder.
+Launch and verification belong to [[run-automation]]. In short: most machines are started by a launch row created from their form, some by webhook; the run row carries the parameters and then the outcome.
 
-## What lives here
+**A form's fields change.** Read the machine's live trigger fields before filling one, never a remembered field list.
 
-- **List-building** (owned by the ClayRoots tool): the waterfalls.
-- **Per-client standing flows:** reply-notify to the client Slack, meeting-sync, Slack-to-logs, and the qualify-and-notify new-lead flow. One set per client, named `... for {client}`.
+## The contract every machine meets
 
-## Conventions
+- **One run record, and the record is the lifecycle:** Running, then Succeeded or Failed, with counts in and out, duration, and a per-run description.
+- **Failure still writes a row.** A shared error handler stamps Failed and pings Slack, so no run vanishes silently.
+- **The client is resolved from the registry at runtime**, never hardcoded. One machine serves every client.
 
-- httpRequest node is typeVersion `4.4`. Generic (httpBasicAuth) credentials cannot be attached over the MCP - a human clicks each node once.
-- **Every workflow names `Error Logger` as its Error Workflow** (workflow Settings -> Error workflow). The MCP cannot set this property, so it is a mandatory manual click when a workflow is created or cloned - a workflow without it does not ship. Set on the `[template]` workflows too, so clones inherit it.
-- Name per-client flows `{purpose} for {client}`; keep the ID out of the vault, the name and the client variable are enough.
-- PlusVibe calls in templated flows authenticate with the shared `Plusvibe Admin` credential and pass the client's `workspace_id` from the registry row - never a per-client credential.
-- Lead state lives in the Hub, not in sender variables: the qualifier writes the status, the qualification, and the brief onto the Prospect row in the Hub Prospects table ([[README]]), and downstream flows gate off the Hub.
+## Reading a run
+
+The run record is the report; the canvas is not. And the run record is still only a claim: **verify by cell values on the target table.** A run log has undercounted a good run by half, and has read Succeeded on a run that wrote nothing usable.

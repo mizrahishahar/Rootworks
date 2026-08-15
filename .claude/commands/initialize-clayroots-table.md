@@ -8,17 +8,20 @@ Loads `conventions-manager` (the chain and its names) and `views-poweruser` (the
 
 Name the table back: base, table, table id, row count, and **channel** — the table name declares it (`... (Linkedin)` has no email waterfall). Then read the schema. Never build against a remembered shape; fields were renamed as recently as this week.
 
-Find the **relevance field** (the per-row verdict, e.g. `Title Verdict`). No relevance field, no chain - stop and run `/filter-by-relevance` first. The chain is worthless built on nothing.
+Check that `relevance` carries values. The field existing is not the same as the pass having run - an all-unchecked `relevance` means `Relevant` is empty and the whole chain below it is empty too. If it has not been stamped, stop and run `/filter-by-relevance` first.
 
 ## Constant fields - create any that are missing
 
 | Field | Type | Why |
 |---|---|---|
+| `relevance` | checkbox | The verdict. Views filter on this, never on Title keywords |
 | `manually_approved` | checkbox | The rescue lane. Only ever WIDENS Relevant |
 | `Tag` | text | Build provenance, stamped at launch. The pin for per-build views |
 | `Deploy Error` | text | Written by Deploy View to Campaign only |
 
 Create through the API, with the description written. Never create a field to hold a filter's logic.
+
+**Both checkboxes exist on purpose.** `relevance` is what the pass stamps and what a re-run overwrites; `manually_approved` is the Operator's hand and survives a re-run. Ticking `relevance` directly on one row works, and it will be lost the next time the pass runs.
 
 ## The standing chain
 
@@ -27,8 +30,8 @@ Create through the API, with the description written. Never create a field to ho
 | View | Filter | Fields |
 |---|---|---|
 | `Grid view` | **none, ever** | all |
-| `Relevant` | verdict = Keep, OR `manually_approved` checked | all minus never-visible |
-| `Cut review` | (verdict = Cut **OR verdict is empty**) AND `manually_approved` unchecked | first_name, company, Seniority, Title, Description, `manually_approved` |
+| `Relevant` | `relevance` is checked, OR `manually_approved` is checked | all minus never-visible |
+| `Cut review` | `relevance` is unchecked AND `manually_approved` is unchecked | first_name, company, Seniority, Title, Description, `manually_approved` |
 | `Relevant : Waterfall` | = Relevant | `Email` + every waterfall-lane field the table carries |
 | `Relevant & Not Waterfalled` | Relevant AND `Status` empty | all minus never-visible minus campaign fields |
 | `Relevant & Not Found` | Relevant AND `Status` any of verifying, no_email_found, error | same |
@@ -36,7 +39,7 @@ Create through the API, with the description written. Never create a field to ho
 | `Relevant & Found : Campaigns` | same rows as Found - a lens, not a narrowing | `Final Email` + campaign fields |
 | `Relevant & Found : Never Contacted` | Found AND (`Messages Sent` empty OR = 0) | same |
 
-**The empty verdict belongs in Cut review.** A stamped field arrives blank on every new row; blank in neither view means the row is invisible rather than merely cut. This clause is what keeps the rescue lane honest.
+A checkbox has two states, so `Relevant` and `Cut review` are exact complements by construction and every new row lands in one of them the moment it arrives. Unchecked means both *cut* and *not yet judged* - the same bucket, and correctly so: both need eyes. Which one a table is in is answered by whether `relevance` has been stamped at all, not by the view.
 
 **A LinkedIn table drops the waterfall spine entirely** - no `Waterfall`, `Not Waterfalled`, `Not Found`, `Found`. Its chain is `Grid view` → `Relevant` → `Cut review` → `Relevant & LinkedIn` (Relevant AND `Social` not empty), and that view is the sender feed.
 
@@ -44,7 +47,7 @@ Create through the API, with the description written. Never create a field to ho
 
 **Campaign fields** (written by the sync and deploy machines, never by hand): `Campaigns`, `Campaign Status`, `Messages Sent`, `Last Contacted`, `Bounce Reason`, `Synced At`, `Deploy Error`.
 
-**The waterfall lane is never a fixed list.** Read it off the schema each time - `Email`, `Email Source`, `Status`, `Final Email`, and every `P*` / `MV *` pair present. A fourth provider appeared this month; a fifth will.
+**The waterfall lane is never a fixed list.** Read it off the schema each time - `Email`, `Email Source`, `Status`, `Final Email`, and every `P*` / `MV *` pair present. A fourth provider appeared this month; a fifth will. (sometimes you don't have any fields of it besides the base ones because the waterfall hasn't been run yet. that's fine.)
 
 ## Building it in Chrome
 

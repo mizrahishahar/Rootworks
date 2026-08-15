@@ -1,25 +1,13 @@
 # describe-icp-for-discolike
 
-Turn a target market into DiscoLike's structured filters, ready to paste. Not prose.
+Write the detailed **ICP description** for a [[DiscoLike]] pull — the prose that goes in `icp_text` — plus the structured filters that ride with it. One artifact: a description the Operator pastes straight in.
 
 Loads `list-builder`. Company data always comes from DiscoLike; contacts never do.
 
-## What actually moves the pull
+## The description is the instrument, not the decoration
 
-Tune the structured filters, not the ICP description. The filters that decide the result:
+`discover-similar-companies` runs a **semantic vector search over crawled website content**. The structured filters only fence the pool; inside that fence, the prose decides what comes back and in what order. A sharp description against loose filters beats tight filters against a vague one.
 
-- **Industry Group** - the primary cut. Pick the group, not the adjective.
-- **Business Model** - separates who sells to whom; wrong model is the most common silent miss.
-- **Digital Footprint** - the floor that quietly deletes good companies when set too high. Check it against a company you already won before trusting it.
-- **Variance** - the auto-stop. It reads the real TAM: when variance halts the pull, that is the market's edge, not a bug.
-- **Geography and size** - only as the client's `overrides` row rules them.
+So write it against **what a crawler can see on the site**, not against abstract business qualities. "Companies with strong engineering culture" matches nothing. "A pricing page with usage-based tiers, developer documentation, a status page, and job listings for platform engineers" matches something.
 
-**The Count is meaningless.** It reports what the query touches, not what you can use. Judge the pull by sampling real rows.
-
-## Before it ships
-
-**Bullseye it.** Take a company the client already won or would obviously want, and check it passes every condition, one at a time. Thirty seconds, and it has caught both a digital-footprint floor and a country gate that would each have deleted a perfect-fit company silently.
-
-## Done when
-
-The filter set is written out condition by condition, the bullseye company passes, and you have named which conditions are the risky ones and why.
+{extra context}

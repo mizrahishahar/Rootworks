@@ -25,5 +25,8 @@ The default email sender. Deploy is clone-based (no true duplicate): read a sour
 - Custom variables store with a `custom_` prefix: upload `site_detail`, reference `{{custom_site_detail}}`, or it renders blank.
 - `is_overwrite:true` has no skip guard and re-contacts excluded leads; on a backfill `leads_uploaded` should be ~0.
 - `{{sender_signature}}` renders the inbox's signature field, blank if empty.
+- **A unibox reply comes back with no text.** `get_emails` returns the message with `body: null` and an empty `content_preview` for anything sent by hand from the unibox. The message is real and it was delivered; only its text is missing from the API. Do not read that as an empty or failed send.
+- **The body lands on the Prospect row, not in PlusVibe.** The 12-hourly sync writes the full text into `Conversation Thread` on the Hub record. When an outbound looks blank in the API, re-read the record: that is where what was actually said appears, often a few hours later. Read the record before concluding a thread is unreadable.
+- **A unibox reply is not a sequence step.** `get_campaign_emails` lists only sequence sends, so an outbound present in `get_emails` but absent there was sent by hand. That is the signal that a human (usually the client, in their own workspace) is working the thread alongside us.
 - Spintax `{{random|a|b}}` varies function words only, never the offer, proof, or CTA.
 - On any MCP error, stop and ask the Operator to refresh; never retry in a loop.

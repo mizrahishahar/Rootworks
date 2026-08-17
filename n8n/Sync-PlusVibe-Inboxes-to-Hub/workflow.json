@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T12:18:51.863Z",
+  "updatedAt": "2026-08-17T18:07:44.228Z",
   "createdAt": "2026-08-17T12:18:40.337Z",
   "id": "4Ck7SP63VQyTzuck",
   "name": "Sync PlusVibe Inboxes to Hub",
@@ -328,15 +328,17 @@
             "Account ID": "={{ $json[\"Account ID\"] }}",
             "Client": "={{ $json.Client }}",
             "Domain": "={{ $json.Domain }}",
+            "Domain Link": "={{ $json[\"Domain Link\"] }}",
             "Status": "={{ $json.Status }}",
             "Warmup Status": "={{ $json[\"Warmup Status\"] }}",
             "Provider": "={{ $json.Provider }}",
             "Daily Limit": "={{ $json[\"Daily Limit\"] }}",
-            "Sent (Yesterday)": "={{ $json[\"Sent (Yesterday)\"] }}",
-            "Replies (Yesterday)": "={{ $json[\"Replies (Yesterday)\"] }}",
-            "OOO Replies (Yesterday)": "={{ $json[\"OOO Replies (Yesterday)\"] }}",
-            "Positive (Yesterday)": "={{ $json[\"Positive (Yesterday)\"] }}",
-            "Bounced (Yesterday)": "={{ $json[\"Bounced (Yesterday)\"] }}",
+            "Tags": "={{ $json.Tags }}",
+            "Sent (All-Time)": "={{ $json[\"Sent (All-Time)\"] }}",
+            "Replies (All-Time)": "={{ $json[\"Replies (All-Time)\"] }}",
+            "OOO Replies (All-Time)": "={{ $json[\"OOO Replies (All-Time)\"] }}",
+            "Positive (All-Time)": "={{ $json[\"Positive (All-Time)\"] }}",
+            "Bounced (All-Time)": "={{ $json[\"Bounced (All-Time)\"] }}",
             "Warmup Health (7d)": "={{ $json[\"Warmup Health (7d)\"] }}",
             "Miss Warmup Rate": "={{ $json[\"Miss Warmup Rate\"] }}",
             "Bounce Rate (3d)": "={{ $json[\"Bounce Rate (3d)\"] }}",
@@ -387,6 +389,134 @@
         "batchSize": 1,
         "options": {}
       }
+    },
+    {
+      "id": "a1421065-c350-4a95-abf0-b299c64038f5",
+      "name": "List Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        480
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/tags/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "0093b797-5dcb-4b7e-b3b1-52719ddd1ab5",
+      "name": "Prep Domain Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Domain-Rows.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "9aa58ff0-cf1c-40cb-9632-7bafdb526b9f",
+      "name": "Upsert Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbltRqDRQm0YQy3tQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Domain"
+          ],
+          "schema": [],
+          "value": {
+            "Domain": "={{ $json.Domain }}",
+            "Client": "={{ $json.Client }}",
+            "Last Synced": "={{ $json[\"Last Synced\"] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "7e4da0a4-6328-48d9-afbc-1489f02b8cec",
+      "name": "Attach Domain Links",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Attach-Domain-Links.js"
+      },
+      "executeOnce": true
     }
   ],
   "connections": {
@@ -467,28 +597,6 @@
         ]
       ]
     },
-    "Account Stats": {
-      "main": [
-        [
-          {
-            "node": "Build Inbox Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Inbox Rows": {
-      "main": [
-        [
-          {
-            "node": "Upsert Inboxes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Upsert Inboxes": {
       "main": [
         [
@@ -528,6 +636,72 @@
           }
         ]
       ]
+    },
+    "Build Inbox Rows": {
+      "main": [
+        [
+          {
+            "node": "Prep Domain Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Domain Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Domains": {
+      "main": [
+        [
+          {
+            "node": "Attach Domain Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Domain Links": {
+      "main": [
+        [
+          {
+            "node": "Upsert Inboxes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Account Stats": {
+      "main": [
+        [
+          {
+            "node": "List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags": {
+      "main": [
+        [
+          {
+            "node": "Build Inbox Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -545,8 +719,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
-  "activeVersionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
+  "versionId": "1147d0ce-1f5a-448d-886a-ee36517e69ef",
+  "activeVersionId": "1147d0ce-1f5a-448d-886a-ee36517e69ef",
   "triggerCount": 1,
   "shared": [
     {
@@ -558,9 +732,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-17T12:18:51.866Z",
-    "createdAt": "2026-08-17T12:18:51.866Z",
-    "versionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
+    "updatedAt": "2026-08-17T18:07:44.232Z",
+    "createdAt": "2026-08-17T18:07:44.232Z",
+    "versionId": "1147d0ce-1f5a-448d-886a-ee36517e69ef",
     "workflowId": "4Ck7SP63VQyTzuck",
     "nodes": [
       {
@@ -630,7 +804,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.syncResults=[];\nconst nowIL=$now.setZone('Asia/Jerusalem');\nconst yesterday=nowIL.minus({days:1}).toFormat('yyyy-MM-dd');\nreturn $('Get PV Clients').all().filter(it=>it.json&&it.json.id).map(it=>{\n  const j=it.json; const f=j.fields||j;\n  return { json: { clientRecId:j.id, clientName:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), yesterday } };\n});"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.syncResults=[];\nconst nowIL=$now.setZone('Asia/Jerusalem');\nconst yesterday=nowIL.minus({days:1}).toFormat('yyyy-MM-dd');\nconst today=nowIL.toFormat('yyyy-MM-dd');\nreturn $('Get PV Clients').all().filter(it=>it.json&&it.json.id).map(it=>{\n  const j=it.json; const f=j.fields||j;\n  return { json: { clientRecId:j.id, clientName:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), yesterday, today } };\n});"
         },
         "executeOnce": true
       },
@@ -792,7 +966,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst pages=$input.all().map(i=>i&&i.json).filter(j=>j&&typeof j==='object');\nconst accounts=[];\nfor(const p of pages){ if(Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nreturn accounts.map(a=>{\n  const payload=a.payload||{};\n  const hs=(payload.analytics&&payload.analytics.health_scores)||{};\n  const rr=(payload.analytics&&payload.analytics.reply_rates)||{};\n  return { json: {\n    email:a.email||'', accountId:a.id||'', status:a.status||'', warmup:a.warmup_status||'', provider:a.provider||'',\n    dailyLimit:payload.daily_limit||0, warmupHealth:hs['7d_overall_warmup_health'], missWarmupRate:hs['1d_miss_warmup_rate'], bounceRate3d:hs['3d_bounce_rate'], replyRate7d:rr['7d_replyrate'],\n    url:'https://api.plusvibe.ai/api/v1/account/email-stats?workspace_id='+cw.pvWorkspace+'&email_acc_id='+a.id+'&start_date='+cw.yesterday+'&end_date='+cw.yesterday\n  } };\n});"
+          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst pages=$('List Email Accounts').all().map(i=>i&&i.json).filter(j=>j&&typeof j==='object');\nconst accounts=[];\nfor(const p of pages){ if(Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nreturn accounts.map(a=>{\n  const payload=a.payload||{};\n  const hs=(payload.analytics&&payload.analytics.health_scores)||{};\n  const rr=(payload.analytics&&payload.analytics.reply_rates)||{};\n  const created=String(a.timestamp_created||'').slice(0,10) || '2020-01-01';\n  return { json: {\n    email:a.email||'', accountId:a.id||'', status:a.status||'', warmup:a.warmup_status||'', provider:a.provider||'',\n    dailyLimit:payload.daily_limit||0, warmupHealth:hs['7d_overall_warmup_health'], missWarmupRate:hs['1d_miss_warmup_rate'], bounceRate3d:hs['3d_bounce_rate'], replyRate7d:rr['7d_replyrate'],\n    tagIds: Array.isArray(payload.tags)?payload.tags:[],\n    url:'https://api.plusvibe.ai/api/v1/account/email-stats?workspace_id='+cw.pvWorkspace+'&email_acc_id='+a.id+'&start_date='+created+'&end_date='+cw.today\n  } };\n});"
         },
         "executeOnce": true
       },
@@ -848,7 +1022,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst accounts=$('Prep Account Stat Calls').all().map(i=>i&&i.json).filter(Boolean);\nlet stats=[];\ntry{ stats=$('Account Stats').all().map(i=>i&&i.json).filter(Boolean); }catch(e){ stats=[]; }\nconst num=(v)=>{ if(typeof v==='number') return v; const n=parseFloat(v); return isNaN(n)?0:n; };\nif(!accounts.length) return [{ json: { _keepAlive:true } }];\nreturn accounts.map((a,i)=>{\n  const raw=stats[i]||{};\n  const failed=!raw.header || raw.status>=400 || !!raw.error_name;\n  const s=raw.header||{};\n  const domain=(a.email.split('@')[1]||a.email).toLowerCase();\n  return { json: {\n    'Inbox': a.email,\n    'Account ID': a.accountId,\n    'Client': [cw.clientRecId],\n    'Domain': domain,\n    'Status': a.status,\n    'Warmup Status': a.warmup,\n    'Provider': a.provider,\n    'Daily Limit': a.dailyLimit,\n    'Sent (Yesterday)': failed?0:num(s.total_sent_count),\n    'Replies (Yesterday)': failed?0:num(s.total_reply_count),\n    'OOO Replies (Yesterday)': failed?0:num(s.total_ooo_reply_count),\n    'Positive (Yesterday)': failed?0:num(s.total_pos_reply_count),\n    'Bounced (Yesterday)': failed?0:num(s.total_bounce_count),\n    'Warmup Health (7d)': (a.warmupHealth==null)?null:a.warmupHealth,\n    'Miss Warmup Rate': (a.missWarmupRate==null)?null:a.missWarmupRate,\n    'Bounce Rate (3d)': (a.bounceRate3d==null)?null:a.bounceRate3d,\n    'Reply Rate (7d)': (a.replyRate7d==null)?null:a.replyRate7d,\n    'Last Synced': $now.toISO(),\n    _failed: failed\n  } };\n});"
+          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst accounts=$('Prep Account Stat Calls').all().map(i=>i&&i.json).filter(Boolean);\nlet stats=[];\ntry{ stats=$('Account Stats').all().map(i=>i&&i.json).filter(Boolean); }catch(e){ stats=[]; }\nlet tagItems=[];\ntry{ tagItems=$('List Tags').all().map(i=>i&&i.json).filter(Boolean); }catch(e){ tagItems=[]; }\nconst tagMap={};\nfor(const t of tagItems){ if(t&&t._id) tagMap[t._id]=t.name||t._id; }\nconst num=(v)=>{ if(typeof v==='number') return v; const n=parseFloat(v); return isNaN(n)?0:n; };\nif(!accounts.length) return [{ json: { _keepAlive:true } }];\nreturn accounts.map((a,i)=>{\n  const raw=stats[i]||{};\n  const failed=!raw.header || raw.status>=400 || !!raw.error_name;\n  const s=raw.header||{};\n  const domain=(a.email.split('@')[1]||a.email).toLowerCase();\n  const tagNames=(a.tagIds||[]).map(id=>tagMap[id]||id).join(', ');\n  return { json: {\n    'Inbox': a.email,\n    'Account ID': a.accountId,\n    'Client': [cw.clientRecId],\n    'Domain': domain,\n    'Status': a.status,\n    'Warmup Status': a.warmup,\n    'Provider': a.provider,\n    'Daily Limit': a.dailyLimit,\n    'Tags': tagNames,\n    'Sent (All-Time)': failed?0:num(s.total_sent_count),\n    'Replies (All-Time)': failed?0:num(s.total_reply_count),\n    'OOO Replies (All-Time)': failed?0:num(s.total_ooo_reply_count),\n    'Positive (All-Time)': failed?0:num(s.total_pos_reply_count),\n    'Bounced (All-Time)': failed?0:num(s.total_bounce_count),\n    'Warmup Health (7d)': (a.warmupHealth==null)?null:a.warmupHealth,\n    'Miss Warmup Rate': (a.missWarmupRate==null)?null:a.missWarmupRate,\n    'Bounce Rate (3d)': (a.bounceRate3d==null)?null:a.bounceRate3d,\n    'Reply Rate (7d)': (a.replyRate7d==null)?null:a.replyRate7d,\n    'Last Synced': $now.toISO(),\n    _failed: failed\n  } };\n});"
         },
         "executeOnce": true
       },
@@ -885,15 +1059,17 @@
               "Account ID": "={{ $json[\"Account ID\"] }}",
               "Client": "={{ $json.Client }}",
               "Domain": "={{ $json.Domain }}",
+              "Domain Link": "={{ $json[\"Domain Link\"] }}",
               "Status": "={{ $json.Status }}",
               "Warmup Status": "={{ $json[\"Warmup Status\"] }}",
               "Provider": "={{ $json.Provider }}",
               "Daily Limit": "={{ $json[\"Daily Limit\"] }}",
-              "Sent (Yesterday)": "={{ $json[\"Sent (Yesterday)\"] }}",
-              "Replies (Yesterday)": "={{ $json[\"Replies (Yesterday)\"] }}",
-              "OOO Replies (Yesterday)": "={{ $json[\"OOO Replies (Yesterday)\"] }}",
-              "Positive (Yesterday)": "={{ $json[\"Positive (Yesterday)\"] }}",
-              "Bounced (Yesterday)": "={{ $json[\"Bounced (Yesterday)\"] }}",
+              "Tags": "={{ $json.Tags }}",
+              "Sent (All-Time)": "={{ $json[\"Sent (All-Time)\"] }}",
+              "Replies (All-Time)": "={{ $json[\"Replies (All-Time)\"] }}",
+              "OOO Replies (All-Time)": "={{ $json[\"OOO Replies (All-Time)\"] }}",
+              "Positive (All-Time)": "={{ $json[\"Positive (All-Time)\"] }}",
+              "Bounced (All-Time)": "={{ $json[\"Bounced (All-Time)\"] }}",
               "Warmup Health (7d)": "={{ $json[\"Warmup Health (7d)\"] }}",
               "Miss Warmup Rate": "={{ $json[\"Miss Warmup Rate\"] }}",
               "Bounce Rate (3d)": "={{ $json[\"Bounce Rate (3d)\"] }}",
@@ -944,6 +1120,134 @@
           "batchSize": 1,
           "options": {}
         }
+      },
+      {
+        "id": "a1421065-c350-4a95-abf0-b299c64038f5",
+        "name": "List Tags",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          480
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/tags/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "0093b797-5dcb-4b7e-b3b1-52719ddd1ab5",
+        "name": "Prep Domain Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst rows=$('Build Inbox Rows').all().map(i=>i&&i.json).filter(Boolean);\nconst domains=[...new Set(rows.filter(r=>r.Domain).map(r=>r.Domain))];\nif(!domains.length) return [{ json: { _keepAlive:true } }];\nreturn domains.map(d=>({ json: { 'Domain': d, 'Client': [cw.clientRecId], 'Last Synced': $now.toISO() } }));"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "9aa58ff0-cf1c-40cb-9632-7bafdb526b9f",
+        "name": "Upsert Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2464,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbltRqDRQm0YQy3tQ"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Domain"
+            ],
+            "schema": [],
+            "value": {
+              "Domain": "={{ $json.Domain }}",
+              "Client": "={{ $json.Client }}",
+              "Last Synced": "={{ $json[\"Last Synced\"] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "7e4da0a4-6328-48d9-afbc-1489f02b8cec",
+        "name": "Attach Domain Links",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2688,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const rows=$('Build Inbox Rows').all().map(i=>i&&i.json).filter(Boolean);\nlet domainRecs=[]; try{ domainRecs=$('Upsert Domains').all().map(i=>i.json).filter(Boolean); }catch(e){}\nconst domainMap={};\nfor(const d of domainRecs){ const nm = d.fields ? d.fields['Domain'] : d['Domain']; if(d.id && nm) domainMap[nm]=d.id; }\nif(!rows.length || (rows.length===1 && rows[0]._keepAlive)) return [{ json: { _keepAlive:true } }];\nreturn rows.map(r=>{\n  const domainRecId = r.Domain ? domainMap[r.Domain] : null;\n  return { json: Object.assign({}, r, { 'Domain Link': domainRecId?[domainRecId]:[] }) };\n});"
+        },
+        "executeOnce": true
       }
     ],
     "connections": {
@@ -1024,28 +1328,6 @@
           ]
         ]
       },
-      "Account Stats": {
-        "main": [
-          [
-            {
-              "node": "Build Inbox Rows",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Build Inbox Rows": {
-        "main": [
-          [
-            {
-              "node": "Upsert Inboxes",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "Upsert Inboxes": {
         "main": [
           [
@@ -1080,6 +1362,72 @@
           [
             {
               "node": "Start Client Work",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Inbox Rows": {
+        "main": [
+          [
+            {
+              "node": "Prep Domain Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Domain Rows": {
+        "main": [
+          [
+            {
+              "node": "Upsert Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Domains": {
+        "main": [
+          [
+            {
+              "node": "Attach Domain Links",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Domain Links": {
+        "main": [
+          [
+            {
+              "node": "Upsert Inboxes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Account Stats": {
+        "main": [
+          [
+            {
+              "node": "List Tags",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Tags": {
+        "main": [
+          [
+            {
+              "node": "Build Inbox Rows",
               "type": "main",
               "index": 0
             }

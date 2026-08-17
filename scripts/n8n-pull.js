@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE = process.env.N8N_URL || 'https://n8n.flowroots.com';
-const OUT = path.join(__dirname, '..', '..', 'n8n');
+const OUT = path.join(__dirname, '..', 'n8n');
 // The public API returns description:null; the real ones live only in the MCP layer.
 // This map (id -> description) fills the INDEX; add a line when a workflow is born.
 const DESC = JSON.parse(fs.readFileSync(path.join(__dirname, 'n8n-descriptions.json'), 'utf8'));

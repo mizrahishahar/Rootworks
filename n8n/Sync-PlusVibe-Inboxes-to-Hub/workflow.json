@@ -1,0 +1,1097 @@
+{
+  "updatedAt": "2026-08-17T12:18:51.863Z",
+  "createdAt": "2026-08-17T12:18:40.337Z",
+  "id": "4Ck7SP63VQyTzuck",
+  "name": "Sync PlusVibe Inboxes to Hub",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "7191e8a0-6247-49f7-81f5-90a72c76af58",
+      "name": "Daily 06:30 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 6,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f2d395e2-ecb0-46a3-a985-af66d095ca35",
+      "name": "Get PV Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "{PlusVibe Workspace ID} != ''",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "51b75279-34e0-4976-b4fd-14b099cfccee",
+      "name": "Prep Client Loop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Client-Loop.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "4b2c10f3-718f-4bc0-a0a0-eeff8966b83c",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "71701694-f0c5-428f-90a7-6f4e5c4c6b9a",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "07506187-2219-41cf-b58a-d52cfb35ee45",
+      "name": "Start Client Work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Start-Client-Work.js"
+      }
+    },
+    {
+      "id": "dda711d8-b6ac-4970-8330-be2ccb951ecd",
+      "name": "List Email Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/account/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1000
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "id": "779a1219-fcea-4906-bbdd-df33b1b5717f",
+      "name": "Prep Account Stat Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Account-Stat-Calls.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "aa645f07-2e40-4a0a-b551-86c76326d6c6",
+      "name": "Account Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "id": "7d14c29a-53b1-42a4-8e23-f8381ad3e3d8",
+      "name": "Build Inbox Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Inbox-Rows.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "9ca040d4-5af6-4d69-b77f-2079612f24ff",
+      "name": "Upsert Inboxes",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblgdmibPyC2dRlVK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Account ID"
+          ],
+          "schema": [],
+          "value": {
+            "Inbox": "={{ $json.Inbox }}",
+            "Account ID": "={{ $json[\"Account ID\"] }}",
+            "Client": "={{ $json.Client }}",
+            "Domain": "={{ $json.Domain }}",
+            "Status": "={{ $json.Status }}",
+            "Warmup Status": "={{ $json[\"Warmup Status\"] }}",
+            "Provider": "={{ $json.Provider }}",
+            "Daily Limit": "={{ $json[\"Daily Limit\"] }}",
+            "Sent (Yesterday)": "={{ $json[\"Sent (Yesterday)\"] }}",
+            "Replies (Yesterday)": "={{ $json[\"Replies (Yesterday)\"] }}",
+            "OOO Replies (Yesterday)": "={{ $json[\"OOO Replies (Yesterday)\"] }}",
+            "Positive (Yesterday)": "={{ $json[\"Positive (Yesterday)\"] }}",
+            "Bounced (Yesterday)": "={{ $json[\"Bounced (Yesterday)\"] }}",
+            "Warmup Health (7d)": "={{ $json[\"Warmup Health (7d)\"] }}",
+            "Miss Warmup Rate": "={{ $json[\"Miss Warmup Rate\"] }}",
+            "Bounce Rate (3d)": "={{ $json[\"Bounce Rate (3d)\"] }}",
+            "Reply Rate (7d)": "={{ $json[\"Reply Rate (7d)\"] }}",
+            "Last Synced": "={{ $json[\"Last Synced\"] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "00c7a9f8-2896-4c51-8239-272aa04cd90d",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        272
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "559c903a-0ef8-48f9-91e6-04568684edcd",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        192
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Daily 06:30 IL": {
+      "main": [
+        [
+          {
+            "node": "Get PV Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PV Clients": {
+      "main": [
+        [
+          {
+            "node": "Prep Client Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Client Loop": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Client Work": {
+      "main": [
+        [
+          {
+            "node": "List Email Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Email Accounts": {
+      "main": [
+        [
+          {
+            "node": "Prep Account Stat Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Account Stat Calls": {
+      "main": [
+        [
+          {
+            "node": "Account Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Account Stats": {
+      "main": [
+        [
+          {
+            "node": "Build Inbox Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Inbox Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Inboxes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Inboxes": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Client Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": {
+    "node:Daily 06:30 IL": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
+  "activeVersionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-17T12:18:40.359Z",
+      "createdAt": "2026-08-17T12:18:40.359Z",
+      "role": "workflow:owner",
+      "workflowId": "4Ck7SP63VQyTzuck",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-17T12:18:51.866Z",
+    "createdAt": "2026-08-17T12:18:51.866Z",
+    "versionId": "d3a50bec-d8d9-4adf-a128-53ea70e32a9b",
+    "workflowId": "4Ck7SP63VQyTzuck",
+    "nodes": [
+      {
+        "id": "7191e8a0-6247-49f7-81f5-90a72c76af58",
+        "name": "Daily 06:30 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          192
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "days",
+                "triggerAtHour": 6,
+                "triggerAtMinute": 30
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "f2d395e2-ecb0-46a3-a985-af66d095ca35",
+        "name": "Get PV Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "{PlusVibe Workspace ID} != ''",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "51b75279-34e0-4976-b4fd-14b099cfccee",
+        "name": "Prep Client Loop",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.syncResults=[];\nconst nowIL=$now.setZone('Asia/Jerusalem');\nconst yesterday=nowIL.minus({days:1}).toFormat('yyyy-MM-dd');\nreturn $('Get PV Clients').all().filter(it=>it.json&&it.json.id).map(it=>{\n  const j=it.json; const f=j.fields||j;\n  return { json: { clientRecId:j.id, clientName:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), yesterday } };\n});"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "4b2c10f3-718f-4bc0-a0a0-eeff8966b83c",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst results=sd.syncResults||[];\nconst totalInboxes=results.reduce((s,r)=>s+(r.inboxes||0),0);\nconst totalWritten=results.reduce((s,r)=>s+(r.written||0),0);\nconst totalFailed=results.reduce((s,r)=>s+(r.failed||0),0);\nconst lines=results.map(r=>'- **'+r.client+':** '+r.inboxes+' inboxes, '+r.written+' written'+(r.failed?', '+r.failed+' pull failure(s)':'')+(r.ok?'':' (WRITE MISMATCH)'));\nconst desc=['**'+results.length+' client(s), '+totalInboxes+' inbox(es), '+totalFailed+' pull failure(s)**'].concat(lines).join('\\n');\nreturn [{ json: {\n  'Automation':'Sync PlusVibe Inboxes to Hub',\n  'Status': totalFailed>0? 'Succeeded with errors':'Succeeded',\n  'Run at': $now.toISO(),\n  'Records In': totalInboxes,\n  'Records Out': totalWritten,\n  'Errors': totalFailed,\n  'Target': 'Inboxes',\n  'Trigger':'schedule',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description': desc\n}}];"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "71701694-f0c5-428f-90a7-6f4e5c4c6b9a",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "07506187-2219-41cf-b58a-d52cfb35ee45",
+        "name": "Start Client Work",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "return $input.all();"
+        }
+      },
+      {
+        "id": "dda711d8-b6ac-4970-8330-be2ccb951ecd",
+        "name": "List Email Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          192
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/account/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1000
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        }
+      },
+      {
+        "id": "779a1219-fcea-4906-bbdd-df33b1b5717f",
+        "name": "Prep Account Stat Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst pages=$input.all().map(i=>i&&i.json).filter(j=>j&&typeof j==='object');\nconst accounts=[];\nfor(const p of pages){ if(Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nreturn accounts.map(a=>{\n  const payload=a.payload||{};\n  const hs=(payload.analytics&&payload.analytics.health_scores)||{};\n  const rr=(payload.analytics&&payload.analytics.reply_rates)||{};\n  return { json: {\n    email:a.email||'', accountId:a.id||'', status:a.status||'', warmup:a.warmup_status||'', provider:a.provider||'',\n    dailyLimit:payload.daily_limit||0, warmupHealth:hs['7d_overall_warmup_health'], missWarmupRate:hs['1d_miss_warmup_rate'], bounceRate3d:hs['3d_bounce_rate'], replyRate7d:rr['7d_replyrate'],\n    url:'https://api.plusvibe.ai/api/v1/account/email-stats?workspace_id='+cw.pvWorkspace+'&email_acc_id='+a.id+'&start_date='+cw.yesterday+'&end_date='+cw.yesterday\n  } };\n});"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "aa645f07-2e40-4a0a-b551-86c76326d6c6",
+        "name": "Account Stats",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1568,
+          192
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 4,
+        "waitBetweenTries": 5000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        }
+      },
+      {
+        "id": "7d14c29a-53b1-42a4-8e23-f8381ad3e3d8",
+        "name": "Build Inbox Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1792,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const cw=$('Loop Over Clients').first().json;\nconst accounts=$('Prep Account Stat Calls').all().map(i=>i&&i.json).filter(Boolean);\nlet stats=[];\ntry{ stats=$('Account Stats').all().map(i=>i&&i.json).filter(Boolean); }catch(e){ stats=[]; }\nconst num=(v)=>{ if(typeof v==='number') return v; const n=parseFloat(v); return isNaN(n)?0:n; };\nif(!accounts.length) return [{ json: { _keepAlive:true } }];\nreturn accounts.map((a,i)=>{\n  const raw=stats[i]||{};\n  const failed=!raw.header || raw.status>=400 || !!raw.error_name;\n  const s=raw.header||{};\n  const domain=(a.email.split('@')[1]||a.email).toLowerCase();\n  return { json: {\n    'Inbox': a.email,\n    'Account ID': a.accountId,\n    'Client': [cw.clientRecId],\n    'Domain': domain,\n    'Status': a.status,\n    'Warmup Status': a.warmup,\n    'Provider': a.provider,\n    'Daily Limit': a.dailyLimit,\n    'Sent (Yesterday)': failed?0:num(s.total_sent_count),\n    'Replies (Yesterday)': failed?0:num(s.total_reply_count),\n    'OOO Replies (Yesterday)': failed?0:num(s.total_ooo_reply_count),\n    'Positive (Yesterday)': failed?0:num(s.total_pos_reply_count),\n    'Bounced (Yesterday)': failed?0:num(s.total_bounce_count),\n    'Warmup Health (7d)': (a.warmupHealth==null)?null:a.warmupHealth,\n    'Miss Warmup Rate': (a.missWarmupRate==null)?null:a.missWarmupRate,\n    'Bounce Rate (3d)': (a.bounceRate3d==null)?null:a.bounceRate3d,\n    'Reply Rate (7d)': (a.replyRate7d==null)?null:a.replyRate7d,\n    'Last Synced': $now.toISO(),\n    _failed: failed\n  } };\n});"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "9ca040d4-5af6-4d69-b77f-2079612f24ff",
+        "name": "Upsert Inboxes",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2016,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblgdmibPyC2dRlVK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Account ID"
+            ],
+            "schema": [],
+            "value": {
+              "Inbox": "={{ $json.Inbox }}",
+              "Account ID": "={{ $json[\"Account ID\"] }}",
+              "Client": "={{ $json.Client }}",
+              "Domain": "={{ $json.Domain }}",
+              "Status": "={{ $json.Status }}",
+              "Warmup Status": "={{ $json[\"Warmup Status\"] }}",
+              "Provider": "={{ $json.Provider }}",
+              "Daily Limit": "={{ $json[\"Daily Limit\"] }}",
+              "Sent (Yesterday)": "={{ $json[\"Sent (Yesterday)\"] }}",
+              "Replies (Yesterday)": "={{ $json[\"Replies (Yesterday)\"] }}",
+              "OOO Replies (Yesterday)": "={{ $json[\"OOO Replies (Yesterday)\"] }}",
+              "Positive (Yesterday)": "={{ $json[\"Positive (Yesterday)\"] }}",
+              "Bounced (Yesterday)": "={{ $json[\"Bounced (Yesterday)\"] }}",
+              "Warmup Health (7d)": "={{ $json[\"Warmup Health (7d)\"] }}",
+              "Miss Warmup Rate": "={{ $json[\"Miss Warmup Rate\"] }}",
+              "Bounce Rate (3d)": "={{ $json[\"Bounce Rate (3d)\"] }}",
+              "Reply Rate (7d)": "={{ $json[\"Reply Rate (7d)\"] }}",
+              "Last Synced": "={{ $json[\"Last Synced\"] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "00c7a9f8-2896-4c51-8239-272aa04cd90d",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          272
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nif(!Array.isArray(sd.syncResults)) sd.syncResults=[];\nconst cw=$('Loop Over Clients').first().json;\nlet rows=[]; try{ rows=$('Build Inbox Rows').all().map(i=>i.json).filter(r=>r&&r['Account ID']); }catch(e){}\nlet written=[]; try{ written=$('Upsert Inboxes').all().map(i=>i.json); }catch(e){}\nconst seen=rows.length;\nconst failedCount=rows.filter(r=>r._failed).length;\nconst ok=!(seen>0 && written.length===0);\nsd.syncResults.push({ client:cw.clientName, inboxes:seen, written:written.length, failed:failedCount, ok });\nreturn [{ json: { done:true } }];"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "559c903a-0ef8-48f9-91e6-04568684edcd",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          672,
+          192
+        ],
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Daily 06:30 IL": {
+        "main": [
+          [
+            {
+              "node": "Get PV Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get PV Clients": {
+        "main": [
+          [
+            {
+              "node": "Prep Client Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Client Loop": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Start Client Work": {
+        "main": [
+          [
+            {
+              "node": "List Email Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Email Accounts": {
+        "main": [
+          [
+            {
+              "node": "Prep Account Stat Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Account Stat Calls": {
+        "main": [
+          [
+            {
+              "node": "Account Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Account Stats": {
+        "main": [
+          [
+            {
+              "node": "Build Inbox Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Inbox Rows": {
+        "main": [
+          [
+            {
+              "node": "Upsert Inboxes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Inboxes": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Start Client Work",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

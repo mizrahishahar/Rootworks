@@ -3,7 +3,7 @@ const cmap=$('Parse Domains').first().json._cmap||{};
 // the fixed field contract and not plumbing rides along, matching the auto-adder in Build Table
 // Schema, so a new source column needs no edit here. Person-level fields stay from Supersoniq.
 const CORE=new Set(['Name','Contact Key','first_name','last_name','Title','Seniority','Department','Email','Social','Phone','Connections','Domain','Company','company_clean','Industry Groups','Employees','Business Model','MX Provider','Score','Similarity','Description','Keywords','City','State','State Full','Country','Zip','Street','Source','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Growth 90d','Features','Seniority Rank']);
-const XSKIP=new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag']);
+const XSKIP=new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag','public_emails_clean','Created']);
 const xmap={};
 for(const r of $('Read CSV').all().map(i=>i.json)){
   const d=String(r.Domain||r.domain||r.company_domain||'').trim().toLowerCase();

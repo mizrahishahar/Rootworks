@@ -14,7 +14,7 @@ for each one of these, show me first of all the settings so we can approve or ch
 - **Inboxes:** Gateway sends only from the clean/SURBL-free set, main runs the full set that OTHER prod campaigns are running atm
 - **Register every variable before building.** Confirm each token the copy uses exists as a field on the sender; create missing ones natively so they render `{{var}}`, not `{{custom_var}}`. An unmapped variable renders blank and burns the send.
 - **Signature** from the inbox (`{{sender_signature}}`), blank line before it. **A P.S. goes after the signature**, never before: body, blank line, signature, blank line, P.S.
-- **Schedule** Monday to Friday, 07:00-14:00 in the client's timezone, unless their `overrides` row says otherwise.
+- **Schedule** Monday to Friday, two windows in the client's timezone: 07:00-10:00 and 15:00-18:00 (use advanced scheduling — `use_adv_schedule: true` with `adv_schedule.windows` per day, both `daily_limit` and `daily_limit_new_lead` required), unless their `overrides` row says otherwise.
 - **Limits live on the inbox, not the campaign.** Set the campaign daily limit high (5000) so it never binds the inbox ramp.
 - **Stop on reply at the domain**, not the lead. Unsubscribes auto-added to the blocklist.
 - **Build as a draft.** The Operator flips it live. You never launch unasked.

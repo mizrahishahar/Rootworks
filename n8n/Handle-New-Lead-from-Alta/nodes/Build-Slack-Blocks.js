@@ -26,9 +26,9 @@ const contact = clean(N.lead_email) || clean(N.linkedin_url);
 let phoneLine = '_no number found_';
 if (phoneVal) {
   const p = esc(phoneVal);
-  if (phoneSrc === 'LeadMagic') phoneLine = p + '   ✅ _mobile_';
-  else if (phoneSrc === 'GPT') phoneLine = p + '   _found online_';
-  else if (phoneSrc === 'GPT-tollfree') phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';
+  if (phoneSrc === 'signature') phoneLine = p + '   ✅ _direct line, from their signature_';
+  else if (['supersoniq', 'ai-ark', 'leadmagic', 'prospeo', 'LeadMagic'].includes(phoneSrc)) phoneLine = p + '   ✅ _mobile_';
+  else if (phoneSrc.endsWith('-tollfree')) phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';
   else phoneLine = p;
 }
 

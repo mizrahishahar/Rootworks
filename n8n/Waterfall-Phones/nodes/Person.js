@@ -23,6 +23,13 @@ const person = {
   linkedin: s(f.Social) || s(f.LinkedIn) || s(f.linkedin) || s(f.linkedin_url),
 };
 out.person = person;
+// Hub contacts link to their company Prospect row, which carries the synced
+// Conversation Thread. The scrape step downstream reads it for a signature phone.
+let companyId = '';
+const link = f.Company;
+if (Array.isArray(link) && link.length) companyId = String(link[0] && link[0].id ? link[0].id : link[0]);
+else if (link && Array.isArray(link.linkedRecordIds) && link.linkedRecordIds.length) companyId = String(link.linkedRecordIds[0]);
+out.companyId = p0.hub ? companyId : '';
 const existingPhone = s(f.Phone) || s(f.phone);
 const isTollFree = (p) => { let x = String(p || '').replace(/\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };
 if (existingPhone && !p0.force) { acc.phone = existingPhone; acc.source = 'existing'; return [{ json: out }]; }

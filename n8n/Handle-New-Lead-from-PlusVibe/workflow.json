@@ -471,10 +471,8 @@
             "lastName": "={{ $('Normalize').item.json.last_name || null }}",
             "position": "={{ $('Normalize').item.json.job_title || null }}",
             "email": "={{ $('Normalize').item.json.lead_email }}",
-            "phone": "={{ $('Resolve Phone').item.json.phone || null }}",
             "linkedin": "={{ $('Normalize').item.json.linkedin_url || null }}",
-            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}",
-            "Phone Source": "={{ ['signature','GPT','LeadMagic','signature-tollfree','GPT-tollfree','none'].includes(String($('Resolve Phone').first().json.phone_source || '').trim()) ? String($('Resolve Phone').first().json.phone_source).trim() : 'none' }}"
+            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
           }
         },
         "options": {
@@ -1037,17 +1035,8 @@
           "conditions": [
             {
               "id": "lm1",
-              "leftValue": "={{ $json.custom_qualification_status }}",
-              "rightValue": "out_of_icp",
-              "operator": {
-                "type": "string",
-                "operation": "notEquals"
-              }
-            },
-            {
-              "id": "lm2",
-              "leftValue": "={{ (($('Format Thread').first().json.signature_phone || '').trim() || ((($json.custom_phone || '').trim() && !/^\\+?1?(800|833|844|855|866|877|888)\\d{7}$/.test(($json.custom_phone || '').trim())) ? ($json.custom_phone || '').trim() : '')) ? 'have' : 'need' }}",
-              "rightValue": "need",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -1059,46 +1048,55 @@
         "options": {}
       },
       "id": "a8079995-1cac-4808-b7f6-e3d586f42f88",
-      "name": "Should Call LeadMagic?",
+      "name": "Call Waterfall?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3936,
+        5504,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Waterfall-Prep.js"
+      },
+      "id": "9c1f74a2-51aa-4b0e-8f14-2f3a7d9e6b01",
+      "name": "Waterfall Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5392,
         -320
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.leadmagic.io/v1/people/mobile-finder",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://n8n.flowroots.com/webhook/waterfall-phones",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"work_email\": $('Normalize').first().json.lead_email } }}",
+        "jsonBody": "={{ { \"tableId\": \"tblzexq9qzO9IRiYV\", \"recordId\": $('Waterfall Prep').first().json.contactId, \"signature_phone\": $('Waterfall Prep').first().json.sig || '', \"clientRecordId\": $('Find Client Row').first().json.id || '' } }}",
         "options": {
+          "timeout": 120000,
           "response": {
             "response": {
-              "neverError": true
+              "neverError": true,
+              "fullResponse": true
             }
           }
         }
       },
       "id": "2acf2dc7-a79f-4488-983d-052238e9458f",
-      "name": "LeadMagic Mobile Finder",
+      "name": "Call Waterfall",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        4160,
+        5616,
         -384
       ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "oMWq3aRIRMhIkSur",
-          "name": "Lead Magic"
-        }
-      },
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Fires the Waterfall Phones machine (HTNr5G6vBVkbxsqF) on the contact row. The waterfall owns the tier logic and the phone write; the sync response feeds the cards and log here."
     },
     {
       "parameters": {
@@ -1718,18 +1716,29 @@
       "main": [
         [
           {
-            "node": "Should Call LeadMagic?",
+            "node": "Existing Prospect?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Should Call LeadMagic?": {
+    "Waterfall Prep": {
       "main": [
         [
           {
-            "node": "LeadMagic Mobile Finder",
+            "node": "Call Waterfall?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Waterfall?": {
+      "main": [
+        [
+          {
+            "node": "Call Waterfall",
             "type": "main",
             "index": 0
           }
@@ -1743,7 +1752,7 @@
         ]
       ]
     },
-    "LeadMagic Mobile Finder": {
+    "Call Waterfall": {
       "main": [
         [
           {
@@ -1758,7 +1767,7 @@
       "main": [
         [
           {
-            "node": "Existing Prospect?",
+            "node": "Set CRM Verdict",
             "type": "main",
             "index": 0
           }
@@ -1787,7 +1796,7 @@
       "main": [
         [
           {
-            "node": "Set CRM Verdict",
+            "node": "Waterfall Prep",
             "type": "main",
             "index": 0
           }

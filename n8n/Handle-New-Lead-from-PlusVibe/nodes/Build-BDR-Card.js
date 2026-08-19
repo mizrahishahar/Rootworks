@@ -28,8 +28,8 @@ let phoneLine = '_no number found_';
 if (phone) {
   const p = esc(phone);
   if (phoneSrc === 'signature') phoneLine = '*' + p + '*   ✅ direct line';
-  else if (phoneSrc === 'LeadMagic') phoneLine = '*' + p + '*   ✅ mobile';
-  else if (phoneSrc === 'signature-tollfree' || phoneSrc === 'GPT-tollfree') phoneLine = '*' + p + '*   ⚠️ switchboard, you will get a receptionist';
+  else if (['supersoniq', 'ai-ark', 'leadmagic', 'prospeo', 'LeadMagic'].includes(phoneSrc)) phoneLine = '*' + p + '*   ✅ mobile';
+  else if (phoneSrc.endsWith('-tollfree')) phoneLine = '*' + p + '*   ⚠️ switchboard, you will get a receptionist';
   else phoneLine = '*' + p + '*   found online, unverified';
 }
 

@@ -65,39 +65,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "rm1",
-              "leftValue": "={{ $json.mode }}",
-              "rightValue": "record",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "wp-recmode-0004",
-      "name": "Record Mode?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        660,
-        -96
-      ]
-    },
-    {
-      "parameters": {
         "operation": "get",
         "base": {
           "__rl": true,
@@ -140,6 +107,85 @@
       "position": [
         1100,
         -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ht1",
+              "leftValue": "={{ ($json.hub && $json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-hubthread-0035",
+      "name": "Hub Thread?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "id": "={{ $('Person').first().json.companyId }}",
+        "options": {}
+      },
+      "id": "wp-fetchco-0036",
+      "name": "Fetch Company",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1240,
+        -192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Scrape-Signature.js"
+      },
+      "id": "wp-scrapesig-0037",
+      "name": "Scrape Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -288
       ]
     },
     {
@@ -669,6 +715,39 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hr1",
+              "leftValue": "={{ $json.hub ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-hubrow-0038",
+      "name": "Hub Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5840,
+        -96
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Field-List.js"
       },
       "id": "wp-fieldlist-0028",
@@ -867,24 +946,6 @@
       "main": [
         [
           {
-            "node": "Record Mode?",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Finalize",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Record Mode?": {
-      "main": [
-        [
-          {
             "node": "Fetch Row",
             "type": "main",
             "index": 0
@@ -892,7 +953,7 @@
         ],
         [
           {
-            "node": "Person",
+            "node": "Finalize",
             "type": "main",
             "index": 0
           }
@@ -911,6 +972,46 @@
       ]
     },
     "Person": {
+      "main": [
+        [
+          {
+            "node": "Hub Thread?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hub Thread?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Company",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SQ Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Company": {
+      "main": [
+        [
+          {
+            "node": "Scrape Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Signature": {
       "main": [
         [
           {
@@ -1180,7 +1281,7 @@
       "main": [
         [
           {
-            "node": "Field List",
+            "node": "Hub Row?",
             "type": "main",
             "index": 0
           }
@@ -1188,6 +1289,24 @@
         [
           {
             "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hub Row?": {
+      "main": [
+        [
+          {
+            "node": "Once",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Field List",
             "type": "main",
             "index": 0
           }

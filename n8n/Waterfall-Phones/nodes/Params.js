@@ -7,7 +7,7 @@ const raw = $input.first().json;
 const b = raw.body || raw;
 const s = (v) => String(v == null ? '' : v).trim();
 const HUB_BASE = 'appQG6dK0FIOhTxOl';
-const baseId = s(b.baseId || b['Clayroots Base ID']);
+const baseId = s(b.baseId || b['Clayroots Base ID']) || HUB_BASE;
 const tableId = s(b.tableId || b['Table ID']);
 const recordId = s(b.recordId);
 const out = {

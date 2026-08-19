@@ -1,12 +1,25 @@
-const f = $('Flatten').first().json;
-const isTollFree = (p) => { let x = String(p || '').replace(/\D/g,''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };
-const gpt = String(f.custom_phone || '').trim();
-let mobile = '';
-try { const cur = $input.first().json || {}; mobile = String(cur.mobile_number || '').trim(); } catch(e) {}
-let phone = '';
-let phone_source = 'none';
-if (gpt && !isTollFree(gpt)) { phone = gpt; phone_source = 'GPT'; }
-else if (mobile) { phone = mobile; phone_source = 'LeadMagic'; }
-else if (f.custom_qualification_status === 'out_of_icp') { phone_source = 'skipped'; }
-else if (gpt) { phone = gpt; phone_source = 'GPT-tollfree'; }
-return [{ json: { phone, phone_source } }];
+// Parses the Waterfall Phones response back into the shape every downstream
+// reader expects ({phone, phone_source}). The waterfall (HTNr5G6vBVkbxsqF) owns
+// the tier logic AND the phone write on the contact row; this node only carries
+// the verdict forward for the Slack cards, the run log, and the addon payload.
+const prep = $('Waterfall Prep').first().json;
+const out = { phone: '', phone_source: 'none' };
+if (prep._call) {
+  const r = $input.first().json;
+  let b = r && r.body !== undefined ? r.body : r;
+  if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }
+  if (b && b.phone !== undefined) {
+    out.phone = String(b.phone || '');
+    out.phone_source = String(b.phone_source || 'none');
+  } else {
+    // Waterfall unreachable (inactive, timeout, non-JSON): the lead still flows,
+    // the phone just stays unresolved. Surfaced in the run log as 'error'.
+    out.phone_source = 'error';
+  }
+} else if (prep.sig) {
+  out.phone = prep.sig;
+  out.phone_source = prep.sigIsTF ? 'signature-tollfree' : 'signature';
+} else if (prep.reason === 'out_of_icp') {
+  out.phone_source = 'skipped';
+}
+return [{ json: out }];

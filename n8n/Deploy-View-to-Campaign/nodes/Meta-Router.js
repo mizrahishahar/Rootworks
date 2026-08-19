@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 const j=($input.first()||{}).json||{};
 if(!D.metaPhase||D.metaPhase==='schema'){
   const tables=Array.isArray(j.tables)?j.tables:[];

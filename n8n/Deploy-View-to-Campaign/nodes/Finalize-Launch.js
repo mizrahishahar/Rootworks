@@ -1,5 +1,5 @@
-const sd=$getWorkflowStaticData('global');
-const D=sd.deploy||{errors:['deploy state missing'],warnings:[],counters:[],rows:{},skipCounts:{},launchId:''};
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;
+const D=sd[dk]||{errors:['deploy state missing'],warnings:[],counters:[],rows:{},skipCounts:{},launchId:''};
 try{ const r=($('Create Lead List').first()||{}).json||{}; if(!r.id&&!D.abort) D.warnings.push('Lead Lists receipt creation failed'); }catch(e){ if(!D.abort) D.warnings.push('Lead Lists receipt not created'); }
 const failed=D.errors||[];
 const sc=D.skipCounts||{};
@@ -47,7 +47,7 @@ if((D.warnings||[]).length){ md.push(''); md.push('**Warnings ('+D.warnings.leng
 if(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }
 const desc=md.join('\n');
 const durS=Math.round((Date.now()-(D.startedAt||Date.now()))/1000);
-sd.deploy=null;
+sd[dk]=null;
 const row={
   'Status':failed.length?'Succeeded with errors':'Succeeded',
   'Trigger':'form',

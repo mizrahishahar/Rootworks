@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 const patches=[];
 let deployed=0, missing=0;
 const skipCounts={};

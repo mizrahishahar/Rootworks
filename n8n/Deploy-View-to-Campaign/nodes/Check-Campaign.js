@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 if(!D.abort){
   const camps=[];
   for(const it of $input.all()){

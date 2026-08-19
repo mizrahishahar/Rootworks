@@ -1,7 +1,7 @@
 # Flowroots Hub - schema
 
 Compiled from the live base (`appQG6dK0FIOhTxOl`) by `scripts/hub-pull.js`. Do not hand-edit.
-What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.
+This file is what the tables ARE; what they mean lives in their own descriptions and the hub skill.
 
 ## Clients (`tblK0nCoNVvFf5SPa`)
 
@@ -46,6 +46,8 @@ What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.
 | Logs | `fldevnA1BWrHhvfal` | multipleRecordLinks |  |
 | Meetings | `fldx6yapArKEZki0L` | multipleRecordLinks |  |
 | Email Domains | `fldOm4uLCpBFvsgou` | multilineText | The client's own email domains, one per line (e.g. getadelante.com and adelantedesk.com for Adelante). The matcher key that lets the Fathom meeting sync tell a client meeting from a sales meeting. Keep current: a client adding a domain without this list updated leaks their meetings into the sales path. |
+| Inboxes | `fldQkOvy4b8YeUYkG` | multipleRecordLinks |  |
+| Domains | `fldJUAJFb6jzL7wxs` | multipleRecordLinks |  |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -57,8 +59,9 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
 | Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
 | Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
-| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, inbox-manager-prompt, linkedin-setter-prompt |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, inbox-manager-prompt, linkedin-setter-prompt, Inbox-Agent-Prompt |
 | Link | `fldZn42JeTlp3amOV` | url | For asset rows: the live URL we actually send (case study page, calculator, video). Content holds the full text behind the link so sessions can read what the prospect will see without fetching. |
+| Creation Date | `fldq4gggdIbzlGYIW` | createdTime |  |
 
 ## Messages (`tblh7G8aW63vEg6S3`)
 
@@ -138,7 +141,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -180,6 +183,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Min monthly visits | `fldTN0qM3BP5iBYvi` | number | Storeleads Domains -> Clayroots launch filter: minimum estimated monthly site visits (f:evmin). Blank = no floor. |
 | Category | `fldkiuShAJ6dfMXTu` | singleLineText | Storeleads Domains -> Clayroots launch filter: comma-separated exact Storeleads category paths (e.g. /Apparel/Athletic Apparel). Matches ANY listed (f:cat, OR). Blank = no category filter. |
 | Technologies | `fldQLWkqMbSFbJVfs` | singleLineText | Storeleads Domains -> Clayroots launch filter: comma-separated exact Storeleads technology names (e.g. Klaviyo). Store must have ALL listed (f:tech, AND). Blank = no tech filter. |
+| Domains Table ID | `fldWbRURgHGNpyzHL` | singleLineText | AI-Ark Export -> Clayroots only. The client's Domains table id (tblXXX) - company data source of truth for this run. Must contain 'domains' in the table name or the run refuses. |
 
 ## Sessions (`tbl3c80o7QlZ4VByU`)
 
@@ -327,7 +331,7 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Messages Sent | `fldbxIY1BXGNJh2lD` | number |  |
 | Replies | `fldaS7xqlohKlMbds` | number |  |
 | Positive Replies (PV) | `fldPmajcH8usJNLMf` | number | The sequencer's own positive count. The dashboard uses Positive Replies (CRM) instead. |
-| Created | `fldzxjfkuXoV7MduY` | dateTime |  |
+| Created | `fldzxjfkuXoV7MduY` | date |  |
 | Last Synced | `fld7hEzeiacXFev4d` | dateTime |  |
 | Client | `fldWg9V9OtFDeoB9O` | multipleRecordLinks |  |
 | Prospects | `fldJ1RVI3PjYtJ2Yk` | multipleRecordLinks | The answered leads that came from this campaign instance. Linked by the reply intakes. |
@@ -350,7 +354,6 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Openers | `fldQSNF5FHrhEtL0D` | multipleRecordLinks |  |
 | PV Leads View | `fldiVF3811bpVr1ix` | formula | Deep link to this campaign's lead list in the PlusVibe app. Derived from Campaign ID, nothing to sync. Blank for non-PlusVibe (Alta) campaigns. |
 | Lead Lists | `fldOyL4INmC7cMu4p` | multipleRecordLinks |  |
-| Agent Config | `fldmEnshwBvAr4bT8` | richText |  |
 
 ## Reports (`tblUFzAV4sysSJktK`)
 
@@ -376,6 +379,9 @@ Weekly client reports. One row per client per run, written by the PlusVibe Weekl
 | Prospects Contacted All-Time | `fldKE5wqfugIBaB0k` | number |  |
 | Replies All-Time | `fldDYh2Iz0gQOsfEC` | number |  |
 | Calls Booked All-Time | `fldLTpbSsmnVjSNDE` | number |  |
+| Type | `fldYxP0H5d13ZaZFu` | singleSelect | Choices: Weekly, Custom, Infrastructure |
+| Creation Date | `fldLjNA15VB4dYBPu` | createdTime |  |
+| DriveLink | `fldVnK4xu7unDGVTs` | url |  |
 
 ## Openers (`tblPcilRrsiEeyIyn`)
 
@@ -417,3 +423,49 @@ Session journal, replaces the deprecated Sessions table. One row per working ses
 | Client | `fldlVaqQgiriwgXOk` | multipleRecordLinks |  |
 | Log | `fld4wmjzFCRaTAVf9` | richText | What happened, what was decided, what is open. Written at session close. |
 | Date | `fldLN7SOc1G0cUSUJ` | dateTime |  |
+
+## Inboxes (`tblgdmibPyC2dRlVK`)
+
+One row per PlusVibe sending inbox, upserted by Account ID. Mirrors Campaigns: current state + yesterday's activity, refreshed daily by Sync PlusVibe Inboxes to Hub.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Inbox | `fldkANsKzUs8ikHrZ` | singleLineText |  |
+| Account ID | `fldSrSCkm5dgB91uh` | singleLineText | PlusVibe account _id. THE upsert key for all writers. |
+| Client | `fldpAz2N7oTNWScd3` | multipleRecordLinks |  |
+| Domain | `fldQgpTvyzirUaurs` | singleLineText |  |
+| Status | `fldsAbMUF6G1gnqIm` | singleSelect | Choices: ACTIVE, PAUSED, ERROR |
+| Warmup Status | `fld94dAgNrjXGRJ9t` | singleSelect | Choices: ACTIVE, PAUSED, INACTIVE |
+| Provider | `fldI7wCBPUk2incqK` | singleLineText |  |
+| Daily Limit | `fld8bDsP2TRj8X4Gw` | number |  |
+| Sent (All-Time) | `flduqTfp0cSwAqSM3` | number |  |
+| Replies (All-Time) | `fld5mKbqv4YLF7HVO` | number |  |
+| OOO Replies (All-Time) | `fldrb82WuBpGRl5va` | number |  |
+| Positive (All-Time) | `fld1bxIBr6fYU7fX0` | number |  |
+| Bounced (All-Time) | `fldizmg1Fvj0SvfNW` | number |  |
+| Warmup Health (7d) | `fldLtS90bQ5SVDfdH` | number |  |
+| Miss Warmup Rate | `fldEc75p9zvsqz514` | number |  |
+| Bounce Rate (3d) | `fldLxHs5iim8UBB6O` | number |  |
+| Reply Rate (7d) | `flduTVHGuKc0yWqhe` | number |  |
+| Last Synced | `flddxE5wWm303pSVX` | dateTime |  |
+| Tags | `fldZjFfx5Nwk87pig` | singleLineText | PlusVibe tag names for this inbox, comma-separated. |
+| Domain Link | `fldyDd6rEmi9krZnd` | multipleRecordLinks |  |
+| Domain Replies (All-Time) | `fldD0coC7Xva5qRpG` | multipleLookupValues |  |
+
+## Domains (`tbltRqDRQm0YQy3tQ`)
+
+One row per sending domain per client, linked from Inboxes. Rollups aggregate all-time stats across every inbox on that domain. Upserted by Sync PlusVibe Inboxes to Hub.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Domain | `fldMcitTB60CeAOCJ` | singleLineText |  |
+| Client | `fldz2S7gihalU2UMS` | multipleRecordLinks |  |
+| Last Synced | `fldEACG3axtny5k5y` | dateTime |  |
+| Inboxes | `fld172r5q92gtqgUM` | multipleRecordLinks |  |
+| Replies (All-Time) | `fldkS3gdaAhTEm20Z` | rollup |  |
+| Sent (All-Time) | `fldV1XP0bo8J0Eewi` | rollup |  |
+| Positive (All-Time) | `fldy4Wr3lDZ8WwumV` | rollup |  |
+| Bounced (All-Time) | `fld47mZufldUaz6vO` | rollup |  |
+| Inbox Count | `fldqTcJgXmMpco4dq` | count |  |
+| Tags | `fldN6oLszhN7LeXdb` | rollup |  |
+| OOO Replies (All-Time) | `fldX3AwY7fwORQs1D` | rollup |  |

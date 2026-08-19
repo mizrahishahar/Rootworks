@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy; const R=D.rb;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk]; const R=D.rb;
 const j=($input.first()||{}).json||{};
 const hasWrap=Object.prototype.hasOwnProperty.call(j,'body');
 const body=hasWrap?j.body:j;

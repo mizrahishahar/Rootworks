@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 if(D.abort){ return [{json:{ready:false, abort:true}}]; }
 const rowsArr=D.viewRows||[];
 D.rowsTotal=rowsArr.length;

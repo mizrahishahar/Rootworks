@@ -68,18 +68,6 @@ Two forms, and only two:
 - **Direct.** "You have", "you are", his facts said to his face. Allowed **only after saying we checked him** ("had a look at your site"). Never uninvited. Uninvited direct personalization is the AI tell and creates the anti.
 - **Indirect.** The default. The research decides what to focus on: which part of the fulfillment gets the depth is chosen by his situation. Then his world shows up as a casual drop folded into our own story or a general truth ("when you're running a handful of crews across a city the size of LA"), never recited at him. He feels seen without being told he was looked up.
 
-## The reference
+## The references
 
-An interested reply to a walkthrough offer, worked to the bar. (The Operator's own examples live beside this one when provided; they set the size and the register.)
-
-> Here's the walkthrough, John. loom.com/91d07d5
->
-> It's Sam using the system inside Cactus, his own moving company. A lead comes in, the quote is built from two numbers, inventory and distance, and goes back out in seconds. Nobody sits and prices it.
->
-> Leads that don't book get chased automatically. That flow is what took Cactus from 13 trucks to 51, and most customers just book whoever answers first.
->
-> Are you free Monday at 1pm or Tuesday at 2pm PT? Sam would go through how your jobs run today and show you what he'd set up first in your shop.
->
-> Or pick any time that suits you here: {link}
-
-The ask fulfilled in line one and the body is the walkthrough itself. The mechanism handed over whole, so he could set it up himself tomorrow and he knows it. Proof folded into two lines. The call is a question, the gain is his, and every checklist line arrives without one of them being stated.
+Real replies worked to the bar live in `examples.md`, beside this file. They set the size and the register.

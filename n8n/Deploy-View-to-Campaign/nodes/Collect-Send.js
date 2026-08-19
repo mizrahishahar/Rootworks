@@ -1,10 +1,10 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy; const S=D.send;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk]; const S=D.send;
 const j=($input.first()||{}).json||{};
 const hasWrap=Object.prototype.hasOwnProperty.call(j,'body');
 const rb=hasWrap?j.body:j;
 const status=Number(j.statusCode||0);
 const fmt=v=>Number(v||0).toLocaleString('en-US');
-// Live progress written to the launch row after every chunk.
+// Live progress written to the launch row after every chunk (Stamp Progress hangs off this output as a side branch; it must NEVER sit between this node and Send Done?, its Airtable output would destroy the loop state).
 const emit=(o)=>{ const P=D.pv||{}; const total=S.queue.length||1; const doneChunks=Math.min(S.idx,total);
   const lines=['**Uploading to '+(D.campName||'?')+'**','','- Chunk '+fmt(doneChunks)+' of '+fmt(total),'- Sent so far: '+fmt(P.sent),'- Accepted so far: '+fmt(P.uploaded)];
   if(P.skipped) lines.push('- Already in the workspace, blocked by dedupe: '+fmt(P.skipped));
@@ -12,7 +12,14 @@ const emit=(o)=>{ const P=D.pv||{}; const total=S.queue.length||1; const doneChu
   lines.push('','Read-back and the full report follow once uploading finishes.');
   return [{json:Object.assign({_lid:D.launchId||'', _prog:lines.join('\n')}, o)}]; };
 const mkBody=(chunk)=>Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunk}, D.flags||{});
-const advance=()=>{ S.queue[S.idx]=null; S.idx++; S.attempts=0; if(S.idx<S.queue.length) return emit({body:mkBody(S.queue[S.idx]), wait:2}); return emit({done:true, wait:0}); };
+const advance=()=>{ if(S.idx<S.queue.length){ S.queue[S.idx]=null; } S.idx++; S.attempts=0; if(S.idx<S.queue.length&&S.queue[S.idx]) return emit({body:mkBody(S.queue[S.idx]), wait:2}); return emit({done:true, wait:0}); };
+if(j.error&&!hasWrap&&!status){
+  // The HTTP node itself errored (no request went out). Retry the same chunk, capped.
+  S.attempts++;
+  if(S.attempts<=3&&S.queue[S.idx]) return emit({body:mkBody(S.queue[S.idx]), wait:Math.pow(2,S.attempts)});
+  D.errors.push('lead/add chunk '+(S.idx+1)+'/'+S.queue.length+' node error: '+String(j.error).slice(0,200));
+  return advance();
+}
 const cur=S.queue[S.idx]||[];
 const ok=status>=200&&status<300&&rb&&typeof rb==='object'&&!Array.isArray(rb);
 if(ok){
@@ -57,6 +64,6 @@ if((status===413||status===400)&&cur.length>25&&/too large|payload|entity|body s
   return emit({body:mkBody(a), wait:2});
 }
 S.attempts++;
-if(S.attempts<=3) return emit({body:mkBody(cur), wait:Math.pow(2,S.attempts)});
+if(S.attempts<=3&&cur.length) return emit({body:mkBody(cur), wait:Math.pow(2,S.attempts)});
 D.errors.push('lead/add chunk '+(S.idx+1)+'/'+S.queue.length+' failed after 3 retries (status '+(status||'?')+'): '+JSON.stringify(rb).slice(0,200));
 return advance();

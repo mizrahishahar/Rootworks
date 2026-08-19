@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global'); const D=sd.deploy;
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 const r=($input.first()||{}).json||{};
 const f=r.fields||r;
 D.clientName=String(f['Client name']||f['Client']||'').trim();

@@ -26,7 +26,8 @@ The law over everything is honesty. We present reality as it is, we give real va
 
 - `the-read.md` - the energy read and the move each read sets: engaged, flat, not interested, a reason given, a redirect, a correction, rapport.
 - `voice.md` - the voice, personalization, the banned words checklist, and the gate every draft passes before it is shown.
-- `the-chase.md` - the follow-up: value-led, urgency as seasoning, the door out as an option.
+- `the-chase.md` - the follow-up: value-led, urgency as seasoning, the door out from the second round.
+- `agent-config.md` - the client's autonomous setter agent: what its prompt carries and the staleness law.
 
 ## Booking
 

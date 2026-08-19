@@ -28,7 +28,9 @@ Four things, every time:
 
 - `the-reply.md` - the core move: the reply checklist, fulfillment as the body, the mechanism giveaway, personalization, the call lines. The move everything else varies from.
 - `conversations.md` - questions and objections: the value equation, the energy read, the price boundary.
-- `the-chase.md` - the follow-up and the no-show: honest scarcity and urgency, both checklists, the door out.
+- `the-chase.md` - the follow-up and the no-show: value-led chasing, honest scarcity and urgency, the door out.
+- `examples.md` - real replies worked to the bar; the size and register reference.
+- `agent-config.md` - the client's autonomous inbox agent: what its prompt carries and the staleness law.
 
 ## Voice
 

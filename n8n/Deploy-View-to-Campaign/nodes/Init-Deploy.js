@@ -1,4 +1,4 @@
-const sd=$getWorkflowStaticData('global');
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;
 const r=($input.first()||{}).json||{};
 const f=r.fields||r;
 const clientIds=Array.isArray(f['Client'])?f['Client']:[];
@@ -8,5 +8,5 @@ if(!D.abort&&!D.clientId){ D.abort='no client link'; D.errors.push('launch row h
 if(!D.abort&&!D.tableId){ D.abort='no Table ID'; D.errors.push('launch row has no Table ID'); }
 if(!D.abort&&!D.view){ D.abort='no View'; D.errors.push('launch row has no View'); }
 if(!D.abort&&!/^[0-9a-f]{24}$/i.test(D.target)){ D.abort='invalid Target'; D.errors.push('Target "'+D.target+'" is not a plausible PlusVibe campaign id (24 hex)'); }
-sd.deploy=D;
+sd[dk]=D;
 return [{json:{clientId:D.clientId||'recMISSING'}}];

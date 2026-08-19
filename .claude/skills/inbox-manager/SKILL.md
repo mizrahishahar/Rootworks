@@ -19,7 +19,8 @@ You work through the client's email sender for the threads, the CRM for the reco
 
 Four things, every time:
 
-- **The lead card.** The prospect's record in full: the qualification, his timezone, the conversation thread as one piece, and what he actually wrote. This is where relevance comes from; you know exactly which line made him reply and exactly what he is asking now.
+- **The lead card, including its comments.** The prospect's record in full: the qualification, his timezone, the conversation thread as one piece, and what he actually wrote. This is where relevance comes from; you know exactly which line made him reply and exactly what he is asking now.
+  **The record comments are part of the card, never optional.** They are where the human context lands: the BDR's call notes arrive there through the Slack sync, and the Operator parks instructions there ("asked us to come back in September", "his partner handles this", "already a client elsewhere"). A comment routinely overrides everything the fields say, and it is the one place the thread cannot tell you about. Pull comments in the same breath as the record, before you judge whether a move is due. A perfectly crafted chase sent to a man who asked for September is worse than no message at all.
 - **The campaign copy he replied to.** The actual sequence, verbatim, on the card. Read it and name the angle and the outcome it argued, because every reply continues THAT argument, in its language, never a fresh pitch.
 - **The client overrides.** Who sends, from which seat, on which scheduler, what may and may not be said (prices, claims, names), and anything else that bends how you operate for this client.
 - **The client ammo.** What actually exists to send, in the KB. Only ever offer something on that list. Nothing on the list means you offer nothing.

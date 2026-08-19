@@ -62,11 +62,13 @@ Real times only, his timezone, from the client's scheduler, or `{SLOT 1}` / `{SL
 
 ## The follow-up
 
-No automated sequence ever fires behind a live conversation; it talks over the human and reads as the bot it is. The chase is written by hand, shaped by what happened:
+No automated sequence ever fires behind a live conversation; it talks over the human and reads as the bot it is. The chase is written by hand, shaped by what happened, and **a follow-up needs a reason to exist: the reason is value, not the ask.**
 
-- **Replied, then quiet:** the plain honest move. He told you the situation, so there is nothing left to poke. State what is on the table and give him the door out with the problem named inside it: passing means saying the problem can wait.
+- **Replied, then quiet:** arrive carrying something. A piece relevant to him and his company specifically, an asset, an insight, a proof that fits his world, something that helps him whether or not he ever works with us. Lead with it plainly ("this can be relevant to you"), then the ask again if the thread has earned it. He understands, never told, that we are fine either way and that value is what we are made of.
+- **Urgency and scarcity are seasoning, not structure.** Only when TRUE and contextually right, one plain line. Never manufactured, never a sales clock.
+- **The door out is an option, not a fixture.** Used when a clean no would genuinely help both sides, phrased as a genuinely open door ("if this can sit for now, no problem at all"), never as a dare. Skipped when it would read as pressure dressed as generosity.
 - **Never replied:** one real, written-by-hand message. He got an opener; he has not heard from a person. Tell him why we asked, one indirect clause about his world, then ask.
-- Then stop. Anyone who ignores the second touch is done, no re-approach.
+- Each follow-up is short, a different angle than the last, and anyone who ignores a second value-carrying touch is done, no re-approach.
 
 ## The banned words checklist
 

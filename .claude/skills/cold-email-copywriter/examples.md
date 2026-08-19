@@ -1,4 +1,4 @@
-Teaches: our own winning sequences, verbatim as deployed, with their numbers and why each one earned its replies.
+Teaches: our own winning sequences, verbatim as deployed, and why each one earned its replies.
 
 # Examples
 
@@ -154,9 +154,7 @@ The sibling campaign (2026-07-07 Home Movers, Company Inbox) ran the same argume
 
 ### Spintax, as deployed
 
-Light by design: two options per slot, mostly on the opener verb and the CTA.
-
-Spintax is bad here. do not take insparation.
+The spintax here is bad, below the standard. Do not take inspiration from this table.
 
 | Email | Slot                | Option 1 (base)                                | Option 2                                    |
 | ----- | ------------------- | ---------------------------------------------- | ------------------------------------------- |
@@ -177,39 +175,57 @@ Never spun: every number ($2M, $7M, 13, 51, 6), Sam, Cactus Moving, the 3A email
 
 ---
 
-## 3. Adelante · Israeli DTC Hebrew · General, No Bot (pitch-led)
+## 3. Flowroots · IL B2B SaaS · Founders / Marketing, Sales & Commerce (offer-led, Hebrew)
 
-The account's best positive rate at meaningful volume.
+Our own outbound, run from the Piper workspace. The account's best reply and positive rates.
 
-**Why it won:** it names the reader's exact repeating tickets in their own words (order status, returns, availability), gives one proof with a hard number (Modibodi, ~70% closed with no human), and the CTA is the lightest yes in the stack: reply "yes", get a WhatsApp number, try the agent. The follow-up never repeats the ask; it adds a real seasonal deadline, reframes price against the alternative the reader is actually weighing (hiring a support rep), and closes on a question about THEIR world.
+**Why it won:** the observation flips their own trade back at them ({{company_name}} helps its clients get customers, but who fills YOUR pipeline?). The risk reversal is embedded in the offer itself, pay only per meeting that happens, which is exactly why the CTA gets to stay featherweight ("worth sending more details?"). Touch 2B names the objection head on: if this sounds too good to be true, it is because all the risk sits on us, not on you. And the language is how Israeli tech actually talks, Hebrew carrying the English loanwords the reader uses daily (pipeline, outreach, growth, demo).
 
 Hebrew ships unspun, wrapped in a `dir='rtl'` container, with {{hebrew_first_name}}, never a transliteration.
 
 ### Touch 1
 
-*Subject (Hebrew):* the support of {{company_name}}
+**Variant A**  ·  *Subject (Hebrew):* demos for {{company_name}}
 
 > היי {{hebrew_first_name}},
 >
-> אם רוב הפניות של {{company_name}} חוזרות על עצמן: סטטוס הזמנה, החזרות, זמינות - זה בטח מציף אתכם.
+> {{company_name}} עוזרת ללקוחות שלה להביא יותר לקוחות, אבל מי ממלא את ה-pipeline שלך?
 >
-> בנינו נציג AI שסוגר את הפניות האלה מקצה לקצה: קורא את הנתונים מה-Shopify שלכם וגם מבצע פעולות אמיתיות כמו בדיקת סטטוס, החזרה והחלפה.
+> אנחנו יכולים להשיג לך דמואים עם לידים רלוונטיים, בתשלום עבור כל פגישה שמתקיימת.
 >
-> אצל Modibodi הנציג סוגר כ-70% מהפניות בלי נציג אנושי.
+> שווה שאשלח עוד פרטים?
+
+**Variant B**  ·  *Subject (Hebrew):* a question, {{hebrew_first_name}}
+
+> היי {{hebrew_first_name}},
 >
-> רוצים נציג שעובד על האתר שלכם ולפי הנהלים שלכם? אם זה מעניין אותך אפשר לרשום כן ואשלח לך מספר ווטסאפ לנסות אותו.
+> הקטגוריה שלך רועשת, ולהוציא דמו מול הלקוח הנכון זה כבר חצי מהמשחק.
+>
+> אנחנו יכולים למלא לך את היומן בדמואים עם האנשים הנכונים, במודל מבוסס תוצאות בלבד.
+>
+> רלוונטי עבורך?
 
 ---
 
 ### Touch 2
 
-*Threaded, +1 day · single variant*
+*Threaded, +1 day*
 
-> {{hebrew_first_name}}, בין החגים לנובמבר לא נשאר זמן להטמיע כלום. מי שרוצה נציג מוכן לפיק, צריך להתחיל עכשיו, ותוך שבוע הנציג שלכם באוויר.
+**Variant A**  ·  *the video excuse*
+
+> {{hebrew_first_name}}, אין צורך לשלם ריטיינרים שלא שווים את זה על lead generation.
 >
-> במקום לגייס נציג תמיכה ב-8 עד 10 אלף שקל בחודש, זה עולה $800 בחודש, בלי שתתחזקו כלום: אנחנו מפעילים ומשפרים את הנציג בשבילכם כל שבוע.
+> אני יכול להשיג לך דמואים דרך outreach ממוקד ל-brands ולצוותי growth, marketing ו-sales שמתאימים לך ולא שמעו עליך מעולם, בתשלום עבור כל פגישה שמתקיימת.
 >
-> מה הפנייה שהכי מציפה אתכם כרגע: סטטוס הזמנה, החזרות או זמינות? בואו נפתור ספציפית את זה קודם.
+> אני יכול להקליט וידאו קצר שמראה איך זה עובד. מעניין אותך?
+
+**Variant B**  ·  *the objection named*
+
+> {{hebrew_first_name}}, אם המודל הזה נשמע too good to be true, זה כי כל ה-risk יושב עלינו ולא עליך.
+>
+> אני מקים לך תשתית שלמה של outbound ממוקד ללקוחות הכי חשובים לך, גם בקטגוריה רוויה, ומשיג לך דמואים, בתשלום עבור כל פגישה שמתקיימת.
+>
+> שווה שאשלח דוגמה לאיך קמפיין כזה נראה?
 
 ### Spintax
 
@@ -295,9 +311,9 @@ The Question campaigns are the biggest positive producers on the whole account, 
 
 > Hey {{first_name}}, noticed you don't have anyone dedicated to infra yet. Who ends up dealing with it when something needs attention, you?
 
-**Open, no assumption** (the fact is public and thin)
+**Open, no assumption** (the fact is public and thin; the latest deployed iteration loads a guessed pain onto the same fact)
 
-> Hey {{first_name}}, saw you're hiring for an infra role. Can I ask how that's going for you?
+> Hey {{first_name}}, noticed you're hiring for an infra role. Is it the classic tribal knowledge problem, one person's got it all in their head?
 
 **Binary, one option loaded** (the fact lands on a person)
 

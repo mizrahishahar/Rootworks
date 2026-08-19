@@ -48,14 +48,12 @@ Four blocks, in this order. The Operator reviews copy and spintax separately, so
 > the body, once
 ```
 
-**2. A slot table per email.** Base first, so the default read is obvious:
+**2. A slot table per email.** Base first, so the default read is obvious. Rendered as a real markdown table, never inside a code fence:
 
-```
 | Slot | Option 1 (base) | Option 2 | Option 3 |
 |---|---|---|---|
 | the build | ... | ... | ... |
 | the ask | ... | ... | ... |
-```
 
 **3. The never-spun list.** One line, everything fixed, named.
 

@@ -22,7 +22,7 @@ Three gates, always:
 ---
 ## Where truth lives
 
-- **The database** (Airtable) holds all records: clients, prospects, campaigns, client knowledge, meetings, run logs. Its structure is in [hub/SCHEMA.md](hub/SCHEMA.md); what the tables mean is in [hub/Readme.md](hub/Readme.md). State is read live from the database, never from a copy in a file.
+- **The database** (Airtable) holds all records: clients, prospects, campaigns, client knowledge, meetings, run logs. Its structure is in [[SCHEMA]] at the repo root, compiled by `scripts/hub-pull.js`; the hub skill carries the knowledge-base doctrine. State is read live from the database, never from a copy in a file.
 - **The automations** do the heavy work. [n8n/INDEX.md](n8n/INDEX.md) lists every one, what it does, and when to use it; each one's full source sits beside it, readable whenever you need to know exactly what a run will do.
 - **`tools/`** has one file per external system we operate: what it is, how to act on it, and the traps it has already cost us. **Read the system's file before you touch that system.**
 

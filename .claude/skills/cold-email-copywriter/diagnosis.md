@@ -17,16 +17,24 @@ The numbers exist to feed the next iteration. Every read ends in a verdict, a na
 
 ## Judge at the right level
 
-This is the discipline that prevents wrong verdicts. Two levels, judged in order:
+This is the discipline that prevents wrong verdicts. Infrastructure and lists are properties of the whole sending operation, judged across every campaign at **workspace** volume. A single **campaign** earns judgment only after those are clean and only at its own volume floor. The KPIs, in the order they gate each other:
 
-**1. The workspace level: infrastructure and lists.** Deliverability and list health are properties of the whole sending operation, not of one campaign. Judge them across every campaign a client is running, at workspace volume:
+| Level | Signal | Healthy | Worrying | Broken | Judge from |
+|---|---|---|---|---|---|
+| Workspace · infrastructure | Bounce rate | under 3% | | 3%+ | any volume |
+| Workspace · infrastructure | Domain vs siblings | in line | lagging | silent, or 80%+ sender bounces | 500+ sends per domain |
+| Workspace · list | Genuine reply rate | 2%+ | 1 to 2% | under 1% | 2k+ sent across its campaigns |
+| Campaign · copy & offer | Positive rate (per contacted) | 0.5%+ | 0.15 to 0.5% | under 0.15% | **3k contacted, this campaign** |
+| Inbox | Positives that book | 30%+ | 20 to 30% | under 20% | positives exist |
 
-- **Infrastructure.** Bounce rate 3%+ anywhere, or replies near zero across ALL campaigns, or one domain silent while its siblings reply: that is mail not landing, and no campaign verdict is valid until it is ruled out. Per-domain bounce splits and sibling-domain comparison locate it. A domain with 80%+ sender-side bounces or weeks under 1% reply is dead: replace it fast, a dead domain costs more than a new one.
-- **The list.** Judged across the campaigns that share it. Healthy genuine reply runs 2%+; under 1% at 2k+ sent with clean infrastructure says the mail lands but the people are wrong. Read the negatives verbatim: "wrong person" means resegment, "we already use X" means saturation, go where X is not. Profile who the positives actually are; they describe the ICP that resonates, which may not be the ICP that was targeted.
+**Copy may be blamed only from the fourth row down**: the campaign has 3k+ contacted AND every row above it reads healthy. Below the floor: keep sending or widen the window, no verdict. Rows failing above it: that row is the verdict, and the copy was never given its chance.
 
-**2. The campaign level: copy and offer.** Only once infrastructure and list are clean does a campaign's own performance mean anything. **A campaign is judged from roughly 3k contacted.** Below that, keep sending or widen the window; above it, the campaign's positive rate is real: 0.5%+ is healthy, 0.15 to 0.5% says the argument is weak, under 0.15% says kill it. Our own winners have run 2 to 3.5% positive on tight small lists and 0.5 to 0.8% on broad ones; a broad list at 0.5% with volume out-produces a tight list at 2%.
+What each level's break means:
 
-**3. After the reply: the inbox.** Positives that do not become calls (healthy is 30%+ booking) are a working-the-reply problem: speed, slots, the ask. The inbox skill owns it; the campaign is not the suspect.
+- **Infrastructure broken:** mail is not landing; no other number means anything. Locate by per-domain bounce splits and sibling comparison. A dead domain is replaced fast; it costs more than a new one.
+- **List broken:** mail lands, the people are wrong. Read the negatives verbatim ("wrong person" = resegment, "we already use X" = saturation, go where X is not) and profile who the positives actually are; they describe the ICP that resonates, which may not be the ICP targeted.
+- **Campaign broken:** finally the copy and the offer. Our own reference points: winners run 2 to 3.5% positive on tight small lists, 0.5 to 0.8% on broad ones, and a broad list at 0.5% with volume out-produces a tight list at 2%.
+- **Inbox broken:** positives exist and calls do not; speed, slots, and the ask are the suspects, the campaign is not. The inbox skill owns it.
 
 ## Judging campaign copy
 
@@ -34,10 +42,7 @@ When the question is the copy itself, the unit of judgment is the variant, and t
 
 The read: pull per-variant numbers from the platform, then put each variant's copy beside its numbers and explain the gap in craft terms: which opener earned the read, which outcome resonated, which proof was proximate, which CTA collected. A verdict about a variant names the line responsible, not just the rate. Winning angles propagate into new campaigns; dying variants are killed, not rewritten.
 
-Present a copy judgment in this shape:
-
-```
-### {campaign} · {contacted} contacted
+Present a copy judgment in this shape (real tables, never inside code fences): a heading naming the campaign and its contacted count, then the variant table, then three labeled lines.
 
 | Variant | Angle | Sent | Reply | Positive | Verdict |
 |---|---|---|---|---|---|
@@ -47,7 +52,6 @@ Present a copy judgment in this shape:
 **What the winner did:** one short paragraph, naming lines.
 **What the loser did:** one short paragraph, naming lines.
 **Next campaign:** the angle it runs and why.
-```
 
 ## What a verdict becomes
 

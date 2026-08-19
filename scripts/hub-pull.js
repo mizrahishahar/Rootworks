@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Rootworks Hub schema puller.
 // Compiles the live Flowroots Hub schema (tables, fields, types, select choices,
-// field descriptions) into hub/SCHEMA.md. Generated from truth; never hand-edited.
+// field descriptions) into SCHEMA.md at the repo root. Generated from truth; never hand-edited.
 //
 // Usage: node scripts/hub-pull.js
 // Auth: AIRTABLE_API_KEY env var, or ~/.config/rootworks/airtable-api-key
@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_ID = 'appQG6dK0FIOhTxOl';
-const OUT = path.join(__dirname, '..', 'hub');
+const OUT = path.join(__dirname, '..');
 
 function apiKey() {
   if (process.env.AIRTABLE_API_KEY) return process.env.AIRTABLE_API_KEY.trim();
@@ -35,7 +35,7 @@ const clean = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').
     '# Flowroots Hub - schema',
     '',
     `Compiled from the live base (\`${BASE_ID}\`) by \`scripts/hub-pull.js\`. Do not hand-edit.`,
-    'What the tables MEAN is in hub/flowroots-hub.md; this file is what they ARE.',
+    'This file is what the tables ARE; what they mean lives in their own descriptions and the hub skill.',
     '',
   ];
 
@@ -57,5 +57,5 @@ const clean = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').
 
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(path.join(OUT, 'SCHEMA.md'), lines.join('\n'));
-  console.log(`${tables.length} tables -> hub/SCHEMA.md`);
+  console.log(`${tables.length} tables -> SCHEMA.md`);
 })().catch((e) => { console.error(e.message); process.exit(1); });

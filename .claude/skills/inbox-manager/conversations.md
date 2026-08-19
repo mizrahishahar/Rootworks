@@ -8,6 +8,7 @@ He wrote back with a question or an objection instead of taking the offer. The c
 2. **The answer carries the mechanism.** His question touches some part of the how, and explaining that part is the value. An objection is never argued. It is answered with how the thing actually works, and he re-concludes himself.
 3. **What the email genuinely cannot answer becomes visible on its own.** His numbers, his setup, his process are not in front of us. Not withheld, just not here. That is what the call is, and it arrives naturally, through the same three call lines as the reply.
 4. **Read the energy first.** An engaged question earns the full move. A flat one-worder has not, so ask one real question back and earn the next reply before any call talk.
+5. **Answer only what was asked.** His question sets the scope, and the answer stays inside it. Nothing volunteers itself: no pricing he did not ask about, no feature he did not raise, no second topic stapled on. And the message holds the first reply's size: making room for the answer means trimming the proof or a slice of the fulfillment, never growing the message.
 
 ## Price
 
@@ -23,6 +24,6 @@ The same rule with a client boundary. Honest at the level we can be honest: what
 >
 > Are you free Thursday at 11am or Friday at 2pm PT? Sam would run it with you on your own numbers and see if it pays for itself in your shop.
 >
-> If neither works, send me a time that suits you and I'll see if I can set it up.
+> Or pick any time that suits you here: {link}
 
-Real numbers first, no dance. The dependency is honest. The call is where his math lives, and "see if it pays for itself" is the fit-if doing its work. A conversation closes with the own-time line, never the door out; the door out belongs to the chase.
+Real numbers first, no dance. The dependency is honest. The call is where his math lives, and "see if it pays for itself" is the fit-if doing its work. A conversation closes with the scheduling link, never the door out; the door out belongs to the chase.

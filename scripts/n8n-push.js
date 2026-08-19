@@ -54,11 +54,29 @@ const payload = {
   settings,
 };
 
-console.log(`workflow: ${doc.name} (${doc.id})`);
+console.log(`workflow: ${doc.name} (${doc.id || 'NEW - will be created'})`);
 console.log(`nodes: ${payload.nodes.length}, code files inlined: ${inlined}`);
 if (dry) { console.log('dry run, nothing sent'); process.exit(0); }
 
 (async () => {
+  if (!doc.id) {
+    // Brand-new machine: create it, then write the assigned id back into workflow.json
+    // so every later push is an update. New workflows arrive inactive with no creds
+    // attached to HTTP nodes; the Operator activates and attaches in the UI.
+    const res = await fetch(`${BASE}/api/v1/workflows`, {
+      method: 'POST',
+      headers: { 'X-N8N-API-KEY': apiKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`POST /workflows -> HTTP ${res.status}: ${await res.text()}`);
+    const out = await res.json();
+    const src = JSON.parse(fs.readFileSync(path.join(dir, 'workflow.json'), 'utf8'));
+    src.id = out.id;
+    fs.writeFileSync(path.join(dir, 'workflow.json'), JSON.stringify(src, null, 2) + '\n');
+    console.log(`created: ${out.name} (${out.id}), id written back to workflow.json`);
+    console.log('NOTE: new workflow is INACTIVE. Activate it and attach HTTP-node credentials in the UI.');
+    return;
+  }
   const res = await fetch(`${BASE}/api/v1/workflows/${doc.id}`, {
     method: 'PUT',
     headers: { 'X-N8N-API-KEY': apiKey(), 'Content-Type': 'application/json' },

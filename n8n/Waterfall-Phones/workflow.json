@@ -1,0 +1,1269 @@
+{
+  "name": "Waterfall Phones",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waterfall-phones",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wp-webhook-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Params.js"
+      },
+      "id": "wp-params-0002",
+      "name": "Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ $json._invalid ? 'bad' : 'ok' }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-valid-0003",
+      "name": "Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rm1",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "record",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-recmode-0004",
+      "name": "Record Mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.tableId }}"
+        },
+        "id": "={{ $('Params').first().json.recordId }}",
+        "options": {}
+      },
+      "id": "wp-fetchrow-0005",
+      "name": "Fetch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -192
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Person.js"
+      },
+      "id": "wp-person-0006",
+      "name": "Person",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Prep.js"
+      },
+      "id": "wp-sqprep-0007",
+      "name": "SQ Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sq1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-callsq-0008",
+      "name": "Call SQ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.supersoniq.app/mcp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('SQ Prep').first().json.callBody }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "wp-sqresolve-0009",
+      "name": "SQ Resolve",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        -192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Supersoniq MCP over HTTP (tools/call enrich_companies, naked tier, has_phone filter). Attach the \"supersoniq\" Header Auth credential manually; if the MCP rejects it (-32001), it needs Authorization: Bearer <key> in a separate credential."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Pick.js"
+      },
+      "id": "wp-sqpick-0010",
+      "name": "SQ Pick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sqp1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-callsqp-0011",
+      "name": "Call SQ Phone?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.supersoniq.app/mcp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('SQ Pick').first().json.callBody }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "wp-sqphone-0012",
+      "name": "SQ Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2420,
+        -288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Supersoniq MCP enrich_phone by contact_id. 10 credits (25 specialty) ONLY when a phone is on file."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Parse.js"
+      },
+      "id": "wp-sqparse-0013",
+      "name": "SQ Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Prep.js"
+      },
+      "id": "wp-arkprep-0014",
+      "name": "Ark Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ark1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-callark-0015",
+      "name": "Call Ark?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3080,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ai-ark.com/api/developer-portal/v2/people/mobile-phone-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Ark Prep').first().json.callBody }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "wp-arkfind-0016",
+      "name": "AI-Ark Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3300,
+        -192
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "AI-Ark v2 mobile-phone-finder (Clay-compatible: 200 on miss). 5 credits per found number. Attach the \"AI Ark\" Header Auth credential manually (header X-TOKEN)."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Parse.js"
+      },
+      "id": "wp-arkparse-0017",
+      "name": "Ark Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/LM-Prep.js"
+      },
+      "id": "wp-lmprep-0018",
+      "name": "LM Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lm1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-calllm-0019",
+      "name": "Call LM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3960,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.leadmagic.io/v1/people/mobile-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('LM Prep').first().json.callBody }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "wp-lmfind-0020",
+      "name": "LeadMagic Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4180,
+        -192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oMWq3aRIRMhIkSur",
+          "name": "Lead Magic"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "LeadMagic mobile-finder by work email. Out-of-credits (402) is classified as a skip, never an error. Attach the \"Lead Magic\" credential manually."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/LM-Parse.js"
+      },
+      "id": "wp-lmparse-0021",
+      "name": "LM Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prospeo-Prep.js"
+      },
+      "id": "wp-prprep-0022",
+      "name": "Prospeo Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pr1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-callpr-0023",
+      "name": "Call Prospeo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.prospeo.io/enrich-person",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Prospeo Prep').first().json.callBody }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "wp-prfind-0024",
+      "name": "Prospeo Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5060,
+        -192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uFPdaX8JAe5KLQdL",
+          "name": "Prospeo"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Prospeo enrich-person with enrich_mobile. 10 credits per mobile FOUND, free on NO_MATCH. Attach the \"Prospeo\" credential manually."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prospeo-Parse.js"
+      },
+      "id": "wp-prparse-0025",
+      "name": "Prospeo Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5280,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Finalize.js"
+      },
+      "id": "wp-final-0026",
+      "name": "Finalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "wb1",
+              "leftValue": "={{ $json._writeback ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-wb-0027",
+      "name": "Writeback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Field-List.js"
+      },
+      "id": "wp-fieldlist-0028",
+      "name": "Field List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5940,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.baseId }}/tables/{{ $('Params').first().json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.def }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "wp-createfield-0029",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        6160,
+        -96
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Once.js"
+      },
+      "id": "wp-once-0030",
+      "name": "Once",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6380,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "wp-writerow-0031",
+      "name": "Write Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6600,
+        -96
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Finalize').first().json.result }}",
+        "options": {}
+      },
+      "id": "wp-respond-0032",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        6820,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "wp-buildlog-0033",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "wp-logrun-0034",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7260,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Params": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Record Mode?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Mode?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Row": {
+      "main": [
+        [
+          {
+            "node": "Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Person": {
+      "main": [
+        [
+          {
+            "node": "SQ Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Prep": {
+      "main": [
+        [
+          {
+            "node": "Call SQ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call SQ?": {
+      "main": [
+        [
+          {
+            "node": "SQ Resolve",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ark Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Resolve": {
+      "main": [
+        [
+          {
+            "node": "SQ Pick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Pick": {
+      "main": [
+        [
+          {
+            "node": "Call SQ Phone?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call SQ Phone?": {
+      "main": [
+        [
+          {
+            "node": "SQ Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ark Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Phone": {
+      "main": [
+        [
+          {
+            "node": "SQ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Parse": {
+      "main": [
+        [
+          {
+            "node": "Ark Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Prep": {
+      "main": [
+        [
+          {
+            "node": "Call Ark?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Ark?": {
+      "main": [
+        [
+          {
+            "node": "AI-Ark Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LM Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-Ark Finder": {
+      "main": [
+        [
+          {
+            "node": "Ark Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Parse": {
+      "main": [
+        [
+          {
+            "node": "LM Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LM Prep": {
+      "main": [
+        [
+          {
+            "node": "Call LM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call LM?": {
+      "main": [
+        [
+          {
+            "node": "LeadMagic Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prospeo Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LeadMagic Finder": {
+      "main": [
+        [
+          {
+            "node": "LM Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LM Parse": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Prep": {
+      "main": [
+        [
+          {
+            "node": "Call Prospeo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Prospeo?": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Finder": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Parse": {
+      "main": [
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize": {
+      "main": [
+        [
+          {
+            "node": "Writeback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writeback?": {
+      "main": [
+        [
+          {
+            "node": "Field List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Field List": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Field": {
+      "main": [
+        [
+          {
+            "node": "Once",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Once": {
+      "main": [
+        [
+          {
+            "node": "Write Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Row": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "id": "HTNr5G6vBVkbxsqF"
+}

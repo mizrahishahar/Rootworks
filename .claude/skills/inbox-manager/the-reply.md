@@ -8,6 +8,10 @@ The reply is built from three things and nothing else: **what he actually wrote,
 
 Read the card and the thread until you can say in one line what he wants and why he replied to THIS angle. That line decides what the fulfillment block contains, which proof is relevant, and what gets left out. Most of the craft is the leaving out.
 
+**When the yes is explicitly to a call, get out of the way.** "Let us chat", "sure, send times", "happy to talk": he already decided, and the thing he said yes to is the call itself, so there is nothing left to fulfill by text. The reply is a warm acknowledgment, the times, one next-step line, the link. Nothing else. Every paragraph of value or mechanism added after his yes is selling past the close: it adds friction to a decision already made and hands him a fresh reason to un-decide. The mechanism he would have gotten in writing, he now gets on the call.
+
+**This applies ONLY to an explicit yes to a call.** A yes to more info, to a video, to an asset ("sure, send it over", "happy to see more") is the opposite case: he asked for fulfillment, and the full reply shape runs, fulfillment as the body, proof, then the call. Read which yes it is before deciding which reply it gets.
+
 ## The commandments
 
 - Do not say what does not need to be said.
@@ -17,7 +21,17 @@ Read the card and the thread until you can say in one line what he wants and why
 
 ## The shape
 
-Short paragraphs, **two to three lines each, a blank line between every one.** Never a wall. The first reply is always roughly the same size, whatever it contains:
+Short paragraphs, **two to three lines each, a blank line between every one.** Never a wall. And the line breaks are not style, they are the law, every message, every time:
+
+- The opening words ("Happy to, Ravi.", "Here's the walkthrough, John.") stand on their own line, blank line after.
+- Every body paragraph separated by a blank line.
+- The times question is its own paragraph.
+- The link line is its own paragraph.
+- The sign-off on its own line.
+
+A message that renders as one big block failed before a word of it was read.
+
+The first reply is always roughly the same size, whatever it contains:
 
 1. **The fulfillment block.** Most of the reply. What he asked for, delivered in full, attached to the outcome in the same breath: the thing he wants IS the outcome getting closer. One to two paragraphs. Inside it lives the mechanism giveaway (below).
 2. **The proof block.** One paragraph, two to three lines max. Proof relevant to THIS outcome and THIS angle, never the biggest logo we have. If the fulfillment already carried the proof, this block does not exist.

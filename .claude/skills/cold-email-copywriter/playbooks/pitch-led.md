@@ -79,16 +79,6 @@ At least two.
 
 > {a new angle, or a second case study} {a lighter re-ask}
 
-**Disarmed follow-up**
-
-> {the out: might be off here, ignore if so}
->
-> {a neutral question about who owns or how they handle {{pain}}}
-
-**No-urgency follow-up**
-
-> No urgency, but if you're ever looking to {the specific outcome}, could always show you what we did for {{case_study}}.
-
 ## Examples
 
 ### Touch 1, by opener
@@ -125,18 +115,3 @@ At least two.
 >
 > Open to a quick look?
 
-### Follow-ups
-
-**Disarmed:**
-
-> Might be off base here, but curious, when something breaks on the infra side, who actually ends up owning the fix over there?
-
-**Disarmed, with one light proof:**
-
-> No stress if this isn't a priority.
->
-> The reason I asked, most teams your size end up with a developer quietly owning infra until it becomes a problem. Happy to share how a couple of them handed it off, if useful.
-
-**No urgency:**
-
-> No urgency at all, but if you ever want to add 15 to 20 qualified calls a month without hiring an SDR, could always show you exactly what we built for {{case_study}}.

@@ -66,9 +66,11 @@ Two touches.
 >
 > Thought there could be an opportunity for a referral partnership, happy to set up a few intros?
 
-**Touch 2** - the follow-up, body only, threads under Touch 1
+**Touch 2** - the follow-up, body only, threads under Touch 1. Excuse-led per the house doctrine: the excuse is a partner result or the incentive spelled out, then the partnership ask again, lighter.
 
-> {a partner result, or the incentive again} {a lighter re-ask}
+> {the excuse: a partner result, or the incentive spelled out}
+>
+> {the partnership repeated in one line} {a lighter re-ask}
 
 ## Examples
 

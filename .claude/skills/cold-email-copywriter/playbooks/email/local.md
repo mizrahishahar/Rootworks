@@ -45,9 +45,11 @@ Two touches.
 >
 > {the CTA}
 
-**Touch 2** - the follow-up, body only, threads under Touch 1
+**Touch 2** - the follow-up, body only, threads under Touch 1. Excuse-led per the house doctrine: the excuse here is a second local proof or a neighborly nudge, then the offer repeated plainly and a lighter re-ask.
 
-> {a second local proof, or a nudge} {a lighter re-ask}
+> {the excuse: a second local proof, or a nudge}
+>
+> {the offer repeated plainly} {a lighter re-ask}
 
 ## Examples
 

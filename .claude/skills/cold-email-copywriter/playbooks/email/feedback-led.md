@@ -40,7 +40,7 @@ Small and personal, carrying no pitch at all. Two to four words, lowercase, the 
 Two, three at most.
 
 - **Touch 1** - the build and the feedback ask. 2 variants, with and without the authority line about us.
-- **Touch 2** - one lever, and the same ask softened. 2 variants.
+- **Touch 2** - excuse-led per the house doctrine: opens on the excuse ("FYI, I'm only asking..."), gives one lever (a concrete detail, who already runs it, or what makes them one of the few being asked), repeats the strongest line, then the same ask softened. 2 variants.
 
 ## Template
 

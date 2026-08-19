@@ -39,7 +39,7 @@ Two, three at most.
 
 - **Touch 1** - what the asset is, and the ask to send it. 2 to 4 variants.
 - **On reply** - the asset delivered, link alone.
-- **Touch 2** - one lever, and the same ask softened, for those who never answered. 2 variants.
+- **Touch 2** - for those who never answered, excuse-led per the house doctrine: opens on the excuse ("worth saying plainly", "FYI"), gives one lever (the outcome named plainly, the asset made smaller, or what makes them eligible), then the same ask softened. 2 variants.
 
 ## Template
 

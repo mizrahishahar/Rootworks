@@ -37,7 +37,7 @@ Two to four words, lowercase, the way an internal note reads. No marketing langu
 Two, three at most.
 
 - **Touch 1** - the free offer, spelled out. 2 to 4 variants.
-- **Touch 2** - one lever, and the same ask softened. 2 variants.
+- **Touch 2** - excuse-led per the house doctrine: opens on the excuse ("FYI", "Worth saying"), gives one lever (the offer standing alone, a different variable of the value equation, or what makes them eligible), then the same ask softened. 2 variants.
 
 ## Template
 

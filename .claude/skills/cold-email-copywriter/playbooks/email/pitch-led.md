@@ -29,12 +29,13 @@ Where the variation lives, and there is a lot of it. Pick on what we actually ho
 
 ### The follow-ups
 
-Two touches minimum, and the follow-up is where the pressure comes off. Each one comes at the same offer from somewhere new.
+Two by default, excuse-led, per the house doctrine in `writing-rules.md`: assume they missed the first email, open with the excuse ("FYI", "Worth sharing", "One more thing"), give the new piece, then repeat the main outcome and re-ask. Shorter than the email before. The excuses this playbook naturally produces:
 
-- **A different angle.** The same argument approached from another direction. Never a restatement, and never a re-introduction.
-- **A different case study.** A second proof, matched on a different axis than the first: size instead of trade, or outcome instead of niche.
-- **Disarmed.** Lower the stakes before raising anything: "might be off here, ignore if so", then one neutral question that makes them reflect on the status quo instead of a claim they have to accept. Strong this late, because a straight re-ask reads as chasing.
-- **No urgency.** Take the timeline off the table out loud and leave the offer sitting there. "No urgency, but if you're ever looking to {outcome}, could always show you what we did for {{case_study}}." Good as a last touch, because it leaves the door open instead of closing it.
+- **A second case study.** A second proof, matched on a different axis than the first: size instead of trade, or outcome instead of niche. The proof is the excuse; the outcome and ask repeat behind it.
+- **A held-back detail.** A concrete piece of the offer or mechanism the first email did not spend: how fast it goes live, what it costs against the alternative, who it is restricted to.
+- **A true deadline or honest scarcity.** A season, a capacity limit, a range we actually restrict to. Only where it is real.
+
+For a final touch after the two, the pressure can come off entirely: **disarmed** ("might be off here, ignore if so", then one neutral question about the status quo) or **no urgency** ("no urgency, but if you're ever looking to {outcome}, could always show you what we did for {{case_study}}"). Both leave the door open instead of closing it.
 
 ## Needs
 
@@ -58,8 +59,8 @@ Simple and internal, the kind a colleague sends. Mix natural and outcome.
 At least two.
 
 - **Touch 1** - the pitch. 2 to 4 variants, depending on the size of the list. The variants differ by opener.
-- **Touch 2** - the follow-up: a different angle, or a different case study. 2 variants.
-- **Touch 3 and on** - a further angle, or the ask taken off entirely: disarmed, or no urgency.
+- **Touch 2** - the excuse-led follow-up: a second proof or a held-back detail, then the outcome and the ask again. 2 variants.
+- **Touch 3** - a second excuse, or the ask taken off entirely: disarmed, or no urgency.
 
 ## Template
 
@@ -77,7 +78,9 @@ At least two.
 
 **Touch 2 and on** - body only, threads under Touch 1
 
-> {a new angle, or a second case study} {a lighter re-ask}
+> {the excuse opener: FYI / Worth sharing / One more thing, carrying the new piece}
+>
+> {the main outcome, repeated in fresh words} {the re-ask}
 
 ## Examples
 

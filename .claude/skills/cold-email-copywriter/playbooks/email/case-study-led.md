@@ -19,7 +19,7 @@ Tell them what happened to someone like them, then ask if they want to know how.
 - **Point at the lever, do not hand it over.** One line on what actually changed ("most of it came from fixing how the office handles leads, not the moves themselves"). Enough to make it feel real, not enough to make the ask unnecessary.
 - **The ask is the artifact, never a call.** The breakdown, the write-up, an intro to the owner. They are saying yes to curiosity about a peer, not to a meeting.
 - **The named owner is the strongest lever.** Naming the person and offering the intro turns curiosity into a relationship, and it is the split worth running against a no-name breakdown ask.
-- **Follow-ups escalate the same story.** Not a new angle: the next number from the same case. One story deepening beats three stories competing.
+- **Follow-ups escalate the same story.** Excuse-led per the house doctrine, and here the excuse is always the next number from the same case: "Turns out the same fix...", "One more on this...". One story deepening beats three stories competing, and the artifact gets offered again, lighter, every time.
 - **No greeting where there is no name.** These land in role inboxes as often as personal ones, and opening straight on the result reads stronger than a greeting addressed to nobody.
 
 ## Needs

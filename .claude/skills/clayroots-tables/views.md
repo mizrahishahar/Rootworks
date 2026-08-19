@@ -36,16 +36,4 @@ A view built from this craft is correct before it is handed over: every filter v
 - **Never treat a clean count as proof.** The spot-check exists because a count can be exactly wrong.
 - **Reuse a verified layer's count** instead of re-querying it out of habit.
 
-## Building a reconcilable segment set
-
-A set closes by construction, not by luck:
-
-- One lane carries the positive test; the last carries its exact negation.
-- The final bucket on a splitting axis is a **catch-all** (`is not 0 AND is not 1`, never an enumerated `2-3, 4+`), so a value nobody anticipated, or a blank, still lands somewhere.
-- **The same field list in both directions.** Two lists that are merely similar produce orphans: rows that pass the parent on a token the segments do not recognise, land nowhere, and are never sent. Three hid in a 662-row feed until the sum was checked.
-
-When a set does not close, the gap is nearly always one of three things: a segment gated on a field the parent does not gate on, a bucket that excluded blanks, or two lists that were supposed to be one list.
-
-## Naming deploy views
-
-`{YYYY-MM-DD} {A|B|C} - {Segment descriptor}`: the build date, a letter, and a descriptor matching the campaign it feeds. Every deploy view carries the date; an undated one reads as standing infrastructure when it is one build's deploy unit. A gateway slice suffixes ` - Gateway`, always last.
+Deploy views, the prioritized cascade they form, their naming, and their reconciliation craft live in `deploy-views.md`; the counting and verification methods above are what that file's arithmetic runs on.

@@ -8,14 +8,13 @@ Name the table back: base, table, table id, row count, and **channel**, which th
 
 ## Constant fields, created through the API with descriptions
 
-| Field | Type | Why |
-|---|---|---|
-| `relevance` | checkbox (formula-backed) | The verdict. Views filter on this, never on Title keywords |
-| `manually_approved` | checkbox | The rescue lane. Only ever WIDENS Relevant |
-| `Tag` | text | Build provenance, stamped at launch. The pin for per-build views |
-| `Deploy Error` | text | Written by the deploy machine only |
+| Field               | Type                      | Why                                                              |
+| ------------------- | ------------------------- | ---------------------------------------------------------------- |
+| `relevance`         | checkbox (formula-backed) | The verdict. Views filter on this, never on Title keywords       |
+| `manually_approved` | checkbox                  | The rescue lane. Only ever WIDENS Relevant                       |
+| `Tag`               | text                      | Build provenance, stamped at launch. The pin for per-build views |
 
-Both checkboxes exist on purpose: `relevance` is what the rule computes and a rule change overwrites; `manually_approved` is the Operator's hand and survives it.
+Both checkboxes exist on purpose: `relevance` is what the rule computes and a rule change overwrites; `manually_approved` is the Operator's hand and survives it. The many machine-written fields (the waterfall lane, campaign fields, deploy receipts) are not setup's job: their writers create and own them, and setup only needs to not fight them.
 
 ## The standing chain
 

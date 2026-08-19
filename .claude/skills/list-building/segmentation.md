@@ -56,15 +56,19 @@ The drive is maximum specificity; the brake is volume. The grid of company axis 
 
 Variants live inside a campaign to test angles against the same audience. Different copy to a different audience is a different campaign, never a variant; reaching for variants when you have two audiences quietly corrupts the read on what works.
 
+## Priority: the second judgment of the set
+
+Segments overlap in reality even when their reasons are clean: one lead can qualify for two, and a lead qualifying for none still has to deploy somewhere. So every segment set carries a second judgment beside the split itself: **the priority order**. Which campaign deserves a lead that qualifies for two is a call about the offer and the angle (the sharper, more specific argument usually wins the lead), made with the Operator, never defaulted. The set then deploys as a prioritized cascade with a catch-all at the bottom, so every relevant lead lands in exactly one campaign and none land in zero. Expressing that cascade as views is table craft; deciding the order is this skill's job.
+
 ## How to show it
 
-A proposed segment set is one real markdown table (never inside a code fence), one row per segment, with the reason column carrying the sentence that justifies the split:
+A proposed segment set is one real markdown table (never inside a code fence), rows in priority order, the reason column carrying the sentence that justifies the split:
 
-| Segment | Axis | The reason (what the copy can now say) | Est. size | Gateway slice |
-|---|---|---|---|---|
+| Priority | Segment | Axis | The reason (what the copy can now say) | Est. size | Gateway slice |
+|---|---|---|---|---|---|
 
-Under it, two labeled lines: **Folded:** the slices deliberately merged and why. **Open:** anything waiting on the Operator's call. The exact-filter expression per segment comes after approval, in the table craft's hand-over format.
+Under it, three labeled lines: **Overlaps:** where segments can collide and who wins the lead. **Folded:** the slices deliberately merged and why. **Open:** anything waiting on the Operator's call.
 
 ## What a segment set becomes
 
-A segment is real only once it is expressed as exact filters a view can hold, every segment's count summing to its parent precisely; that expression and its verification are table craft. Never create a field just to segment on: when the split you want has no field to express it, either raise the missing variable as a genuine gap (see `enrichment.md`) or let the rows classify themselves through an AI field, and then a plain filter does the rest.
+The set's final form in the base is views: a prioritized cascade of deploy views plus the aggregate they sum to, a joint job with the table craft, which owns the exact filters, the counting, and the reconciliation. A segment is real only once its view holds an exact filter and the set sums to its parent precisely. Never create a field just to segment on: when the split you want has no field to express it, either raise the missing variable as a genuine gap (see `enrichment.md`) or let the rows classify themselves through an AI field, and then a plain filter does the rest.

@@ -8,7 +8,7 @@ Every pull carries everyone the query could plausibly return; this is the judgme
 
 - **Title** against the offer buyer: economic buyer, champion, or noise.
 - **Company size.** At firms under ~10 employees, keep both contacts when the second title is not entry-level; both are plausibly decision-makers there. At larger firms, hold to the buyer persona.
-- **Relevance.** Does this person, and the company they sit in, plausibly own or influence the problem the offer solves? Title alone misses company-level noise: a perfect title at the wrong kind of company (wrong industry, wrong business model) is still not relevant, and needs a company-level condition alongside the title one.
+- **Relevance.** Does this person, and the company they sit in, plausibly own or influence the problem the offer solves? Title alone misses company-level noise: a perfect title at the wrong kind of company (wrong industry, wrong business model) is still not relevant, and needs a company-level condition alongside the title one. More rare, since we try to avoid it beforehand with company-level qualifciation.
 
 ## Overshoot, then cut cheaply
 

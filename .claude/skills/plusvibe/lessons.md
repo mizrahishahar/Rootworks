@@ -1,6 +1,6 @@
-Teaches: how to operate the sender through its MCP, and the traps already paid for.
+Teaches: the MCP surface by job, and the lessons already paid for.
 
-# Operating the platform
+# The MCP, and the lessons
 
 ## Actions (MCP)
 

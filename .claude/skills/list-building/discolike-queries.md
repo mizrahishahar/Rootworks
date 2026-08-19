@@ -1,25 +1,25 @@
-Teaches: shaping a DiscoLike pull. The ICP description as the semantic instrument, the structured filters as the precision instrument, and how the variance read sizes a TAM.
+Teaches: writing the detailed ICP paragraph for a DiscoLike pull, the one deliverable the DiscoLike builder turns into company filters.
 
-# DiscoLike queries
+# The DiscoLike ICP paragraph
 
-Company data always comes from DiscoLike; contacts never do. A pull is shaped by two instruments working together, and knowing which one owns what is most of the craft.
+DiscoLike is where a scoped list becomes companies: it searches a crawl of company websites semantically, using a prose ICP description. For each list scoping produced, the deliverable here is **one detailed ICP paragraph**, pasted into the DiscoLike builder, which reads it and proposes the structured company filters (industry, size, geography, business model). That is the whole flow: paragraph in, filters out, Operator reviews the filters in the builder.
 
-## The description is the semantic instrument
+## Writing the paragraph
 
-`discover-similar-companies` runs a semantic vector search over crawled website content. Inside whatever fence the filters draw, the prose decides what comes back and in what order.
+The paragraph describes the companies on this one list, in full sentences, dense with concrete detail. It comes from the scoping sentence, expanded: the client's offer, who the buyer companies are, what they sell, how they operate, what size and market they are in. Ground every claim in the brief and the client's KB, not in category imagination.
 
-So write the ICP description against **what a crawler can see on the site**, not against abstract business qualities. "Companies with strong engineering culture" matches nothing. "A pricing page with usage-based tiers, developer documentation, a status page, and job listings for platform engineers" matches something. Every sentence of the description should name observable evidence: pages, sections, product types, language on the site.
+What makes one paragraph strong:
 
-## Precision lives in the structured filters, not the prose
+- **Describe what these companies visibly ARE and DO**, because the search reads websites: what they sell, to whom, on what model, in which market. "DTC e-commerce brands selling apparel and footwear on Shopify to UK consumers, running their own webstore and customer service" gives the search something to hold. "Innovative customer-centric brands" gives it nothing.
+- **Name the observable markers** when the ICP has them: the platform they run on, the product types on their site, the kind of pages such a company has (a careers page hiring platform engineers, developer docs, a store locator). These are the details that separate the right company from its neighbor.
+- **Include the edges**: what disqualifies (resellers, agencies, marketplaces, enterprises) written as plain sentences, so the builder can fence them out in filters.
+- **One paragraph per list**, matching scoping's one-centre law. Two audiences means two paragraphs, two pulls.
 
-When a pull comes back polluted, the fix is the structured filters (Industry Group, Business Model, Digital Footprint, employee and revenue bands, geography), not another rewrite of the ICP prose. The prose ranks; the filters fence. Tuning the prose to exclude a company type the filters could fence out is fighting the wrong instrument.
+## Reading what comes back
 
-## Read the results honestly
-
-- **The Count is meaningless.** The number a query claims it matched is not a TAM read and never quoted as one.
-- **The variance auto-stop is the TAM read.** The pull walks the ranked list until similarity variance says the centre is exhausted; where it stops is what the market actually holds for this centre. A pull that stops early is information: the centre is thin, and the move is a second centre or a wider fence, not a re-run.
-- Seeds shape the centre: the best seed set is a handful of clients or closed-won lookalikes, not the biggest names in the category.
+- The Count a query claims is meaningless; never quote it as a TAM.
+- The variance auto-stop is the real TAM read: where the ranked list stops is what the market holds for this centre. A pull that stops early is information, and the move is a second centre or a wider fence, not a re-run of the same paragraph.
 
 ## How to show it
 
-The deliverable is one paste-ready block per list: the ICP description as a blockquote, then the structured filters as labeled lines (one per filter, exact values), then **Seeds:** the seed domains. Where a filter is deliberately left open, say so on its line rather than omitting it.
+One block per list, paste-ready: the list's name as a heading, the ICP paragraph as a blockquote, and under it any disqualifiers or markers worth the Operator's eye as short labeled lines. Nothing else.

@@ -35,12 +35,30 @@ Every campaign on the sender has exactly one row in the Hub Campaigns table, mat
 - `Campaign` = the same name · `Campaign ID` = the sender's id · `Sequencer` = PlusVibe · `Channel` = email · `Client` = the registry link.
 - `Campaign Copy` = the sequence as a client would read it. **This field is client-facing.** No mechanics, no status notes, no inbox counts, spintax stripped (base options rendered).
 
-The Campaign Copy field is written in the copywriter's rendering, exactly:
+The field is written in the copywriter's rendering, exactly this shape (real tokens, shared bodies written once, Hebrew as it ships, RTL):
 
-- `### Email 1` as the heading per touch, `---` between touches, never between variants.
-- Variant line: `**Variant A**  ·  _qualifier_  ·  _Subject:_ the subject`, then the body as a blockquote. Follow-up touches note the threading and wait on an italic line (`_Threaded, +2 days_`).
-- Where variants share a body, the variant lines stack above the one body; a body is never printed twice.
-- Placeholders stay as the real tokens the leads carry (`{{first_name}}`, `{{company_name}}`). Hebrew bodies as they ship, RTL.
+```
+### Email 1
+
+**Variant A**  ·  _the qualifier_  ·  _Subject:_ net revenue at {{company_name}}
+
+> Hey {{first_name}},
+>
+> the body.
+
+**Variant B**  ·  _body B_  ·  _Subject:_ {{company_name}} online reputation
+**Variant C**  ·  _body B_  ·  _Subject:_ question about {{company_name}}
+
+> the body, once.
+
+---
+
+### Email 2
+
+_Threaded, +2 days_
+
+> the body.
+```
 
 ## Leads
 

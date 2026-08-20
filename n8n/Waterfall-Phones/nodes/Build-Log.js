@@ -17,7 +17,7 @@ const found = !!res.phone;
 const lines = [
   '**' + target + ' · ' + (found ? res.phone + ' (' + res.phone_source + ')' : 'no phone found') + '**',
   '',
-  '- **Row:** ' + (P.hub ? 'Hub Contacts' : 'ClayRoots') + ' ' + P.tableId + ' / ' + P.recordId,
+  '- **Contact:** ' + P.recordId,
   '- **Tiers tried:** ' + ((acc.tried || []).join(', ') || 'none'),
   '- **Result:** ' + (found ? res.phone + ' via ' + res.phone_source : 'none') + (F._writeback ? (wrote ? ' · written to row' : ' · WRITEBACK FAILED') : ''),
 ];

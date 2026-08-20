@@ -1,6 +1,200 @@
 {
   "name": "Waterfall Phones",
+  "id": "HTNr5G6vBVkbxsqF",
   "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-waterfall-phones",
+        "options": {},
+        "responseMode": "responseNode"
+      },
+      "id": "wp-launchhook-0040",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        480
+      ],
+      "webhookId": "c1d2e3f4-a5b6-47c8-89d0-1e2f3a4b5c6d"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "wp-fetchlaunch-0041",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        480
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "wp-launchparams-0043",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json._launchRecordId }}",
+            "Status": "Running",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "wp-stamprunning-0044",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        480
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rd1",
+              "leftValue": "={{ $('Launch Params').first().json._invalid ? 'bad' : 'ok' }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wp-ready-0054",
+      "name": "Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        480
+      ],
+      "notes": "Contact and Client are both required. A launch row missing either never spends a call; it goes straight to the log with the reason."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Launch-Log.js"
+      },
+      "id": "wp-buildlaunchlog-0050",
+      "name": "Build Launch Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7392,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "wp-updatelaunch-0051",
+      "name": "Update Launch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7616,
+        -176
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
     {
       "parameters": {
         "httpMethod": "POST",
@@ -15,7 +209,8 @@
       "position": [
         0,
         0
-      ]
+      ],
+      "webhookId": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
     },
     {
       "parameters": {
@@ -26,7 +221,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
+        224,
         0
       ]
     },
@@ -59,7 +254,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        440,
+        448,
         0
       ]
     },
@@ -69,12 +264,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json.baseId }}"
+          "value": "appQG6dK0FIOhTxOl"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json.tableId }}"
+          "value": "tblzexq9qzO9IRiYV"
         },
         "id": "={{ $('Params').first().json.recordId }}",
         "options": {}
@@ -84,8 +279,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        880,
-        -192
+        672,
+        0
       ],
       "credentials": {
         "airtableTokenApi": {
@@ -105,8 +300,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
-        -96
+        896,
+        0
       ]
     },
     {
@@ -121,7 +316,7 @@
           "conditions": [
             {
               "id": "ht1",
-              "leftValue": "={{ ($json.hub && $json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
+              "leftValue": "={{ ($json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
               "rightValue": "yes",
               "operator": {
                 "type": "string",
@@ -134,12 +329,12 @@
         "options": {}
       },
       "id": "wp-hubthread-0035",
-      "name": "Hub Thread?",
+      "name": "Company Linked?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1160,
-        -96
+        1120,
+        0
       ]
     },
     {
@@ -148,7 +343,7 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json.baseId }}"
+          "value": "appQG6dK0FIOhTxOl"
         },
         "table": {
           "__rl": true,
@@ -163,8 +358,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1240,
-        -192
+        1344,
+        -176
       ],
       "credentials": {
         "airtableTokenApi": {
@@ -173,7 +368,8 @@
         }
       },
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "notes": "The company Prospect row carries the synced Conversation Thread, where the lead's own signature block (and its phone) survives."
     },
     {
       "parameters": {
@@ -184,8 +380,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1280,
-        -288
+        1568,
+        -176
       ]
     },
     {
@@ -197,8 +393,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
-        -96
+        1792,
+        0
       ]
     },
     {
@@ -230,8 +426,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1540,
-        -96
+        2016,
+        0
       ]
     },
     {
@@ -258,8 +454,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1760,
-        -192
+        2240,
+        -176
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -269,7 +465,7 @@
       },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true,
-      "notes": "Supersoniq REST resolve (companies/enrich, naked tier, has_phone filter) — same endpoint family and \"supersoniq\" credential as the Contagen/Storeleads builders. Max cost 2.5 credits (5 naked contacts)."
+      "notes": "Supersoniq REST resolve (companies/enrich, naked tier, has_phone filter) — same endpoint family and credential as the Contagen/Storeleads builders. Max 2.5 credits (5 naked contacts)."
     },
     {
       "parameters": {
@@ -280,8 +476,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
-        -192
+        2464,
+        -176
       ]
     },
     {
@@ -313,8 +509,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2200,
-        -192
+        2688,
+        -176
       ]
     },
     {
@@ -341,8 +537,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2420,
-        -288
+        2912,
+        -352
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -352,7 +548,7 @@
       },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true,
-      "notes": "Supersoniq REST phone unlock (/partner/v1/enrich/phone) by contact_id. 10 credits (25 specialty) ONLY when a phone is on file; 404 = clean miss."
+      "notes": "Supersoniq REST phone unlock by contact_id. 10 credits (25 specialty) ONLY when a phone is on file; 404 = clean miss."
     },
     {
       "parameters": {
@@ -363,8 +559,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
-        -288
+        3136,
+        -352
       ]
     },
     {
@@ -376,8 +572,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
-        -96
+        3360,
+        0
       ]
     },
     {
@@ -409,8 +605,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3080,
-        -96
+        3584,
+        0
       ]
     },
     {
@@ -437,12 +633,18 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        3300,
-        -192
+        3808,
+        -176
       ],
       "onError": "continueRegularOutput",
       "alwaysOutputData": true,
-      "notes": "AI-Ark v2 mobile-phone-finder (Clay-compatible: 200 on miss). 5 credits per found number. Attach the \"AI Ark\" Header Auth credential manually (header X-TOKEN)."
+      "notes": "AI-Ark v2 mobile-phone-finder (Clay-compatible: 200 on miss). 5 credits per found number, 0 on a miss.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TFaSEjm5g2RUVDCA",
+          "name": "ai-ark"
+        }
+      }
     },
     {
       "parameters": {
@@ -453,8 +655,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3520,
-        -192
+        4032,
+        -176
       ]
     },
     {
@@ -466,8 +668,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3740,
-        -96
+        4256,
+        0
       ]
     },
     {
@@ -499,8 +701,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3960,
-        -96
+        4480,
+        0
       ]
     },
     {
@@ -527,8 +729,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        4180,
-        -192
+        4704,
+        -176
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -538,7 +740,7 @@
       },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true,
-      "notes": "LeadMagic mobile-finder by work email. Out-of-credits (402) is classified as a skip, never an error. Attach the \"Lead Magic\" credential manually."
+      "notes": "LeadMagic mobile-finder by work email. Out-of-credits (402) is classified as a skip, never an error."
     },
     {
       "parameters": {
@@ -549,8 +751,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4400,
-        -192
+        4928,
+        -176
       ]
     },
     {
@@ -562,8 +764,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4620,
-        -96
+        5152,
+        0
       ]
     },
     {
@@ -595,8 +797,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4840,
-        -96
+        5376,
+        0
       ]
     },
     {
@@ -623,8 +825,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        5060,
-        -192
+        5600,
+        -176
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -634,7 +836,7 @@
       },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true,
-      "notes": "Prospeo enrich-person with enrich_mobile. 10 credits per mobile FOUND, free on NO_MATCH. Attach the \"Prospeo\" credential manually."
+      "notes": "Prospeo enrich-person with enrich_mobile. 10 credits per mobile FOUND, free on NO_MATCH."
     },
     {
       "parameters": {
@@ -645,8 +847,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5280,
-        -192
+        5824,
+        -176
       ]
     },
     {
@@ -658,7 +860,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5500,
+        6048,
         0
       ]
     },
@@ -691,93 +893,9 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5720,
+        6272,
         0
       ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "hr1",
-              "leftValue": "={{ $json.hub ? 'yes' : 'no' }}",
-              "rightValue": "yes",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "wp-hubrow-0038",
-      "name": "Hub Row?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        5840,
-        -96
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Field-List.js"
-      },
-      "id": "wp-fieldlist-0028",
-      "name": "Field List",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5940,
-        -96
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.baseId }}/tables/{{ $('Params').first().json.tableId }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.def }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 200
-            }
-          },
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "wp-createfield-0029",
-      "name": "Create Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        6160,
-        -96
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
     },
     {
       "parameters": {
@@ -788,8 +906,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6380,
-        -96
+        6496,
+        -176
       ]
     },
     {
@@ -798,12 +916,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json.baseId }}"
+          "value": "appQG6dK0FIOhTxOl"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json.tableId }}"
+          "value": "tblzexq9qzO9IRiYV"
         },
         "columns": {
           "mappingMode": "autoMapInputData",
@@ -822,8 +940,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        6600,
-        -96
+        6720,
+        -176
       ],
       "credentials": {
         "airtableTokenApi": {
@@ -843,8 +961,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        6820,
-        0
+        7392,
+        96
       ]
     },
     {
@@ -856,8 +974,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7040,
-        0
+        7616,
+        96
       ]
     },
     {
@@ -890,8 +1008,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        7260,
-        0
+        7840,
+        96
       ],
       "credentials": {
         "airtableTokenApi": {
@@ -899,9 +1017,131 @@
           "name": "Airtable"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lr1",
+              "leftValue": "={{ $('Params').first().json.mode === 'launch' ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "wp-launchrun-0055",
+      "name": "Launch Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7168,
+        0
+      ],
+      "notes": "Same execution, two exits: a launch run updates its launch row; a caller run answers the webhook and writes its own log row."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: $('Build Launch Log').first().json.Errors === 0, status: $('Build Launch Log').first().json.Status, target: $('Build Launch Log').first().json.Target } }}",
+        "options": {}
+      },
+      "id": "wp-launchrespond-0056",
+      "name": "Launch Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        7840,
+        -176
+      ],
+      "notes": "Closes the launch webhook. The launch row already carries the full verdict; this is just the acknowledgement."
     }
   ],
   "connections": {
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready?": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Launch Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Launch Log": {
+      "main": [
+        [
+          {
+            "node": "Update Launch Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook": {
       "main": [
         [
@@ -957,14 +1197,14 @@
       "main": [
         [
           {
-            "node": "Hub Thread?",
+            "node": "Company Linked?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Hub Thread?": {
+    "Company Linked?": {
       "main": [
         [
           {
@@ -1263,24 +1503,6 @@
       "main": [
         [
           {
-            "node": "Hub Row?",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Respond",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Hub Row?": {
-      "main": [
-        [
-          {
             "node": "Once",
             "type": "main",
             "index": 0
@@ -1288,29 +1510,7 @@
         ],
         [
           {
-            "node": "Field List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Field List": {
-      "main": [
-        [
-          {
-            "node": "Create Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Field": {
-      "main": [
-        [
-          {
-            "node": "Once",
+            "node": "Launch Run?",
             "type": "main",
             "index": 0
           }
@@ -1332,7 +1532,7 @@
       "main": [
         [
           {
-            "node": "Respond",
+            "node": "Launch Run?",
             "type": "main",
             "index": 0
           }
@@ -1360,11 +1560,39 @@
           }
         ]
       ]
+    },
+    "Launch Run?": {
+      "main": [
+        [
+          {
+            "node": "Build Launch Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Launch Row": {
+      "main": [
+        [
+          {
+            "node": "Launch Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
     "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
-  },
-  "id": "HTNr5G6vBVkbxsqF"
+  }
 }

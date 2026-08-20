@@ -59,7 +59,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
 | Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
 | Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
-| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, inbox-manager-prompt, linkedin-setter-prompt, Inbox-Agent-Prompt |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, email-routine-prompt, linkedin-routine-prompt, Inbox-Agent-Prompt |
 | Link | `fldZn42JeTlp3amOV` | url | For asset rows: the live URL we actually send (case study page, calculator, video). Content holds the full text behind the link so sessions can read what the prospect will see without fetching. |
 | Creation Date | `fldq4gggdIbzlGYIW` | createdTime |  |
 
@@ -107,7 +107,8 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Follow-ups | `fld9TuOQLLS2SN7BI` | multipleRecordLinks |  |
 | Niche Company | `fldvtTaBFg0P9GjbG` | singleLineText |  |
 | Twitter | `flduIgh2eUljbofZF` | url |  |
-| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none |
+| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none, ai-ark |
+| Automations | `fld1HbJ64M0T6YRtR` | multipleRecordLinks |  |
 
 ## Meetings (`tblAo6SfTPTOJrnbX`)
 
@@ -141,7 +142,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -184,6 +185,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Category | `fldkiuShAJ6dfMXTu` | singleLineText | Storeleads Domains -> Clayroots launch filter: comma-separated exact Storeleads category paths (e.g. /Apparel/Athletic Apparel). Matches ANY listed (f:cat, OR). Blank = no category filter. |
 | Technologies | `fldQLWkqMbSFbJVfs` | singleLineText | Storeleads Domains -> Clayroots launch filter: comma-separated exact Storeleads technology names (e.g. Klaviyo). Store must have ALL listed (f:tech, AND). Blank = no tech filter. |
 | Domains Table ID | `fldWbRURgHGNpyzHL` | singleLineText | AI-Ark Export -> Clayroots only. The client's Domains table id (tblXXX) - company data source of truth for this run. Must contain 'domains' in the table name or the run refuses. |
+| Contact | `fldnJWucAHpx2PgV6` | multipleRecordLinks | Waterfall Phones launch parameter. Set it to run the waterfall on ONE contact instead of sweeping a table: the launch leg fires just this row and ignores Table ID / View / Max Rows. Leave empty for a normal sweep. |
 
 ## Sessions (`tbl3c80o7QlZ4VByU`)
 
@@ -250,7 +252,7 @@ Define all recurring expenses and incomes for automatic transaction creation.
 | Client | `fldKDqiYJYTSbBR9g` | multipleRecordLinks |  |
 | Qualification Brief | `fldip2HZKwMc4B5l7` | richText |  |
 | domain | `fld0Lhd3IIxQe5o1P` | formula |  |
-| OutreachStatus | `flduFHhXf6OuAteak` | singleSelect | Choices: Positive Reply, Disqualified, Scheduled Call, No Show, Call Completed, Lost |
+| OutreachStatus | `flduFHhXf6OuAteak` | singleSelect | Choices: Positive Reply, Disqualified, Holding, Scheduled Call, No Show, Call Completed, Lost |
 | meetings | `fldORdmJ0IkCzWRaX` | multipleRecordLinks |  |
 | Messages | `fldw7qF0Gfj0ZtKgy` | multipleRecordLinks |  |
 | Contacts | `fldaF6w2c3KCzgNfH` | multipleRecordLinks |  |
@@ -289,6 +291,7 @@ Define all recurring expenses and incomes for automatic transaction creation.
 | Open in Pipeline | `fldFVpViMjQ6EIHhf` | url | Deep link into the Pipeline INTERFACE for this record, for people who have interface access only and never see the data tables. Base64 detail blob = {"pageId":"pagU8C93nMn6vPMTM","rowId":"<recordId>","showComments":false,"queryOriginHint":{"type":"pageElement","elementId":"peltAxZAiHtDEaCHV","queryContainerId":"pelN4ASCDth1yMJpJ"}} - only rowId varies. Written by the intakes (n8n btoa); Airtable formulas cannot base64-encode. |
 | Timezone | `fldlHgfmt6q0PVrX9` | singleLineText | The lead's timezone abbreviation (ET, CT, MT, PT, GMT, CET...) from the qualifier. Stored so every later reader can render times in THEIR clock instead of ours: the Slack cards, the BDR card's local-time line, and the 12-hourly thread re-render. The intake's Format Thread runs before the qualifier, so it cannot know this at first write; the sync picks it up on the next pass. |
 | Lead Routine ID (DEPRECATED) | `fldXfWYgoNVudTOfc` | singleLineText | DEPRECATED 2026-08-12, never used, safe to delete. Created on a wrong reading that each LEAD gets its own routine. The actual model is one routine per client per channel, fired by the intake at the end of each run; the routine then works the most recently engaged lead. The routine ids live on the Clients registry, not here. |
+| Last Touch or Last Engaged | `fldueqsfIMsUnHtQV` | formula | Shows the Last Touch date if available, otherwise shows the Last Engaged date. |
 
 ## Content Posts (`tblfDTNBIZffcWaLQ`)
 

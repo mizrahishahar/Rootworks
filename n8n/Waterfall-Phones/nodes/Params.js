@@ -1,23 +1,26 @@
-// One mode, one contract: a record pointer. The row carries the identifiers.
-//   { baseId, tableId, recordId, signature_phone?, force?, clientRecordId? }
-// signature_phone is optional because only the CALLER can have it: it comes from the
-// lead's email thread, which no record id can reach. Handle New Lead passes it;
-// a ClayRoots automation just sends the pointer.
-const raw = $input.first().json;
-const b = raw.body || raw;
+// One contact, always a Hub Contacts row, one execution regardless of trigger.
+// Two ways in, converging here:
+//   caller webhook: { recordId, signature_phone?, force?, clientRecordId? }  (Handle New Lead)
+//   launch leg:     the Automations row, already resolved by Launch Params
+// signature_phone exists only on the caller path: only a caller holding the RAW
+// reply has it. Everything else the workflow reads off the row itself.
 const s = (v) => String(v == null ? '' : v).trim();
-const HUB_BASE = 'appQG6dK0FIOhTxOl';
-const baseId = s(b.baseId || b['Clayroots Base ID']) || HUB_BASE;
-const tableId = s(b.tableId || b['Table ID']);
+let b = null, mode = 'caller';
+try { const w = $('Webhook').first().json; if (w) b = w.body || w; } catch (e) { b = null; }
+if (!b) {
+  const lp = $('Launch Params').first().json;
+  mode = 'launch';
+  // The Operator named this contact deliberately, so re-run even if a number is on the row.
+  b = { recordId: lp.contactId, clientRecordId: lp.clientId, force: true };
+}
 const recordId = s(b.recordId);
-const out = {
+return [{ json: {
   startedAt: new Date().toISOString(),
-  baseId, tableId, recordId,
-  hub: baseId === HUB_BASE,
+  mode,
+  recordId,
   force: b.force === true || s(b.force) === 'true',
   clientRecordId: s(b.clientRecordId),
   signature_phone: s(b.signature_phone),
-  _invalid: false, _error: '',
-};
-if (!baseId || !tableId || !recordId) { out._invalid = true; out._error = 'payload needs baseId + tableId + recordId'; }
-return [{ json: out }];
+  _invalid: !recordId,
+  _error: recordId ? '' : 'payload needs recordId',
+} }];

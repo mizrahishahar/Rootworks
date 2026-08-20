@@ -22,7 +22,16 @@ for (let i = 0; i < marks.length; i++) {
   blocks.push(thread.slice(marks[i].end, bodyEnd));
 }
 if (!blocks.length) blocks.push(thread);
-const grabPhones = (txt) => { const out = []; const pre = /(?:\+?\d{1,3}[\t .\-]?)?(?:\(?\d{2,4}\)?[\t .\-]?){2,4}\d{2,4}/g; let mm; while ((mm = pre.exec(String(txt || ''))) !== null) { const raw = mm[0].trim(); const dg = raw.replace(/\D/g, ''); if (dg.length >= 9 && dg.length <= 15) out.push({ raw, dg }); } return out; };
+// URLs, cid: refs, and bracketed asset tags carry long digit runs (upload timestamps,
+// uuids) that pattern-match as phones — proven by a live false positive (a Dropbox
+// filename's 20240212154056). Strip them, then accept only formatted numbers: a bare
+// unbroken 11+ digit run without a leading + is never a real signature phone.
+const scrub = (txt) => String(txt || '')
+  .replace(/https?:\/\/\S+/gi, ' ')
+  .replace(/\bwww\.\S+/gi, ' ')
+  .replace(/\bcid:\S+/gi, ' ')
+  .replace(/\[[^\]\n]*\]/g, ' ');
+const grabPhones = (txt) => { const out = []; const pre = /(?:\+?\d{1,3}[\t .\-]?)?(?:\(?\d{2,4}\)?[\t .\-]?){2,4}\d{2,4}/g; let mm; while ((mm = pre.exec(scrub(txt))) !== null) { const raw = mm[0].trim(); const dg = raw.replace(/\D/g, ''); if (dg.length < 9 || dg.length > 15) continue; if (/^\d{11,}$/.test(raw)) continue; out.push({ raw, dg }); } return out; };
 const isTollFree = (dg) => { let x = String(dg || ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };
 // Latest reply first: the freshest signature is the most likely direct line.
 let hit = '', tf = '';

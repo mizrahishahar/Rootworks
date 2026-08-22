@@ -1,6 +1,10 @@
 {
-  "name": "Waterfall Phones",
+  "updatedAt": "2026-08-20T09:58:38.002Z",
+  "createdAt": "2026-08-19T20:39:04.124Z",
   "id": "HTNr5G6vBVkbxsqF",
+  "name": "Waterfall Phones",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -1592,7 +1596,1625 @@
     }
   },
   "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
     "executionOrder": "v1",
-    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
-  }
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "618ee155-8630-44e6-b1e5-b995478a8c26",
+  "activeVersionId": "618ee155-8630-44e6-b1e5-b995478a8c26",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-08-19T20:39:04.133Z",
+      "createdAt": "2026-08-19T20:39:04.133Z",
+      "role": "workflow:owner",
+      "workflowId": "HTNr5G6vBVkbxsqF",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-20T09:58:38.019Z",
+    "createdAt": "2026-08-20T09:58:38.019Z",
+    "versionId": "618ee155-8630-44e6-b1e5-b995478a8c26",
+    "workflowId": "HTNr5G6vBVkbxsqF",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-waterfall-phones",
+          "options": {},
+          "responseMode": "responseNode"
+        },
+        "id": "wp-launchhook-0040",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          480
+        ],
+        "webhookId": "c1d2e3f4-a5b6-47c8-89d0-1e2f3a4b5c6d"
+      },
+      {
+        "parameters": {
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "wp-fetchlaunch-0041",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          480
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// One-off on-demand launch: the webhook carries only the Automations row id,\n// and the row carries the Contact to look up. Nothing else is read.\nconst rec = $('Fetch Launch Record').first().json;\nconst f = rec.fields || {};\nconst linkId = (v) => { if (Array.isArray(v) && v.length) return String(v[0] && v[0].id ? v[0].id : v[0]); return ''; };\nconst contactId = linkId(f.Contact);\n// Client is required: it is what attaches the run to a client in the run log, and\n// a phone lookup always belongs to someone's pipeline.\nconst clientId = linkId(f.Client);\nconst missing = [];\nif (!contactId) missing.push('Contact');\nif (!clientId) missing.push('Client');\nreturn [{ json: {\n  contactId,\n  clientId,\n  _launchRecordId: rec.id,\n  startedAt: new Date().toISOString(),\n  _invalid: missing.length > 0,\n  _error: missing.length ? ('launch row is missing ' + missing.join(' and ')) : '',\n} }];\n"
+        },
+        "id": "wp-launchparams-0043",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          480
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json._launchRecordId }}",
+              "Status": "Running",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "wp-stamprunning-0044",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          672,
+          480
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "rd1",
+                "leftValue": "={{ $('Launch Params').first().json._invalid ? 'bad' : 'ok' }}",
+                "rightValue": "ok",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-ready-0054",
+        "name": "Ready?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          896,
+          480
+        ],
+        "notes": "Contact and Client are both required. A launch row missing either never spends a call; it goes straight to the log with the reason."
+      },
+      {
+        "parameters": {
+          "jsCode": "// The launch row's verdict, read straight from this execution's Finalize (the\n// launch leg runs the waterfall inline, no second execution). Per the logging\n// standard this UPDATES the pre-created launch row rather than creating one.\nconst P = $('Launch Params').first().json;\nconst failed = [];\nlet r = null;\nif (P._invalid) {\n  failed.push('invalid launch row: ' + (P._error || 'unknown'));\n} else {\n  try { r = ($('Finalize').first().json || {}).result || null; } catch (e) { r = null; }\n  if (!r) failed.push('run ended before a verdict');\n  else for (const x of (r.failed || [])) failed.push(x);\n}\nconst start = P.startedAt || new Date().toISOString();\nconst ms = Date.parse(start);\nconst dur = ms ? Math.round((Date.now() - ms) / 1000) : null;\nconst found = !!(r && r.phone);\nconst lines = [\n  '**' + (found ? r.phone + ' (' + r.phone_source + ')' : 'no phone found') + '**',\n  '',\n  '- **Contact:** ' + (P.contactId || 'not set'),\n  '- **Tiers tried:** ' + ((r && (r.tried || []).join(', ')) || 'none'),\n  '- **Result:** ' + (found ? r.phone + ' via ' + r.phone_source + ', written to the contact row' : 'nothing found on any tier'),\n];\nconst skipped = (r && r.skipped) || [];\nif (skipped.length) lines.push('', '**Tiers skipped**', ...skipped.map((x) => '- ' + x));\nif (failed.length) lines.push('', '**FAILED (' + failed.length + ')**', ...failed.map((x) => '- ' + x));\nlines.push('', '**Duration:** ' + (dur != null ? dur + 's' : 'n/a'));\nreturn [{ json: {\n  id: P._launchRecordId,\n  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n  'Errors': failed.length,\n  'Records In': 1,\n  'Records Out': found ? 1 : 0,\n  'Target': P.contactId || '',\n  'Trigger': 'form',\n  'Run at': start,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n} }];\n"
+        },
+        "id": "wp-buildlaunchlog-0050",
+        "name": "Build Launch Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7392,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "wp-updatelaunch-0051",
+        "name": "Update Launch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          7616,
+          -176
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "waterfall-phones",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "wp-webhook-0001",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+      },
+      {
+        "parameters": {
+          "jsCode": "// One contact, always a Hub Contacts row, one execution regardless of trigger.\n// Two ways in, converging here:\n//   caller webhook: { recordId, signature_phone?, force?, clientRecordId? }  (Handle New Lead)\n//   launch leg:     the Automations row, already resolved by Launch Params\n// signature_phone exists only on the caller path: only a caller holding the RAW\n// reply has it. Everything else the workflow reads off the row itself.\nconst s = (v) => String(v == null ? '' : v).trim();\nlet b = null, mode = 'caller';\ntry { const w = $('Webhook').first().json; if (w) b = w.body || w; } catch (e) { b = null; }\nif (!b) {\n  const lp = $('Launch Params').first().json;\n  mode = 'launch';\n  // The Operator named this contact deliberately, so re-run even if a number is on the row.\n  b = { recordId: lp.contactId, clientRecordId: lp.clientId, force: true };\n}\nconst recordId = s(b.recordId);\nreturn [{ json: {\n  startedAt: new Date().toISOString(),\n  mode,\n  recordId,\n  force: b.force === true || s(b.force) === 'true',\n  clientRecordId: s(b.clientRecordId),\n  signature_phone: s(b.signature_phone),\n  _invalid: !recordId,\n  _error: recordId ? '' : 'payload needs recordId',\n} }];\n"
+        },
+        "id": "wp-params-0002",
+        "name": "Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          224,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "v1",
+                "leftValue": "={{ $json._invalid ? 'bad' : 'ok' }}",
+                "rightValue": "ok",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-valid-0003",
+        "name": "Valid?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "id": "={{ $('Params').first().json.recordId }}",
+          "options": {}
+        },
+        "id": "wp-fetchrow-0005",
+        "name": "Fetch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          672,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "jsCode": "// Builds the person and the waterfall accumulator from the Hub Contacts row.\nconst p0 = $('Params').first().json;\nconst s = (v) => { if (Array.isArray(v)) v = v[0]; return String(v == null ? '' : v).trim(); };\nlet f = null;\ntry { const r = $('Fetch Row').first().json || {}; f = r.fields || (r.id ? r : null); } catch (e) { f = null; }\nconst acc = { phone: '', source: 'none', tf: '', tf_source: '', tried: [], skipped: [], failed: [] };\nconst out = { recordId: p0.recordId, force: p0.force, clientRecordId: p0.clientRecordId, person: {}, companyId: '', acc, _invalid: p0._invalid, _error: p0._error };\nif (out._invalid) return [{ json: out }];\nif (!f) { out._invalid = true; out._error = 'contact ' + p0.recordId + ' not readable'; return [{ json: out }]; }\nconst FREEMAIL = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','aol.com','proton.me','protonmail.com','live.com','msn.com','gmx.com','mail.com','walla.co.il','walla.com']);\nconst email = s(f.email).toLowerCase();\nlet domain = s(f.domain).toLowerCase();\nif (!domain && email.includes('@')) { const d = email.split('@')[1]; if (d && !FREEMAIL.has(d)) domain = d; }\nout.person = {\n  email,\n  first_name: s(f.firstName),\n  last_name: s(f.lastName),\n  full_name: (s(f.firstName) + ' ' + s(f.lastName)).trim(),\n  domain,\n  linkedin: s(f.linkedin),\n};\n// The contact links to its company Prospect row, which carries the synced\n// Conversation Thread. The scrape step reads it for a signature phone.\nconst link = f.Company;\nif (Array.isArray(link) && link.length) out.companyId = String(link[0] && link[0].id ? link[0].id : link[0]);\nelse if (link && Array.isArray(link.linkedRecordIds) && link.linkedRecordIds.length) out.companyId = String(link.linkedRecordIds[0]);\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst existingPhone = s(f.phone);\nif (existingPhone && !p0.force) { acc.phone = existingPhone; acc.source = 'existing'; return [{ json: out }]; }\nconst sig = p0.signature_phone;\nif (sig) {\n  acc.tried.push('signature');\n  if (isTollFree(sig)) { acc.tf = sig; acc.tf_source = 'signature-tollfree'; }\n  else { acc.phone = sig; acc.source = 'signature'; }\n}\nreturn [{ json: out }];\n"
+        },
+        "id": "wp-person-0006",
+        "name": "Person",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ht1",
+                "leftValue": "={{ ($json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-hubthread-0035",
+        "name": "Company Linked?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "id": "={{ $('Person').first().json.companyId }}",
+          "options": {}
+        },
+        "id": "wp-fetchco-0036",
+        "name": "Fetch Company",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1344,
+          -176
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "The company Prospect row carries the synced Conversation Thread, where the lead's own signature block (and its phone) survives."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 0b: the stored Conversation Thread on the company Prospect row.\n// The 12-hourly thread syncs keep signature blocks intact (proven live 2026-08-20:\n// Zeron, MX Wholesale, What A Move all carry the lead's number in THEM messages),\n// so a Hub contact fired by record id alone can still get the signature phone.\n// A signature_phone passed in the payload (Handle New Lead, raw reply in hand) wins.\nconst prev = $('Person').first().json;\nconst j = Object.assign({}, prev);\nconst acc = j.acc;\nif (acc.phone) return [{ json: j }];\nlet thread = '';\ntry { const r = $('Fetch Company').first().json || {}; const f = r.fields || {}; thread = String(f['Conversation Thread'] || f['Conversation Thread OLD'] || ''); } catch (e) { thread = ''; }\nif (!thread) return [{ json: j }];\nif (acc.tried.indexOf('signature') === -1) acc.tried.push('signature');\n// Collect THEM blocks only: the lead's own messages, where their signature lives.\nconst blocks = [];\nconst re = /\\*\\*\\[[^\\]]*\\]\\s*(THEM|US):\\*\\*/g;\nlet m, marks = [];\nwhile ((m = re.exec(thread)) !== null) marks.push({ dir: m[1], start: m.index, end: re.lastIndex });\nfor (let i = 0; i < marks.length; i++) {\n  if (marks[i].dir !== 'THEM') continue;\n  const bodyEnd = i + 1 < marks.length ? marks[i + 1].start : thread.length;\n  blocks.push(thread.slice(marks[i].end, bodyEnd));\n}\nif (!blocks.length) blocks.push(thread);\n// URLs, cid: refs, and bracketed asset tags carry long digit runs (upload timestamps,\n// uuids) that pattern-match as phones — proven by a live false positive (a Dropbox\n// filename's 20240212154056). Strip them, then accept only formatted numbers: a bare\n// unbroken 11+ digit run without a leading + is never a real signature phone.\nconst scrub = (txt) => String(txt || '')\n  .replace(/https?:\\/\\/\\S+/gi, ' ')\n  .replace(/\\bwww\\.\\S+/gi, ' ')\n  .replace(/\\bcid:\\S+/gi, ' ')\n  .replace(/\\[[^\\]\\n]*\\]/g, ' ');\nconst grabPhones = (txt) => { const out = []; const pre = /(?:\\+?\\d{1,3}[\\t .\\-]?)?(?:\\(?\\d{2,4}\\)?[\\t .\\-]?){2,4}\\d{2,4}/g; let mm; while ((mm = pre.exec(scrub(txt))) !== null) { const raw = mm[0].trim(); const dg = raw.replace(/\\D/g, ''); if (dg.length < 9 || dg.length > 15) continue; if (/^\\d{11,}$/.test(raw)) continue; out.push({ raw, dg }); } return out; };\nconst isTollFree = (dg) => { let x = String(dg || ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\n// Latest reply first: the freshest signature is the most likely direct line.\nlet hit = '', tf = '';\nfor (let i = blocks.length - 1; i >= 0 && !hit; i--) {\n  for (const c of grabPhones(blocks[i])) {\n    if (isTollFree(c.dg)) { if (!tf) tf = c.raw; }\n    else { hit = c.raw; break; }\n  }\n}\nif (hit) { acc.phone = hit; acc.source = 'signature'; }\nelse if (tf && !acc.tf) { acc.tf = tf; acc.tf_source = 'signature-tollfree'; }\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-scrapesig-0037",
+        "name": "Scrape Signature",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 1: Supersoniq. Resolve the person to a contact at their company (naked pull,\n// has_phone-filtered), then unlock the phone by contact_id. This node decides whether\n// to call and builds the resolution request; the unlock request is built in SQ Pick.\nconst j = $input.first().json;\nif (j._invalid) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nconst acc = j.acc, p = j.person;\nconst name = (p.full_name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim()).trim();\nif (acc.phone) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nif (!p.domain || !name) { acc.skipped.push('supersoniq: missing domain or name'); return [{ json: Object.assign({}, j, { _call: 0 }) }]; }\nacc.tried.push('supersoniq');\nconst callBody = { companies: [{ domain: p.domain }], tier: 'naked', per_company_limit: 5, filters: { has_phone: true } };\nreturn [{ json: Object.assign({}, j, { _call: 1, callBody }) }];\n"
+        },
+        "id": "wp-sqprep-0007",
+        "name": "SQ Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1792,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sq1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-callsq-0008",
+        "name": "Call SQ?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2016,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('SQ Prep').first().json.callBody }}",
+          "options": {
+            "timeout": 120000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "wp-sqresolve-0009",
+        "name": "SQ Resolve",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2240,
+          -176
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "Supersoniq REST resolve (companies/enrich, naked tier, has_phone filter) — same endpoint family and credential as the Contagen/Storeleads builders. Max 2.5 credits (5 naked contacts)."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parses the Supersoniq REST resolution response (/partner/v1/companies/enrich,\n// naked tier + has_phone filter), matches the contact by name, and builds the\n// /partner/v1/enrich/phone unlock body. A person Supersoniq doesn't know is a\n// clean miss; a refused/unparseable call is a failure (retryable), never a negative.\nconst prev = $('SQ Prep').first().json;\nconst j = Object.assign({}, prev); delete j.callBody;\nconst acc = j.acc, p = j.person;\nconst resp = $input.first().json;\nlet b = resp && resp.body !== undefined ? resp.body : resp;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\nconst code = Number((resp && resp.statusCode) || 0);\nconst out = (call, body) => [{ json: Object.assign({}, j, { _call: call ? 1 : 0 }, body ? { callBody: body } : {}) }];\nif (!b || typeof b !== 'object' || code >= 400) {\n  const msg = (b && (b.detail && JSON.stringify(b.detail).slice(0, 150) || b.error || b.message)) || ('HTTP ' + (code || '?'));\n  acc.failed.push('supersoniq resolve: ' + msg);\n  return out(0);\n}\nconst contacts = [];\nconst walk = (x) => { if (!x) return; if (Array.isArray(x)) { x.forEach(walk); return; } if (typeof x === 'object') { if (Array.isArray(x.contacts)) contacts.push(...x.contacts); for (const v of Object.values(x)) { if (v && typeof v === 'object') walk(v); } } };\nwalk(b);\nconst norm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');\nconst wantF = norm(p.first_name), wantL = norm(p.last_name);\nconst wantFull = norm(p.full_name) || (wantF + wantL);\nlet match = null;\nfor (const ct of contacts) {\n  const f = norm(ct.first_name), l = norm(ct.last_name);\n  const full = norm(ct.full_name) || (f + l);\n  if (wantF && wantL && f === wantF && l === wantL) { match = ct; break; }\n  if (wantFull && full && full === wantFull) { match = ct; break; }\n}\nif (!match && contacts.length === 1 && wantF && norm(contacts[0].first_name) === wantF) match = contacts[0];\nconst cid = match && (match.contact_id || match.id || match.uuid);\nif (!cid) return out(0); // not in Supersoniq, or no id in the payload: a miss, next tier\nreturn out(1, { contact_id: String(cid) });\n"
+        },
+        "id": "wp-sqpick-0010",
+        "name": "SQ Pick",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sqp1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-callsqp-0011",
+        "name": "Call SQ Phone?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2688,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/enrich/phone",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('SQ Pick').first().json.callBody }}",
+          "options": {
+            "timeout": 120000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "wp-sqphone-0012",
+        "name": "SQ Phone",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2912,
+          -352
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "Supersoniq REST phone unlock by contact_id. 10 credits (25 specialty) ONLY when a phone is on file; 404 = clean miss."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parses the Supersoniq REST phone unlock (/partner/v1/enrich/phone).\n// Charged 10 credits (25 specialty) only when a phone is on file.\nconst prev = $('SQ Pick').first().json;\nconst j = Object.assign({}, prev); delete j.callBody;\nconst acc = j.acc;\nconst resp = $input.first().json;\nlet b = resp && resp.body !== undefined ? resp.body : resp;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\nconst code = Number((resp && resp.statusCode) || 0);\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst plausible = (p) => { const d = String(p || '').replace(/\\D/g, ''); return d.length >= 7 && d.length <= 15; };\nif (!b || typeof b !== 'object' || code >= 400) {\n  if (code === 404) return [{ json: j }]; // no phone on file: a clean miss\n  const msg = (b && (b.detail && JSON.stringify(b.detail).slice(0, 150) || b.error || b.message)) || ('HTTP ' + (code || '?'));\n  acc.failed.push('supersoniq phone: ' + msg);\n  return [{ json: j }];\n}\nlet phone = '';\nconst dig = (x, depth) => { if (phone || !x || depth > 3) return; if (typeof x === 'string') return; if (Array.isArray(x)) { x.forEach((v) => dig(v, depth + 1)); return; } if (typeof x === 'object') { for (const k of ['phone', 'phone_number', 'mobile', 'mobile_phone', 'mobile_number', 'number']) { if (typeof x[k] === 'string' && plausible(x[k])) { phone = x[k].trim(); return; } } for (const v of Object.values(x)) dig(v, depth + 1); } };\ndig(b, 0);\nif (phone) {\n  if (isTollFree(phone)) { if (!acc.tf) { acc.tf = phone; acc.tf_source = 'supersoniq-tollfree'; } }\n  else { acc.phone = phone; acc.source = 'supersoniq'; }\n}\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-sqparse-0013",
+        "name": "SQ Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3136,
+          -352
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 2: AI-Ark mobile-phone-finder (v2, Clay-compatible: HTTP 200 on miss).\n// LinkedIn URL alone, or domain + full name. 5 credits per found number, 0 on miss.\nconst j0 = $input.first().json;\nconst j = Object.assign({}, j0); delete j.callBody;\nif (j._invalid) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nconst acc = j.acc, p = j.person;\nif (acc.phone) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nconst name = (p.full_name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim()).trim();\nlet callBody = null;\nif (p.linkedin) callBody = { linkedin: p.linkedin };\nelse if (p.domain && name) callBody = { domain: p.domain, name };\nif (!callBody) { acc.skipped.push('ai-ark: missing linkedin and domain+name'); return [{ json: Object.assign({}, j, { _call: 0 }) }]; }\nacc.tried.push('ai-ark');\nreturn [{ json: Object.assign({}, j, { _call: 1, callBody }) }];\n"
+        },
+        "id": "wp-arkprep-0014",
+        "name": "Ark Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3360,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ark1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-callark-0015",
+        "name": "Call Ark?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3584,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.ai-ark.com/api/developer-portal/v2/people/mobile-phone-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Ark Prep').first().json.callBody }}",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "wp-arkfind-0016",
+        "name": "AI-Ark Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3808,
+          -176
+        ],
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "AI-Ark v2 mobile-phone-finder (Clay-compatible: 200 on miss). 5 credits per found number, 0 on a miss.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// AI-Ark v2 envelope: HTTP 200 always; body.status 200 = hit (numbers nested in\n// data.data as arrays of strings), body.status 404 = clean miss, anything else = failure.\nconst prev = $('Ark Prep').first().json;\nconst j = Object.assign({}, prev); delete j.callBody;\nconst acc = j.acc;\nconst resp = $input.first().json;\nlet b = resp && resp.body !== undefined ? resp.body : resp;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\nconst code = resp && resp.statusCode;\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst plausible = (p) => { const d = String(p || '').replace(/\\D/g, ''); return d.length >= 7 && d.length <= 15; };\nif (!b || typeof b !== 'object') { acc.failed.push('ai-ark: unparseable response (HTTP ' + (code || '?') + ')'); return [{ json: j }]; }\nconst st = Number(b.status || code || 0);\nif (st === 404) return [{ json: j }]; // clean miss\nif (st !== 200) {\n  const msg = (b.error && (b.error.error || b.error.message)) || ('HTTP ' + st);\n  if (/credit|quota|payment|insufficient/i.test(String(msg)) || st === 402) acc.skipped.push('ai-ark: out of credits');\n  else acc.failed.push('ai-ark: ' + String(msg).slice(0, 120));\n  return [{ json: j }];\n}\nconst nums = [];\nconst flat = (x) => { if (!x) return; if (Array.isArray(x)) { x.forEach(flat); return; } if (typeof x === 'string' && plausible(x)) nums.push(x.trim()); };\nflat(b.data && b.data.data);\nlet hit = '', tf = '';\nfor (const n of nums) { if (isTollFree(n)) { if (!tf) tf = n; } else { hit = n; break; } }\nif (hit) { acc.phone = hit; acc.source = 'ai-ark'; }\nelse if (tf && !acc.tf) { acc.tf = tf; acc.tf_source = 'ai-ark-tollfree'; }\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-arkparse-0017",
+        "name": "Ark Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4032,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 3: LeadMagic mobile-finder by work email.\nconst j0 = $input.first().json;\nconst j = Object.assign({}, j0); delete j.callBody;\nif (j._invalid) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nconst acc = j.acc, p = j.person;\nif (acc.phone) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nif (!p.email) { acc.skipped.push('leadmagic: no email'); return [{ json: Object.assign({}, j, { _call: 0 }) }]; }\nacc.tried.push('leadmagic');\nreturn [{ json: Object.assign({}, j, { _call: 1, callBody: { work_email: p.email } }) }];\n"
+        },
+        "id": "wp-lmprep-0018",
+        "name": "LM Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4256,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "lm1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-calllm-0019",
+        "name": "Call LM?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4480,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.leadmagic.io/v1/people/mobile-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('LM Prep').first().json.callBody }}",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "wp-lmfind-0020",
+        "name": "LeadMagic Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4704,
+          -176
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "oMWq3aRIRMhIkSur",
+            "name": "Lead Magic"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "LeadMagic mobile-finder by work email. Out-of-credits (402) is classified as a skip, never an error."
+      },
+      {
+        "parameters": {
+          "jsCode": "// LeadMagic verdicts. Out-of-credits (the 402 class) is a SKIP, not an error:\n// the account state, not the lead, refused the call. Rows stay retryable either way.\nconst prev = $('LM Prep').first().json;\nconst j = Object.assign({}, prev); delete j.callBody;\nconst acc = j.acc;\nconst resp = $input.first().json;\nlet b = resp && resp.body !== undefined ? resp.body : resp;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }\nif (!b || typeof b !== 'object') b = {};\nconst code = Number((resp && resp.statusCode) || 0);\nconst msg = String(b.message || b.error || '');\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst plausible = (p) => { const d = String(p || '').replace(/\\D/g, ''); return d.length >= 7 && d.length <= 15; };\nif (code === 402 || /credit|payment required|insufficient|quota/i.test(msg)) {\n  acc.skipped.push('leadmagic: out of credits');\n} else if (code >= 400) {\n  acc.failed.push('leadmagic: HTTP ' + code + (msg ? ' (' + msg.slice(0, 100) + ')' : ''));\n} else {\n  const mobile = String(b.mobile_number || b.mobile || '').trim();\n  if (mobile && plausible(mobile)) {\n    if (isTollFree(mobile)) { if (!acc.tf) { acc.tf = mobile; acc.tf_source = 'leadmagic-tollfree'; } }\n    else { acc.phone = mobile; acc.source = 'leadmagic'; }\n  }\n}\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-lmparse-0021",
+        "name": "LM Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4928,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 4: Prospeo enrich-person with enrich_mobile. 10 credits per mobile FOUND, free on miss.\n// Best identifier wins: email, else name + company website, else LinkedIn URL.\nconst j0 = $input.first().json;\nconst j = Object.assign({}, j0); delete j.callBody;\nif (j._invalid) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nconst acc = j.acc, p = j.person;\nif (acc.phone) return [{ json: Object.assign({}, j, { _call: 0 }) }];\nlet data = null;\nif (p.email) data = { email: p.email };\nelse if (p.first_name && p.last_name && p.domain) data = { first_name: p.first_name, last_name: p.last_name, company_website: p.domain };\nelse if (p.full_name && p.domain) data = { full_name: p.full_name, company_website: p.domain };\nelse if (p.linkedin) data = { linkedin_url: p.linkedin };\nif (!data) { acc.skipped.push('prospeo: no usable identifier'); return [{ json: Object.assign({}, j, { _call: 0 }) }]; }\nacc.tried.push('prospeo');\nreturn [{ json: Object.assign({}, j, { _call: 1, callBody: { data, enrich_mobile: true } }) }];\n"
+        },
+        "id": "wp-prprep-0022",
+        "name": "Prospeo Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5152,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pr1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-callpr-0023",
+        "name": "Call Prospeo?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5376,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.prospeo.io/enrich-person",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Prospeo Prep').first().json.callBody }}",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "wp-prfind-0024",
+        "name": "Prospeo Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5600,
+          -176
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "uFPdaX8JAe5KLQdL",
+            "name": "Prospeo"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "Prospeo enrich-person with enrich_mobile. 10 credits per mobile FOUND, free on NO_MATCH."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Prospeo verdicts. NO_MATCH = clean miss. INSUFFICIENT_CREDITS = skip.\n// A masked or unrevealed mobile is a miss, never written.\nconst prev = $('Prospeo Prep').first().json;\nconst j = Object.assign({}, prev); delete j.callBody;\nconst acc = j.acc;\nconst resp = $input.first().json;\nlet b = resp && resp.body !== undefined ? resp.body : resp;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\nconst code = Number((resp && resp.statusCode) || 0);\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst plausible = (p) => { const d = String(p || '').replace(/\\D/g, ''); return d.length >= 7 && d.length <= 15; };\nif (!b || typeof b !== 'object') { acc.failed.push('prospeo: unparseable response (HTTP ' + (code || '?') + ')'); return [{ json: j }]; }\nconst errCode = String(b.error_code || '');\nif (b.error === true || errCode) {\n  if (errCode === 'NO_MATCH') return [{ json: j }];\n  if (errCode === 'INSUFFICIENT_CREDITS' || code === 402) acc.skipped.push('prospeo: out of credits');\n  else acc.failed.push('prospeo: ' + (errCode || 'HTTP ' + code));\n  return [{ json: j }];\n}\nconst person = b.person || (b.response && b.response.person) || {};\nlet cand = person.mobile || person.mobile_phone || person.phone || '';\nif (cand && typeof cand === 'object') {\n  if (cand.revealed === false) cand = '';\n  else cand = cand.number || cand.mobile || cand.raw || cand.international || '';\n}\ncand = String(cand || '').trim();\nif (cand && cand.indexOf('*') === -1 && plausible(cand)) {\n  if (isTollFree(cand)) { if (!acc.tf) { acc.tf = cand; acc.tf_source = 'prospeo-tollfree'; } }\n  else { acc.phone = cand; acc.source = 'prospeo'; }\n}\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-prparse-0025",
+        "name": "Prospeo Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5824,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// The verdict. Direct number wins; a toll-free switchboard is the last resort.\n// The response body is what the caller (Handle New Lead, a ClayRoots automation,\n// or a one-off curl) gets back synchronously.\nconst j0 = $input.first().json;\nconst j = Object.assign({}, j0); delete j.callBody;\nconst toE164 = (raw) => {\n  const t = String(raw || '').trim();\n  if (!t) return '';\n  const d = t.replace(/\\D/g, '');\n  if (t.charAt(0) === '+') return '+' + d;\n  if (d.length === 11 && d.charAt(0) === '1') return '+' + d;\n  if (d.length === 10 && d.charAt(0) !== '0') return '+1' + d;\n  return t;\n};\nif (j._invalid) {\n  j.result = { ok: false, error: j._error || 'invalid payload', phone: '', phone_source: 'none' };\n  j._writeback = false;\n  return [{ json: j }];\n}\nconst acc = j.acc;\nlet phone = acc.phone, source = acc.source;\nif (!phone && acc.tf) { phone = acc.tf; source = acc.tf_source; }\nif (!phone) source = 'none';\nphone = toE164(phone);\nj.result = { ok: true, phone, phone_source: source, tried: acc.tried, skipped: acc.skipped, failed: acc.failed, recordId: j.recordId || '' };\nj._writeback = !!phone && source !== 'existing';\nreturn [{ json: j }];\n"
+        },
+        "id": "wp-final-0026",
+        "name": "Finalize",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6048,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "wb1",
+                "leftValue": "={{ $json._writeback ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "wp-wb-0027",
+        "name": "Writeback?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6272,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// The single update item for the Hub Contacts row.\nconst f = $('Finalize').first().json;\nreturn [{ json: { id: f.recordId, phone: f.result.phone, 'Phone Source': f.result.phone_source } }];\n"
+        },
+        "id": "wp-once-0030",
+        "name": "Once",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6496,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "wp-writerow-0031",
+        "name": "Write Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6720,
+          -176
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $('Finalize').first().json.result }}",
+          "options": {}
+        },
+        "id": "wp-respond-0032",
+        "name": "Respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          7392,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// One row per run, per the logging standard: computed Status, failed[] -> Errors,\n// skips separated, Client attached only when the run serves exactly one client.\nconst P = $('Params').first().json;\nconst F = $('Finalize').first().json;\nconst res = F.result || {};\nconst acc = F.acc || { tried: [], skipped: [], failed: [] };\nconst failed = (acc.failed || []).slice();\nif (F._invalid) failed.push('invalid payload: ' + (F._error || 'unknown'));\nlet wrote = false;\ntry { const w = $('Write Row').first().json; if (w && w.id) wrote = true; } catch (e) {}\nif (F._writeback && !wrote) failed.push('writeback did not land on ' + (F.recordId || 'row'));\nconst start = P.startedAt || new Date().toISOString();\nconst ms = Date.parse(start);\nconst dur = ms ? Math.round((Date.now() - ms) / 1000) : null;\nconst target = (F.person && F.person.email) || P.recordId || 'unknown';\nconst found = !!res.phone;\nconst lines = [\n  '**' + target + ' · ' + (found ? res.phone + ' (' + res.phone_source + ')' : 'no phone found') + '**',\n  '',\n  '- **Contact:** ' + P.recordId,\n  '- **Tiers tried:** ' + ((acc.tried || []).join(', ') || 'none'),\n  '- **Result:** ' + (found ? res.phone + ' via ' + res.phone_source : 'none') + (F._writeback ? (wrote ? ' · written to row' : ' · WRITEBACK FAILED') : ''),\n];\nif ((acc.skipped || []).length) lines.push('', '**Skipped (' + acc.skipped.length + ')**', ...acc.skipped.map((x) => '- ' + x));\nif (failed.length) lines.push('', '**FAILED (' + failed.length + ')**', ...failed.map((x) => '- ' + x));\nconst row = {\n  'Automation': 'Waterfall Phones',\n  'Run at': start,\n  'Records In': 1,\n  'Records Out': found ? 1 : 0,\n  'Target': target,\n  'Trigger': 'webhook',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  'Duration s': dur,\n  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n  'Errors': failed.length,\n  'Description': lines.join('\\n'),\n};\nif (P.clientRecordId) row['Client'] = [P.clientRecordId];\nreturn [{ json: row }];\n"
+        },
+        "id": "wp-buildlog-0033",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7616,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "wp-logrun-0034",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          7840,
+          96
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "lr1",
+                "leftValue": "={{ $('Params').first().json.mode === 'launch' ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "wp-launchrun-0055",
+        "name": "Launch Run?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          7168,
+          0
+        ],
+        "notes": "Same execution, two exits: a launch run updates its launch row; a caller run answers the webhook and writes its own log row."
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ { ok: $('Build Launch Log').first().json.Errors === 0, status: $('Build Launch Log').first().json.Status, target: $('Build Launch Log').first().json.Target } }}",
+          "options": {}
+        },
+        "id": "wp-launchrespond-0056",
+        "name": "Launch Respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          7840,
+          -176
+        ],
+        "notes": "Closes the launch webhook. The launch row already carries the full verdict; this is just the acknowledgement."
+      }
+    ],
+    "connections": {
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Ready?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ready?": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Launch Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Launch Log": {
+        "main": [
+          [
+            {
+              "node": "Update Launch Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Params": {
+        "main": [
+          [
+            {
+              "node": "Valid?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valid?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Row": {
+        "main": [
+          [
+            {
+              "node": "Person",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Person": {
+        "main": [
+          [
+            {
+              "node": "Company Linked?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Company Linked?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Company",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SQ Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Company": {
+        "main": [
+          [
+            {
+              "node": "Scrape Signature",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Scrape Signature": {
+        "main": [
+          [
+            {
+              "node": "SQ Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Prep": {
+        "main": [
+          [
+            {
+              "node": "Call SQ?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call SQ?": {
+        "main": [
+          [
+            {
+              "node": "SQ Resolve",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Resolve": {
+        "main": [
+          [
+            {
+              "node": "SQ Pick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Pick": {
+        "main": [
+          [
+            {
+              "node": "Call SQ Phone?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call SQ Phone?": {
+        "main": [
+          [
+            {
+              "node": "SQ Phone",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Phone": {
+        "main": [
+          [
+            {
+              "node": "SQ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Parse": {
+        "main": [
+          [
+            {
+              "node": "Ark Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Prep": {
+        "main": [
+          [
+            {
+              "node": "Call Ark?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Ark?": {
+        "main": [
+          [
+            {
+              "node": "AI-Ark Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "LM Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI-Ark Finder": {
+        "main": [
+          [
+            {
+              "node": "Ark Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Parse": {
+        "main": [
+          [
+            {
+              "node": "LM Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LM Prep": {
+        "main": [
+          [
+            {
+              "node": "Call LM?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call LM?": {
+        "main": [
+          [
+            {
+              "node": "LeadMagic Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prospeo Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LeadMagic Finder": {
+        "main": [
+          [
+            {
+              "node": "LM Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LM Parse": {
+        "main": [
+          [
+            {
+              "node": "Prospeo Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospeo Prep": {
+        "main": [
+          [
+            {
+              "node": "Call Prospeo?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Prospeo?": {
+        "main": [
+          [
+            {
+              "node": "Prospeo Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospeo Finder": {
+        "main": [
+          [
+            {
+              "node": "Prospeo Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospeo Parse": {
+        "main": [
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Finalize": {
+        "main": [
+          [
+            {
+              "node": "Writeback?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Writeback?": {
+        "main": [
+          [
+            {
+              "node": "Once",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Launch Run?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Once": {
+        "main": [
+          [
+            {
+              "node": "Write Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Row": {
+        "main": [
+          [
+            {
+              "node": "Launch Run?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Respond": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Run?": {
+        "main": [
+          [
+            {
+              "node": "Build Launch Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Launch Row": {
+        "main": [
+          [
+            {
+              "node": "Launch Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

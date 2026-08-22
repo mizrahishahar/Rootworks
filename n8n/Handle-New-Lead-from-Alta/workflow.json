@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-14T14:01:18.030Z",
+  "updatedAt": "2026-08-19T21:37:56.712Z",
   "createdAt": "2026-07-28T08:55:27.839Z",
   "id": "AwlfoUuXzi86isEe",
   "name": "Handle New Lead from Alta",
@@ -2380,7 +2380,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1787164111647
+      "runStartedAt": 1787400394727
     }
   },
   "meta": {
@@ -2453,8 +2453,8 @@
       }
     ]
   },
-  "versionId": "2e6dc05a-fe2d-41c0-aa1c-c91ef530e42f",
-  "activeVersionId": "2e6dc05a-fe2d-41c0-aa1c-c91ef530e42f",
+  "versionId": "3d8cc40a-71a6-42f5-8b87-82fa7c4e35f4",
+  "activeVersionId": "3d8cc40a-71a6-42f5-8b87-82fa7c4e35f4",
   "triggerCount": 1,
   "shared": [
     {
@@ -2466,9 +2466,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-14T14:01:18.034Z",
-    "createdAt": "2026-08-14T14:01:18.034Z",
-    "versionId": "2e6dc05a-fe2d-41c0-aa1c-c91ef530e42f",
+    "updatedAt": "2026-08-19T21:37:56.718Z",
+    "createdAt": "2026-08-19T21:37:56.718Z",
+    "versionId": "3d8cc40a-71a6-42f5-8b87-82fa7c4e35f4",
     "workflowId": "AwlfoUuXzi86isEe",
     "nodes": [
       {
@@ -2876,10 +2876,8 @@
               "lastName": "={{ $('Alta Normalize').item.json.last_name || null }}",
               "position": "={{ $('Alta Normalize').item.json.job_title || $('Merge Person').first().json.title || null }}",
               "email": "={{ $('Alta Normalize').item.json.lead_email || $('Merge Person').first().json.personEmail || null }}",
-              "phone": "={{ $('Resolve Phone').item.json.phone || null }}",
               "linkedin": "={{ $('Alta Normalize').item.json.linkedin_url || null }}",
-              "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}",
-              "Phone Source": "={{ ['signature','GPT','LeadMagic','signature-tollfree','GPT-tollfree','none'].includes(String($('Resolve Phone').first().json.phone_source || '').trim()) ? String($('Resolve Phone').first().json.phone_source).trim() : 'none' }}"
+              "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
             }
           },
           "options": {
@@ -3581,7 +3579,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const F = $('Flatten').first().json;\nconst N = $('Alta Normalize').first().json;\nlet phoneVal = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}\nlet B = {};\ntry { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }\nlet C = {};\ntry { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }\nlet dash = '';\ntry { dash = String(((($('Get Client Row').first().json || {}).fields) || {})['Dashboard Page ID'] || '').trim(); } catch (e) { dash = ''; }\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));\n\nconst companyRaw = F.company_name || N.company_name || 'Unknown';\nconst tzRaw = String(F.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch (e) { localTime = ''; }\n\nconst name = clean(N.full_name);\nconst title = clean(N.job_title);\nconst contact = clean(N.lead_email) || clean(N.linkedin_url);\n\nlet phoneLine = '_no number found_';\nif (phoneVal) {\n  const p = esc(phoneVal);\n  if (phoneSrc === 'LeadMagic') phoneLine = p + '   ✅ _mobile_';\n  else if (phoneSrc === 'GPT') phoneLine = p + '   _found online_';\n  else if (phoneSrc === 'GPT-tollfree') phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';\n  else phoneLine = p;\n}\n\nconst who = [];\nwho.push(name ? ('*' + name + '*' + (title ? '   ' + title : '')) : '*General inbox*   confirm the decision maker');\nif (contact) who.push(contact);\nwho.push(phoneLine);\nwho.push('');\nwho.push('via Alta · ' + (clean(F.source_channel) || clean(F.reply_channel) || 'reply'));\nconst place = [clean(N.city), tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\nif (place) who.push(place);\nconst firmo = [clean(B.employees) || clean(N.company_size) ? (clean(B.employees) || clean(N.company_size)) + ' staff' : '', clean(B.revenue_range) || clean(N.company_revenue), clean(N.domain)].filter(Boolean).join('   ·   ');\nif (firmo) who.push(firmo);\n\nconst reply = esc(String(F.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 900));\nconst quoted = reply ? '> ' + reply : '> _interested, see thread_';\nconst brief = esc(String(F.custom_qualification_brief || '').trim());\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: ('🔥 new interested qualified lead · ' + companyRaw).slice(0, 150), emoji: true } }];\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: who.join('\\n').slice(0, 2900) } });\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*THEY SAID*\\n\\n' + quoted).slice(0, 2900) } });\nif (brief) {\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*WHY THEY QUALIFY*\\n\\n' + brief).slice(0, 2900) } });\n}\n\nlet campName = clean(C.campaignName) || clean(N.campaign_name);\nif (!campName) { const cid = String(N.alta_campaign_id || '').trim(); if (cid && !isUuid(cid)) campName = clean(cid); }\nif (campName) {\n  const statBits = [];\n  if (C.contacted) statBits.push(esc(C.contacted) + ' contacted');\n  if (C.replies !== '' && C.replies != null) statBits.push(esc(C.replies) + ' replies' + (C.replyRate ? ' (' + esc(C.replyRate) + ')' : ''));\n  if (C.positives !== '' && C.positives != null) statBits.push(esc(C.positives) + ' positive' + (C.positiveRate ? ' (' + esc(C.positiveRate) + ')' : ''));\n  if (C.status) statBits.push(esc(C.status));\n  const campLines = ['*WHERE THEY CAME FROM*', '', campName];\n  if (statBits.length) campLines.push(statBits.join('   ·   '));\n  if (dash && C.campaignRowId) {\n    try {\n      const blob = JSON.stringify({ pageId: 'pagnDARjFPzq5HclC', rowId: C.campaignRowId });\n      const b64 = Buffer.from(blob, 'utf8').toString('base64').replace(/=+$/, '');\n      campLines.push('');\n      campLines.push('🔗  *<https://airtable.com/appQG6dK0FIOhTxOl/' + dash + '?detail=' + b64 + '|View the campaign>*  copy and live stats');\n    } catch (e) {}\n  }\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: campLines.join('\\n').slice(0, 2900) } });\n}\n\nreturn [{ json: { blocksJson: JSON.stringify({ blocks }) } }];"
+          "jsCode": "const F = $('Flatten').first().json;\nconst N = $('Alta Normalize').first().json;\nlet phoneVal = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}\nlet B = {};\ntry { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }\nlet C = {};\ntry { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }\nlet dash = '';\ntry { dash = String(((($('Get Client Row').first().json || {}).fields) || {})['Dashboard Page ID'] || '').trim(); } catch (e) { dash = ''; }\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));\n\nconst companyRaw = F.company_name || N.company_name || 'Unknown';\nconst tzRaw = String(F.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch (e) { localTime = ''; }\n\nconst name = clean(N.full_name);\nconst title = clean(N.job_title);\nconst contact = clean(N.lead_email) || clean(N.linkedin_url);\n\nlet phoneLine = '_no number found_';\nif (phoneVal) {\n  const p = esc(phoneVal);\n  if (phoneSrc === 'signature') phoneLine = p + '   ✅ _direct line, from their signature_';\n  else if (['supersoniq', 'ai-ark', 'leadmagic', 'prospeo', 'LeadMagic'].includes(phoneSrc)) phoneLine = p + '   ✅ _mobile_';\n  else if (phoneSrc.endsWith('-tollfree')) phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';\n  else phoneLine = p;\n}\n\nconst who = [];\nwho.push(name ? ('*' + name + '*' + (title ? '   ' + title : '')) : '*General inbox*   confirm the decision maker');\nif (contact) who.push(contact);\nwho.push(phoneLine);\nwho.push('');\nwho.push('via Alta · ' + (clean(F.source_channel) || clean(F.reply_channel) || 'reply'));\nconst place = [clean(N.city), tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\nif (place) who.push(place);\nconst firmo = [clean(B.employees) || clean(N.company_size) ? (clean(B.employees) || clean(N.company_size)) + ' staff' : '', clean(B.revenue_range) || clean(N.company_revenue), clean(N.domain)].filter(Boolean).join('   ·   ');\nif (firmo) who.push(firmo);\n\nconst reply = esc(String(F.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 900));\nconst quoted = reply ? '> ' + reply : '> _interested, see thread_';\nconst brief = esc(String(F.custom_qualification_brief || '').trim());\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: ('🔥 new interested qualified lead · ' + companyRaw).slice(0, 150), emoji: true } }];\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: who.join('\\n').slice(0, 2900) } });\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*THEY SAID*\\n\\n' + quoted).slice(0, 2900) } });\nif (brief) {\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*WHY THEY QUALIFY*\\n\\n' + brief).slice(0, 2900) } });\n}\n\nlet campName = clean(C.campaignName) || clean(N.campaign_name);\nif (!campName) { const cid = String(N.alta_campaign_id || '').trim(); if (cid && !isUuid(cid)) campName = clean(cid); }\nif (campName) {\n  const statBits = [];\n  if (C.contacted) statBits.push(esc(C.contacted) + ' contacted');\n  if (C.replies !== '' && C.replies != null) statBits.push(esc(C.replies) + ' replies' + (C.replyRate ? ' (' + esc(C.replyRate) + ')' : ''));\n  if (C.positives !== '' && C.positives != null) statBits.push(esc(C.positives) + ' positive' + (C.positiveRate ? ' (' + esc(C.positiveRate) + ')' : ''));\n  if (C.status) statBits.push(esc(C.status));\n  const campLines = ['*WHERE THEY CAME FROM*', '', campName];\n  if (statBits.length) campLines.push(statBits.join('   ·   '));\n  if (dash && C.campaignRowId) {\n    try {\n      const blob = JSON.stringify({ pageId: 'pagnDARjFPzq5HclC', rowId: C.campaignRowId });\n      const b64 = Buffer.from(blob, 'utf8').toString('base64').replace(/=+$/, '');\n      campLines.push('');\n      campLines.push('🔗  *<https://airtable.com/appQG6dK0FIOhTxOl/' + dash + '?detail=' + b64 + '|View the campaign>*  copy and live stats');\n    } catch (e) {}\n  }\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: campLines.join('\\n').slice(0, 2900) } });\n}\n\nreturn [{ json: { blocksJson: JSON.stringify({ blocks }) } }];"
         },
         "id": "b0128d01-5b87-4db9-8510-932fcd2ccfc1",
         "name": "Build Slack Blocks",
@@ -3800,21 +3798,11 @@
             "conditions": [
               {
                 "id": "lm1",
-                "leftValue": "={{ $json.custom_qualification_status }}",
-                "rightValue": "out_of_icp",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
                 "operator": {
                   "type": "string",
-                  "operation": "notEquals"
-                }
-              },
-              {
-                "id": "lm2",
-                "leftValue": "={{ $json.custom_phone }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "string",
-                  "operation": "empty",
-                  "singleValue": true
+                  "operation": "equals"
                 }
               }
             ],
@@ -3823,7 +3811,7 @@
           "options": {}
         },
         "id": "a211b10c-dcb0-4ad6-a237-8ffcc25b8804",
-        "name": "Should Call LeadMagic?",
+        "name": "Call Waterfall?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
@@ -3833,40 +3821,49 @@
       },
       {
         "parameters": {
+          "jsCode": "// Decides whether to fire the Waterfall Phones webhook for this lead.\n// The waterfall owns the phone write on the contact row; this run only needs\n// the resolved number back for the Slack cards and the run log.\n// Out-of-ICP leads never trigger paid tiers: they fire only when a direct\n// signature number is already in hand (free, instant hit inside the waterfall).\nconst f = $('Flatten').first().json;\nlet contactId = '';\ntry { contactId = $('Create CRM Contact').first().json.id || ''; } catch (e) {}\nif (!contactId) {\n  try {\n    const pf = $('Find CRM Prospect').first().json.fields || {};\n    const c = pf.Contacts;\n    if (Array.isArray(c) && c.length) contactId = String(c[0] && c[0].id ? c[0].id : c[0]);\n  } catch (e) {}\n}\nlet sig = '', sigTf = '';\ntry { const ft = $('Format Thread').first().json || {}; sig = String(ft.signature_phone || '').trim(); sigTf = String(ft.signature_phone_tollfree || '').trim(); } catch (e) {}\nconst outOfIcp = f.custom_qualification_status === 'out_of_icp';\nconst _call = (contactId && (!outOfIcp || sig)) ? 1 : 0;\nlet reason = '';\nif (!contactId) reason = 'no contact row';\nelse if (outOfIcp && !sig) reason = 'out_of_icp';\nreturn [{ json: { _call, contactId, sig: sig || sigTf, sigIsTF: !sig && !!sigTf, reason } }];\n"
+        },
+        "id": "7b3e2f19-4c8d-4a6e-9d21-5f0a8c7e1b42",
+        "name": "Waterfall Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4848,
+          -240
+        ]
+      },
+      {
+        "parameters": {
           "method": "POST",
-          "url": "https://api.leadmagic.io/v1/people/mobile-finder",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
+          "url": "https://n8n.flowroots.com/webhook/waterfall-phones",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={{ { \"work_email\": $('Alta Normalize').first().json.lead_email } }}",
+          "jsonBody": "={{ { \"tableId\": \"tblzexq9qzO9IRiYV\", \"recordId\": $('Waterfall Prep').first().json.contactId, \"signature_phone\": $('Waterfall Prep').first().json.sig || '', \"clientRecordId\": $('Client Vars').first().json.clientRecId || '' } }}",
           "options": {
+            "timeout": 120000,
             "response": {
               "response": {
-                "neverError": true
+                "neverError": true,
+                "fullResponse": true
               }
             }
           }
         },
         "id": "196ff07b-76c9-4068-96af-77cf56dc46e2",
-        "name": "LeadMagic Mobile Finder",
+        "name": "Call Waterfall",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
           5184,
           -320
         ],
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "oMWq3aRIRMhIkSur",
-            "name": "Lead Magic"
-          }
-        },
-        "onError": "continueRegularOutput"
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "Fires the Waterfall Phones machine (HTNr5G6vBVkbxsqF) on the contact row. The waterfall owns the tier logic and the phone write; the sync response feeds the cards and log here."
       },
       {
         "parameters": {
-          "jsCode": "const f = $('Flatten').first().json;\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g,''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst gpt = String(f.custom_phone || '').trim();\nlet mobile = '';\ntry { const cur = $input.first().json || {}; mobile = String(cur.mobile_number || '').trim(); } catch(e) {}\nlet phone = '';\nlet phone_source = 'none';\nif (gpt && !isTollFree(gpt)) { phone = gpt; phone_source = 'GPT'; }\nelse if (mobile) { phone = mobile; phone_source = 'LeadMagic'; }\nelse if (f.custom_qualification_status === 'out_of_icp') { phone_source = 'skipped'; }\nelse if (gpt) { phone = gpt; phone_source = 'GPT-tollfree'; }\nreturn [{ json: { phone, phone_source } }];"
+          "jsCode": "// Parses the Waterfall Phones response back into the shape every downstream\n// reader expects ({phone, phone_source}). The waterfall (HTNr5G6vBVkbxsqF) owns\n// the tier logic AND the phone write on the contact row; this node only carries\n// the verdict forward for the Slack cards, the run log, and the addon payload.\nconst prep = $('Waterfall Prep').first().json;\nconst out = { phone: '', phone_source: 'none' };\nif (prep._call) {\n  const r = $input.first().json;\n  let b = r && r.body !== undefined ? r.body : r;\n  if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\n  if (b && b.phone !== undefined) {\n    out.phone = String(b.phone || '');\n    out.phone_source = String(b.phone_source || 'none');\n  } else {\n    // Waterfall unreachable (inactive, timeout, non-JSON): the lead still flows,\n    // the phone just stays unresolved. Surfaced in the run log as 'error'.\n    out.phone_source = 'error';\n  }\n} else if (prep.sig) {\n  out.phone = prep.sig;\n  out.phone_source = prep.sigIsTF ? 'signature-tollfree' : 'signature';\n} else if (prep.reason === 'out_of_icp') {\n  out.phone_source = 'skipped';\n}\nreturn [{ json: out }];\n"
         },
         "id": "42e696a0-727d-4534-8381-352bef6cc178",
         "name": "Resolve Phone",
@@ -4591,18 +4588,29 @@
         "main": [
           [
             {
-              "node": "Should Call LeadMagic?",
+              "node": "Create CRM Prospect",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Should Call LeadMagic?": {
+      "Waterfall Prep": {
         "main": [
           [
             {
-              "node": "LeadMagic Mobile Finder",
+              "node": "Call Waterfall?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Waterfall?": {
+        "main": [
+          [
+            {
+              "node": "Call Waterfall",
               "type": "main",
               "index": 0
             }
@@ -4616,7 +4624,7 @@
           ]
         ]
       },
-      "LeadMagic Mobile Finder": {
+      "Call Waterfall": {
         "main": [
           [
             {
@@ -4631,7 +4639,7 @@
         "main": [
           [
             {
-              "node": "Create CRM Prospect",
+              "node": "Set CRM Verdict",
               "type": "main",
               "index": 0
             }
@@ -4810,7 +4818,7 @@
         "main": [
           [
             {
-              "node": "Set CRM Verdict",
+              "node": "Waterfall Prep",
               "type": "main",
               "index": 0
             }

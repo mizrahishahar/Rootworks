@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-18T20:58:49.586Z",
+  "updatedAt": "2026-08-19T21:37:41.776Z",
   "createdAt": "2026-07-28T08:41:24.263Z",
   "id": "tspO2CNXtGudtSe7",
   "name": "Handle New Lead from PlusVibe",
@@ -1968,7 +1968,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1787161323473
+      "runStartedAt": 1787211958208
     }
   },
   "meta": {
@@ -2087,8 +2087,8 @@
       }
     ]
   },
-  "versionId": "f4731108-8726-4956-b743-4ec155cdb993",
-  "activeVersionId": "7b6e0b04-ee64-4e51-86ab-3af37fcecc18",
+  "versionId": "fcfe9a5a-142a-4ab6-a97c-ad9ed9037b76",
+  "activeVersionId": "fcfe9a5a-142a-4ab6-a97c-ad9ed9037b76",
   "triggerCount": 2,
   "shared": [
     {
@@ -2100,9 +2100,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-15T13:00:17.762Z",
-    "createdAt": "2026-08-15T13:00:17.762Z",
-    "versionId": "7b6e0b04-ee64-4e51-86ab-3af37fcecc18",
+    "updatedAt": "2026-08-19T21:37:41.780Z",
+    "createdAt": "2026-08-19T21:37:41.780Z",
+    "versionId": "fcfe9a5a-142a-4ab6-a97c-ad9ed9037b76",
     "workflowId": "tspO2CNXtGudtSe7",
     "nodes": [
       {
@@ -2570,10 +2570,8 @@
               "lastName": "={{ $('Normalize').item.json.last_name || null }}",
               "position": "={{ $('Normalize').item.json.job_title || null }}",
               "email": "={{ $('Normalize').item.json.lead_email }}",
-              "phone": "={{ $('Resolve Phone').item.json.phone || null }}",
               "linkedin": "={{ $('Normalize').item.json.linkedin_url || null }}",
-              "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}",
-              "Phone Source": "={{ ['signature','GPT','LeadMagic','signature-tollfree','GPT-tollfree','none'].includes(String($('Resolve Phone').first().json.phone_source || '').trim()) ? String($('Resolve Phone').first().json.phone_source).trim() : 'none' }}"
+              "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
             }
           },
           "options": {
@@ -2739,7 +2737,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const F = $('Flatten').first().json;\nconst N = $('Normalize').first().json;\nlet phoneVal = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}\nlet B = {};\ntry { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }\nlet C = {};\ntry { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }\nlet dash = '';\ntry { dash = String(((($('Find Client Row').first().json || {}).fields) || {})['Dashboard Page ID'] || '').trim(); } catch (e) { dash = ''; }\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));\n\nconst companyRaw = F.company_name || N.company_name || 'Unknown';\nconst tzRaw = String(F.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch (e) { localTime = ''; }\n\nconst name = clean(((N.first_name || '') + ' ' + (N.last_name || '')).trim());\nconst title = clean(N.job_title);\nconst email = clean(N.lead_email);\n\nlet phoneLine = '_no number found_';\nif (phoneVal) {\n  const p = esc(phoneVal);\n  if (phoneSrc === 'signature') phoneLine = p + '   ✅ _direct line, from their signature_';\n  else if (phoneSrc === 'LeadMagic') phoneLine = p + '   ✅ _mobile_';\n  else if (phoneSrc === 'GPT') phoneLine = p + '   _found online_';\n  else if (phoneSrc === 'signature-tollfree' || phoneSrc === 'GPT-tollfree') phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';\n  else phoneLine = p;\n}\n\nconst who = [];\nwho.push(name ? ('*' + name + '*' + (title ? '   ' + title : '')) : '*General inbox*   confirm the decision maker');\nif (email) who.push(email);\nwho.push(phoneLine);\nwho.push('');\nconst place = [clean(N.city), tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\nif (place) who.push(place);\nconst firmo = [clean(B.employees) ? clean(B.employees) + ' staff' : '', clean(B.revenue_range), clean(N.domain)].filter(Boolean).join('   ·   ');\nif (firmo) who.push(firmo);\n\nconst reply = esc(String(F.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 900));\nconst quoted = reply ? '> ' + reply : '> _interested, see thread_';\nconst brief = esc(String(F.custom_qualification_brief || '').trim());\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: ('🔥 new interested qualified lead · ' + companyRaw).slice(0, 150), emoji: true } }];\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: who.join('\\n').slice(0, 2900) } });\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*THEY SAID*\\n\\n' + quoted).slice(0, 2900) } });\nif (brief) {\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*WHY THEY QUALIFY*\\n\\n' + brief).slice(0, 2900) } });\n}\n\nlet campName = clean(C.campaignName) || clean(N.campaign_name);\nif (!campName) { const cid = String(N.campaign_id || '').trim(); if (cid && !isUuid(cid)) campName = clean(cid); }\nif (campName) {\n  const statBits = [];\n  if (C.contacted) statBits.push(esc(C.contacted) + ' contacted');\n  if (C.replies !== '' && C.replies != null) statBits.push(esc(C.replies) + ' replies' + (C.replyRate ? ' (' + esc(C.replyRate) + ')' : ''));\n  if (C.positives !== '' && C.positives != null) statBits.push(esc(C.positives) + ' positive' + (C.positiveRate ? ' (' + esc(C.positiveRate) + ')' : ''));\n  if (C.status) statBits.push(esc(C.status));\n  const campLines = ['*WHERE THEY CAME FROM*', '', campName];\n  if (statBits.length) campLines.push(statBits.join('   ·   '));\n  if (dash && C.campaignRowId) {\n    try {\n      const blob = JSON.stringify({ pageId: 'pagnDARjFPzq5HclC', rowId: C.campaignRowId });\n      const b64 = Buffer.from(blob, 'utf8').toString('base64').replace(/=+$/, '');\n      campLines.push('');\n      campLines.push('🔗  *<https://airtable.com/appQG6dK0FIOhTxOl/' + dash + '?detail=' + b64 + '|View the campaign>*  copy and live stats');\n    } catch (e) {}\n  }\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: campLines.join('\\n').slice(0, 2900) } });\n}\n\nreturn [{ json: { blocksJson: JSON.stringify({ blocks }) } }];"
+          "jsCode": "const F = $('Flatten').first().json;\nconst N = $('Normalize').first().json;\nlet phoneVal = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}\nlet B = {};\ntry { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }\nlet C = {};\ntry { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }\nlet dash = '';\ntry { dash = String(((($('Find Client Row').first().json || {}).fields) || {})['Dashboard Page ID'] || '').trim(); } catch (e) { dash = ''; }\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));\n\nconst companyRaw = F.company_name || N.company_name || 'Unknown';\nconst tzRaw = String(F.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch (e) { localTime = ''; }\n\nconst name = clean(((N.first_name || '') + ' ' + (N.last_name || '')).trim());\nconst title = clean(N.job_title);\nconst email = clean(N.lead_email);\n\nlet phoneLine = '_no number found_';\nif (phoneVal) {\n  const p = esc(phoneVal);\n  if (phoneSrc === 'signature') phoneLine = p + '   ✅ _direct line, from their signature_';\n  else if (['supersoniq', 'ai-ark', 'leadmagic', 'prospeo', 'LeadMagic'].includes(phoneSrc)) phoneLine = p + '   ✅ _mobile_';\n  else if (phoneSrc.endsWith('-tollfree')) phoneLine = p + '   ⚠️ _switchboard, you will get a receptionist_';\n  else phoneLine = p;\n}\n\nconst who = [];\nwho.push(name ? ('*' + name + '*' + (title ? '   ' + title : '')) : '*General inbox*   confirm the decision maker');\nif (email) who.push(email);\nwho.push(phoneLine);\nwho.push('');\nconst place = [clean(N.city), tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\nif (place) who.push(place);\nconst firmo = [clean(B.employees) ? clean(B.employees) + ' staff' : '', clean(B.revenue_range), clean(N.domain)].filter(Boolean).join('   ·   ');\nif (firmo) who.push(firmo);\n\nconst reply = esc(String(F.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 900));\nconst quoted = reply ? '> ' + reply : '> _interested, see thread_';\nconst brief = esc(String(F.custom_qualification_brief || '').trim());\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: ('🔥 new interested qualified lead · ' + companyRaw).slice(0, 150), emoji: true } }];\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: who.join('\\n').slice(0, 2900) } });\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*THEY SAID*\\n\\n' + quoted).slice(0, 2900) } });\nif (brief) {\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: ('*WHY THEY QUALIFY*\\n\\n' + brief).slice(0, 2900) } });\n}\n\nlet campName = clean(C.campaignName) || clean(N.campaign_name);\nif (!campName) { const cid = String(N.campaign_id || '').trim(); if (cid && !isUuid(cid)) campName = clean(cid); }\nif (campName) {\n  const statBits = [];\n  if (C.contacted) statBits.push(esc(C.contacted) + ' contacted');\n  if (C.replies !== '' && C.replies != null) statBits.push(esc(C.replies) + ' replies' + (C.replyRate ? ' (' + esc(C.replyRate) + ')' : ''));\n  if (C.positives !== '' && C.positives != null) statBits.push(esc(C.positives) + ' positive' + (C.positiveRate ? ' (' + esc(C.positiveRate) + ')' : ''));\n  if (C.status) statBits.push(esc(C.status));\n  const campLines = ['*WHERE THEY CAME FROM*', '', campName];\n  if (statBits.length) campLines.push(statBits.join('   ·   '));\n  if (dash && C.campaignRowId) {\n    try {\n      const blob = JSON.stringify({ pageId: 'pagnDARjFPzq5HclC', rowId: C.campaignRowId });\n      const b64 = Buffer.from(blob, 'utf8').toString('base64').replace(/=+$/, '');\n      campLines.push('');\n      campLines.push('🔗  *<https://airtable.com/appQG6dK0FIOhTxOl/' + dash + '?detail=' + b64 + '|View the campaign>*  copy and live stats');\n    } catch (e) {}\n  }\n  blocks.push({ type: 'divider' });\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: campLines.join('\\n').slice(0, 2900) } });\n}\n\nreturn [{ json: { blocksJson: JSON.stringify({ blocks }) } }];"
         },
         "id": "03fd8834-dd6e-47e8-b9e3-136cca8d0eb8",
         "name": "Build Slack Blocks",
@@ -3130,23 +3128,14 @@
             "options": {
               "caseSensitive": true,
               "leftValue": "",
-              "typeValidation": "loose",
+              "typeValidation": "strict",
               "version": 2
             },
             "conditions": [
               {
                 "id": "lm1",
-                "leftValue": "={{ $json.custom_qualification_status }}",
-                "rightValue": "out_of_icp",
-                "operator": {
-                  "type": "string",
-                  "operation": "notEquals"
-                }
-              },
-              {
-                "id": "lm2",
-                "leftValue": "={{ (($('Format Thread').first().json.signature_phone || '').trim() || ((($json.custom_phone || '').trim() && !/^\\+?1?(800|833|844|855|866|877|888)\\d{7}$/.test(($json.custom_phone || '').trim())) ? ($json.custom_phone || '').trim() : '')) ? 'have' : 'need' }}",
-                "rightValue": "need",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "rightValue": "yes",
                 "operator": {
                   "type": "string",
                   "operation": "equals"
@@ -3158,50 +3147,59 @@
           "options": {}
         },
         "id": "a8079995-1cac-4808-b7f6-e3d586f42f88",
-        "name": "Should Call LeadMagic?",
+        "name": "Call Waterfall?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          3936,
+          5504,
+          -320
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Decides whether to fire the Waterfall Phones webhook for this lead.\n// The waterfall owns the phone write on the contact row; this run only needs\n// the resolved number back for the Slack cards and the run log.\n// Out-of-ICP leads never trigger paid tiers: they fire only when a direct\n// signature number is already in hand (free, instant hit inside the waterfall).\nconst f = $('Flatten').first().json;\nlet contactId = '';\ntry { contactId = $('Create CRM Contact').first().json.id || ''; } catch (e) {}\nif (!contactId) {\n  try {\n    const pf = $('Find CRM Prospect').first().json.fields || {};\n    const c = pf.Contacts;\n    if (Array.isArray(c) && c.length) contactId = String(c[0] && c[0].id ? c[0].id : c[0]);\n  } catch (e) {}\n}\nlet sig = '', sigTf = '';\ntry { const ft = $('Format Thread').first().json || {}; sig = String(ft.signature_phone || '').trim(); sigTf = String(ft.signature_phone_tollfree || '').trim(); } catch (e) {}\nconst outOfIcp = f.custom_qualification_status === 'out_of_icp';\nconst _call = (contactId && (!outOfIcp || sig)) ? 1 : 0;\nlet reason = '';\nif (!contactId) reason = 'no contact row';\nelse if (outOfIcp && !sig) reason = 'out_of_icp';\nreturn [{ json: { _call, contactId, sig: sig || sigTf, sigIsTF: !sig && !!sigTf, reason } }];\n"
+        },
+        "id": "9c1f74a2-51aa-4b0e-8f14-2f3a7d9e6b01",
+        "name": "Waterfall Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5392,
           -320
         ]
       },
       {
         "parameters": {
           "method": "POST",
-          "url": "https://api.leadmagic.io/v1/people/mobile-finder",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
+          "url": "https://n8n.flowroots.com/webhook/waterfall-phones",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={{ { \"work_email\": $('Normalize').first().json.lead_email } }}",
+          "jsonBody": "={{ { \"tableId\": \"tblzexq9qzO9IRiYV\", \"recordId\": $('Waterfall Prep').first().json.contactId, \"signature_phone\": $('Waterfall Prep').first().json.sig || '', \"clientRecordId\": $('Find Client Row').first().json.id || '' } }}",
           "options": {
+            "timeout": 120000,
             "response": {
               "response": {
-                "neverError": true
+                "neverError": true,
+                "fullResponse": true
               }
             }
           }
         },
         "id": "2acf2dc7-a79f-4488-983d-052238e9458f",
-        "name": "LeadMagic Mobile Finder",
+        "name": "Call Waterfall",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          4160,
+          5616,
           -384
         ],
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "oMWq3aRIRMhIkSur",
-            "name": "Lead Magic"
-          }
-        },
-        "onError": "continueRegularOutput"
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "Fires the Waterfall Phones machine (HTNr5G6vBVkbxsqF) on the contact row. The waterfall owns the tier logic and the phone write; the sync response feeds the cards and log here."
       },
       {
         "parameters": {
-          "jsCode": "const f = $('Flatten').first().json;\nlet sig='', sigTf='';\ntry { const ft = $('Format Thread').first().json || {}; sig = String(ft.signature_phone || '').trim(); sigTf = String(ft.signature_phone_tollfree || '').trim(); } catch(e) {}\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g,''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst gpt = String(f.custom_phone || '').trim();\nlet mobile = '';\ntry { const cur = $input.first().json || {}; mobile = String(cur.mobile_number || '').trim(); } catch(e) {}\nlet phone = '';\nlet phone_source = 'none';\nif (sig) { phone = sig; phone_source = 'signature'; }\nelse if (gpt && !isTollFree(gpt)) { phone = gpt; phone_source = 'GPT'; }\nelse if (mobile) { phone = mobile; phone_source = 'LeadMagic'; }\nelse if (f.custom_qualification_status === 'out_of_icp') { phone_source = 'skipped'; }\nelse if (sigTf) { phone = sigTf; phone_source = 'signature-tollfree'; }\nelse if (gpt) { phone = gpt; phone_source = 'GPT-tollfree'; }\nreturn [{ json: { phone, phone_source } }];"
+          "jsCode": "// Parses the Waterfall Phones response back into the shape every downstream\n// reader expects ({phone, phone_source}). The waterfall (HTNr5G6vBVkbxsqF) owns\n// the tier logic AND the phone write on the contact row; this node only carries\n// the verdict forward for the Slack cards, the run log, and the addon payload.\nconst prep = $('Waterfall Prep').first().json;\nconst out = { phone: '', phone_source: 'none' };\nif (prep._call) {\n  const r = $input.first().json;\n  let b = r && r.body !== undefined ? r.body : r;\n  if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }\n  if (b && b.phone !== undefined) {\n    out.phone = String(b.phone || '');\n    out.phone_source = String(b.phone_source || 'none');\n  } else {\n    // Waterfall unreachable (inactive, timeout, non-JSON): the lead still flows,\n    // the phone just stays unresolved. Surfaced in the run log as 'error'.\n    out.phone_source = 'error';\n  }\n} else if (prep.sig) {\n  out.phone = prep.sig;\n  out.phone_source = prep.sigIsTF ? 'signature-tollfree' : 'signature';\n} else if (prep.reason === 'out_of_icp') {\n  out.phone_source = 'skipped';\n}\nreturn [{ json: out }];\n"
         },
         "id": "bc108a26-af70-4adf-b251-ca12b6aaae0e",
         "name": "Resolve Phone",
@@ -3287,7 +3285,7 @@
       },
       {
         "parameters": {
-          "jsCode": "let row = {};\ntry { row = (($('Find Client Row').first().json || {}).fields) || {}; } catch(e) { row = {}; }\nconst channel = String(row['BDR Slack Channel ID'] || '').trim();\nlet n = {}; try { n = $('Normalize').first().json || {}; } catch(e) {}\nlet f = {}; try { f = $('Flatten').first().json || {}; } catch(e) {}\nlet phone = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phone = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch(e) {}\nlet prospectId = '', url = '';\ntry { const r = $('Resolve Prospect').first().json || {}; prospectId = r.prospect_id || ''; url = String(r.pipeline_url || ''); } catch(e) {}\n\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst company = clean(f.company_name) || clean(n.company_name) || 'Unknown';\nconst email = clean(n.lead_email);\nconst tzRaw = String(f.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst city = clean(n.city);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch(e) { localTime = ''; }\n\nconst full = clean(((n.first_name || '') + ' ' + (n.last_name || '')).trim());\nconst title = clean(n.job_title);\nconst who = full ? (full + (title ? ',  ' + title : '')) : 'General inbox, confirm you have the owner';\nconst place = [city, tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\n\nlet phoneLine = '_no number found_';\nif (phone) {\n  const p = esc(phone);\n  if (phoneSrc === 'signature') phoneLine = '*' + p + '*   ✅ direct line';\n  else if (phoneSrc === 'LeadMagic') phoneLine = '*' + p + '*   ✅ mobile';\n  else if (phoneSrc === 'signature-tollfree' || phoneSrc === 'GPT-tollfree') phoneLine = '*' + p + '*   ⚠️ switchboard, you will get a receptionist';\n  else phoneLine = '*' + p + '*   found online, unverified';\n}\n\nconst briefRaw = String(f.custom_qualification_brief || '');\nconst fit = esc((briefRaw.split('\\n')[0] || '').replace(/:?white_check_mark:?/gi, '').replace(/^[ |\\-•]+/, '').trim().slice(0, 200)) || clean(f.custom_qualification_status);\nconst situation = clean(f.situation_summary) || esc(String(f.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 180)) || 'interested, see thread';\n\nlet persona = '';\ntry {\n  const acct = String(n.email_account_id || n.sending_inbox || '').toLowerCase();\n  const prefix = (acct.split('@')[0] || '').replace(/\\.[a-z0-9]+$/, '');\n  const pmap = {tomwilson:'Tom Wilson', sarahjohnson:'Sarah Johnson', mikecarter:'Mike Carter', jakemiller:'Jake Miller', chrisdavis:'Chris Davis'};\n  persona = pmap[prefix] || '';\n} catch(e) { persona = ''; }\n\nconst L = [];\nL.push('📞   *NEW LEAD TO CALL*');\nL.push('');\nL.push('*' + company + '*');\nL.push(who);\nif (place) L.push(place);\nL.push('');\nL.push('📱   ' + phoneLine);\nL.push('');\nL.push('*Fit*');\nL.push(fit);\nL.push('');\nL.push('*Where it stands*');\nL.push(situation);\nL.push('');\nif (persona) { L.push('*We email them as*   ' + persona + ', so you are consistent if it comes up'); L.push(''); }\nL.push('*Goal*   book the meeting');\nL.push('');\nif (email) { L.push('⚠️   Be very careful if you choose to email them directly, we are still working the thread as well.'); L.push(email); L.push(''); }\nif (url) { L.push('🔗   *<' + url + '|Open in Pipeline>*   to see the full prospect details'); L.push(''); }\nL.push('📬   *The full conversation so far is in the thread below.*');\nL.push('');\nL.push('_Reply in this thread as you work it (called / reached / no answer). Your notes sync onto their record._');\n\nreturn [{ json: { bdr_channel: channel, bdr_text: L.join('\\n').slice(0, 2900), prospect_id: prospectId } }];"
+          "jsCode": "let row = {};\ntry { row = (($('Find Client Row').first().json || {}).fields) || {}; } catch(e) { row = {}; }\nconst channel = String(row['BDR Slack Channel ID'] || '').trim();\nlet n = {}; try { n = $('Normalize').first().json || {}; } catch(e) {}\nlet f = {}; try { f = $('Flatten').first().json || {}; } catch(e) {}\nlet phone = '', phoneSrc = '';\ntry { const rp = $('Resolve Phone').first().json || {}; phone = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch(e) {}\nlet prospectId = '', url = '';\ntry { const r = $('Resolve Prospect').first().json || {}; prospectId = r.prospect_id || ''; url = String(r.pipeline_url || ''); } catch(e) {}\n\nconst esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst clean = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s.toUpperCase() === 'N/A') ? '' : esc(s); };\nconst company = clean(f.company_name) || clean(n.company_name) || 'Unknown';\nconst email = clean(n.lead_email);\nconst tzRaw = String(f.custom_timezone || '').trim();\nconst tz = clean(tzRaw);\nconst city = clean(n.city);\nconst zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};\nlet localTime = '';\ntry { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch(e) { localTime = ''; }\n\nconst full = clean(((n.first_name || '') + ' ' + (n.last_name || '')).trim());\nconst title = clean(n.job_title);\nconst who = full ? (full + (title ? ',  ' + title : '')) : 'General inbox, confirm you have the owner';\nconst place = [city, tz, localTime ? localTime + ' their time' : ''].filter(Boolean).join('   ·   ');\n\nlet phoneLine = '_no number found_';\nif (phone) {\n  const p = esc(phone);\n  if (phoneSrc === 'signature') phoneLine = '*' + p + '*   ✅ direct line';\n  else if (['supersoniq', 'ai-ark', 'leadmagic', 'prospeo', 'LeadMagic'].includes(phoneSrc)) phoneLine = '*' + p + '*   ✅ mobile';\n  else if (phoneSrc.endsWith('-tollfree')) phoneLine = '*' + p + '*   ⚠️ switchboard, you will get a receptionist';\n  else phoneLine = '*' + p + '*   found online, unverified';\n}\n\nconst briefRaw = String(f.custom_qualification_brief || '');\nconst fit = esc((briefRaw.split('\\n')[0] || '').replace(/:?white_check_mark:?/gi, '').replace(/^[ |\\-•]+/, '').trim().slice(0, 200)) || clean(f.custom_qualification_status);\nconst situation = clean(f.situation_summary) || esc(String(f.reply_text || '').replace(/\\s+/g, ' ').trim().slice(0, 180)) || 'interested, see thread';\n\nlet persona = '';\ntry {\n  const acct = String(n.email_account_id || n.sending_inbox || '').toLowerCase();\n  const prefix = (acct.split('@')[0] || '').replace(/\\.[a-z0-9]+$/, '');\n  const pmap = {tomwilson:'Tom Wilson', sarahjohnson:'Sarah Johnson', mikecarter:'Mike Carter', jakemiller:'Jake Miller', chrisdavis:'Chris Davis'};\n  persona = pmap[prefix] || '';\n} catch(e) { persona = ''; }\n\nconst L = [];\nL.push('📞   *NEW LEAD TO CALL*');\nL.push('');\nL.push('*' + company + '*');\nL.push(who);\nif (place) L.push(place);\nL.push('');\nL.push('📱   ' + phoneLine);\nL.push('');\nL.push('*Fit*');\nL.push(fit);\nL.push('');\nL.push('*Where it stands*');\nL.push(situation);\nL.push('');\nif (persona) { L.push('*We email them as*   ' + persona + ', so you are consistent if it comes up'); L.push(''); }\nL.push('*Goal*   book the meeting');\nL.push('');\nif (email) { L.push('⚠️   Be very careful if you choose to email them directly, we are still working the thread as well.'); L.push(email); L.push(''); }\nif (url) { L.push('🔗   *<' + url + '|Open in Pipeline>*   to see the full prospect details'); L.push(''); }\nL.push('📬   *The full conversation so far is in the thread below.*');\nL.push('');\nL.push('_Reply in this thread as you work it (called / reached / no answer). Your notes sync onto their record._');\n\nreturn [{ json: { bdr_channel: channel, bdr_text: L.join('\\n').slice(0, 2900), prospect_id: prospectId } }];"
         },
         "id": "92966aaf-7881-4c71-9969-87216f977279",
         "name": "Build BDR Card",
@@ -3410,14 +3408,6 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
-        "name": "Routine URL Set?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          6832,
-          -128
-        ],
         "parameters": {
           "conditions": {
             "options": {
@@ -3440,17 +3430,17 @@
             ]
           },
           "options": {}
-        }
+        },
+        "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
+        "name": "Routine URL Set?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6832,
+          -128
+        ]
       },
       {
-        "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
-        "name": "Fire Inbox Routine",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          7056,
-          -128
-        ],
         "parameters": {
           "method": "POST",
           "url": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
@@ -3476,6 +3466,14 @@
           "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
           "options": {}
         },
+        "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
+        "name": "Fire Inbox Routine",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          7120,
+          -160
+        ],
         "onError": "continueRegularOutput"
       }
     ],
@@ -3817,18 +3815,29 @@
         "main": [
           [
             {
-              "node": "Should Call LeadMagic?",
+              "node": "Existing Prospect?",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Should Call LeadMagic?": {
+      "Waterfall Prep": {
         "main": [
           [
             {
-              "node": "LeadMagic Mobile Finder",
+              "node": "Call Waterfall?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Waterfall?": {
+        "main": [
+          [
+            {
+              "node": "Call Waterfall",
               "type": "main",
               "index": 0
             }
@@ -3842,7 +3851,7 @@
           ]
         ]
       },
-      "LeadMagic Mobile Finder": {
+      "Call Waterfall": {
         "main": [
           [
             {
@@ -3857,7 +3866,7 @@
         "main": [
           [
             {
-              "node": "Existing Prospect?",
+              "node": "Set CRM Verdict",
               "type": "main",
               "index": 0
             }
@@ -3886,7 +3895,7 @@
         "main": [
           [
             {
-              "node": "Set CRM Verdict",
+              "node": "Waterfall Prep",
               "type": "main",
               "index": 0
             }

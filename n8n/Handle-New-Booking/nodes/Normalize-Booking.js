@@ -11,7 +11,8 @@ try{ manual=$('Manual Booking').first().json; }catch(e){}
 let out;
 if(cal){
   const b=cal.body||{}; const p=b.payload||{};
-  if(String(b.triggerEvent||'')!=='BOOKING_CREATED'){ return [{ json:{ _ignore:true, reason:'Cal.com event '+(b.triggerEvent||'?')+' is not a booking' } }]; }
+  const ev=String(b.triggerEvent||'');
+  if(ev!=='BOOKING_CREATED'){ return [{ json:{ _ignore:true, reason:'Cal.com event '+(ev||'?')+' is not a new booking'+(p.uid?' ('+p.uid+')':''), event:ev } }]; }
   const a=(p.attendees||[])[0]||{};
   const email=String(a.email||'').toLowerCase().trim();
   const nameParts=String(a.name||'').trim().split(/\s+/);

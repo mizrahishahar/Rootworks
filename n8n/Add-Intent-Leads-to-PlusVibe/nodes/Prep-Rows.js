@@ -11,4 +11,6 @@ for(const it of rows){
   if(!j.id) continue;
   out.push({ json: { recordId:j.id, baseId:src.baseId||'', tableId:src.tableId||'', clientRecId:src.clientRecId||'', clientName:src.clientName||'', pvWorkspace:src.pvWorkspace||'', row:(j.fields||j) } });
 }
+// No ready rows: emit one placeholder so the chain reaches Build Client Log and the run still writes its row.
+if(!out.length) return [{ json: { _empty:true } }];
 return out;

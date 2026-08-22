@@ -22,7 +22,18 @@ function apiKey() {
 }
 const args = process.argv.slice(2);
 const id = args[0];
-if (!id) { console.error('Usage: node scripts/n8n-exec.js <executionId> [node name ...] [--chars 800]'); process.exit(1); }
+if (!id) { console.error('Usage: node scripts/n8n-exec.js <executionId> [node name ...] [--chars 800]\n       node scripts/n8n-exec.js --list <workflowId> [limit]'); process.exit(1); }
+if (id === '--list') {
+  // Recent executions of one workflow, newest first: the door that works when the MCP says "not available in MCP".
+  const wfId = args[1]; const limit = Number(args[2]) || 10;
+  (async () => {
+    const res = await fetch(`${BASE}/api/v1/executions?workflowId=${encodeURIComponent(wfId)}&limit=${limit}`, { headers: { 'X-N8N-API-KEY': apiKey() } });
+    if (!res.ok) throw new Error(`GET /executions -> HTTP ${res.status}: ${await res.text()}`);
+    const out = await res.json();
+    for (const e of out.data || []) console.log(`${e.id}  ${e.status}  ${e.mode}  ${e.startedAt} -> ${e.stoppedAt || '...'}`);
+  })().catch((e) => { console.error(e.message); process.exit(1); });
+  return;
+}
 const ci = args.indexOf('--chars');
 const chars = ci > -1 ? Number(args[ci + 1]) || 800 : 800;
 const only = args.slice(1).filter((a, i) => a !== '--chars' && !(ci > -1 && i === ci));

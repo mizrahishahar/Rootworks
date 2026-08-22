@@ -43,7 +43,10 @@ for (const dir of fs.readdirSync(ROOT).sort()) {
     isSubWorkflow: nodes.some((n) => n.type === 'n8n-nodes-base.executeWorkflowTrigger'),
     errorLogger: (wf.settings && wf.settings.errorWorkflow) === ERROR_LOGGER_ID,
     logNodes,
-    silentLogWrite: logNodes.filter((l) => l.op !== 'search' && l.onError !== 'stopWorkflow').map((l) => l.name),
+    // Only writes must be loud; reads of the launch row may continue (the row may not exist yet).
+    silentLogWrite: logNodes.filter((l) => ['create', 'update', 'upsert'].includes(l.op) && l.onError !== 'stopWorkflow').map((l) => l.name),
+    // Launched runs (form / Hub launch row) stamp Running; scheduled and event runs write their row at the end, by the Operator's ruling.
+    launchable: nodes.some((n) => n.type === 'n8n-nodes-base.formTrigger' || (n.type === 'n8n-nodes-base.webhook' && /^launch-|-run$/.test(String((n.parameters || {}).path || '')))),
     stampsRunning: /['"]Running['"]/.test(all),
     literalSucceeded: /Status['"]?\s*[:=]\s*['"]Succeeded['"]/.test(all),
     collectsFailed: /failed\s*=\s*\[\]|failed\.push|failed\.length/.test(src),
@@ -64,12 +67,12 @@ for (const r of rows) {
   if (!r.isSubWorkflow && !r.logNodes.length) flags.push('NO LOG ROW');
   if (r.silentLogWrite.length) flags.push('SILENT LOG WRITE: ' + r.silentLogWrite.join(', '));
   if (r.literalSucceeded) flags.push('LITERAL SUCCEEDED');
-  if (!r.isSubWorkflow && r.logNodes.length && !r.stampsRunning) flags.push('NO RUNNING STAMP');
+  if (!r.isSubWorkflow && r.launchable && r.logNodes.length && !r.stampsRunning) flags.push('NO RUNNING STAMP (launchable)');
   console.log(`\n## ${r.workflow} (${r.id}) active=${r.active}${r.isSubWorkflow ? ' [helper]' : ''}`);
   console.log(`triggers=${r.triggers.join('+') || 'none'} errorLogger=${r.errorLogger} failed[]=${r.collectsFailed} tally=${r.usesTally} clientScoped=${r.clientScoped}`);
   console.log(`log nodes: ${r.logNodes.map((l) => `${l.name}[${l.op}|${l.onError}]`).join('; ') || 'none'}`);
   if (r.calls.length) console.log(`calls: ${r.calls.join(', ')}`);
   if (flags.length) console.log(`FLAGS: ${flags.join(' | ')}`);
 }
-const flagged = rows.filter((r) => !r.isSubWorkflow && (!r.errorLogger || !r.logNodes.length || r.silentLogWrite.length || r.literalSucceeded || !r.stampsRunning));
+const flagged = rows.filter((r) => !r.isSubWorkflow && (!r.errorLogger || !r.logNodes.length || r.silentLogWrite.length || r.literalSucceeded || (r.launchable && r.logNodes.length && !r.stampsRunning)));
 console.log(`\n${rows.length} machines, ${flagged.length} flagged`);

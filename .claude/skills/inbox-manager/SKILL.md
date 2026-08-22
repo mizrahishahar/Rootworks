@@ -48,7 +48,7 @@ Never reuse a phrase or hook already spent in the thread. Signature is a plain s
 
 ## Booking mechanics
 
-- **Real times only.** Pull live availability from the client's scheduler when one is wired. When it is not, the times come from the Operator. Never invent a slot.
+- **Real times only, from the `get_availability` tool.** It is on the Marvin MCP server next to `post_draft`: give it the client name and the lead's IANA timezone (days and max optional) and it returns the open slots on that client's Scheduling Link, labelled in the lead's clock, for every scheduler we serve (Cal.com, Calendly, HubSpot). That is the only source of a time in a reply; the Operator is the fallback only when the tool reports no link or an error. Never invent a slot.
 - Always his timezone. Distinct times across a run. Quietly drop dead times and re-anchor live ones.
 - **Never state a call length** unless a real one is known.
 - **The ask is two concrete times; the scheduling link closes every ask.** "Or pick any time that suits you here: {link}." Never "send me a time that works", which turns booking into correspondence. The link is the closer, never the whole ask on its own.

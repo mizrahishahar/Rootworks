@@ -22,6 +22,7 @@ Do not hand-edit; rerun the script after every pull.
 | Create-PlusVibe-Weekly-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |
 | Deploy-View-to-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
 | Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
+| Get-Availability | GET https://n8n.flowroots.com/webhook/availability |  | no |
 | Handle-Intent-Signal | POST https://n8n.flowroots.com/webhook/intent-signal |  | no |
 | Handle-New-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |
 | Handle-New-Lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |

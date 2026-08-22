@@ -1,0 +1,1027 @@
+{
+  "name": "Handle New Booking",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a68e713e-6639-4536-b4d8-6f6c39adf28d",
+      "name": "Cal Booking",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "813bb9cf-b0b3-4b2c-a122-cb5b0c80e0fd",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking/cal",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "9c7c4326-4144-458a-8504-96a07cf54c0f",
+      "name": "Manual Booking",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        224
+      ],
+      "webhookId": "035fdd7c-e589-4c46-94ea-cb207741ec3e",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking/manual",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "a5a8d96f-d021-40c3-927d-93b7575551a5",
+      "name": "Normalize Booking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Normalize-Booking.js"
+      }
+    },
+    {
+      "id": "103b5dbc-8b3e-4061-ad91-a67949136502",
+      "name": "Booking Event?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !$json._ignore }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a64f240f-f183-4c13-bf9f-419463da8954",
+      "name": "Get Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c666c45c-168c-43af-b296-6b53c4aa50ab",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Client.js"
+      }
+    },
+    {
+      "id": "fb10026b-5976-4c99-835b-665c671589a1",
+      "name": "Client Resolved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.clientRecId && !$json.clientMeeting }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ceb55c8d-980c-4ec6-9959-00a313d64fa3",
+      "name": "Find Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "filterByFormula": "=AND(FIND(\"{{ $('Resolve Client').first().json.clientName }}\", ARRAYJOIN({Client})), OR(AND(\"{{ $('Normalize Booking').first().json.email }}\" != \"\", FIND(\"{{ $('Normalize Booking').first().json.email }}\", LOWER(ARRAYJOIN({Contact Email}))) > 0), AND(\"{{ $('Normalize Booking').first().json.domain }}\" != \"\", LOWER({domain}) = \"{{ $('Normalize Booking').first().json.domain }}\")))",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "433d2bf6-583d-4bf3-ba8f-be650630d3e5",
+      "name": "Prospect Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.id }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8b3da52c-6096-4a0b-a24c-900b8ba3883c",
+      "name": "PV Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        160
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.plusvibe.ai/api/v1/lead/get?workspace_id=' + encodeURIComponent($('Resolve Client').first().json.pvWorkspace) + '&email=' + encodeURIComponent($('Normalize Booking').first().json.email) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "32aed809-085a-4366-b9ba-c74f4558f562",
+      "name": "Assess Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Assess-Lead.js"
+      }
+    },
+    {
+      "id": "436c45b9-e358-45c7-b4e6-0bb3e80d4b18",
+      "name": "Ours?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.ours }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d5742b24-741c-4751-984f-07b36cb2b240",
+      "name": "Create Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        64
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Dedup Key"
+          ],
+          "schema": [],
+          "value": {
+            "Name": "={{ $('Assess Lead').first().json.companyName || $('Normalize Booking').first().json.domain || $('Normalize Booking').first().json.fullName || $('Normalize Booking').first().json.email }}",
+            "Website": "={{ $('Normalize Booking').first().json.domain ? ('https://' + $('Normalize Booking').first().json.domain) : null }}",
+            "Client": "={{ [ $('Resolve Client').first().json.clientRecId ] }}",
+            "Source": "Booking",
+            "Campaign": "={{ $('Assess Lead').first().json.campaign || null }}",
+            "First Engagement": "={{ $now.toISO() }}",
+            "Dedup Key": "={{ String($('Resolve Client').first().json.clientSlug).toLowerCase() + '|' + String($('Normalize Booking').first().json.domain || $('Normalize Booking').first().json.email).toLowerCase() }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d21596c8-d0f8-4cd8-bba6-2eeed1fecb05",
+      "name": "Create Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        64
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $('Normalize Booking').first().json.firstName || $('Normalize Booking').first().json.email }}",
+            "lastName": "={{ $('Normalize Booking').first().json.lastName || null }}",
+            "email": "={{ $('Normalize Booking').first().json.email }}",
+            "position": "={{ $('Assess Lead').first().json.title || null }}",
+            "Company": "={{ $('Create Prospect').first().json.id ? [ $('Create Prospect').first().json.id ] : [] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "efc2911f-8651-4f8b-95c8-60e03aa1b24c",
+      "name": "Resolve Prospect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Prospect.js"
+      }
+    },
+    {
+      "id": "4fd45b4c-edf0-4f1e-bb50-b35542be5c4d",
+      "name": "Stamp Booked",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        0
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').first().json.prospectId }}",
+            "OutreachStatus": "Scheduled Call",
+            "Call Booked At": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "contextNotes": "={{ (($('Resolve Prospect').first().json.priorNotes || '') ? ($('Resolve Prospect').first().json.priorNotes + '\\n\\n') : '') + 'Call booked via ' + $('Normalize Booking').first().json.source + ': ' + ($('Normalize Booking').first().json.title || '(untitled)') + ' at ' + $('Normalize Booking').first().json.startTime + ($('Normalize Booking').first().json.meetingUrl ? ' | ' + $('Normalize Booking').first().json.meetingUrl : '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "48c5f25b-a3cd-446b-a48d-ff7328b17216",
+      "name": "Stamp Flowroots Pipeline",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        -160
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Resolve Prospect').first().json.prospectId }}",
+            "PipelineStatus": "Scheduled Call"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3e6764c4-aa9c-4087-8b23-59d47d63a6ba",
+      "name": "Flowroots?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$('Resolve Client').first().json.isFlowroots }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3876aff0-c65d-4812-abcd-4f619fb52573",
+      "name": "Create Meeting",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3584,
+        0
+      ],
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblAo6SfTPTOJrnbX"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Title": "={{ $('Normalize Booking').first().json.title || ($('Resolve Client').first().json.clientName + ' call') }}",
+            "Date": "={{ $('Normalize Booking').first().json.startTime }}",
+            "Participants": "={{ ($('Normalize Booking').first().json.fullName + ' <' + $('Normalize Booking').first().json.email + '>').trim() }}",
+            "MeetingLink": "={{ $('Normalize Booking').first().json.meetingUrl || null }}",
+            "Company": "={{ $('Resolve Prospect').first().json.prospectId ? [ $('Resolve Prospect').first().json.prospectId ] : [] }}",
+            "Meeting Type": "sales",
+            "Additional Notes (Scheduler)": "={{ $('Normalize Booking').first().json.notes || null }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "80fd364a-1621-4d34-8da7-afed6d65eb40",
+      "name": "Build Booking Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Booking-Card.js"
+      }
+    },
+    {
+      "id": "3beba823-adf1-4a92-be90-324ff0b07147",
+      "name": "Post Booking Card",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        4032,
+        0
+      ],
+      "webhookId": "a9e8debc-b7cf-4e81-b891-aa2c625ee70a",
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0459cfad-4ed0-4f4a-9bd4-c0f06c32126c",
+      "name": "Create Unattributed Meeting",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        320
+      ],
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblAo6SfTPTOJrnbX"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Title": "={{ $('Normalize Booking').first().json.title || ($('Resolve Client').first().json.clientName + ' call') }}",
+            "Date": "={{ $('Normalize Booking').first().json.startTime }}",
+            "Participants": "={{ ($('Normalize Booking').first().json.fullName + ' <' + $('Normalize Booking').first().json.email + '>').trim() }}",
+            "MeetingLink": "={{ $('Normalize Booking').first().json.meetingUrl || null }}",
+            "Client": "={{ [ $('Resolve Client').first().json.clientRecId ] }}",
+            "Meeting Type": "sales",
+            "Additional Notes (Scheduler)": "={{ 'NOT ATTRIBUTED: the attendee is not in the CRM and not a lead in the client\\'s sequencer. ' + ($('Normalize Booking').first().json.notes || '') }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "93894d42-17d9-4431-b58c-b8ea418e7a3b",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4256,
+        224
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      }
+    },
+    {
+      "id": "7da9c2fb-1eaa-4823-9b5a-dd2a7d30998f",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4480,
+        224
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Cal Booking": {
+      "main": [
+        [
+          {
+            "node": "Normalize Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Booking": {
+      "main": [
+        [
+          {
+            "node": "Normalize Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Booking": {
+      "main": [
+        [
+          {
+            "node": "Booking Event?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Event?": {
+      "main": [
+        [
+          {
+            "node": "Get Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clients": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Client Resolved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Resolved?": {
+      "main": [
+        [
+          {
+            "node": "Find Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Prospect": {
+      "main": [
+        [
+          {
+            "node": "Prospect Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Found?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PV Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Lookup": {
+      "main": [
+        [
+          {
+            "node": "Assess Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Lead": {
+      "main": [
+        [
+          {
+            "node": "Ours?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ours?": {
+      "main": [
+        [
+          {
+            "node": "Create Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Unattributed Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Prospect": {
+      "main": [
+        [
+          {
+            "node": "Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prospect": {
+      "main": [
+        [
+          {
+            "node": "Stamp Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Booked": {
+      "main": [
+        [
+          {
+            "node": "Flowroots?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flowroots?": {
+      "main": [
+        [
+          {
+            "node": "Stamp Flowroots Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Flowroots Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Meeting": {
+      "main": [
+        [
+          {
+            "node": "Build Booking Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Booking Card": {
+      "main": [
+        [
+          {
+            "node": "Post Booking Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Booking Card": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Unattributed Meeting": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "id": "I67PRoVIZeMhiJso"
+}

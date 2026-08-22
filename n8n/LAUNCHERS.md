@@ -23,6 +23,7 @@ Do not hand-edit; rerun the script after every pull.
 | Deploy-View-to-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
 | Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
 | Handle-Intent-Signal | POST https://n8n.flowroots.com/webhook/intent-signal |  | no |
+| Handle-New-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |
 | Handle-New-Lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |
 | Handle-New-Lead-from-PlusVibe | POST https://n8n.flowroots.com/webhook/plusvibe-new-reply <br> POST https://n8n.flowroots.com/webhook/newlead-manual |  | no |
 | Handle-another-meeting-for-flowroots | POST https://n8n.flowroots.com/webhook/9851c15f-256a-425c-9771-8690be97bf8b |  | no |

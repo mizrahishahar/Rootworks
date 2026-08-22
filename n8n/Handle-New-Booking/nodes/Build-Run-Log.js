@@ -6,7 +6,7 @@ let a=null; try{ a=$('Assess Lead').first().json; }catch(e){}
 let meetingId=''; try{ meetingId=$('Create Meeting').first().json.id||''; }catch(e){}
 if(!meetingId){ try{ meetingId=$('Create Unattributed Meeting').first().json.id||''; }catch(e){} }
 let stamped=false; try{ stamped=!!($('Stamp Booked').first().json||{}).id; }catch(e){}
-let posted=false; try{ posted=!!($('Post Booking Card').first().json||{}).ts; }catch(e){}
+let posted=false; try{ const s=$('Post Booking Card').first().json||{}; posted=!!(s.ts||(s.message&&s.message.ts)||s.ok===true); }catch(e){}
 const failed=[]; const skipped=[];
 const who=(n.fullName||'')+' <'+(n.email||'')+'>'+(n.domain?' ('+n.domain+')':'');
 const lines=['- **Source:** '+(n.source||'?')+(n.bookingUid?' ('+n.bookingUid+')':''), '- **Attendee:** '+who, '- **When:** '+(n.startTime||'?')+(n.title?' · '+n.title:'')];

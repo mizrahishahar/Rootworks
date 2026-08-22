@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T21:24:38.090Z",
+  "updatedAt": "2026-08-22T17:00:14.079Z",
   "createdAt": "2026-07-28T07:33:15.641Z",
   "id": "7jqOsQh43ODQWQZ9",
   "name": "Storeleads Domains -> Supersoniq -> Clayroots",
@@ -1259,6 +1259,34 @@
       "notes": "Captures the Drive URL on success or the failure reason, for Build Log to announce either way.",
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
+    },
+    {
+      "id": "41d3c9ef-4785-4ead-a5a9-6a57ff37887b",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5088,
+        792
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
     }
   ],
   "connections": {
@@ -1654,7 +1682,7 @@
       "main": [
         [
           {
-            "node": "Strip Immutable",
+            "node": "Clean Fields",
             "type": "main",
             "index": 0
           }
@@ -1828,6 +1856,17 @@
           }
         ]
       ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Strip Immutable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1852,8 +1891,8 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "9d434cc5-5169-48c8-b4a9-64e44b2a0834",
-  "activeVersionId": "9d434cc5-5169-48c8-b4a9-64e44b2a0834",
+  "versionId": "b8067c1b-524c-4b08-ac37-448aa60673e2",
+  "activeVersionId": "b8067c1b-524c-4b08-ac37-448aa60673e2",
   "triggerCount": 2,
   "shared": [
     {
@@ -1865,9 +1904,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-17T21:24:38.101Z",
-    "createdAt": "2026-08-17T21:24:38.101Z",
-    "versionId": "9d434cc5-5169-48c8-b4a9-64e44b2a0834",
+    "updatedAt": "2026-08-22T17:00:14.085Z",
+    "createdAt": "2026-08-22T17:00:14.085Z",
+    "versionId": "b8067c1b-524c-4b08-ac37-448aa60673e2",
     "workflowId": "7jqOsQh43ODQWQZ9",
     "nodes": [
       {
@@ -2332,7 +2371,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const cmap=$('Parse Domains').first().json._cmap||{};\n// Generic company/domain-level carry-through. Anything the source CSV carries that is not part of\n// the fixed field contract and not plumbing rides along, matching the auto-adder in Build Table\n// Schema, so a new source column needs no edit here. Person-level fields stay from Supersoniq.\nconst CORE=new Set(['Name','Contact Key','first_name','last_name','Title','Seniority','Department','Email','Social','Phone','Connections','Domain','Company','company_clean','Industry Groups','Employees','Business Model','MX Provider','Score','Similarity','Description','Keywords','City','State','State Full','Country','Zip','Street','Source','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Growth 90d','Features','Seniority Rank']);\nconst XSKIP=new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag','public_emails_clean','Created']);\nconst xmap={};\nfor(const r of $('Read CSV').all().map(i=>i.json)){\n  const d=String(r.Domain||r.domain||r.company_domain||'').trim().toLowerCase();\n  if(!d)continue;\n  const x=xmap[d]||(xmap[d]={});\n  for(const k of Object.keys(r)){ if(CORE.has(k)||XSKIP.has(k))continue; const v=r[k]; if((x[k]===undefined||x[k]==='')&&v!==undefined&&v!==null&&String(v).trim()!=='')x[k]=String(v).trim(); }\n}\nconst runId=String($execution.id);\nconst tag=((($('Contacts Launch').first().json['Tag'])||'')+'').trim();\nconst _st=($('Config').first().json||{}).startedAt;\nlet buildDate='';\ntry{ buildDate=DateTime.fromISO(String(_st)).toFormat('yyyy-MM-dd'); }catch(e){ buildDate=''; }\nif(!buildDate||buildDate==='Invalid DateTime'){ buildDate=$now.toFormat('yyyy-MM-dd'); }\nconst cap=(s)=>s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():'';\nconst cleanFirst=(full)=>{ if(!full)return''; const tok=String(full).split(',')[0].trim().split(/\\s+/)[0]||''; return cap(tok.replace(/[^A-Za-z'\\-]/g,'')); };\nconst cleanLast=(full)=>{ if(!full)return''; const parts=String(full).split(',')[0].trim().split(/\\s+/); if(parts.length<2)return''; return parts.slice(1).map(p=>cap(p.replace(/[^A-Za-z'\\-]/g,''))).filter(Boolean).join(' '); };\nconst cleanCompany=(nm)=>{if(!nm)return'';const orig=String(nm).trim();let c=orig.replace(/\\s{2,}/g,' ');\nconst GEN=new Set(['home','welcome','shop','store','about','about us','products','index','page','contact','contact us','blog','news']);\nconst isGen=(s)=>GEN.has(String(s).trim().toLowerCase());\nconst TAGLINE_RE=/\\b(free|shipping|sale|% ?off|buy now|shop now|official|welcome to|best|discover|explore|save up|subscribe|new arrivals|worldwide|delivery|since \\d{4})\\b/i;\nconst looksLikeTagline=(s)=>{const t=String(s||'').trim(); if(!t)return true; if(isGen(t))return true; if(TAGLINE_RE.test(t))return true; return t.split(/\\s+/).filter(Boolean).length>=6;};\n// Picks the more brand-like of two candidate segments. Falls back to the head (old default)\n// unless one side is clearly a tagline or is at least 2 words shorter than the other.\nconst pickPair=(head,tail)=>{const h=String(head||'').trim(),t=String(tail||'').trim();\n  const hTag=looksLikeTagline(h),tTag=looksLikeTagline(t);\n  if(hTag&&tTag)return null;\n  if(hTag)return t||null; if(tTag)return h||null;\n  if(!h)return t||null; if(!t)return h||null;\n  const hw=h.split(/\\s+/).length,tw=t.split(/\\s+/).length;\n  if(Math.abs(hw-tw)<=1)return h;\n  return hw<tw?h:t;};\nc=c.replace(/^welcome to\\s+/i,'').trim();\nconst pp=c.split(' | ');\nif(pp.length>1){\n  const cands=pp.map(s=>s.trim()).filter(Boolean);\n  const clean=cands.filter(s=>!looksLikeTagline(s));\n  if(clean.length===1){c=clean[0];}\n  else if(clean.length>1){clean.sort((a,b)=>a.split(/\\s+/).length-b.split(/\\s+/).length); c=clean[0];}\n  else{return orig;}\n}\nfor(let i=0;i<2;i++){const d=c.search(/\\s[-–—:]\\s/); if(d<3) break; const head=c.slice(0,d).trim(); const tail=c.slice(d).replace(/^\\s[-–—:]\\s/,'').trim(); const s=pickPair(head,tail); if(s===null) return orig; c=s;}\nif(/^[A-Za-z0-9][A-Za-z0-9-]*(\\.[A-Za-z]{2,})+$/.test(c)) c=c.replace(/(\\.[A-Za-z]{2,})+$/,'');\nc=c.replace(/[®™]/g,'');\n// Never strip a legal-form suffix that's joined to the name by \"&\" (e.g. \"Dose & Co\", \"Tiffany & Co.\") - that IS the name.\nfor(let i=0;i<2;i++){const m=c.match(/[,\\s]+(inc|llc|l\\.l\\.c\\.|ltd|limited|corp|corporation|co|company|gmbh|plc|llp|lp|pllc|pc)\\.?$/i); if(!m)break; const before=c.slice(0,m.index).trim(); const lastWord=before.split(/\\s+/).pop()||''; if(lastWord==='&')break; c=before;}\nc=c.replace(/,+$/,'').trim();\nconst hasUp=/\\p{Lu}/u.test(c), hasLow=/\\p{Ll}/u.test(c);\nif(hasUp!==hasLow){const parts=c.split(/(\\s+)/); const words=parts.filter(t=>/\\S/.test(t)); const MINOR=new Set(['of','and','the','for','to','in','on','at','by','a','an']);\nif(!(hasUp&&words.length===1&&c.length<=4)){let wi=-1; c=parts.map(t=>{if(!/\\S/.test(t))return t; wi++; const lw=t.toLowerCase(); return (wi>0&&MINOR.has(lw))?lw:lw.replace(/\\p{L}/u,(ch)=>ch.toUpperCase());}).join('');}}\nreturn c;};\nconst band=(n)=>{ n=Number(n); if(!Number.isFinite(n)||n<=0)return''; if(n<=10)return'1-10'; if(n<=50)return'11-50'; if(n<=200)return'51-200'; if(n<=500)return'201-500'; if(n<=1000)return'501-1000'; if(n<=5000)return'1001-5000'; if(n<=10000)return'5001-10000'; return'10001+'; };\nconst STATES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia',PR:'Puerto Rico',ON:'Ontario',QC:'Quebec',BC:'British Columbia',AB:'Alberta',MB:'Manitoba',SK:'Saskatchewan',NS:'Nova Scotia',NB:'New Brunswick'};\nconst stateFull=(s)=>{ const v=String(s||'').trim(); if(!v)return''; const up=v.toUpperCase(); if(STATES[up])return STATES[up]; return v.split(/\\s+/).map(cap).join(' '); };\nconst numOr=(v)=>{ if(v===null||v===undefined||String(v).trim()==='')return''; const n=Number(v); return Number.isFinite(n)?n:''; };\nconst out=[];\nlet skipped=0;\nfor(const it of $input.all()){\n  const resp=it.json||{};\n  const results=Array.isArray(resp.results)?resp.results:[];\n  for(const r of results){\n    const contacts=Array.isArray(r.contacts)?r.contacts:[];\n    for(const ct of contacts){\n      const domain=String(ct.company_domain||'').trim().toLowerCase();\n      const co=cmap[domain]||{};\n      const extras=xmap[domain]||{};\n      const full=((String(ct.first_name||'')+' '+String(ct.last_name||'')).trim())||String(ct.full_name||'');\n      const first=cleanFirst(full); const last=cleanLast(full);\n      const key=(first.toLowerCase()+last.toLowerCase()+domain).trim();\n      if(!key){ skipped++; continue; }\n      const coName=cleanCompany(co.Company||String(ct.company_name||''));\n      out.push({ json: {\n        ...extras,\n        'Contact Key': key,\n        Name: full, first_name: first, last_name: last,\n        Title: String(ct.job_title||''), Seniority: String(ct.seniority||''), Department: String(ct.function||''),\n        Email: String(ct.email||''), Social: String(ct.linkedin_url||''),\n        Phone:'', Connections:'',\n        Domain: domain, Company: coName, company_clean: coName,\n        'Industry Groups': co['Industry Groups']||'', Employees: band(co.Employees),\n        'Business Model': co['Business Model']||'', 'MX Provider': co['MX Provider']||'',\n        Score:'', Similarity:'', Description: co.Description||'', Keywords:'',\n        City: co.City||'', State: co.State||'', 'State Full': stateFull(co.State), Country: co.Country||'',\n        Zip:'', Street:'', Source:'Supersoniq', 'Run ID': runId, 'Build Date': buildDate, Tag: tag,\n        Plan: co.Plan||'',\n        'Revenue Est Monthly': numOr(co['Revenue Est Monthly']),\n        'Store Age Years': numOr(co['Store Age Years']),\n        'Product Count': numOr(co['Product Count']),\n        'App Spend Mo': numOr(co['App Spend Mo']),\n        'Key Apps': co['Key Apps']||'', 'Tech Stack': co['Tech Stack']||'',\n        'Trustpilot Rating': numOr(co['Trustpilot Rating']),\n        'Trustpilot Reviews': numOr(co['Trustpilot Reviews']),\n        'Migrated From': co['Migrated From']||'', 'Social Followers': co['Social Followers']||'',\n        'Growth 90d': numOr(co['Growth 90d']), Features: co.Features||''\n      }});\n    }\n  }\n}\nconst sd=$getWorkflowStaticData('global');\nsd.contactsSkipped=skipped;\nsd.contactsWritten=out.length;\nif(!out.length){ throw new Error('Supersoniq returned no usable contacts for '+($('Parse Domains').first().json._domain_count)+' domain(s). Rows skipped for an empty Contact Key: '+skipped+'.'); }\nreturn out;",
+          "jsCode": "const cmap=$('Parse Domains').first().json._cmap||{};\n// Generic company/domain-level carry-through. Anything the source CSV carries that is not part of\n// the fixed field contract and not plumbing rides along, matching the auto-adder in Build Table\n// Schema, so a new source column needs no edit here. Person-level fields stay from Supersoniq.\nconst CORE=new Set(['Name','Contact Key','first_name','last_name','Title','Seniority','Department','Email','Social','Phone','Connections','Domain','Company','company_clean','Industry Groups','Employees','Business Model','MX Provider','Score','Similarity','Description','Keywords','City','State','State Full','Country','Zip','Street','Source','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Growth 90d','Features','Seniority Rank']);\nconst XSKIP=new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag','public_emails_clean','Created']);\nconst xmap={};\nfor(const r of $('Read CSV').all().map(i=>i.json)){\n  const d=String(r.Domain||r.domain||r.company_domain||'').trim().toLowerCase();\n  if(!d)continue;\n  const x=xmap[d]||(xmap[d]={});\n  for(const k of Object.keys(r)){ if(CORE.has(k)||XSKIP.has(k))continue; const v=r[k]; if((x[k]===undefined||x[k]==='')&&v!==undefined&&v!==null&&String(v).trim()!=='')x[k]=String(v).trim(); }\n}\nconst runId=String($execution.id);\nconst tag=((($('Contacts Launch').first().json['Tag'])||'')+'').trim();\nconst _st=($('Config').first().json||{}).startedAt;\nlet buildDate='';\ntry{ buildDate=DateTime.fromISO(String(_st)).toFormat('yyyy-MM-dd'); }catch(e){ buildDate=''; }\nif(!buildDate||buildDate==='Invalid DateTime'){ buildDate=$now.toFormat('yyyy-MM-dd'); }\nconst cap=(s)=>s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():'';\nconst cleanFirst=(full)=>{ if(!full)return''; const tok=String(full).split(',')[0].trim().split(/\\s+/)[0]||''; return cap(tok.replace(/[^A-Za-z'\\-]/g,'')); };\nconst cleanLast=(full)=>{ if(!full)return''; const parts=String(full).split(',')[0].trim().split(/\\s+/); if(parts.length<2)return''; return parts.slice(1).map(p=>cap(p.replace(/[^A-Za-z'\\-]/g,''))).filter(Boolean).join(' '); };\nconst band=(n)=>{ n=Number(n); if(!Number.isFinite(n)||n<=0)return''; if(n<=10)return'1-10'; if(n<=50)return'11-50'; if(n<=200)return'51-200'; if(n<=500)return'201-500'; if(n<=1000)return'501-1000'; if(n<=5000)return'1001-5000'; if(n<=10000)return'5001-10000'; return'10001+'; };\nconst numOr=(v)=>{ if(v===null||v===undefined||String(v).trim()==='')return''; const n=Number(v); return Number.isFinite(n)?n:''; };\nconst out=[];\nlet skipped=0;\nfor(const it of $input.all()){\n  const resp=it.json||{};\n  const results=Array.isArray(resp.results)?resp.results:[];\n  for(const r of results){\n    const contacts=Array.isArray(r.contacts)?r.contacts:[];\n    for(const ct of contacts){\n      const domain=String(ct.company_domain||'').trim().toLowerCase();\n      const co=cmap[domain]||{};\n      const extras=xmap[domain]||{};\n      const full=((String(ct.first_name||'')+' '+String(ct.last_name||'')).trim())||String(ct.full_name||'');\n      const first=cleanFirst(full); const last=cleanLast(full);\n      const key=(first.toLowerCase()+last.toLowerCase()+domain).trim();\n      if(!key){ skipped++; continue; }\n      // Raw here; the Clean Fields helper (next node) writes the cleaned Company / company_clean / State Full.\n      const coName=String(co.Company||ct.company_name||'').trim();\n      out.push({ json: {\n        ...extras,\n        'Contact Key': key,\n        Name: full, first_name: first, last_name: last,\n        Title: String(ct.job_title||''), Seniority: String(ct.seniority||''), Department: String(ct.function||''),\n        Email: String(ct.email||''), Social: String(ct.linkedin_url||''),\n        Phone:'', Connections:'',\n        Domain: domain, Company: coName, company_clean: coName,\n        'Industry Groups': co['Industry Groups']||'', Employees: band(co.Employees),\n        'Business Model': co['Business Model']||'', 'MX Provider': co['MX Provider']||'',\n        Score:'', Similarity:'', Description: co.Description||'', Keywords:'',\n        City: co.City||'', State: co.State||'', 'State Full': '', Country: co.Country||'',\n        Zip:'', Street:'', Source:'Supersoniq', 'Run ID': runId, 'Build Date': buildDate, Tag: tag,\n        Plan: co.Plan||'',\n        'Revenue Est Monthly': numOr(co['Revenue Est Monthly']),\n        'Store Age Years': numOr(co['Store Age Years']),\n        'Product Count': numOr(co['Product Count']),\n        'App Spend Mo': numOr(co['App Spend Mo']),\n        'Key Apps': co['Key Apps']||'', 'Tech Stack': co['Tech Stack']||'',\n        'Trustpilot Rating': numOr(co['Trustpilot Rating']),\n        'Trustpilot Reviews': numOr(co['Trustpilot Reviews']),\n        'Migrated From': co['Migrated From']||'', 'Social Followers': co['Social Followers']||'',\n        'Growth 90d': numOr(co['Growth 90d']), Features: co.Features||''\n      }});\n    }\n  }\n}\nconst sd=$getWorkflowStaticData('global');\nsd.contactsSkipped=skipped;\nsd.contactsWritten=out.length;\nif(!out.length){ throw new Error('Supersoniq returned no usable contacts for '+($('Parse Domains').first().json._domain_count)+' domain(s). Rows skipped for an empty Contact Key: '+skipped+'.'); }\nreturn out;",
           "mode": "runOnceForAllItems"
         },
         "id": "3cf05517-1b92-43e6-b92b-6bcb2626863c",
@@ -3123,6 +3162,34 @@
         "notes": "Captures the Drive URL on success or the failure reason, for Build Log to announce either way.",
         "onError": "continueRegularOutput",
         "alwaysOutputData": true
+      },
+      {
+        "id": "41d3c9ef-4785-4ead-a5a9-6a57ff37887b",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          5088,
+          792
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
       }
     ],
     "connections": {
@@ -3518,7 +3585,7 @@
         "main": [
           [
             {
-              "node": "Strip Immutable",
+              "node": "Clean Fields",
               "type": "main",
               "index": 0
             }
@@ -3687,6 +3754,17 @@
           [
             {
               "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Strip Immutable",
               "type": "main",
               "index": 0
             }

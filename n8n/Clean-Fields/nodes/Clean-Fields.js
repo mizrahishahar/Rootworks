@@ -70,15 +70,20 @@ const out = [];
 for (const item of $input.all()) {
   const r = Object.assign({}, item.json || {});
   // Company: clean whichever source the row carries; write both columns when either is present.
-  const rawCompany = String((has(r, 'Company') && r.Company) || (has(r, 'company_clean') && r.company_clean) || '').trim();
+  // Domains rows (DiscoLike shape) carry the company in Name with no Company column: Name is the source and the target.
+  const isDomainsRow = !has(r, 'Company') && !has(r, 'Contact Key') && has(r, 'Name') && has(r, 'company_clean');
+  const rawCompany = String((has(r, 'Company') && r.Company) || (has(r, 'company_clean') && r.company_clean) || (isDomainsRow && r.Name) || '').trim();
   if (has(r, 'Company') || has(r, 'company_clean')) {
     const cn = cleanCompany(rawCompany);
     if (has(r, 'Company')) r.Company = cn || r.Company;
     if (has(r, 'company_clean')) r.company_clean = cn || r.company_clean;
+    if (isDomainsRow) r.Name = cn || r.Name;
   }
-  if (has(r, 'State')) r['State Full'] = stateFull(r.State);
-  if (has(r, 'Name') && !(r.first_name || r.last_name)) { r.first_name = cleanFirst(r.Name); r.last_name = cleanLast(r.Name); }
-  if (has(r, 'Public Emails')) r.public_emails_clean = keepPublic(parseEmails(r['Public Emails'])).join(', ');
+  // Only rows that carry a State Full column get it filled; a domains row has no such column and an extra key 422s the upsert.
+  if (has(r, 'State') && has(r, 'State Full')) r['State Full'] = stateFull(r.State);
+  // Person rows only (they carry a Contact Key); a domains row's Name is a company, never split.
+  if (has(r, 'Contact Key') && has(r, 'Name') && !(r.first_name || r.last_name)) { r.first_name = cleanFirst(r.Name); r.last_name = cleanLast(r.Name); }
+  if (has(r, 'Public Emails') && has(r, 'public_emails_clean')) r.public_emails_clean = keepPublic(parseEmails(r['Public Emails'])).join(', ');
   out.push({ json: r, pairedItem: { item: out.length } });
 }
 return out;

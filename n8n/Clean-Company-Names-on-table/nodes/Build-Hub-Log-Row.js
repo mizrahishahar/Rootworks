@@ -24,7 +24,7 @@ const fields = {
   'Records In': st.scanned,
   'Records Out': st.changed,
   'Errors': 0,
-  'Trigger': inp.triggerKind === 'webhook' ? 'webhook' : 'form'
+  'Trigger': inp.launchRecordId ? 'form' : 'form'
 };
 const body = inp.launchRecordId ? { records: [{ id: inp.launchRecordId, fields }], typecast: true } : { records: [{ fields }], typecast: true };
 return [{ json: { hasLaunchRecord: !!inp.launchRecordId, body, summary: description } }];

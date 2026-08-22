@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T11:48:13.513Z",
+  "updatedAt": "2026-08-22T17:00:25.473Z",
   "createdAt": "2026-07-28T09:25:51.367Z",
   "id": "9iMXBGRlPk3O6pDZ",
   "name": "Handle Intent Signal",
@@ -608,6 +608,34 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "6975d8e7-8ceb-42e0-a978-2e2c65807590",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1240,
+        200
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
     }
   ],
   "connections": {
@@ -850,7 +878,7 @@
       "main": [
         [
           {
-            "node": "Any Leads?",
+            "node": "Clean Fields",
             "type": "main",
             "index": 0
           }
@@ -874,6 +902,17 @@
           }
         ]
       ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Any Leads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -891,8 +930,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "f2988cd5-6b47-4bc1-9ab8-702730f4453a",
-  "activeVersionId": "6defe3ef-8333-4ea5-ab5b-d9361627673d",
+  "versionId": "9f0f465f-c47c-45e3-8996-832a51f8dc94",
+  "activeVersionId": "9f0f465f-c47c-45e3-8996-832a51f8dc94",
   "triggerCount": 1,
   "shared": [
     {
@@ -904,9 +943,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-08T20:29:58.342Z",
-    "createdAt": "2026-08-08T20:29:58.342Z",
-    "versionId": "6defe3ef-8333-4ea5-ab5b-d9361627673d",
+    "updatedAt": "2026-08-22T17:00:25.547Z",
+    "createdAt": "2026-08-22T17:00:25.547Z",
+    "versionId": "9f0f465f-c47c-45e3-8996-832a51f8dc94",
     "workflowId": "9iMXBGRlPk3O6pDZ",
     "nodes": [
       {
@@ -1134,7 +1173,7 @@
           0
         ],
         "parameters": {
-          "jsCode": "const cfg=$('Parse Config').first().json;\nconst cleanCompany=(nm)=>{if(!nm)return'';let c=String(nm).trim();\nconst pipe=c.indexOf(' | '); if(pipe>-1) c=c.slice(0,pipe).trim();\nconst dash=c.indexOf(' - '); if(dash>=3) c=c.slice(0,dash).trim();\nc=c.replace(/[®™]/g,'');\nfor(let i=0;i<2;i++){c=c.replace(/[,\\s]+(inc|llc|l\\.l\\.c\\.|ltd|limited|corp|corporation|co|company|gmbh|plc|llp|lp|pllc|pc)\\.?$/i,'').trim();}\nreturn c.replace(/,+$/,'').trim();};\nconst companies = {};\nfor (const i of $('Filter & Qualify Jobs').all()) { companies[i.json.domain] = i.json; }\nconst TARGET = cfg.campaign_url;\nconst nowIso = new Date().toISOString();\nfunction pushContact(out, c) {\n  const dom = String(c.company_domain || c.domain || '').toLowerCase();\n  const co = companies[dom] || {};\n  const li = c.linkedin_url || '';\n  if (!li) return;\n  const role = co.job_title || 'an infrastructure role';\n  const posted = co.posted_at ? ' (posted ' + co.posted_at + ')' : '';\n  out.push({ json: {\n    'Name': c.full_name || ((c.first_name || '') + ' ' + (c.last_name || '')).trim(),\n    'first_name': c.first_name || '',\n    'last_name': c.last_name || '',\n    'LinkedIn URL': li,\n    'Domain': dom,\n    'Company': cleanCompany(c.company_name || co.company || ''),\n    'Email': c.email || '',\n    'Event Type': cfg.event_type,\n    'Target Campaign': TARGET,\n    'Signal Detail': 'Hiring ' + role + posted + '. Decision maker (' + (c.job_title || c.seniority || '') + ') via Apify jobs scrape + Supersoniq. Job: ' + (co.job_link || ''),\n    'Intent Status': 'NEW',\n    'detected_at': nowIso\n  }});\n}\nconst out = [];\nfor (const it of $('Get Decision Makers').all()) {\n  const resp = it.json || {};\n  const comps = Array.isArray(resp.results) ? resp.results : [];\n  for (const comp of comps) {\n    if (Array.isArray(comp.contacts)) { for (const c of comp.contacts) pushContact(out, c); }\n    else pushContact(out, comp);\n  }\n}\nreturn out;"
+          "jsCode": "const cfg=$('Parse Config').first().json;\nconst companies = {};\nfor (const i of $('Filter & Qualify Jobs').all()) { companies[i.json.domain] = i.json; }\nconst TARGET = cfg.campaign_url;\nconst nowIso = new Date().toISOString();\nfunction pushContact(out, c) {\n  const dom = String(c.company_domain || c.domain || '').toLowerCase();\n  const co = companies[dom] || {};\n  const li = c.linkedin_url || '';\n  if (!li) return;\n  const role = co.job_title || 'an infrastructure role';\n  const posted = co.posted_at ? ' (posted ' + co.posted_at + ')' : '';\n  out.push({ json: {\n    'Name': c.full_name || ((c.first_name || '') + ' ' + (c.last_name || '')).trim(),\n    'first_name': c.first_name || '',\n    'last_name': c.last_name || '',\n    'LinkedIn URL': li,\n    'Domain': dom,\n    'Company': String(c.company_name || co.company || '').trim(),\n    'Email': c.email || '',\n    'Event Type': cfg.event_type,\n    'Target Campaign': TARGET,\n    'Signal Detail': 'Hiring ' + role + posted + '. Decision maker (' + (c.job_title || c.seniority || '') + ') via Apify jobs scrape + Supersoniq. Job: ' + (co.job_link || ''),\n    'Intent Status': 'NEW',\n    'detected_at': nowIso\n  }});\n}\nconst out = [];\nfor (const it of $('Get Decision Makers').all()) {\n  const resp = it.json || {};\n  const comps = Array.isArray(resp.results) ? resp.results : [];\n  for (const comp of comps) {\n    if (Array.isArray(comp.contacts)) { for (const c of comp.contacts) pushContact(out, c); }\n    else pushContact(out, comp);\n  }\n}\nreturn out;"
         },
         "alwaysOutputData": true
       },
@@ -1511,6 +1550,34 @@
           },
           "options": {}
         }
+      },
+      {
+        "id": "6975d8e7-8ceb-42e0-a978-2e2c65807590",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1240,
+          200
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
       }
     ],
     "connections": {
@@ -1753,7 +1820,7 @@
         "main": [
           [
             {
-              "node": "Any Leads?",
+              "node": "Clean Fields",
               "type": "main",
               "index": 0
             }
@@ -1772,6 +1839,17 @@
           [
             {
               "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Any Leads?",
               "type": "main",
               "index": 0
             }

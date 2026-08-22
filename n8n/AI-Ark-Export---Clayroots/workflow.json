@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-20T09:44:06.365Z",
+  "updatedAt": "2026-08-22T17:00:17.071Z",
   "createdAt": "2026-08-18T08:22:54.084Z",
   "id": "pwDPDeIwEJfiDSv3",
   "name": "AI-Ark Export -> Clayroots",
@@ -908,6 +908,34 @@
         "language": "javaScript",
         "jsCode": "@@file:nodes/Build-Domain-Map.js"
       }
+    },
+    {
+      "id": "c27578bb-2687-4c45-a86d-8d718c8fef64",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6656,
+        488
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
     }
   ],
   "connections": {
@@ -1241,7 +1269,7 @@
       "main": [
         [
           {
-            "node": "Strip Immutable",
+            "node": "Clean Fields",
             "type": "main",
             "index": 0
           }
@@ -1335,6 +1363,17 @@
           }
         ]
       ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Strip Immutable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1356,8 +1395,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "9ce3ae8c-c904-4e32-8237-b5da044da8de",
-  "activeVersionId": "9ce3ae8c-c904-4e32-8237-b5da044da8de",
+  "versionId": "71935cb3-da74-44da-90f7-a1c6f2b1d8ed",
+  "activeVersionId": "71935cb3-da74-44da-90f7-a1c6f2b1d8ed",
   "triggerCount": 2,
   "shared": [
     {
@@ -1369,9 +1408,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-18T16:05:11.477Z",
-    "createdAt": "2026-08-18T16:05:11.477Z",
-    "versionId": "9ce3ae8c-c904-4e32-8237-b5da044da8de",
+    "updatedAt": "2026-08-22T17:00:17.083Z",
+    "createdAt": "2026-08-22T17:00:17.083Z",
+    "versionId": "71935cb3-da74-44da-90f7-a1c6f2b1d8ed",
     "workflowId": "pwDPDeIwEJfiDSv3",
     "nodes": [
       {
@@ -2051,7 +2090,7 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "const items = $input.all().map(i => i.json);\nconst mapItem = items.find(x => x && x.map);\nconst map = (mapItem && mapItem.map) || {};\nconst rows = items.filter(x => x !== mapItem);\nconst form = $('Contacts Launch').first().json;\nconst runId = String($execution.id);\nconst tag = ((form['Tag'] || '') + '').trim();\n\nconst stripDomain = (url) => { let d = String(url||'').trim().toLowerCase(); if(!d) return ''; d = d.replace(/^https?:\\/\\//,'').replace(/^www\\./,'').split('/')[0].split('?')[0]; return d; };\n\n// Decision-maker-tier seniority values, matching the enum used elsewhere in this stack.\nconst SEN = { c_suite:'C-Suite', vp:'VP', director:'Director', manager:'Manager', senior:'Senior', owner:'Owner', founder:'Founder', head:'Head', partner:'Partner', 'mid-level':'Unclassified', entry:'Unclassified', intern:'Unclassified' };\nconst mapSeniority = (v) => SEN[String(v||'').trim().toLowerCase()] || 'Unclassified';\n\n// Same company-name cleanup as the Storeleads/Supersoniq pipeline's Format Supersoniq node -\n// strips taglines, \"Welcome to\", legal suffixes, normalizes casing. Applied whether the name\n// came from the Domains table match or the AI-Ark CSV fallback.\nconst cap=(s)=>s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():'';\nconst cleanCompany=(nm)=>{if(!nm)return'';const orig=String(nm).trim();let c=orig.replace(/\\s{2,}/g,' ');\nconst GEN=new Set(['home','welcome','shop','store','about','about us','products','index','page','contact','contact us','blog','news']);\nconst isGen=(s)=>GEN.has(String(s).trim().toLowerCase());\nconst TAGLINE_RE=/\\b(free|shipping|sale|% ?off|buy now|shop now|official|welcome to|best|discover|explore|save up|subscribe|new arrivals|worldwide|delivery|since \\d{4})\\b/i;\nconst looksLikeTagline=(s)=>{const t=String(s||'').trim(); if(!t)return true; if(isGen(t))return true; if(TAGLINE_RE.test(t))return true; return t.split(/\\s+/).filter(Boolean).length>=6;};\nconst pickPair=(head,tail)=>{const h=String(head||'').trim(),t=String(tail||'').trim();\n  const hTag=looksLikeTagline(h),tTag=looksLikeTagline(t);\n  if(hTag&&tTag)return null;\n  if(hTag)return t||null; if(tTag)return h||null;\n  if(!h)return t||null; if(!t)return h||null;\n  const hw=h.split(/\\s+/).length,tw=t.split(/\\s+/).length;\n  if(Math.abs(hw-tw)<=1)return h;\n  return hw<tw?h:t;};\nc=c.replace(/^welcome to\\s+/i,'').trim();\nconst pp=c.split(' | ');\nif(pp.length>1){\n  const cands=pp.map(s=>s.trim()).filter(Boolean);\n  const clean=cands.filter(s=>!looksLikeTagline(s));\n  if(clean.length===1){c=clean[0];}\n  else if(clean.length>1){clean.sort((a,b)=>a.split(/\\s+/).length-b.split(/\\s+/).length); c=clean[0];}\n  else{return orig;}\n}\nfor(let i=0;i<2;i++){const d=c.search(/\\s[-–—:]\\s/); if(d<3) break; const head=c.slice(0,d).trim(); const tail=c.slice(d).replace(/^\\s[-–—:]\\s/,'').trim(); const s=pickPair(head,tail); if(s===null) return orig; c=s;}\nif(/^[A-Za-z0-9][A-Za-z0-9-]*(\\.[A-Za-z]{2,})+$/.test(c)) c=c.replace(/(\\.[A-Za-z]{2,})+$/,'');\nc=c.replace(/[®™]/g,'');\nfor(let i=0;i<2;i++){const m=c.match(/[,\\s]+(inc|llc|l\\.l\\.c\\.|ltd|limited|corp|corporation|co|company|gmbh|plc|llp|lp|pllc|pc)\\.?$/i); if(!m)break; const before=c.slice(0,m.index).trim(); const lastWord=before.split(/\\s+/).pop()||''; if(lastWord==='&')break; c=before;}\nc=c.replace(/,+$/,'').trim();\nconst hasUp=/\\p{Lu}/u.test(c), hasLow=/\\p{Ll}/u.test(c);\nif(hasUp!==hasLow){const parts=c.split(/(\\s+)/); const words=parts.filter(t=>/\\S/.test(t)); const MINOR=new Set(['of','and','the','for','to','in','on','at','by','a','an']);\nif(!(hasUp&&words.length===1&&c.length<=4)){let wi=-1; c=parts.map(t=>{if(!/\\S/.test(t))return t; wi++; const lw=t.toLowerCase(); return (wi>0&&MINOR.has(lw))?lw:lw.replace(/\\p{L}/u,(ch)=>ch.toUpperCase());}).join('');}}\nreturn c;};\n\n// Pipeline/bookkeeping fields to never carry through from the Domains table onto a contact -\n// same exclusion list as the Storeleads/Supersoniq pipeline's Format Supersoniq node.\nconst DOMAIN_SKIP = new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag','public_emails_clean','Created','Contact Source','Source']);\n\nlet skipped = 0;\nlet matched = 0;\nconst out = [];\nfor (const r of rows) {\n  const first = String(r['First Name']||'').trim();\n  const last = String(r['Last Name']||'').trim();\n  const domain = stripDomain(r['Company Website']);\n  const key = (first.toLowerCase()+last.toLowerCase()+domain).trim();\n  if (!key) { skipped++; continue; }\n  const dm = map[domain] || null;\n  if (dm) matched++;\n  // No match in the Domains table: fall back to AI-Ark's own company name only, nothing else guessed.\n  const rawCompany = dm ? (dm.Company || dm.company_clean || '') : String(r['Company Name for Emails']||r['Company Name']||'').trim();\n  const company = cleanCompany(rawCompany);\n\n  const dmClean = {};\n  if (dm) { for (const k of Object.keys(dm)) { if (DOMAIN_SKIP.has(k)) continue; dmClean[k] = dm[k]; } }\n\n  out.push({ json: {\n    ...dmClean,\n    'Contact Key': key,\n    Name: r['Full Name'] || (first+' '+last).trim(), first_name: first, last_name: last,\n    Title: String(r['Title']||''), Seniority: mapSeniority(r['Seniority']),\n    Email: String(r['Email Business']||'').trim(), Social: String(r['LinkedIn']||'').trim(), Phone: String(r['Mobile Phone']||'').trim(),\n    Domain: domain, Company: company,\n    'Contact Source': 'AI Ark', Tag: tag, 'Run ID': runId\n  }});\n}\nconst sd = $getWorkflowStaticData('global');\nsd.aiArkSkipped = skipped;\nsd.aiArkMatched = matched;\nif (!out.length) { throw new Error('No usable AI-Ark contacts after formatting. Rows skipped for an empty Contact Key: '+skipped+'.'); }\nreturn out;"
+          "jsCode": "const items = $input.all().map(i => i.json);\nconst mapItem = items.find(x => x && x.map);\nconst map = (mapItem && mapItem.map) || {};\nconst rows = items.filter(x => x !== mapItem);\nconst form = $('Contacts Launch').first().json;\nconst runId = String($execution.id);\nconst tag = ((form['Tag'] || '') + '').trim();\n\nconst stripDomain = (url) => { let d = String(url||'').trim().toLowerCase(); if(!d) return ''; d = d.replace(/^https?:\\/\\//,'').replace(/^www\\./,'').split('/')[0].split('?')[0]; return d; };\n\n// Decision-maker-tier seniority values, matching the enum used elsewhere in this stack.\nconst SEN = { c_suite:'C-Suite', vp:'VP', director:'Director', manager:'Manager', senior:'Senior', owner:'Owner', founder:'Founder', head:'Head', partner:'Partner', 'mid-level':'Unclassified', entry:'Unclassified', intern:'Unclassified' };\nconst mapSeniority = (v) => SEN[String(v||'').trim().toLowerCase()] || 'Unclassified';\n\n// Company cleaning lives in the Clean Fields helper, the next node; this node only picks the raw source.\n\n// Pipeline/bookkeeping fields to never carry through from the Domains table onto a contact -\n// same exclusion list as the Storeleads/Supersoniq pipeline's Format Supersoniq node.\nconst DOMAIN_SKIP = new Set(['domain','company_domain','Verified','segment','query_name','ingested_at','RankInCompany','Run ID','Build Date','Tag','public_emails_clean','Created','Contact Source','Source']);\n\nlet skipped = 0;\nlet matched = 0;\nconst out = [];\nfor (const r of rows) {\n  const first = String(r['First Name']||'').trim();\n  const last = String(r['Last Name']||'').trim();\n  const domain = stripDomain(r['Company Website']);\n  const key = (first.toLowerCase()+last.toLowerCase()+domain).trim();\n  if (!key) { skipped++; continue; }\n  const dm = map[domain] || null;\n  if (dm) matched++;\n  // No match in the Domains table: fall back to AI-Ark's own company name only, nothing else guessed.\n  const rawCompany = dm ? (dm.Company || dm.company_clean || '') : String(r['Company Name for Emails']||r['Company Name']||'').trim();\n  // Raw here; the Clean Fields helper (next node) writes the cleaned Company.\n  const company = String(rawCompany||'').trim();\n\n  const dmClean = {};\n  if (dm) { for (const k of Object.keys(dm)) { if (DOMAIN_SKIP.has(k)) continue; dmClean[k] = dm[k]; } }\n\n  out.push({ json: {\n    ...dmClean,\n    'Contact Key': key,\n    Name: r['Full Name'] || (first+' '+last).trim(), first_name: first, last_name: last,\n    Title: String(r['Title']||''), Seniority: mapSeniority(r['Seniority']),\n    Email: String(r['Email Business']||'').trim(), Social: String(r['LinkedIn']||'').trim(), Phone: String(r['Mobile Phone']||'').trim(),\n    Domain: domain, Company: company,\n    'Contact Source': 'AI Ark', Tag: tag, 'Run ID': runId\n  }});\n}\nconst sd = $getWorkflowStaticData('global');\nsd.aiArkSkipped = skipped;\nsd.aiArkMatched = matched;\nif (!out.length) { throw new Error('No usable AI-Ark contacts after formatting. Rows skipped for an empty Contact Key: '+skipped+'.'); }\nreturn out;"
         }
       },
       {
@@ -2275,6 +2314,34 @@
           "mode": "runOnceForAllItems",
           "language": "javaScript",
           "jsCode": "// Company data comes ONLY from the given Domains table - the actual source of truth built\n// earlier by DiscoLike/Storeleads/whatever else. Never from the Contacts table, never live from an API.\n// No hardcoded field list - a Domains table's real schema varies by what built it, so every\n// field the record actually has rides through untouched, under whatever name it really has.\nconst rows = $input.all().map(i => i.json.fields || i.json || {}).filter(r => r && r.Domain);\nconst map = {};\nfor (const r of rows) {\n  const d = String(r.Domain || '').trim().toLowerCase();\n  if (!d || map[d]) continue;\n  const co = {};\n  for (const k of Object.keys(r)) {\n    if (k === 'Domain') continue;\n    const v = r[k];\n    co[k] = (v===undefined||v===null) ? '' : v;\n  }\n  map[d] = co;\n}\nreturn [{ json: { map } }];"
+        }
+      },
+      {
+        "id": "c27578bb-2687-4c45-a86d-8d718c8fef64",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          6656,
+          488
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
         }
       }
     ],
@@ -2609,7 +2676,7 @@
         "main": [
           [
             {
-              "node": "Strip Immutable",
+              "node": "Clean Fields",
               "type": "main",
               "index": 0
             }
@@ -2700,6 +2767,17 @@
               "node": "Merge For Format",
               "type": "main",
               "index": 1
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Strip Immutable",
+              "type": "main",
+              "index": 0
             }
           ]
         ]

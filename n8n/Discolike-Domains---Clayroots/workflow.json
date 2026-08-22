@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T11:47:11.535Z",
+  "updatedAt": "2026-08-22T17:00:19.834Z",
   "createdAt": "2026-06-10T15:22:38.237Z",
   "id": "vTMckuoU61r9GXfa",
   "name": "Discolike Domains -> Clayroots",
@@ -786,6 +786,34 @@
         "jsCode": "@@file:nodes/Strip-Immutable.js"
       },
       "notes": "Removes Build Date and Run ID from the payload. Build Date is a computed CREATED_TIME() field; writing it 422s and previously re-stamped existing rows on every append. Run ID dropped by Operator decision 2026-08-09."
+    },
+    {
+      "id": "0a3324bf-fe1f-4098-a630-19061eb872ce",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        440
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
     }
   ],
   "connections": {
@@ -1126,7 +1154,7 @@
       "main": [
         [
           {
-            "node": "AT Schema Companies",
+            "node": "Clean Fields",
             "type": "main",
             "index": 0
           }
@@ -1154,6 +1182,17 @@
           }
         ]
       ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "AT Schema Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1170,8 +1209,8 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "550628a2-4fa9-40a6-aa6b-64416d74a54a",
-  "activeVersionId": "48a34021-1b80-4270-bc2f-2326619c560a",
+  "versionId": "90e97b4f-8029-46e0-affa-23867954f247",
+  "activeVersionId": "90e97b4f-8029-46e0-affa-23867954f247",
   "triggerCount": 2,
   "shared": [
     {
@@ -1183,9 +1222,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-14T12:03:04.882Z",
-    "createdAt": "2026-08-14T12:03:04.882Z",
-    "versionId": "48a34021-1b80-4270-bc2f-2326619c560a",
+    "updatedAt": "2026-08-22T17:00:19.846Z",
+    "createdAt": "2026-08-22T17:00:19.846Z",
+    "versionId": "90e97b4f-8029-46e0-affa-23867954f247",
     "workflowId": "vTMckuoU61r9GXfa",
     "nodes": [
       {
@@ -1259,7 +1298,7 @@
       },
       {
         "parameters": {
-          "jsCode": "\nconst cleanCompany=(nm)=>{if(!nm)return'';const orig=String(nm).trim();let c=orig;\nconst GEN=new Set(['home','welcome','shop','store','about','about us','products','index','page','contact','contact us','blog','news']);\nconst isGen=(s)=>GEN.has(String(s).trim().toLowerCase());\nconst pick=(a)=>{for(const p of a){if(p&&String(p).trim()&&!isGen(p))return String(p).trim();}return null;};\nc=c.replace(/^welcome to\\s+/i,'').trim();\nconst pp=c.split(' | '); if(pp.length>1){const s=pick(pp); if(s===null) return orig; c=s;}\nfor(let i=0;i<2;i++){const d=c.search(/\\s[-–—]\\s/); if(d<3) break; const head=c.slice(0,d).trim(); const tail=c.slice(d).replace(/^\\s[-–—]\\s/,'').trim(); const s=pick([head,tail]); if(s===null) return orig; c=s;}\nif(/^[A-Za-z0-9][A-Za-z0-9-]*(\\.[A-Za-z]{2,})+$/.test(c)) c=c.replace(/(\\.[A-Za-z]{2,})+$/,'');\nc=c.replace(/[®™]/g,'');\nfor(let i=0;i<2;i++){c=c.replace(/[,\\s]+(inc|llc|l\\.l\\.c\\.|ltd|limited|corp|corporation|co|company|gmbh|plc|llp|lp|pllc|pc)\\.?$/i,'').trim();}\nc=c.replace(/,+$/,'').trim();\nconst hasUp=/\\p{Lu}/u.test(c), hasLow=/\\p{Ll}/u.test(c);\nif(hasUp!==hasLow){const parts=c.split(/(\\s+)/); const words=parts.filter(t=>/\\S/.test(t)); const MINOR=new Set(['of','and','the','for','to','in','on','at','by','a','an']);\nif(!(hasUp&&words.length===1&&c.length<=4)){let wi=-1; c=parts.map(t=>{if(!/\\S/.test(t))return t; wi++; const lw=t.toLowerCase(); return (wi>0&&MINOR.has(lw))?lw:lw.replace(/\\p{L}/u,(ch)=>ch.toUpperCase());}).join('');}}\nreturn c;};\nconst BLACK = new Set(['hr','careers','career','jobs','job','legal','privacy','noreply','no-reply','donotreply','abuse','postmaster','compliance','recruiting','recruitment','press','media','unsubscribe','webmaster','admin','info-security']);\nconst parseEmails = (cell) => { if(!cell) return []; let s=String(cell).trim().replace(/^\\[|\\]$/g,''); return s.split(/[,;]+/).map(e=>e.replace(/['\"\\s]/g,'').trim()).filter(e=>e.includes('@')); };\nconst keepPublic = (arr) => arr.filter(e=>{ const lp=e.split('@')[0].toLowerCase().split('+')[0]; return !BLACK.has(lp); });\nconst flat = (r) => { const o={}; for(const k in r){ const v=r[k]; if(v===null||v===undefined) o[k]=''; else if(Array.isArray(v)) o[k]=v.join(', '); else if(typeof v==='object') o[k]=JSON.stringify(v); else o[k]=v; } return o; };\nconst tag = ((($('Companies Upload').first().json['Tag'])||'')+'').trim();\nconst rows = $input.all().map(i=>i.json);\nconst out=[];\nfor(const r of rows){\n  const base=flat(r);\n  const emails = keepPublic(parseEmails(r['Public Emails']));\n  const cn = cleanCompany(r.Name);\n  const meta = { ingested_at:$now.toISO(), Name: cn || (base.Name||''), company_clean:cn, Source:'DiscoLike', Tag:tag };\n  if(emails.length) out.push({json:{ ...base, ...meta, segment:'has_public', public_emails_clean:emails.join(', ') }});\n  else out.push({json:{ ...base, ...meta, segment:'no_public' }});\n}\nreturn out;"
+          "jsCode": "\nconst BLACK = new Set(['hr','careers','career','jobs','job','legal','privacy','noreply','no-reply','donotreply','abuse','postmaster','compliance','recruiting','recruitment','press','media','unsubscribe','webmaster','admin','info-security']);\nconst parseEmails = (cell) => { if(!cell) return []; let s=String(cell).trim().replace(/^\\[|\\]$/g,''); return s.split(/[,;]+/).map(e=>e.replace(/['\"\\s]/g,'').trim()).filter(e=>e.includes('@')); };\nconst keepPublic = (arr) => arr.filter(e=>{ const lp=e.split('@')[0].toLowerCase().split('+')[0]; return !BLACK.has(lp); });\nconst flat = (r) => { const o={}; for(const k in r){ const v=r[k]; if(v===null||v===undefined) o[k]=''; else if(Array.isArray(v)) o[k]=v.join(', '); else if(typeof v==='object') o[k]=JSON.stringify(v); else o[k]=v; } return o; };\nconst tag = ((($('Companies Upload').first().json['Tag'])||'')+'').trim();\nconst rows = $input.all().map(i=>i.json);\nconst out=[];\nfor(const r of rows){\n  const base=flat(r);\n  const emails = keepPublic(parseEmails(r['Public Emails']));\n  // Raw here; the Clean Fields helper (next node) cleans Name and company_clean (domains-row rule).\n  const rawName = String(base.Name||'').trim();\n  const meta = { ingested_at:$now.toISO(), Name: rawName, company_clean: rawName, Source:'DiscoLike', Tag:tag };\n  if(emails.length) out.push({json:{ ...base, ...meta, segment:'has_public', public_emails_clean:emails.join(', ') }});\n  else out.push({json:{ ...base, ...meta, segment:'no_public' }});\n}\nreturn out;"
         },
         "id": "61f9c673-99bb-4c18-bee7-ba91f188cd26",
         "name": "Companies Handler",
@@ -1968,6 +2007,34 @@
           "jsCode": "return $input.all().map(i => { const j = { ...i.json }; delete j['Build Date']; delete j['Run ID']; return { json: j }; });"
         },
         "notes": "Removes Build Date and Run ID from the payload. Build Date is a computed CREATED_TIME() field; writing it 422s and previously re-stamped existing rows on every append. Run ID dropped by Operator decision 2026-08-09."
+      },
+      {
+        "id": "0a3324bf-fe1f-4098-a630-19061eb872ce",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1280,
+          440
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
       }
     ],
     "connections": {
@@ -2308,7 +2375,7 @@
         "main": [
           [
             {
-              "node": "AT Schema Companies",
+              "node": "Clean Fields",
               "type": "main",
               "index": 0
             }
@@ -2331,6 +2398,17 @@
           [
             {
               "node": "AT Insert Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "AT Schema Companies",
               "type": "main",
               "index": 0
             }

@@ -1,5 +1,5 @@
-let rows=[]; let rs=0;
-try{ const sd=$getWorkflowStaticData('global'); rows=sd.bdrResults||[]; rs=sd.runStartedAt||0; }catch(e){}
+let rows=[]; let rs=0; let launch={};
+try{ const sd=$getWorkflowStaticData('global'); rows=sd.bdrResults||[]; rs=sd.runStartedAt||0; launch=sd.launch||{}; }catch(e){}
 return rows.map(r=>{
   const failed=[];
   if(!r.slackOk) failed.push('Slack fetch failed: '+(r.slackErr||'unknown'));
@@ -14,19 +14,21 @@ return rows.map(r=>{
     '- **CRM:** '+(r.matched?(r.comments+' new BDR thread repl(ies) pushed as Hub Prospects record comments'):'no prospect matched, no comments pushed')
   ].join('\n');
   if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');
-  return {json:{
+  // One row per BDR channel, its own Execution ID suffix so it never collides with the parent run's row.
+  const row={
     'Automation':'Sync BDR Channel',
-    'Client': r.recordId?[r.recordId]:[],
     'Status': failed.length?'Succeeded with errors':'Succeeded',
     'Run at': r.runAt||$now.toISO(),
     'Records In': r.msgs,
     'Records Out': (r.fileId?1:0)+r.comments,
     'Errors': failed.length,
     'Target': (r.channel||'?')+' -> '+(r.filename||'')+' + Prospect comments',
-    'Trigger':'schedule',
-    'Execution ID': String($execution.id),
+    'Trigger': launch.trigger||'schedule',
+    'Execution ID': String($execution.id)+'-bdr-'+(r.recordId||'x'),
     'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
     'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),
     'Description': desc
-  }};
+  };
+  if(r.recordId) row['Client']=[r.recordId];
+  return {json: row};
 });

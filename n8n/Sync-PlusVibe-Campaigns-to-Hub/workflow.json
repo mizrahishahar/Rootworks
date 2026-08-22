@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T12:30:53.258Z",
+  "updatedAt": "2026-08-22T16:29:57.054Z",
   "createdAt": "2026-08-02T14:29:03.492Z",
   "id": "211QkQG8TUF9ctcO",
   "name": "Sync PlusVibe Campaigns to Hub",
@@ -183,7 +183,7 @@
       ],
       "parameters": {
         "resource": "record",
-        "operation": "create",
+        "operation": "upsert",
         "base": {
           "__rl": true,
           "mode": "id",
@@ -197,7 +197,9 @@
         "columns": {
           "mappingMode": "autoMapInputData",
           "value": {},
-          "matchingColumns": [],
+          "matchingColumns": [
+            "Execution ID"
+          ],
           "schema": []
         },
         "options": {
@@ -643,6 +645,149 @@
       "notes": "Fires the client's pvsync add-on. 404 = client has no add-on, run continues.",
       "onError": "continueRegularOutput",
       "executeOnce": true
+    },
+    {
+      "id": "b326bff5-4cfb-4458-bccb-695c5cc3cec2",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1504,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-pv-campaigns",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "d9415790-d593-4078-9f6a-2f071cb126b6"
+    },
+    {
+      "id": "799b7e44-3411-4d0e-add0-9066ed575f72",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1280,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a59bd228-1748-4e52-af80-90ffc35a1fe1",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1056,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "8684f04c-ced2-4d08-b6b4-2065927e9770",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -832,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "50364889-9d01-4315-b071-1a086677348b",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -661,7 +806,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Clients",
+            "node": "Any Clients?",
             "type": "main",
             "index": 0
           }
@@ -894,7 +1039,7 @@
       "main": [
         [
           {
-            "node": "Get PV Clients",
+            "node": "Run Context",
             "type": "main",
             "index": 0
           }
@@ -917,6 +1062,68 @@
         [
           {
             "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get PV Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
             "type": "main",
             "index": 0
           }
@@ -947,89 +1154,150 @@
           "replies": 116,
           "positives": 21,
           "ok": true
-        },
-        {
-          "client": "Piper AI",
-          "clientRecId": "recjK36ixfluCkVHu",
-          "campaigns": 22,
-          "written": 22,
-          "sent": 26116,
-          "replies": 110,
-          "positives": 10,
-          "ok": true
-        },
-        {
-          "client": "Flowroots",
-          "clientRecId": "recl27rmyOlVg7fxb",
-          "campaigns": 0,
-          "written": 22,
-          "sent": 0,
-          "replies": 0,
-          "positives": 0,
-          "ok": true
-        },
-        {
-          "client": "Dave.io",
-          "clientRecId": "reclCOYRBgMowJd8G",
-          "campaigns": 10,
-          "written": 10,
-          "sent": 23844,
-          "replies": 69,
-          "positives": 10,
-          "ok": true
-        },
-        {
-          "client": "Move PLNR",
-          "clientRecId": "recyZTRr7Hb5S6Ozr",
-          "campaigns": 27,
-          "written": 27,
-          "sent": 27622,
-          "replies": 301,
-          "positives": 55,
-          "ok": true
         }
       ],
       "threadStats": {
-        "checked": 140,
-        "updated": 11,
+        "checked": 141,
+        "updated": 2,
         "problems": [
+          "iMOVE Moving Services: client has no PV workspace",
+          "Apollo Moving: client has no PV workspace",
+          "Voicematrix: client has no PV workspace",
+          "Pride Office Services: client has no PV workspace",
           "The Residency: contact fetch returned no email",
+          "E-rick Déménageur: client has no PV workspace",
           "Parasol Solutions: contact fetch returned no email",
+          "Colorado Tech Recruiters (CTR): client has no PV workspace",
+          "Tatio.io: client has no PV workspace",
+          "Sparta Movers: client has no PV workspace",
+          "Local Motion Moving: client has no PV workspace",
+          "Frekil (YC P25): client has no PV workspace",
+          "Zebulon Perry Expediters: client has no PV workspace",
+          "Ai-InteleKt: client has no PV workspace",
+          "Cytodyme: client has no PV workspace",
+          "Trinzz: client has no PV workspace",
+          "Hemut: client has no PV workspace",
           "goshine.ai: contact fetch returned no email",
+          "Pro Alliance Services: client has no PV workspace",
+          "Phame Estate Services: client has no PV workspace",
+          "unlimitedprofessionalservices1.com: client has no PV workspace",
+          "Star Family Movers: client has no PV workspace",
+          "Ressl AI (YC W26): client has no PV workspace",
+          "On The Move Ottawa: client has no PV workspace",
+          "Tom's Marathon Movers: client has no PV workspace",
+          "ampliFI Loyalty Solutions: client has no PV workspace",
+          "CaaB (OMC Group): client has no PV workspace",
+          "Truckin Movers: client has no PV workspace",
+          "Knowable Inc: client has no PV workspace",
+          "Sherlocks.ai: client has no PV workspace",
+          "Animal Love: client has no PV workspace",
+          "ATOZ Solutions: client has no PV workspace",
+          "Cinteot Inc.: client has no PV workspace",
           "The Rogues Creative: contact fetch returned no email",
+          "Dave.io: client has no PV workspace",
+          "Intelizen: client has no PV workspace",
+          "DoorTAG: client has no PV workspace",
+          "Move PLNR: client has no PV workspace",
+          "Netlify: contact fetch returned no email",
+          "Envision Construction: client has no PV workspace",
+          "Nicolosi Moving & Storage: client has no PV workspace",
+          "Moving Makeover: client has no PV workspace",
+          "NichterSolutions: client has no PV workspace",
+          "Boxer Buddies: client has no PV workspace",
+          "Quick Moving: client has no PV workspace",
+          "Anyword: client has no PV workspace",
+          "Happy Movers: client has no PV workspace",
+          "Maven AGI: client has no PV workspace",
+          "Merc Movers: client has no PV workspace",
+          "Adelante: client has no PV workspace",
+          "Aleks's Piano Movers: client has no PV workspace",
+          "Unique Moving and Storage: client has no PV workspace",
+          "Caliber: client has no PV workspace",
+          "Ryan Gootee General Contractors: client has no PV workspace",
+          "Great Day Moving: client has no PV workspace",
+          "Piper AI: client has no PV workspace",
+          "Reindeer AI: client has no PV workspace",
+          "Mustang Moving: client has no PV workspace",
+          "What A Move!: client has no PV workspace",
+          "Revcord: client has no PV workspace",
+          "Bananaz: client has no PV workspace",
           "Endl: contact fetch returned no email",
+          "Xpress Relocations: client has no PV workspace",
+          "A-Zip Movers & Cartage: client has no PV workspace",
+          "Ubeya: client has no PV workspace",
+          "TecXra: client has no PV workspace",
+          "DABL: client has no PV workspace",
+          "Zeron: client has no PV workspace",
+          "Boss Moving: client has no PV workspace",
+          "All Out Movers: client has no PV workspace",
           "Virio: contact fetch returned no email",
+          "octi.health: client has no PV workspace",
           "Silmaril (YC P26): contact fetch returned no email",
+          "Shawn & Shawn Moving: client has no PV workspace",
+          "Patentext: client has no PV workspace",
+          "Gamesquare Holdings: client has no PV workspace",
+          "SyntaxGTM: client has no PV workspace",
+          "Golden Legacy Moving: client has no PV workspace",
+          "Freedom Farm IL: client has no PV workspace",
           "Parasol Solutions: contact fetch returned no email",
+          "2X Solutions: client has no PV workspace",
+          "Meckano: client has no PV workspace",
+          "Icon Moving and Packing: client has no PV workspace",
+          "Spinach AI: client has no PV workspace",
+          "New House Moving: client has no PV workspace",
+          "Next Move Madison: client has no PV workspace",
+          "Fuga Technologies: client has no PV workspace",
+          "BCMovers: client has no PV workspace",
+          "Bitfab: client has no PV workspace",
+          "Element Moving & Storage: client has no PV workspace",
+          "International Van Lines: client has no PV workspace",
+          "Robo Movers: client has no PV workspace",
+          "NachoNacho: client has no PV workspace",
+          "Control Plane: client has no PV workspace",
+          "Largeton Group: client has no PV workspace",
+          "Tricension: client has no PV workspace",
+          "Moving You Home: client has no PV workspace",
           "Novia101: contact fetch returned no email",
+          "Saber: client has no PV workspace",
+          "Snapify: client has no PV workspace",
+          "Frontier Bio: client has no PV workspace",
+          "Substrate AI: client has no PV workspace",
+          "Magnum Moving & Storage: client has no PV workspace",
           "Framer: contact fetch returned no email",
+          "Tabula: client has no PV workspace",
+          "Falkordb: client has no PV workspace",
+          "Popeye Moving & Storage: client has no PV workspace",
+          "Eric's Moving and Delivery Service: client has no PV workspace",
+          "Konimbo: client has no PV workspace",
+          "Slattery Moving & Storage: client has no PV workspace",
+          "Village Bros. Moving: client has no PV workspace",
+          "Largeton Group: client has no PV workspace",
+          "cutonce.ai: client has no PV workspace",
           "Robins Properties: contact fetch returned no email",
-          "xMap: contact fetch returned no email"
+          "Murray's Moving & Storage: client has no PV workspace",
+          "Super Dave Moving: client has no PV workspace",
+          "xMap: contact fetch returned no email",
+          "Dan The Moving Man: client has no PV workspace",
+          "Best Moving Toronto: client has no PV workspace",
+          "New Theory: client has no PV workspace",
+          "Aloha Solutions West Moving & Delivery: client has no PV workspace",
+          "Quissly: client has no PV workspace"
         ]
       },
       "clientMap": {
         "recN79He6wwPKogUR": {
           "name": "Adelante",
           "pvWorkspace": "6a58e1dcd210c1eaa39b3ecb"
-        },
-        "recjK36ixfluCkVHu": {
-          "name": "Piper AI",
-          "pvWorkspace": "6a27bb851bffeb09ca749fd9"
-        },
-        "recl27rmyOlVg7fxb": {
-          "name": "Flowroots",
-          "pvWorkspace": "6a4a5a2b74e3c92174e00cc6"
-        },
-        "reclCOYRBgMowJd8G": {
-          "name": "Dave.io",
-          "pvWorkspace": "6a4a3ab6d70a593c3e3b75e5"
-        },
-        "recyZTRr7Hb5S6Ozr": {
-          "name": "Move PLNR",
-          "pvWorkspace": "6a018ddb85c01f5da7906694"
         }
       },
-      "runStartedAt": 1787371251609
+      "runStartedAt": 1787415441440,
+      "launch": {
+        "recordId": "recCKe7vcvZ5HCs02",
+        "trigger": "form",
+        "clientFilter": "recN79He6wwPKogUR",
+        "startedAt": 1787415441258
+      },
+      "syncScope": "one client (on demand)"
     },
     "node:Every 12h (07+19)": {
       "recurrenceRules": []
@@ -1040,9 +1308,9 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
-  "activeVersionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
-  "triggerCount": 1,
+  "versionId": "8a3d400b-d907-45ef-8fa0-c1007d1ec59e",
+  "activeVersionId": "8a3d400b-d907-45ef-8fa0-c1007d1ec59e",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-08-02T14:29:03.500Z",
@@ -1053,9 +1321,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-13T12:33:49.000Z",
-    "createdAt": "2026-08-13T12:30:53.261Z",
-    "versionId": "a056914d-bb94-4236-a7d7-0cd3af04e3b9",
+    "updatedAt": "2026-08-22T16:29:57.055Z",
+    "createdAt": "2026-08-22T16:29:57.055Z",
+    "versionId": "8a3d400b-d907-45ef-8fa0-c1007d1ec59e",
     "workflowId": "211QkQG8TUF9ctcO",
     "nodes": [
       {
@@ -1121,7 +1389,7 @@
           0
         ],
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.pvSyncResults=[];\nsd.threadStats={checked:0,updated:0,problems:[]};\nsd.clientMap={};\nfor(const it of $input.all()){ const r=it.json||{}; const f=r.fields||r; if(r.id) sd.clientMap[r.id]={name:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim()}; }\nreturn $input.all();"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.pvSyncResults=[];\nsd.threadStats={checked:0,updated:0,problems:[]};\nsd.clientMap={};\n// Scheduled runs sync every PV client. A launched run with a Client on its launch row syncs that client only.\nconst cf=String((sd.launch||{}).clientFilter||'');\nconst all=$input.all().filter(it=>it.json&&it.json.id);\nconst picked=cf?all.filter(it=>it.json.id===cf):all;\nsd.syncScope=cf?(picked.length?'one client (on demand)':'client filter matched no PV client'):'all clients';\nfor(const it of picked){ const r=it.json||{}; const f=r.fields||r; sd.clientMap[r.id]={name:f['Client']||'', pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim()}; }\n// Nothing to loop over: emit one placeholder so the Any Clients? gate can route straight to the run log.\nif(!picked.length) return [{ json: { _empty:true } }];\nreturn picked;\n"
         }
       },
       {
@@ -1172,7 +1440,7 @@
           140
         ],
         "parameters": {
-          "jsCode": "const items=$input.all().filter(it=>it&&it.json&&it.json.id);\nif(!items.length) return [{ json: { _empty:true } }];\nreturn items;"
+          "jsCode": "// Keeps only prospects whose client is in this run's scope (the PV clients picked by Init Results).\n// A prospect of a client outside the scope (an Alta client, a non-PV client, a client filtered out\n// on an on-demand run) is out of scope, not a thread problem: counted once as a skip, never as an error.\nconst sd=$getWorkflowStaticData('global');\nconst cm=sd.clientMap||{};\nconst toId=(c)=>typeof c==='string'?c:((c&&c.id)||'');\nlet scopeSkipped=0;\nconst items=[];\nfor(const it of $input.all()){\n  if(!it||!it.json||!it.json.id) continue;\n  const f=it.json.fields||it.json;\n  const cl=Array.isArray(f.Client)?f.Client.map(toId):[];\n  if(!cl.length||!cm[cl[0]]){ scopeSkipped++; continue; }\n  items.push(it);\n}\nsd.threadStats=sd.threadStats||{checked:0,updated:0,problems:[]};\nsd.threadStats.scopeSkipped=scopeSkipped;\nif(!items.length) return [{ json: { _empty:true } }];\nreturn items;\n"
         },
         "onError": "continueRegularOutput"
       },
@@ -1219,7 +1487,7 @@
           420
         ],
         "parameters": {
-          "jsCode": "let results=[]; let t={checked:0,updated:0,problems:[]}; let rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.pvSyncResults||[]; t=sd.threadStats||t; rs=sd.runStartedAt||0; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst totalIn=results.reduce((s,r)=>s+(r.campaigns||0),0);\nconst totalOut=results.reduce((s,r)=>s+(r.written||0),0);\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=results.map(r=> '- **'+r.client+':** '+nf(r.campaigns)+' campaigns · '+nf(r.sent)+' sent · '+nf(r.replies)+' replies'+(r.ok?'':' (FAILED)'));\nconst allProbs=t.problems||[];\nconst skipped=allProbs.filter(p=>String(p).includes('no email'));\nconst probs=allProbs.filter(p=>!String(p).includes('no email'));\nconst skippedNames=skipped.map(p=>String(p).split(':')[0]);\nconst errCount=failed.length+probs.length;\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**'];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+': campaigns seen but none written').join('\\n'));\nif(skipped.length) parts.push('**Skipped ('+skipped.length+', no contact email)**\\n'+skippedNames.join(', '));\nif(probs.length) parts.push('**Thread problems ('+probs.length+')**\\n'+probs.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Sync PlusVibe Campaigns to Hub',\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalIn,\n 'Records Out': totalOut,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+          "jsCode": "let results=[]; let t={checked:0,updated:0,problems:[]}; let rs=0; let launch={}; let scope='all clients';\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.pvSyncResults||[]; t=sd.threadStats||t; rs=sd.runStartedAt||0; launch=sd.launch||{}; scope=sd.syncScope||scope; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst totalIn=results.reduce((s,r)=>s+(r.campaigns||0),0);\nconst totalOut=results.reduce((s,r)=>s+(r.written||0),0);\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=results.map(r=> '- **'+r.client+':** '+nf(r.campaigns)+' campaigns · '+nf(r.sent)+' sent · '+nf(r.replies)+' replies'+(r.ok?'':' (FAILED)'));\nconst allProbs=t.problems||[];\nconst skipped=allProbs.filter(p=>String(p).includes('no email'));\nconst probs=allProbs.filter(p=>!String(p).includes('no email'));\nconst skippedNames=skipped.map(p=>String(p).split(':')[0]);\nconst errCount=failed.length+probs.length;\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**','**Scope:** '+scope];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+': campaigns seen but none written').join('\\n'));\nif(skipped.length) parts.push('**Skipped ('+skipped.length+', no contact email)**\\n'+skippedNames.join(', '));\nif(t.scopeSkipped) parts.push('**Skipped ('+t.scopeSkipped+', prospect of a client outside this run\\'s scope)**');\nif(launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no PlusVibe client)**');\nif(probs.length) parts.push('**Thread problems ('+probs.length+')**\\n'+probs.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nconst row={\n 'Automation':'Sync PlusVibe Campaigns to Hub',\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalIn,\n 'Records Out': totalOut,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger': launch.trigger||'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif(launch.clientFilter) row['Client']=[launch.clientFilter];\nreturn [{ json: row }];\n"
         },
         "executeOnce": true,
         "onError": "continueRegularOutput"
@@ -1235,7 +1503,7 @@
         ],
         "parameters": {
           "resource": "record",
-          "operation": "create",
+          "operation": "upsert",
           "base": {
             "__rl": true,
             "mode": "id",
@@ -1249,7 +1517,9 @@
           "columns": {
             "mappingMode": "autoMapInputData",
             "value": {},
-            "matchingColumns": [],
+            "matchingColumns": [
+              "Execution ID"
+            ],
             "schema": []
           },
           "options": {
@@ -1695,6 +1965,149 @@
         "notes": "Fires the client's pvsync add-on. 404 = client has no add-on, run continues.",
         "onError": "continueRegularOutput",
         "executeOnce": true
+      },
+      {
+        "id": "b326bff5-4cfb-4458-bccb-695c5cc3cec2",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1504,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-sync-pv-campaigns",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "d9415790-d593-4078-9f6a-2f071cb126b6"
+      },
+      {
+        "id": "799b7e44-3411-4d0e-add0-9066ed575f72",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1280,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "a59bd228-1748-4e52-af80-90ffc35a1fe1",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1056,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "8684f04c-ced2-4d08-b6b4-2065927e9770",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -832,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "50364889-9d01-4315-b071-1a086677348b",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -240,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
       }
     ],
     "connections": {
@@ -1713,7 +2126,7 @@
         "main": [
           [
             {
-              "node": "Loop Over Clients",
+              "node": "Any Clients?",
               "type": "main",
               "index": 0
             }
@@ -1946,7 +2359,7 @@
         "main": [
           [
             {
-              "node": "Get PV Clients",
+              "node": "Run Context",
               "type": "main",
               "index": 0
             }
@@ -1974,12 +2387,74 @@
             }
           ]
         ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get PV Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
     "authors": "Shahar Mizrahi",
-    "name": "Version a056914d",
-    "description": "",
+    "name": null,
+    "description": null,
     "autosaved": false
   },
   "tags": []

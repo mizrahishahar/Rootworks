@@ -1,7 +1,7 @@
 let s={totalInWorkspace:0,truncated:false,campaigns:[]};
 let t={checked:0,updated:0,skipped:[]};
-let rs=0;
-try{ const sd=$getWorkflowStaticData('global'); s=sd.altaSync||s; t=sd.altaThreads||t; rs=sd.runStartedAt||0; }catch(e){}
+let rs=0; let launch={};
+try{ const sd=$getWorkflowStaticData('global'); s=sd.altaSync||s; t=sd.altaThreads||t; rs=sd.runStartedAt||0; launch=sd.launch||{}; }catch(e){}
 const nf=(x)=>Number(x||0).toLocaleString('en-US');
 const lines=s.campaigns.map(c=>'- **'+c.name+':** '+nf(c.leads)+' leads');
 const warn=s.truncated?['**WARNING:** workspace has >100 campaigns, list truncated']:[];
@@ -10,6 +10,8 @@ const zeroUpsert=s.totalInWorkspace>0 && s.campaigns.length===0;
 const errCount=t.skipped.length + (authFailed && !t.skipped.length ? 1 : 0) + (zeroUpsert ? 1 : 0);
 const zeroWarn=zeroUpsert?['**ERROR:** 0 campaigns upserted while workspace has '+s.totalInWorkspace+' campaign(s)']:[];
 const parts=['**'+s.campaigns.length+' active of '+s.totalInWorkspace+' campaigns in workspace**'];
+// This machine serves the one Alta workspace (Dave.io); a client filter on the launch row is noted, not applied.
+if(launch.clientFilter && launch.clientFilter!=='reclCOYRBgMowJd8G') parts.push('**Scope:** launch row Client ignored, this sync serves the Dave.io Alta workspace only');
 if(warn.length) parts.push(warn.join('\n'));
 if(zeroWarn.length) parts.push(zeroWarn.join('\n'));
 if(lines.length) parts.push('**Campaigns**\n'+lines.join('\n'));
@@ -25,7 +27,7 @@ return [{ json: {
  'Records Out': s.campaigns.length,
  'Errors': errCount,
  'Target': 'Campaigns + Prospects',
- 'Trigger':'schedule',
+ 'Trigger': launch.trigger||'schedule',
  'Execution ID': String($execution.id),
  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
  'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),

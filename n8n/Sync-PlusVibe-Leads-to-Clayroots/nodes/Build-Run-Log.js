@@ -32,7 +32,7 @@ if(skipLines.length){ md.push(''); md.push('**Skipped ('+skipLines.length+')**')
 if(warnLines.length){ md.push(''); md.push('**Warnings ('+warnLines.length+')**'); for(const e of warnLines) md.push('- '+e); }
 const errTotal=allFailed.length;
 sd.clients={};
-return [{json:{
+const row={
   'Automation':'Sync PlusVibe Leads to Clayroots',
   'Status':errTotal?'Succeeded with errors':'Succeeded',
   'Watermark OK':wmOk,
@@ -45,4 +45,7 @@ return [{json:{
   'Execution ID':String($execution.id),
   'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
   'Description':md.join('\n').slice(0,95000)
-}}];
+};
+// Client is attached only when the run served exactly one client (a record-id filter); never an empty link array.
+if(/^rec[a-z0-9]{14}$/i.test(String(run.clientFilter||''))) row['Client']=[run.clientFilter];
+return [{json:row}];

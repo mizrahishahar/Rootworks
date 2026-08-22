@@ -48,6 +48,7 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Email Domains | `fldOm4uLCpBFvsgou` | multilineText | The client's own email domains, one per line (e.g. getadelante.com and adelantedesk.com for Adelante). The matcher key that lets the Fathom meeting sync tell a client meeting from a sales meeting. Keep current: a client adding a domain without this list updated leaks their meetings into the sales path. |
 | Inboxes | `fldQkOvy4b8YeUYkG` | multipleRecordLinks |  |
 | Domains | `fldJUAJFb6jzL7wxs` | multipleRecordLinks |  |
+| Credits | `fldAXROZdXATgpav5` | multipleRecordLinks |  |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -107,7 +108,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Follow-ups | `fld9TuOQLLS2SN7BI` | multipleRecordLinks |  |
 | Niche Company | `fldvtTaBFg0P9GjbG` | singleLineText |  |
 | Twitter | `flduIgh2eUljbofZF` | url |  |
-| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none, ai-ark |
+| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none, ai-ark, prospeo |
 | Automations | `fld1HbJ64M0T6YRtR` | multipleRecordLinks |  |
 
 ## Meetings (`tblAo6SfTPTOJrnbX`)
@@ -142,7 +143,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -472,3 +473,25 @@ One row per sending domain per client, linked from Inboxes. Rollups aggregate al
 | Inbox Count | `fldqTcJgXmMpco4dq` | count |  |
 | Tags | `fldN6oLszhN7LeXdb` | rollup |  |
 | OOO Replies (All-Time) | `fldX3AwY7fwORQs1D` | rollup |  |
+
+## Credits (`tblVhx3LWFm5Ot6Jg`)
+
+One row per paid tool, refreshed daily by Sync Tool Credits to Hub (06:00 IL, plus on demand). Credits is the balance as the tool's API reports it; a tool whose API has no balance endpoint keeps Checked At empty and says so in Note. Alert Below is Operator-set; Alert drives the Slack line in flowroots-pulse.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Tool | `fldXtiya7qhAVH30c` | singleLineText | Tool name. THE upsert key. |
+| Credits | `fldvlz34pMSMT15ro` | number | Current balance as the tool's API reports it. |
+| Unit | `fldzO6sM4ChY4vC0c` | singleLineText | What one credit buys for this tool (verifications, contacts, USD...). |
+| Plan | `fldt7aWVqDQTOsG8t` | singleLineText |  |
+| Renews | `fldUWe7k9kJmJbLyt` | date | Next reset or renewal, when the API says. |
+| Checked At | `fldyfUZGEkMh61hhY` | dateTime | Last successful read. |
+| Previous Credits | `fldx8IXuxTYZjkPS6` | number | The balance at the previous successful read. |
+| Daily Burn | `fldxKLORrCZVlu8Lr` | number | Previous Credits minus Credits, normalised to 24h. Negative means a top-up landed. |
+| Alert Below | `fldZEvpJ38382hQZi` | number | Operator-set floor. Blank = no alert. |
+| Endpoint | `fld7ZeiCL3rLvleOJ` | singleLineText | The exact path read, for debugging. |
+| Last Error | `fldTKxIRrvtrPvWqs` | multilineText | The provider's actual response when the read fails. |
+| Note | `fldPAsFji8G2keISK` | multilineText |  |
+| Client | `fldajNLgMrDr8hijN` | multipleRecordLinks | Only for per-client-billed tools. |
+| Days Left | `fldKwU8hjW4raLXyJ` | formula | Credits divided by Daily Burn. Blank until two reads exist or when burn is zero. |
+| Alert | `fldkLhtm5XSEGs73b` | formula | Credits under the Operator-set floor. Read by the sync for the Slack line. |

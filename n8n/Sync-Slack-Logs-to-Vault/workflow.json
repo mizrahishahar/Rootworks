@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T23:11:23.432Z",
+  "updatedAt": "2026-08-22T16:21:15.020Z",
   "createdAt": "2026-07-28T06:55:20.211Z",
   "id": "VrCFq5xwiYtcmEIc",
   "name": "Sync Slack Logs to Vault",
@@ -258,7 +258,7 @@
     },
     {
       "parameters": {
-        "operation": "create",
+        "operation": "upsert",
         "base": {
           "__rl": true,
           "mode": "id",
@@ -272,7 +272,9 @@
         "columns": {
           "mappingMode": "autoMapInputData",
           "value": {},
-          "matchingColumns": [],
+          "matchingColumns": [
+            "Execution ID"
+          ],
           "schema": []
         },
         "options": {
@@ -293,7 +295,8 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "onError": "stopWorkflow"
     },
     {
       "parameters": {
@@ -910,7 +913,150 @@
           "name": "Airtable"
         }
       },
-      "onError": "continueRegularOutput"
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "963861ba-35d3-4902-b41b-148637b4bd69",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1392,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-slack-logs",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "f7dfb605-77a3-4904-9b91-e71b9091b6cb"
+    },
+    {
+      "id": "14a6f2ed-3bd1-4e77-b63d-53959baea68c",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1168,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a29805b9-faaa-47a5-a5f1-c299ba757e24",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -944,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "56469c2b-4362-4196-8ad2-d00e7df83173",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "54463c8e-31b9-43b4-88ea-946e36c30f78",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -168,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1017,7 +1163,7 @@
       "main": [
         [
           {
-            "node": "Get Enabled Clients",
+            "node": "Run Context",
             "type": "main",
             "index": 0
           }
@@ -1039,7 +1185,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Any Clients?",
             "type": "main",
             "index": 0
           }
@@ -1326,6 +1472,68 @@
           }
         ]
       ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get Enabled Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1341,315 +1549,16 @@
       "recurrenceRules": []
     },
     "global": {
-      "slackSyncResults": [
-        {
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 2,
-          "file": "1HyY5MH32sl8hv_bXlxb_qMG0cgyL0AQd",
-          "ok": true,
-          "error": ""
-        },
-        {
-          "client": "Piper AI",
-          "channel": "C0B8XHDAMND",
-          "msgs": 1,
-          "file": "1YWLZgJa2etiekQS3cdgrJ4yk1ZFTcCq3",
-          "ok": true,
-          "error": ""
-        },
-        {
-          "client": "Move PLNR",
-          "channel": "C0B4HECTU3A",
-          "msgs": 1,
-          "file": "1jibWj9Ze-bAVs6R1iOxUozRI3EyXEpGI",
-          "ok": true,
-          "error": ""
-        }
-      ],
-      "runStartedAt": 1787342426004,
-      "bdrResults": [
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 26,
-          "threads": 3,
-          "filename": "2026-08-12 - Slack BDR.md",
-          "fileId": "1oxPZIKoBKBL1Dk4slsL8S72mFaRCxuSs",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-12T23:00:33.766+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-12 - Slack BDR.md",
-          "fileId": "1oxPZIKoBKBL1Dk4slsL8S72mFaRCxuSs",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-12T23:00:44.055+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 4,
-          "threads": 2,
-          "filename": "2026-08-13 - Slack BDR.md",
-          "fileId": "1W61IyJs9mhWakXyVjS85PV5JNHtU-4NR",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-13T23:00:32.332+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-13 - Slack BDR.md",
-          "fileId": "1W61IyJs9mhWakXyVjS85PV5JNHtU-4NR",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-13T23:00:42.551+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 24,
-          "threads": 3,
-          "filename": "2026-08-14 - Slack BDR.md",
-          "fileId": "1Nf1iVVIXGvp-hVP1h4hmfDB9mVWOylg_",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-14T23:00:31.608+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-14 - Slack BDR.md",
-          "fileId": "1Nf1iVVIXGvp-hVP1h4hmfDB9mVWOylg_",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-14T23:00:39.586+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 4,
-          "threads": 0,
-          "filename": "2026-08-15 - Slack BDR.md",
-          "fileId": "1Kn3LxRYCB9GNV1oUxqWNuC-VaB_0zxvy",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-15T23:00:28.665+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-15 - Slack BDR.md",
-          "fileId": "1Kn3LxRYCB9GNV1oUxqWNuC-VaB_0zxvy",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-15T23:00:36.613+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 18,
-          "threads": 1,
-          "filename": "2026-08-16 - Slack BDR.md",
-          "fileId": "1XmEHIbhMus__GmHanvCnQ-OTtB2G7mXB",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-16T23:00:33.311+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-16 - Slack BDR.md",
-          "fileId": "1XmEHIbhMus__GmHanvCnQ-OTtB2G7mXB",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-16T23:00:43.267+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 4,
-          "threads": 0,
-          "filename": "2026-08-17 - Slack BDR.md",
-          "fileId": "1z9juMlCofGA8fg8fnLivguBQ8c0od5eR",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-17T23:00:23.498+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-17 - Slack BDR.md",
-          "fileId": "1z9juMlCofGA8fg8fnLivguBQ8c0od5eR",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-17T23:00:31.704+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 27,
-          "threads": 2,
-          "filename": "2026-08-18 - Slack BDR.md",
-          "fileId": "1EBAtAtgfFPhdF1qTAp4OvXckWnsAUxRi",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-18T23:00:24.768+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-18 - Slack BDR.md",
-          "fileId": "1EBAtAtgfFPhdF1qTAp4OvXckWnsAUxRi",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-18T23:00:31.991+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 23,
-          "threads": 1,
-          "filename": "2026-08-19 - Slack BDR.md",
-          "fileId": "1FDvpnjfJc7Exkt2iJ0864LQ96OggPPPj",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-19T23:00:21.895+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-19 - Slack BDR.md",
-          "fileId": "1FDvpnjfJc7Exkt2iJ0864LQ96OggPPPj",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-19T23:00:29.702+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 8,
-          "threads": 1,
-          "filename": "2026-08-20 - Slack BDR.md",
-          "fileId": "16uXJfIpbFrbfEGuB3pXOwaHVPAM3mvVF",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-20T23:00:32.117+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-20 - Slack BDR.md",
-          "fileId": "16uXJfIpbFrbfEGuB3pXOwaHVPAM3mvVF",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-20T23:00:39.358+03:00"
-        },
-        {
-          "recordId": "recN79He6wwPKogUR",
-          "client": "Adelante",
-          "channel": "C0BFHMGUHT3",
-          "msgs": 2,
-          "threads": 0,
-          "filename": "2026-08-21 - Slack BDR.md",
-          "fileId": "1FMnbuxjIzW4f5G-Ttd5PXmYbkSLKOnjQ",
-          "matched": false,
-          "comments": 0,
-          "slackOk": true,
-          "slackErr": "",
-          "runAt": "2026-08-21T23:00:33.741+03:00"
-        },
-        {
-          "recordId": "recyZTRr7Hb5S6Ozr",
-          "client": "Move PLNR",
-          "channel": "C0AQ013Q8FN",
-          "msgs": 0,
-          "threads": 0,
-          "filename": "2026-08-21 - Slack BDR.md",
-          "fileId": "1FMnbuxjIzW4f5G-Ttd5PXmYbkSLKOnjQ",
-          "matched": false,
-          "comments": 0,
-          "slackOk": false,
-          "slackErr": "not_in_channel",
-          "runAt": "2026-08-21T23:00:50.687+03:00"
-        }
-      ]
+      "slackSyncResults": [],
+      "runStartedAt": 1787415779999,
+      "bdrResults": [],
+      "launch": {
+        "recordId": "recRJ3itCyXgKQT42",
+        "trigger": "form",
+        "clientFilter": "recl27rmyOlVg7fxb",
+        "startedAt": 1787415779767
+      },
+      "syncScope": "client filter matched no Slack-Sync client"
     }
   },
   "meta": {
@@ -1657,9 +1566,9 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
-  "activeVersionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
-  "triggerCount": 1,
+  "versionId": "3b23e1a1-25df-4cff-a574-61ac69116d60",
+  "activeVersionId": "3b23e1a1-25df-4cff-a574-61ac69116d60",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-07-28T06:55:20.234Z",
@@ -1670,9 +1579,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-11T23:11:26.000Z",
-    "createdAt": "2026-08-11T23:11:23.436Z",
-    "versionId": "e8894e0d-eda5-4877-8758-2ee5febbec95",
+    "updatedAt": "2026-08-22T16:21:15.024Z",
+    "createdAt": "2026-08-22T16:21:15.024Z",
+    "versionId": "3b23e1a1-25df-4cff-a574-61ac69116d60",
     "workflowId": "VrCFq5xwiYtcmEIc",
     "nodes": [
       {
@@ -1912,7 +1821,7 @@
       },
       {
         "parameters": {
-          "jsCode": "let results=[];\nlet rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.slackSyncResults||[]; rs=sd.runStartedAt||0; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst okOnes=results.filter(r=>r.ok);\nconst totalMsgs=results.reduce((s,r)=>s+(r.msgs||0),0);\nconst files=results.filter(r=>r.file).length;\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=okOnes.map(r=> '- **'+r.client+' ('+(r.channel||'?')+'):** '+nf(r.msgs)+' msgs · '+(r.file?'file written':'no file'));\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**'];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+' ('+(r.channel||'?')+'): '+(r.error||'unknown')).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{json:{\n 'Automation':'Sync Slack Logs to Vault',\n 'Status': failed.length>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalMsgs,\n 'Records Out': files,\n 'Errors': failed.length,\n 'Target': results.length+' client channel(s) -> Drive Logs folders',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+          "jsCode": "let results=[]; let rs=0; let launch={}; let scope='all clients';\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.slackSyncResults||[]; rs=sd.runStartedAt||0; launch=sd.launch||{}; scope=sd.syncScope||scope; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst okOnes=results.filter(r=>r.ok);\nconst totalMsgs=results.reduce((s,r)=>s+(r.msgs||0),0);\nconst files=results.filter(r=>r.file).length;\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=okOnes.map(r=> '- **'+r.client+' ('+(r.channel||'?')+'):** '+nf(r.msgs)+' msgs · '+(r.file?'file written':'no file'));\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**','**Scope:** '+scope];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+' ('+(r.channel||'?')+'): '+(r.error||'unknown')).join('\\n'));\nif(launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no Slack-Sync client)**');\nconst desc=parts.join('\\n\\n');\nconst row={\n 'Automation':'Sync Slack Logs to Vault',\n 'Status': failed.length>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalMsgs,\n 'Records Out': files,\n 'Errors': failed.length,\n 'Target': results.length+' client channel(s) -> Drive Logs folders',\n 'Trigger': launch.trigger||'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif(launch.clientFilter) row['Client']=[launch.clientFilter];\nreturn [{json: row}];\n"
         },
         "id": "545f697c-d78e-464d-b117-6261d03633aa",
         "name": "Build Run Log",
@@ -1927,7 +1836,7 @@
       },
       {
         "parameters": {
-          "operation": "create",
+          "operation": "upsert",
           "base": {
             "__rl": true,
             "mode": "id",
@@ -1941,7 +1850,9 @@
           "columns": {
             "mappingMode": "autoMapInputData",
             "value": {},
-            "matchingColumns": [],
+            "matchingColumns": [
+              "Execution ID"
+            ],
             "schema": []
           },
           "options": {
@@ -1962,7 +1873,8 @@
             "id": "RZ2SX89iUyF4aEWJ",
             "name": "Airtable"
           }
-        }
+        },
+        "onError": "stopWorkflow"
       },
       {
         "parameters": {
@@ -2042,7 +1954,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.slackSyncResults=[];\nreturn $input.all();"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.slackSyncResults=[];\nsd.bdrResults=[];\n// Scheduled runs sync every enabled client. A launched run with a Client on its launch row syncs that client only.\nconst cf=String((sd.launch||{}).clientFilter||'');\nconst all=$input.all().filter(it=>it.json&&it.json.id);\nconst picked=cf?all.filter(it=>it.json.id===cf):all;\nsd.syncScope=cf?(picked.length?'one client (on demand)':'client filter matched no Slack-Sync client'):'all clients';\n// Nothing to loop over: emit one placeholder so the Any Clients? gate can route straight to the run log.\nif(!picked.length) return [{ json: { _empty:true } }];\nreturn picked;\n"
         },
         "id": "1e4aa2b4-fd2d-40b0-a810-7f467a94f0e3",
         "name": "Init Results",
@@ -2529,7 +2441,7 @@
       },
       {
         "parameters": {
-          "jsCode": "let rows=[]; let rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); rows=sd.bdrResults||[]; rs=sd.runStartedAt||0; }catch(e){}\nreturn rows.map(r=>{\n  const failed=[];\n  if(!r.slackOk) failed.push('Slack fetch failed: '+(r.slackErr||'unknown'));\n  else if(!r.fileId) failed.push('log file not written to Drive');\n  let desc=[\n    '**'+r.msgs+' messages, '+r.threads+' with threads, '+r.comments+' CRM comments**',\n    '',\n    '- **Fired by:** Sync Slack Logs to Vault',\n    '- **Channel synced:** '+(r.channel||'?'),\n    '- **Pulled:** '+r.msgs+' message(s), '+r.threads+' with threads',\n    '- **File:** '+(r.fileId?((r.filename||'(unnamed)')+' (Drive id '+r.fileId+') in the client Logs folder'):'NOT written ('+(r.filename||'no file')+')'),\n    '- **CRM:** '+(r.matched?(r.comments+' new BDR thread repl(ies) pushed as Hub Prospects record comments'):'no prospect matched, no comments pushed')\n  ].join('\\n');\n  if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n  return {json:{\n    'Automation':'Sync BDR Channel',\n    'Client': r.recordId?[r.recordId]:[],\n    'Status': failed.length?'Succeeded with errors':'Succeeded',\n    'Run at': r.runAt||$now.toISO(),\n    'Records In': r.msgs,\n    'Records Out': (r.fileId?1:0)+r.comments,\n    'Errors': failed.length,\n    'Target': (r.channel||'?')+' -> '+(r.filename||'')+' + Prospect comments',\n    'Trigger':'schedule',\n    'Execution ID': String($execution.id),\n    'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n    'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n    'Description': desc\n  }};\n});"
+          "jsCode": "let rows=[]; let rs=0; let launch={};\ntry{ const sd=$getWorkflowStaticData('global'); rows=sd.bdrResults||[]; rs=sd.runStartedAt||0; launch=sd.launch||{}; }catch(e){}\nreturn rows.map(r=>{\n  const failed=[];\n  if(!r.slackOk) failed.push('Slack fetch failed: '+(r.slackErr||'unknown'));\n  else if(!r.fileId) failed.push('log file not written to Drive');\n  let desc=[\n    '**'+r.msgs+' messages, '+r.threads+' with threads, '+r.comments+' CRM comments**',\n    '',\n    '- **Fired by:** Sync Slack Logs to Vault',\n    '- **Channel synced:** '+(r.channel||'?'),\n    '- **Pulled:** '+r.msgs+' message(s), '+r.threads+' with threads',\n    '- **File:** '+(r.fileId?((r.filename||'(unnamed)')+' (Drive id '+r.fileId+') in the client Logs folder'):'NOT written ('+(r.filename||'no file')+')'),\n    '- **CRM:** '+(r.matched?(r.comments+' new BDR thread repl(ies) pushed as Hub Prospects record comments'):'no prospect matched, no comments pushed')\n  ].join('\\n');\n  if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n  // One row per BDR channel, its own Execution ID suffix so it never collides with the parent run's row.\n  const row={\n    'Automation':'Sync BDR Channel',\n    'Status': failed.length?'Succeeded with errors':'Succeeded',\n    'Run at': r.runAt||$now.toISO(),\n    'Records In': r.msgs,\n    'Records Out': (r.fileId?1:0)+r.comments,\n    'Errors': failed.length,\n    'Target': (r.channel||'?')+' -> '+(r.filename||'')+' + Prospect comments',\n    'Trigger': launch.trigger||'schedule',\n    'Execution ID': String($execution.id)+'-bdr-'+(r.recordId||'x'),\n    'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n    'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n    'Description': desc\n  };\n  if(r.recordId) row['Client']=[r.recordId];\n  return {json: row};\n});\n"
         },
         "id": "b5e07029-8287-47bd-8297-aa50a8d7fe63",
         "name": "Build BDR Run Log",
@@ -2579,7 +2491,150 @@
             "name": "Airtable"
           }
         },
-        "onError": "continueRegularOutput"
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "963861ba-35d3-4902-b41b-148637b4bd69",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1392,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-sync-slack-logs",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "f7dfb605-77a3-4904-9b91-e71b9091b6cb"
+      },
+      {
+        "id": "14a6f2ed-3bd1-4e77-b63d-53959baea68c",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1168,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "a29805b9-faaa-47a5-a5f1-c299ba757e24",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -944,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "56469c2b-4362-4196-8ad2-d00e7df83173",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -720,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "54463c8e-31b9-43b4-88ea-946e36c30f78",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -168,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
       }
     ],
     "connections": {
@@ -2686,7 +2741,7 @@
         "main": [
           [
             {
-              "node": "Get Enabled Clients",
+              "node": "Run Context",
               "type": "main",
               "index": 0
             }
@@ -2708,7 +2763,7 @@
         "main": [
           [
             {
-              "node": "Loop Over Items",
+              "node": "Any Clients?",
               "type": "main",
               "index": 0
             }
@@ -2995,13 +3050,75 @@
             }
           ]
         ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get Enabled Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
     "authors": "Shahar Mizrahi",
-    "name": "Version e8894e0d",
-    "description": "",
-    "autosaved": true
+    "name": null,
+    "description": null,
+    "autosaved": false
   },
   "tags": []
 }

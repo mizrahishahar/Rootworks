@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T20:31:17.341Z",
+  "updatedAt": "2026-08-22T16:22:26.570Z",
   "createdAt": "2026-07-28T12:12:50.566Z",
   "id": "8oCb1lkbgeujqRz0",
   "name": "Add Intent Leads to Alta",
@@ -458,6 +458,216 @@
         "batchSize": 1,
         "options": {}
       }
+    },
+    {
+      "id": "ff4adc01-bafc-4e72-91e8-7c2f0e9d6844",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1296,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-add-intent-alta",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "c8031e21-b6f2-40bc-a213-da3d07da5980"
+    },
+    {
+      "id": "4c3a80e8-6e85-4800-b258-1ed357d38b9e",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1072,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "2eb539a5-1d25-42a7-a0fc-299859876195",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -848,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "61019bbf-dc73-4bef-ba2e-659105ae8cac",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -624,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "6e1ae236-f811-4333-9e4c-3d3751d9859e",
+      "name": "Filter Clients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -184,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Filter-Clients.js"
+      }
+    },
+    {
+      "id": "c9eff551-459b-4056-be76-aaa2543e14e2",
+      "name": "Build Launch Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        264,
+        -240
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Launch-Summary.js"
+      }
+    },
+    {
+      "id": "c35f8a57-6e43-47f5-9755-fb204a68d2b7",
+      "name": "Close Launch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        488,
+        -240
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "7ec26c09-8b82-40c8-947e-4b255278f787",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -465,7 +675,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Clients",
+            "node": "Filter Clients",
             "type": "main",
             "index": 0
           }
@@ -603,7 +813,13 @@
     },
     "Loop Over Clients": {
       "main": [
-        [],
+        [
+          {
+            "node": "Build Launch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Parse Client Config",
@@ -617,7 +833,91 @@
       "main": [
         [
           {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
             "node": "Get Intent Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Clients": {
+      "main": [
+        [
+          {
+            "node": "Any Clients?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Launch Summary": {
+      "main": [
+        [
+          {
+            "node": "Close Launch Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Launch Summary",
             "type": "main",
             "index": 0
           }
@@ -638,7 +938,15 @@
       "recurrenceRules": []
     },
     "global": {
-      "runStartedAt": 1787383850448
+      "runStartedAt": 1787415784398,
+      "launch": {
+        "recordId": "recOtjisjpag3koiE",
+        "trigger": "form",
+        "clientFilter": "recl27rmyOlVg7fxb",
+        "startedAt": 1787415784178
+      },
+      "intentResults": [],
+      "syncScope": "client filter matched no Intent client"
     }
   },
   "meta": {
@@ -646,9 +954,9 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
-  "activeVersionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
-  "triggerCount": 1,
+  "versionId": "60d411d8-dfad-4115-8cc6-48d803f3bf41",
+  "activeVersionId": "60d411d8-dfad-4115-8cc6-48d803f3bf41",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-07-28T12:12:50.572Z",
@@ -659,9 +967,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-08T20:31:17.343Z",
-    "createdAt": "2026-08-08T20:31:17.343Z",
-    "versionId": "e1f8141b-d1a1-42d7-a4dc-e483372cab61",
+    "updatedAt": "2026-08-22T16:22:26.575Z",
+    "createdAt": "2026-08-22T16:22:26.575Z",
+    "versionId": "60d411d8-dfad-4115-8cc6-48d803f3bf41",
     "workflowId": "8oCb1lkbgeujqRz0",
     "nodes": [
       {
@@ -1057,7 +1365,7 @@
           40
         ],
         "parameters": {
-          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nlet tables=[]; try{ tables=$('Parse Client Config').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst clientRecId=(tables[0]&&tables[0].clientRecId)||'';\nconst clientName=(tables[0]&&tables[0].clientName)||'';\nlet prep=[]; try{ prep=$('Prep Rows').all().map(i=>i.json); }catch(e){}\nconst ready=prep.filter(r=>r&&r.recordId).length;\nconst readErrors=prep.filter(r=>r&&r._readError).map(r=>({ name:'table '+(r.tableId||'?')+': read failed', reason:r.errorMessage||'' }));\nlet routes=[]; try{ routes=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.recordId); }catch(e){}\nlet results=[]; try{ results=$('Stamp Results').all().map(i=>i.json); }catch(e){}\nconst ok=results.filter(r=>r.ok);\nconst failed=results.filter(r=>!r.ok).concat(routes.filter(r=>r.action==='failed_precheck')).concat(readErrors);\nconst noEmail=routes.filter(r=>r.action==='no_email');\nconst byTable={};\nfor(const t of tables){ byTable[t.tableId]={ ready:0, enrolled:0, failed:0, noEmail:0 }; }\nfor(const r of routes){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); b.ready++; if(r.action==='no_email')b.noEmail++; if(r.action==='failed_precheck')b.failed++; }\nfor(const r of results){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); if(r.ok)b.enrolled++; else b.failed++; }\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst parts=['**'+nf(ready)+' ready, '+nf(ok.length)+' enrolled, '+failed.length+' failed**'];\nif(!tables.length) parts.push('No usable Intent Tables lines (need tbl ids + Clayroots Base ID on the row); nothing to do.');\nconst tLines=Object.keys(byTable).map(tid=>{ const b=byTable[tid]; return '- **'+tid+':** '+nf(b.ready)+' ready · '+nf(b.enrolled)+' enrolled · '+nf(b.failed)+' failed · '+nf(b.noEmail)+' no email'; });\nif(tLines.length) parts.push('**Tables**\\n'+tLines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.slice(0,5).map(f=>'- '+(f.name||f.recordId||'?')+': '+(f.reason?String(f.reason).slice(0,120):'enroll failed')).join('\\n')+(failed.length>5?'\\n- ...and '+(failed.length-5)+' more':''));\nif(noEmail.length) parts.push('**Skipped ('+noEmail.length+', no email)**\\n'+noEmail.map(r=>r.name||r.recordId||'?').join(', '));\nreturn [{json:{\n 'Automation':'Add Intent Leads to Alta',\n 'Client': clientRecId?[clientRecId]:[],\n 'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': ready,\n 'Records Out': ok.length,\n 'Errors': failed.length,\n 'Target': tables.map(t=>t.tableId).join(', '),\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id)+'-'+(clientRecId||'x'),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': parts.join('\\n\\n')\n}}];"
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nlet tables=[]; try{ tables=$('Parse Client Config').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst clientRecId=(tables[0]&&tables[0].clientRecId)||'';\nconst clientName=(tables[0]&&tables[0].clientName)||'';\nlet prep=[]; try{ prep=$('Prep Rows').all().map(i=>i.json); }catch(e){}\nconst ready=prep.filter(r=>r&&r.recordId).length;\nconst readErrors=prep.filter(r=>r&&r._readError).map(r=>({ name:'table '+(r.tableId||'?')+': read failed', reason:r.errorMessage||'' }));\nlet routes=[]; try{ routes=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.recordId); }catch(e){}\nlet results=[]; try{ results=$('Stamp Results').all().map(i=>i.json); }catch(e){}\nconst ok=results.filter(r=>r.ok);\nconst failed=results.filter(r=>!r.ok).concat(routes.filter(r=>r.action==='failed_precheck')).concat(readErrors);\nconst noEmail=routes.filter(r=>r.action==='no_email');\nconst byTable={};\nfor(const t of tables){ byTable[t.tableId]={ ready:0, enrolled:0, failed:0, noEmail:0 }; }\nfor(const r of routes){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); b.ready++; if(r.action==='no_email')b.noEmail++; if(r.action==='failed_precheck')b.failed++; }\nfor(const r of results){ const b=byTable[r.tableId]||(byTable[r.tableId]={ready:0,enrolled:0,failed:0,noEmail:0}); if(r.ok)b.enrolled++; else b.failed++; }\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst parts=['**'+nf(ready)+' ready, '+nf(ok.length)+' enrolled, '+failed.length+' failed**'];\nif(!tables.length) parts.push('No usable Intent Tables lines (need tbl ids + Clayroots Base ID on the row); nothing to do.');\nconst tLines=Object.keys(byTable).map(tid=>{ const b=byTable[tid]; return '- **'+tid+':** '+nf(b.ready)+' ready · '+nf(b.enrolled)+' enrolled · '+nf(b.failed)+' failed · '+nf(b.noEmail)+' no email'; });\nif(tLines.length) parts.push('**Tables**\\n'+tLines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.slice(0,5).map(f=>'- '+(f.name||f.recordId||'?')+': '+(f.reason?String(f.reason).slice(0,120):'enroll failed')).join('\\n')+(failed.length>5?'\\n- ...and '+(failed.length-5)+' more':''));\nif(noEmail.length) parts.push('**Skipped ('+noEmail.length+', no email)**\\n'+noEmail.map(r=>r.name||r.recordId||'?').join(', '));\nconst launch=sd2.launch||{};\nif(!Array.isArray(sd2.intentResults)) sd2.intentResults=[];\nsd2.intentResults.push({client:clientName, ready, enrolled:ok.length, failed:failed.length, target:tables.map(t=>t.tableId).join(', ')});\nconst row={\n 'Automation':'Add Intent Leads to Alta',\n 'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': ready,\n 'Records Out': ok.length,\n 'Errors': failed.length,\n 'Target': tables.map(t=>t.tableId).join(', '),\n 'Trigger': launch.trigger||'schedule',\n 'Execution ID': String($execution.id)+'-'+(clientRecId||'x'),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': parts.join('\\n\\n')\n};\nif(clientRecId) row['Client']=[clientRecId];\nreturn [{json:row}];"
         },
         "executeOnce": false,
         "onError": "continueRegularOutput"
@@ -1116,6 +1424,216 @@
           "batchSize": 1,
           "options": {}
         }
+      },
+      {
+        "id": "ff4adc01-bafc-4e72-91e8-7c2f0e9d6844",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1296,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-add-intent-alta",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "c8031e21-b6f2-40bc-a213-da3d07da5980"
+      },
+      {
+        "id": "4c3a80e8-6e85-4800-b258-1ed357d38b9e",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1072,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "2eb539a5-1d25-42a7-a0fc-299859876195",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -848,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "61019bbf-dc73-4bef-ba2e-659105ae8cac",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -624,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "6e1ae236-f811-4333-9e4c-3d3751d9859e",
+        "name": "Filter Clients",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -184,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.intentResults=[];\n// Scheduled runs enroll for every client with Intent Tables. A launched run with a Client on its launch row serves that client only.\nconst cf=String((sd.launch||{}).clientFilter||'');\nconst all=$input.all().filter(it=>it.json&&it.json.id);\nconst picked=cf?all.filter(it=>it.json.id===cf):all;\nsd.syncScope=cf?(picked.length?'one client (on demand)':'client filter matched no Intent client'):'all clients';\n// Nothing to loop over: emit one placeholder so the Any Clients? gate can route straight to the launch-row close.\nif(!picked.length) return [{ json: { _empty:true } }];\nreturn picked;\n"
+        }
+      },
+      {
+        "id": "c9eff551-459b-4056-be76-aaa2543e14e2",
+        "name": "Build Launch Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          264,
+          -240
+        ],
+        "parameters": {
+          "jsCode": "// Closes the Hub launch row of an on-demand run with a roll-up of the per-client rows.\n// A scheduled run has no launch row and this leg emits nothing.\nconst sd=$getWorkflowStaticData('global');\nconst launch=sd.launch||{};\nif(!launch.recordId) return [];\nconst rs=sd.runStartedAt||launch.startedAt||$now.toMillis();\nconst results=sd.intentResults||[];\nconst ready=results.reduce((s,r)=>s+(r.ready||0),0);\nconst enrolled=results.reduce((s,r)=>s+(r.enrolled||0),0);\nconst failed=results.reduce((s,r)=>s+(r.failed||0),0);\nconst lines=results.map(r=>'- **'+(r.client||'?')+':** '+(r.ready||0)+' ready · '+(r.enrolled||0)+' enrolled · '+(r.failed||0)+' failed');\nconst parts=['**'+results.length+' client(s), '+ready+' ready, '+enrolled+' enrolled, '+failed+' failed**','**Scope:** '+(sd.syncScope||'all clients')];\nif(lines.length) parts.push('**Clients** (one detail row per client below this one)\\n'+lines.join('\\n'));\nif(launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no Intent client)**');\nconst row={\n  'Automation': $workflow.name,\n  'Status': failed?'Succeeded with errors':'Succeeded',\n  'Run at': $now.toISO(),\n  'Records In': ready,\n  'Records Out': enrolled,\n  'Errors': failed,\n  'Target': results.map(r=>r.target||'').filter(Boolean).join(', '),\n  'Trigger': 'form',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Duration s': Math.round(($now.toMillis()-rs)/1000),\n  'Description': parts.join('\\n\\n')\n};\nif(launch.clientFilter) row['Client']=[launch.clientFilter];\nreturn [{json:row}];\n"
+        }
+      },
+      {
+        "id": "c35f8a57-6e43-47f5-9755-fb204a68d2b7",
+        "name": "Close Launch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          488,
+          -240
+        ],
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "7ec26c09-8b82-40c8-947e-4b255278f787",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -160,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
       }
     ],
     "connections": {
@@ -1123,7 +1641,7 @@
         "main": [
           [
             {
-              "node": "Loop Over Clients",
+              "node": "Filter Clients",
               "type": "main",
               "index": 0
             }
@@ -1261,7 +1779,13 @@
       },
       "Loop Over Clients": {
         "main": [
-          [],
+          [
+            {
+              "node": "Build Launch Summary",
+              "type": "main",
+              "index": 0
+            }
+          ],
           [
             {
               "node": "Parse Client Config",
@@ -1275,7 +1799,91 @@
         "main": [
           [
             {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
               "node": "Get Intent Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Clients": {
+        "main": [
+          [
+            {
+              "node": "Any Clients?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Launch Summary": {
+        "main": [
+          [
+            {
+              "node": "Close Launch Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Launch Summary",
               "type": "main",
               "index": 0
             }

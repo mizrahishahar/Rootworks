@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T20:29:49.199Z",
+  "updatedAt": "2026-08-22T16:15:21.667Z",
   "createdAt": "2026-08-01T14:55:25.827Z",
   "id": "up8Yll6huq06h1DE",
   "name": "Sync Alta Campaigns to Hub",
@@ -101,7 +101,7 @@
       ],
       "parameters": {
         "resource": "record",
-        "operation": "create",
+        "operation": "upsert",
         "base": {
           "__rl": true,
           "mode": "id",
@@ -115,7 +115,9 @@
         "columns": {
           "mappingMode": "autoMapInputData",
           "value": {},
-          "matchingColumns": [],
+          "matchingColumns": [
+            "Execution ID"
+          ],
           "schema": []
         },
         "options": {
@@ -856,6 +858,117 @@
           "name": "Airtable"
         }
       }
+    },
+    {
+      "id": "e37fb152-bd4e-4d7b-af1c-4b33c638a07b",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1496,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-alta-campaigns",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "eba11eb8-1772-4965-b76f-258c4a37fdaa"
+    },
+    {
+      "id": "4e634a3b-f4fd-4f75-8b74-f4c87cb98875",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1272,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "dff779e5-8589-4130-98ad-dd52fc307103",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1048,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "689eee30-9620-4f84-9b11-6d7598d1f73c",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -824,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
     }
   ],
   "connections": {
@@ -1191,6 +1304,50 @@
       "main": [
         [
           {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
             "node": "Fetch Alta Campaigns",
             "type": "main",
             "index": 0
@@ -1222,7 +1379,7 @@
           },
           {
             "name": "Executives - Hiring Infra (Full Pitch - $50)",
-            "leads": 0
+            "leads": 19
           },
           {
             "name": "Executives - Hiring Infra (Full Pitch - AirPods)",
@@ -1243,13 +1400,19 @@
         ]
       },
       "altaThreads": {
-        "checked": 35,
+        "checked": 36,
         "updated": 2,
         "skipped": [
           "BrothersTech (missing campaignId)"
         ]
       },
-      "runStartedAt": 1787373053367
+      "runStartedAt": 1787415457220,
+      "launch": {
+        "recordId": "recBt5ge8vQs7DXzm",
+        "trigger": "form",
+        "clientFilter": "",
+        "startedAt": 1787415456860
+      }
     },
     "node:Every 12h (07:30+19:30)": {
       "recurrenceRules": []
@@ -1260,9 +1423,9 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
-  "activeVersionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
-  "triggerCount": 1,
+  "versionId": "4f502182-1562-4b5c-a56e-073374a29dbd",
+  "activeVersionId": "4f502182-1562-4b5c-a56e-073374a29dbd",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-08-01T14:55:25.833Z",
@@ -1273,9 +1436,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-08T20:29:49.202Z",
-    "createdAt": "2026-08-08T20:29:49.202Z",
-    "versionId": "c0aa4820-04e8-4cad-9987-fa3106c88b7e",
+    "updatedAt": "2026-08-22T16:15:21.669Z",
+    "createdAt": "2026-08-22T16:15:21.669Z",
+    "versionId": "4f502182-1562-4b5c-a56e-073374a29dbd",
     "workflowId": "up8Yll6huq06h1DE",
     "nodes": [
       {
@@ -1357,7 +1520,7 @@
           220
         ],
         "parameters": {
-          "jsCode": "let s={totalInWorkspace:0,truncated:false,campaigns:[]};\nlet t={checked:0,updated:0,skipped:[]};\nlet rs=0;\ntry{ const sd=$getWorkflowStaticData('global'); s=sd.altaSync||s; t=sd.altaThreads||t; rs=sd.runStartedAt||0; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=s.campaigns.map(c=>'- **'+c.name+':** '+nf(c.leads)+' leads');\nconst warn=s.truncated?['**WARNING:** workspace has >100 campaigns, list truncated']:[];\nconst authFailed=t.skipped.some(p=>String(p).includes('AUTH FAILED'));\nconst zeroUpsert=s.totalInWorkspace>0 && s.campaigns.length===0;\nconst errCount=t.skipped.length + (authFailed && !t.skipped.length ? 1 : 0) + (zeroUpsert ? 1 : 0);\nconst zeroWarn=zeroUpsert?['**ERROR:** 0 campaigns upserted while workspace has '+s.totalInWorkspace+' campaign(s)']:[];\nconst parts=['**'+s.campaigns.length+' active of '+s.totalInWorkspace+' campaigns in workspace**'];\nif(warn.length) parts.push(warn.join('\\n'));\nif(zeroWarn.length) parts.push(zeroWarn.join('\\n'));\nif(lines.length) parts.push('**Campaigns**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(t.skipped.length) parts.push('**Thread problems ('+t.skipped.length+')**\\n'+t.skipped.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Sync Alta Campaigns to Hub',\n 'Client': ['reclCOYRBgMowJd8G'],\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': s.campaigns.length,\n 'Records Out': s.campaigns.length,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger':'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
+          "jsCode": "let s={totalInWorkspace:0,truncated:false,campaigns:[]};\nlet t={checked:0,updated:0,skipped:[]};\nlet rs=0; let launch={};\ntry{ const sd=$getWorkflowStaticData('global'); s=sd.altaSync||s; t=sd.altaThreads||t; rs=sd.runStartedAt||0; launch=sd.launch||{}; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=s.campaigns.map(c=>'- **'+c.name+':** '+nf(c.leads)+' leads');\nconst warn=s.truncated?['**WARNING:** workspace has >100 campaigns, list truncated']:[];\nconst authFailed=t.skipped.some(p=>String(p).includes('AUTH FAILED'));\nconst zeroUpsert=s.totalInWorkspace>0 && s.campaigns.length===0;\nconst errCount=t.skipped.length + (authFailed && !t.skipped.length ? 1 : 0) + (zeroUpsert ? 1 : 0);\nconst zeroWarn=zeroUpsert?['**ERROR:** 0 campaigns upserted while workspace has '+s.totalInWorkspace+' campaign(s)']:[];\nconst parts=['**'+s.campaigns.length+' active of '+s.totalInWorkspace+' campaigns in workspace**'];\n// This machine serves the one Alta workspace (Dave.io); a client filter on the launch row is noted, not applied.\nif(launch.clientFilter && launch.clientFilter!=='reclCOYRBgMowJd8G') parts.push('**Scope:** launch row Client ignored, this sync serves the Dave.io Alta workspace only');\nif(warn.length) parts.push(warn.join('\\n'));\nif(zeroWarn.length) parts.push(zeroWarn.join('\\n'));\nif(lines.length) parts.push('**Campaigns**\\n'+lines.join('\\n'));\nparts.push('**Threads:** '+nf(t.checked)+' prospects checked · '+nf(t.updated)+' threads refreshed');\nif(t.skipped.length) parts.push('**Thread problems ('+t.skipped.length+')**\\n'+t.skipped.map(p=>'- '+p).join('\\n'));\nconst desc=parts.join('\\n\\n');\nreturn [{ json: {\n 'Automation':'Sync Alta Campaigns to Hub',\n 'Client': ['reclCOYRBgMowJd8G'],\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': s.campaigns.length,\n 'Records Out': s.campaigns.length,\n 'Errors': errCount,\n 'Target': 'Campaigns + Prospects',\n 'Trigger': launch.trigger||'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];\n"
         },
         "executeOnce": true,
         "onError": "continueRegularOutput"
@@ -1373,7 +1536,7 @@
         ],
         "parameters": {
           "resource": "record",
-          "operation": "create",
+          "operation": "upsert",
           "base": {
             "__rl": true,
             "mode": "id",
@@ -1387,7 +1550,9 @@
           "columns": {
             "mappingMode": "autoMapInputData",
             "value": {},
-            "matchingColumns": [],
+            "matchingColumns": [
+              "Execution ID"
+            ],
             "schema": []
           },
           "options": {
@@ -2128,6 +2293,117 @@
             "name": "Airtable"
           }
         }
+      },
+      {
+        "id": "e37fb152-bd4e-4d7b-af1c-4b33c638a07b",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1496,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-sync-alta-campaigns",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "eba11eb8-1772-4965-b76f-258c4a37fdaa"
+      },
+      {
+        "id": "4e634a3b-f4fd-4f75-8b74-f4c87cb98875",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1272,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "dff779e5-8589-4130-98ad-dd52fc307103",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1048,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "689eee30-9620-4f84-9b11-6d7598d1f73c",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -824,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
       }
     ],
     "connections": {
@@ -2460,6 +2736,50 @@
         ]
       },
       "Every 12h (07:30+19:30)": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
         "main": [
           [
             {

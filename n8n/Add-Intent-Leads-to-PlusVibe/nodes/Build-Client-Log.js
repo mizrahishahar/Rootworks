@@ -21,18 +21,22 @@ const tLines=Object.keys(byTable).map(tid=>{ const b=byTable[tid]; return '- **'
 if(tLines.length) parts.push('**Tables**\n'+tLines.join('\n'));
 if(failed.length) parts.push('**FAILED ('+failed.length+')**\n'+failed.slice(0,5).map(f=>'- '+(f.name||f.recordId||'?')+': '+(f.reason?String(f.reason).slice(0,120):'enroll failed')).join('\n')+(failed.length>5?'\n- ...and '+(failed.length-5)+' more':''));
 if(noEmail.length) parts.push('**Skipped ('+noEmail.length+', no email)**\n'+noEmail.map(r=>r.name||r.recordId||'?').join(', '));
-return [{json:{
+const launch=sd2.launch||{};
+if(!Array.isArray(sd2.intentResults)) sd2.intentResults=[];
+sd2.intentResults.push({client:clientName, ready, enrolled:ok.length, failed:failed.length, target:tables.map(t=>t.tableId).join(', ')});
+const row={
  'Automation':'Add Intent Leads to PlusVibe',
- 'Client': clientRecId?[clientRecId]:[],
  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',
  'Run at': $now.toISO(),
  'Records In': ready,
  'Records Out': ok.length,
  'Errors': failed.length,
  'Target': tables.map(t=>t.tableId).join(', '),
- 'Trigger':'schedule',
+ 'Trigger': launch.trigger||'schedule',
  'Execution ID': String($execution.id)+'-'+(clientRecId||'x'),
  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
  'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),
  'Description': parts.join('\n\n')
-}}];
+};
+if(clientRecId) row['Client']=[clientRecId];
+return [{json:row}];

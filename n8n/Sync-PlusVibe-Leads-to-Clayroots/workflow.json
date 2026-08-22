@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T09:22:11.835Z",
+  "updatedAt": "2026-08-22T16:21:39.178Z",
   "createdAt": "2026-08-08T16:34:33.134Z",
   "id": "TTRm3gldn3jiVgkp",
   "name": "Sync PlusVibe Leads to Clayroots",
@@ -97,7 +97,7 @@
     },
     {
       "parameters": {
-        "operation": "create",
+        "operation": "upsert",
         "base": {
           "__rl": true,
           "mode": "id",
@@ -111,7 +111,9 @@
         "columns": {
           "mappingMode": "autoMapInputData",
           "value": {},
-          "matchingColumns": [],
+          "matchingColumns": [
+            "Execution ID"
+          ],
           "schema": []
         },
         "options": {
@@ -938,6 +940,149 @@
         "mode": "runOnceForAllItems",
         "jsCode": "@@file:nodes/Build-Run-Log.js"
       }
+    },
+    {
+      "id": "cb4a6fcd-7cc3-493d-8bcd-0a10bf4316f7",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1904,
+        800
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-pv-leads",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "9482b300-3b8a-4f8f-9c5a-f1a6c5aedc45"
+    },
+    {
+      "id": "06fc603c-596c-4f07-877c-c7f7b773b099",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1680,
+        800
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "5576265c-378a-47a6-9f7b-e9f2d1b118d0",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1456,
+        800
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "c31c7f96-fb1b-4586-80c1-fcdc428ebc65",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        680
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "e98a6216-9bc2-4f55-b264-d77e71f45264",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -312,
+        664
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1182,7 +1327,7 @@
       "main": [
         [
           {
-            "node": "Init Run",
+            "node": "Run Context",
             "type": "main",
             "index": 0
           }
@@ -1193,7 +1338,7 @@
       "main": [
         [
           {
-            "node": "Loop Clients",
+            "node": "Any Clients?",
             "type": "main",
             "index": 0
           }
@@ -1374,6 +1519,68 @@
           }
         ]
       ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Init Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1390,20 +1597,26 @@
     },
     "global": {
       "run": {
-        "start": "2026-08-22T03:00:32.235+03:00",
-        "trigger": "schedule",
-        "clientFilter": "",
+        "start": "2026-08-22T19:17:59.672+03:00",
+        "trigger": "form",
+        "clientFilter": "recl27rmyOlVg7fxb",
         "fullPass": false
       },
       "clients": {},
       "chunks": [],
-      "currentClient": "recyZTRr7Hb5S6Ozr",
+      "currentClient": "recl27rmyOlVg7fxb",
       "pull": {
         "queue": [],
         "idx": 0,
         "byCampaign": {}
       },
-      "write": null
+      "write": null,
+      "launch": {
+        "recordId": "recLgJDqhuhclIcYN",
+        "trigger": "form",
+        "clientFilter": "recl27rmyOlVg7fxb",
+        "startedAt": 1787415479655
+      }
     }
   },
   "meta": {
@@ -1411,9 +1624,9 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
-  "activeVersionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
-  "triggerCount": 1,
+  "versionId": "cee358a9-c4ae-4ccf-a799-b27d9cc8886a",
+  "activeVersionId": "cee358a9-c4ae-4ccf-a799-b27d9cc8886a",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-08-08T16:34:33.183Z",
@@ -1424,9 +1637,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-13T09:22:11.841Z",
-    "createdAt": "2026-08-13T09:22:11.841Z",
-    "versionId": "505b27fe-f98b-4b90-848e-339b64aaf3f6",
+    "updatedAt": "2026-08-22T16:21:39.181Z",
+    "createdAt": "2026-08-22T16:21:39.181Z",
+    "versionId": "cee358a9-c4ae-4ccf-a799-b27d9cc8886a",
     "workflowId": "TTRm3gldn3jiVgkp",
     "nodes": [
       {
@@ -1444,7 +1657,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nlet trig='schedule', cf='', fp=false;\ntry{\n  const t=$('Manual Start').first().json||{};\n  trig='event';\n  const b=(t&&typeof t.body==='object'&&t.body)?t.body:{};\n  const q=(t&&typeof t.query==='object'&&t.query)?t.query:{};\n  cf=String(t.clientFilter||b.clientFilter||q.clientFilter||'').trim();\n  const rawFp=(t.fullPass!==undefined?t.fullPass:(b.fullPass!==undefined?b.fullPass:q.fullPass));\n  fp=(rawFp===true||String(rawFp).toLowerCase()==='true');\n}catch(e){}\nsd.run={start:$now.toISO(), trigger:trig, clientFilter:cf, fullPass:fp};\nsd.clients={};\nsd.pull=null;\nsd.write=null;\nreturn [{json:{trigger:trig, clientFilter:cf, fullPass:fp}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nlet trig='schedule', cf='', fp=false;\n// Door 1: Execute Workflow call (Manual Start) with clientFilter / fullPass in its payload.\ntry{\n  const t=$('Manual Start').first().json||{};\n  trig='event';\n  const b=(t&&typeof t.body==='object'&&t.body)?t.body:{};\n  const q=(t&&typeof t.query==='object'&&t.query)?t.query:{};\n  cf=String(t.clientFilter||b.clientFilter||q.clientFilter||'').trim();\n  const rawFp=(t.fullPass!==undefined?t.fullPass:(b.fullPass!==undefined?b.fullPass:q.fullPass));\n  fp=(rawFp===true||String(rawFp).toLowerCase()==='true');\n}catch(e){}\n// Door 2: Hub launch row (Run Context). Its Client link becomes the filter; trigger = form.\nconst launch=sd.launch||{};\nif(launch.recordId){ trig='form'; cf=String(launch.clientFilter||cf||'').trim(); }\nsd.run={start:$now.toISO(), trigger:trig, clientFilter:cf, fullPass:fp};\nsd.clients={};\nsd.pull=null;\nsd.write=null;\nreturn [{json:{trigger:trig, clientFilter:cf, fullPass:fp}}];\n"
         },
         "id": "25d4cc8a-901f-4ea9-bfc0-5ee74a361b56",
         "name": "Init Run",
@@ -1493,7 +1706,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst cf=String((sd.run||{}).clientFilter||'').toLowerCase();\nconst out=[];\nfor(const it of $input.all()){\n  const r=it.json||{};\n  const f=r.fields||r;\n  const name=String(f['Client name']||f['Client']||'').trim();\n  const ws=String(f['PlusVibe Workspace ID']||'').trim();\n  const crBase=String(f['Clayroots Base ID']||'').trim();\n  if(!r.id||!name||!ws||!crBase) continue;\n  if(cf && name.toLowerCase().indexOf(cf)===-1) continue;\n  out.push({json:{clientRecId:r.id, clientName:name, ws, crBase}});\n}\nreturn out;"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst cfRaw=String((sd.run||{}).clientFilter||'').trim();\nconst cf=cfRaw.toLowerCase();\n// The filter is either a Clients record id (from a Hub launch row) or a name fragment (from a manual call).\nconst byId=/^rec[a-z0-9]{14}$/i.test(cfRaw);\nconst out=[];\nfor(const it of $input.all()){\n  const r=it.json||{};\n  const f=r.fields||r;\n  const name=String(f['Client name']||f['Client']||'').trim();\n  const ws=String(f['PlusVibe Workspace ID']||'').trim();\n  const crBase=String(f['Clayroots Base ID']||'').trim();\n  if(!r.id||!name||!ws||!crBase) continue;\n  if(cf && (byId ? r.id!==cfRaw : name.toLowerCase().indexOf(cf)===-1)) continue;\n  out.push({json:{clientRecId:r.id, clientName:name, ws, crBase}});\n}\n// Nothing to loop over: emit one placeholder so the Any Clients? gate can route straight to the run log.\nif(!out.length) return [{json:{_empty:true}}];\nreturn out;\n"
         },
         "id": "6b3bfee5-01a5-4822-874f-312604c38f60",
         "name": "Map Clients",
@@ -1520,7 +1733,7 @@
       },
       {
         "parameters": {
-          "operation": "create",
+          "operation": "upsert",
           "base": {
             "__rl": true,
             "mode": "id",
@@ -1534,7 +1747,9 @@
           "columns": {
             "mappingMode": "autoMapInputData",
             "value": {},
-            "matchingColumns": [],
+            "matchingColumns": [
+              "Execution ID"
+            ],
             "schema": []
           },
           "options": {
@@ -2359,7 +2574,150 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst run=sd.run||{};\nconst durS=Math.round((Date.now()-new Date(run.start||Date.now()).getTime())/1000);\nconst clients=Object.keys(sd.clients||{}).map(id=>sd.clients[id]);\nlet totalIn=0, totalOut=0, failedClients=0;\nconst allFailed=[], skipLines=[], warnLines=[], clientLines=[], wmHold=[];\nfor(const c of clients){\n  const s=c.summary||{};\n  totalIn+=s.leadsPulled||0;\n  totalOut+=s.rowsWritten||0;\n  const fl=s.failedList||[];\n  if(fl.length) failedClients++;\n  for(const e of fl) allFailed.push('**'+(s.name||'?')+':** '+e);\n  for(const sk of (s.skips||[])) skipLines.push('**'+(s.name||'?')+':** '+sk);\n  for(const w of (s.warnings||[])) warnLines.push('**'+(s.name||'?')+':** '+w);\n  if(s.pullOk===false) wmHold.push((s.name||'?')+' pull incomplete');\n  if(s.writeOk===false) wmHold.push((s.name||'?')+' write failures');\n  clientLines.push('- **'+(s.name||'?')+':** '+[(s.campaigns||0)+' campaigns ('+(s.complete||0)+'/'+(s.campaigns||0)+' invariants OK)', (s.leadsPulled||0)+' leads pulled', (s.nominated||0)+' refreshed', (s.rowsWritten||0)+' rows written', s.mode||''].filter(Boolean).join(' · '));\n}\nconst partial=!!(run.clientFilter);\nif(partial) wmHold.push('partial run (clientFilter \"'+run.clientFilter+'\")');\nconst wmOk=wmHold.length===0 && clients.length>0;\nconst md=[];\nmd.push('**'+clients.length+' clients, '+failedClients+' failed**');\nmd.push('');\nmd.push('**Watermark:** '+(wmOk?'advanced (pull complete, writes clean)':('HELD - '+wmHold.join('; '))));\nmd.push('');\nmd.push('**Clients**');\nfor(const l of clientLines) md.push(l);\nif(allFailed.length){ md.push(''); md.push('**FAILED ('+allFailed.length+')**'); for(const e of allFailed) md.push('- '+e); }\nif(skipLines.length){ md.push(''); md.push('**Skipped ('+skipLines.length+')**'); for(const e of skipLines) md.push('- '+e); }\nif(warnLines.length){ md.push(''); md.push('**Warnings ('+warnLines.length+')**'); for(const e of warnLines) md.push('- '+e); }\nconst errTotal=allFailed.length;\nsd.clients={};\nreturn [{json:{\n  'Automation':'Sync PlusVibe Leads to Clayroots',\n  'Status':errTotal?'Succeeded with errors':'Succeeded',\n  'Watermark OK':wmOk,\n  'Trigger':run.trigger||'event',\n  'Run at':run.start||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':totalIn,\n  'Records Out':totalOut,\n  'Errors':errTotal,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':md.join('\\n').slice(0,95000)\n}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nconst run=sd.run||{};\nconst durS=Math.round((Date.now()-new Date(run.start||Date.now()).getTime())/1000);\nconst clients=Object.keys(sd.clients||{}).map(id=>sd.clients[id]);\nlet totalIn=0, totalOut=0, failedClients=0;\nconst allFailed=[], skipLines=[], warnLines=[], clientLines=[], wmHold=[];\nfor(const c of clients){\n  const s=c.summary||{};\n  totalIn+=s.leadsPulled||0;\n  totalOut+=s.rowsWritten||0;\n  const fl=s.failedList||[];\n  if(fl.length) failedClients++;\n  for(const e of fl) allFailed.push('**'+(s.name||'?')+':** '+e);\n  for(const sk of (s.skips||[])) skipLines.push('**'+(s.name||'?')+':** '+sk);\n  for(const w of (s.warnings||[])) warnLines.push('**'+(s.name||'?')+':** '+w);\n  if(s.pullOk===false) wmHold.push((s.name||'?')+' pull incomplete');\n  if(s.writeOk===false) wmHold.push((s.name||'?')+' write failures');\n  clientLines.push('- **'+(s.name||'?')+':** '+[(s.campaigns||0)+' campaigns ('+(s.complete||0)+'/'+(s.campaigns||0)+' invariants OK)', (s.leadsPulled||0)+' leads pulled', (s.nominated||0)+' refreshed', (s.rowsWritten||0)+' rows written', s.mode||''].filter(Boolean).join(' · '));\n}\nconst partial=!!(run.clientFilter);\nif(partial) wmHold.push('partial run (clientFilter \"'+run.clientFilter+'\")');\nconst wmOk=wmHold.length===0 && clients.length>0;\nconst md=[];\nmd.push('**'+clients.length+' clients, '+failedClients+' failed**');\nmd.push('');\nmd.push('**Watermark:** '+(wmOk?'advanced (pull complete, writes clean)':('HELD - '+wmHold.join('; '))));\nmd.push('');\nmd.push('**Clients**');\nfor(const l of clientLines) md.push(l);\nif(allFailed.length){ md.push(''); md.push('**FAILED ('+allFailed.length+')**'); for(const e of allFailed) md.push('- '+e); }\nif(skipLines.length){ md.push(''); md.push('**Skipped ('+skipLines.length+')**'); for(const e of skipLines) md.push('- '+e); }\nif(warnLines.length){ md.push(''); md.push('**Warnings ('+warnLines.length+')**'); for(const e of warnLines) md.push('- '+e); }\nconst errTotal=allFailed.length;\nsd.clients={};\nconst row={\n  'Automation':'Sync PlusVibe Leads to Clayroots',\n  'Status':errTotal?'Succeeded with errors':'Succeeded',\n  'Watermark OK':wmOk,\n  'Trigger':run.trigger||'event',\n  'Run at':run.start||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':totalIn,\n  'Records Out':totalOut,\n  'Errors':errTotal,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':md.join('\\n').slice(0,95000)\n};\n// Client is attached only when the run served exactly one client (a record-id filter); never an empty link array.\nif(/^rec[a-z0-9]{14}$/i.test(String(run.clientFilter||''))) row['Client']=[run.clientFilter];\nreturn [{json:row}];"
+        }
+      },
+      {
+        "id": "cb4a6fcd-7cc3-493d-8bcd-0a10bf4316f7",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1904,
+          800
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-sync-pv-leads",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "9482b300-3b8a-4f8f-9c5a-f1a6c5aedc45"
+      },
+      {
+        "id": "06fc603c-596c-4f07-877c-c7f7b773b099",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1680,
+          800
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "5576265c-378a-47a6-9f7b-e9f2d1b118d0",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1456,
+          800
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "c31c7f96-fb1b-4586-80c1-fcdc428ebc65",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1232,
+          680
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "e98a6216-9bc2-4f55-b264-d77e71f45264",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -312,
+          664
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
         }
       }
     ],
@@ -2605,7 +2963,7 @@
         "main": [
           [
             {
-              "node": "Init Run",
+              "node": "Run Context",
               "type": "main",
               "index": 0
             }
@@ -2616,7 +2974,7 @@
         "main": [
           [
             {
-              "node": "Loop Clients",
+              "node": "Any Clients?",
               "type": "main",
               "index": 0
             }
@@ -2792,6 +3150,68 @@
           [
             {
               "node": "Log Runs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Init Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
               "type": "main",
               "index": 0
             }

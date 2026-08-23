@@ -90,6 +90,13 @@ for(const r of rows){
     put('Phones',join(b.phones)); put('Public Emails',join(b.public_emails)); put('Social URLs',join(b.social_urls)); put('MX Provider',b.mx_provider); put('Redirect Domain',b.redirect_domain); }
   // role
   if(cfg.do.role&&d&&role[d]!==undefined&&!has(r,'Existing In Role')) out['Existing In Role']=role[d];
+  // campaigns: carry the old single Target Campaign into the channel fields; Email Campaign from the launch body
+  if(cfg.do.campaigns){
+    const tc=String(f['Target Campaign']||'').trim();
+    if(tc&&/^https?:\/\//i.test(tc)){ put('LinkedIn Campaign',tc); if(String(f['Intent Status']||'')==='ROUTED'&&f['routed_at']) put('LinkedIn Routed At',f['routed_at']); }
+    else if(tc){ put('Email Campaign',tc); if(String(f['Intent Status']||'')==='ROUTED'&&f['routed_at']) put('Email Routed At',f['routed_at']); }
+    if(cfg.email_campaign) put('Email Campaign',cfg.email_campaign);
+  }
   // contacts
   if(cfg.do.contacts){
     const p=contact[r.id];

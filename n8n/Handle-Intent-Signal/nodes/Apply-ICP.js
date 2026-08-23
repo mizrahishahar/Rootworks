@@ -1,5 +1,5 @@
-// Apply ICP: only a company the check called `yes` goes on. partial and no are dropped with
-// their reason kept for the run log. A check that never completed rejects everything and is
+// Apply ICP: a company the check called `yes` or `partial` goes on (Operator ruling 2026-08-23:
+// partial stays in). `no` and missing verdicts are dropped with their reason kept for the run log. A check that never completed rejects everything and is
 // logged as an error: no company is ever passed through on a missing verdict.
 // One row per kept company: { domain, company, biz, icp_reason, icp_confidence }.
 const poll=$input.first().json||{};
@@ -19,8 +19,8 @@ for(const d of Object.keys(companies)){
   const fit=String(r.Fit||r.fit||'').toLowerCase();
   const reason=String(r.Reasoning||r.reasoning||'').slice(0,200);
   const conf=String(r.Confidence||r.confidence||'');
-  if(fit==='yes'){ stats.yes++; out.push({ json: { domain:d, company:companies[d].company, biz:companies[d].biz, icp_reason:reason, icp_confidence:conf } }); }
-  else { if(fit==='partial') stats.partial++; else stats.no++; stats.rejected.push({ domain:d, fit:fit||'?', reason }); }
+  if(fit==='yes'||fit==='partial'){ if(fit==='yes') stats.yes++; else stats.partial++; out.push({ json: { domain:d, company:companies[d].company, biz:companies[d].biz, icp_reason:(fit==='partial'?'PARTIAL: ':'')+reason, icp_confidence:conf } }); }
+  else { stats.no++; stats.rejected.push({ domain:d, fit:fit||'?', reason }); }
 }
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];
 out[0].json._stats=stats;

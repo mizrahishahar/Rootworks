@@ -7,7 +7,7 @@ for(let i=0;i<enrolls.length;i++){
   if(!r.recordId) continue;
   const failed=!!(e&&(e.error||e.error_message||e.success===false||String(e.status||'').toLowerCase()==='error'));
   out.push({ json: {
-    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name,
+    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name, otherDone:!!r.otherDone,
     ok: !failed,
     reason: !failed?'':String((e.error&&(e.error.message||e.error))||e.error_message||'PlusVibe lead/add failed').slice(0,160)
   }});

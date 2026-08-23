@@ -1,12 +1,10 @@
 // Domain Calls: one item per distinct domain that still needs company fields or the in-role
 // count. Carries the BizData URL, the Supersoniq match body and the DiscoLike count URL.
-// The role terms come from the Apify task's INPUT (keywords=), same as the live machine.
+// The role terms are the play's roles line, passed on the launch body.
 const cfg=$('Parse Launch').first().json;
 const parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };
-let roles=[];
-try{ const j=$('Get Run Input').first().json||{}; const b=parse(j.body===undefined?null:j.body)||{}; const urls=[].concat(b.urls||[]).join(' '); const seen=new Set();
-  for(const m of urls.matchAll(/keywords=([^&\s]+)/g)){ const k=decodeURIComponent(m[1].replace(/\+/g,' ')).trim(); if(k&&!seen.has(k.toLowerCase())){ seen.add(k.toLowerCase()); roles.push(k); } } }catch(e){}
-const terms=Array.from(new Set(roles.map(r=>r.replace(/\b(engineer|engineering|specialist|developer|lead|manager)\b/ig,'').replace(/\s+/g,' ').trim()).filter(Boolean)));
+const roles=Array.isArray(cfg.roles)?cfg.roles:[];
+const terms=roles;
 const rows=$('Fetch Rows').all().map(i=>i.json).filter(r=>r&&r.id);
 const has=(f,k)=>{ const v=f[k]; return v!==undefined&&v!==null&&String(v).trim()!==''; };
 const need={};

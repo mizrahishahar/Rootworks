@@ -9,8 +9,10 @@
 // People gate: a contact's actual title must contain one of the play's title terms and none
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
 // President -> vp) so a term written short still catches the long form. Nothing else.
-// Tier: the play's rules in order, first match wins, stamped as Target Campaign. 'first hire'
-// is read off Existing In Role: 0 = yes, above 0 = no, blank (no source knows the company) = unknown.
+// Channels: the play's linkedin / email lines, each one target or tiers in order, first match wins,
+// stamped as LinkedIn Campaign / Email Campaign. 'first hire' is read off Existing In Role:
+// 0 = yes, above 0 = no, blank (no source knows the company) = unknown. Every title the people
+// gate drops is listed in _stats so the play's list can be widened from real misses.
 // Company names go out raw; the Clean Fields helper writes Company clean next (no company_clean column on Intent tables, Operator ruling 2026-08-23).
 const cfg=$('Parse Play').first().json;
 const titleCase=(s)=>String(s).replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());
@@ -30,7 +32,7 @@ const norm=(t)=>{ let s=String(t||'').toLowerCase(); for(const [re,rep] of SYN) 
 const titleTerms=(cfg.people.titles||[]).map(norm).filter(Boolean);
 const neverTerms=(cfg.people.never||[]).map(norm).filter(Boolean);
 const passesPeople=(title)=>{ const t=norm(title); if(!t) return false; if(neverTerms.some(n=>t.includes(n))) return false; return titleTerms.some(x=>t.includes(x)); };
-const tierFor=(firstHire)=>{ for(const t of (cfg.tiers||[])){ if(t.kind==='rest') return t.url; if(t.kind==='first_hire'&&t.value===firstHire) return t.url; } return ''; };
+const tierFor=(tiers,firstHire)=>{ for(const t of (tiers||[])){ if(t.kind==='rest') return t.target; if(t.kind==='first_hire'&&t.value===firstHire) return t.target; } return ''; };
 
 // Companies: Apply ICP rows (company + biz + reason), Contact Calls rows (first hire + bodies).
 const companies={};
@@ -42,18 +44,18 @@ const failed=[];
 const out=[];
 const seenKey=new Set(); const seenLi=new Set();
 const nowIso=new Date().toISOString();
-const gate={ checked:0, dropped_never:0, dropped_no_title:0 };
+const gate={ checked:0, dropped_never:0, dropped_no_title:0, dropped:[] };
 const tiers={};
 
 function baseRow(d){
   const e=companies[d]||{}; const c=e.company||{}; const b=e.biz||{}; const j=c.job||{}; const addr=b.address||{}; const cc=callByDomain[d]||{};
-  const firstHire=cc.first_hire||'Unknown';
-  const target=tierFor(firstHire);
+  const firstHire=cc.first_hire||'unknown';
+  const li=tierFor(cfg.channels&&cfg.channels.linkedin,firstHire); const em=tierFor(cfg.channels&&cfg.channels.email,firstHire);
   return {
     'Domain': d,
     'Company': String(c.company||b.name||'').trim(),
     'Event Type': cfg.event_type,
-    'Target Campaign': target,
+    'LinkedIn Campaign': li, 'Email Campaign': em,
     'Intent Status': 'NEW',
     'detected_at': nowIso,
     'ICP Reason': e.icp_reason||'',
@@ -83,8 +85,8 @@ function push(d,p,source){
   if(seenKey.has(key)||(li&&seenLi.has(li.toLowerCase()))) return 'dup';
   gate.checked++;
   const t=norm(p.title);
-  if(neverTerms.some(n=>t.includes(n))){ gate.dropped_never++; return 'never'; }
-  if(!titleTerms.some(x=>t.includes(x))){ gate.dropped_no_title++; return 'notitle'; }
+  if(neverTerms.some(n=>t.includes(n))){ gate.dropped_never++; gate.dropped.push(d+': '+(p.title||'')+' (never)'); return 'never'; }
+  if(!titleTerms.some(x=>t.includes(x))){ gate.dropped_no_title++; gate.dropped.push(d+': '+(p.title||'')); return 'notitle'; }
   seenKey.add(key); if(li) seenLi.add(li.toLowerCase());
   const row=Object.assign(baseRow(d), {
     'Name': full, 'first_name': first, 'last_name': last,
@@ -94,7 +96,7 @@ function push(d,p,source){
     'Contact Key': key, 'Contact Source': source,
     'Signal Detail': signal(d)+' · '+source+' · '+(p.title||'')
   });
-  tiers[row['Target Campaign']]=(tiers[row['Target Campaign']]||0)+1;
+  const tk=(row['LinkedIn Campaign']?'linkedin:'+row['LinkedIn Campaign']:'')+(row['Email Campaign']?' email:'+row['Email Campaign']:''); tiers[tk.trim()]=(tiers[tk.trim()]||0)+1;
   out.push({ json: row });
   return 'ok';
 }

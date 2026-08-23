@@ -1,6 +1,6 @@
 // Parse Launch: the Apify run webhook. Body: { play: <KB Files record id>, resource: <Apify run> }.
 // Nothing else is read from the payload; the play row carries the play. The resource object
-// carries the run's dataset (the jobs) and key-value store (the run's INPUT, the search roles).
+// carries the run's dataset (the jobs). The roles counted for Existing In Role come from the play.
 const sd=$getWorkflowStaticData('global');
 sd.runStartedAt=$now.toMillis();
 const j=$input.first().json||{};
@@ -16,7 +16,6 @@ const cfg={
 const missing=[];
 if(!/^rec[A-Za-z0-9]{14}$/.test(cfg.play)) missing.push('play (KB Files record id)');
 if(!cfg.datasetId) missing.push('resource.defaultDatasetId');
-if(!cfg.kvStoreId) missing.push('resource.defaultKeyValueStoreId');
 cfg.config_ok=(missing.length===0);
 cfg.missing=missing;
 cfg.guard='launch';

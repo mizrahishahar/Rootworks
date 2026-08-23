@@ -4,10 +4,11 @@ for(const it of $input.all()){
   if(!p.recordId) continue;
   const f=p.row||{};
   const email=String(f['Final Email']||'').trim();
-  const campaignId=String(f['Target Campaign']||'').trim();
+  const campaignId=String(f['Email Campaign']||'').trim();
+  const otherDone=!String(f['LinkedIn Campaign']||'').trim()||!!String(f['LinkedIn Routed At']||'').trim();
   const name=String(f['Name']||email||'').trim();
   if(!campaignId || /^https?:\/\//i.test(campaignId)){
-    out.push({ json: { action:'failed_precheck', reason:'Target Campaign is not a PlusVibe campaign id', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });
+    out.push({ json: { action:'failed_precheck', reason:'Email Campaign is not a PlusVibe campaign id', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });
     continue;
   }
   if(!p.pvWorkspace){
@@ -34,6 +35,6 @@ for(const it of $input.all()){
       }
     } ]
   };
-  out.push({ json: { action:'enroll', pv_body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });
+  out.push({ json: { action:'enroll', otherDone, pv_body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });
 }
 return out;

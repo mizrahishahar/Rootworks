@@ -7,7 +7,7 @@ for(let i=0;i<enrolls.length;i++){
   if(!r.recordId) continue;
   const ok=!(e&&e.error);
   out.push({ json: {
-    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name,
+    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name, otherDone:!!r.otherDone,
     ok: ok,
     reason: ok?'':String((e.error&&(e.error.message||e.error))||'enroll failed after retries').slice(0,160)
   }});

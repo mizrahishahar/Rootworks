@@ -1,5 +1,9 @@
-// Contact Calls: one row per ICP-approved company, carrying the first-hire verdict and the
-// request bodies for both contact sources, built from the play's people line.
+// Contact Calls: one row per ICP-approved company, carrying Existing In Role and the request
+// bodies for both contact sources.
+//
+// Pull WIDE, gate later: ContaGen is asked for every Technology / Executive person at any
+// decision level (DiscoLike bills net-new only), so nobody is lost before the people gate in
+// Build Intent Leads. Supersoniq bills per delivered contact, so it is asked by the play's titles.
 //
 // Existing In Role: a source "knows" the company when it answered with a match; the count is the
 // highest across the sources that know it; blank when no source knows the company. The tier rule
@@ -19,18 +23,18 @@ calls.forEach((c,i)=>{
   if(ss>=200&&ss<300&&sb&&typeof sb==='object'){
     const m=Array.isArray(sb.matched)?sb.matched[0]:(Array.isArray(sb.results)?sb.results[0]:null);
     if(m&&(m.company_id||m.company_name)){ known=true; count=Math.max(count, Number(m.available_contacts)||0); }
-  } else if(ss){ stats.sq_errors++; stats.failed.push({ tier:'First hire (Supersoniq)', name:c.domain, reason:'HTTP '+ss+' '+String((sb&&(sb.error||sb.message))||'').slice(0,100) }); }
+  } else if(ss){ stats.sq_errors++; stats.failed.push({ tier:'In role (Supersoniq)', name:c.domain, reason:'HTTP '+ss+' '+String((sb&&(sb.error||sb.message))||'').slice(0,100) }); }
   const cj=(cgItems[i]&&cgItems[i].json)||{}; const cb=parse(cj.body===undefined?null:cj.body);
   const cs=Number(cj.statusCode)||0;
   const bizKnown=!!(($('Apply ICP').all()[i]||{}).json||{}).biz;
   if(cs>=200&&cs<300&&cb&&typeof cb==='object'&&cb.count!==undefined){ if(bizKnown){ known=true; count=Math.max(count, Number(cb.count)||0); } }
-  else if(cs){ stats.cg_errors++; stats.failed.push({ tier:'First hire (DiscoLike)', name:c.domain, reason:'HTTP '+cs+' '+String((cb&&(cb.detail||cb.error))||'').slice(0,100) }); }
-  const firstHire=!known?'Unknown':(count===0?'Yes':'No');
-  stats[firstHire.toLowerCase()]++;
+  else if(cs){ stats.cg_errors++; stats.failed.push({ tier:'In role (DiscoLike)', name:c.domain, reason:'HTTP '+cs+' '+String((cb&&(cb.detail||cb.error))||'').slice(0,100) }); }
+  const firstHire=!known?'unknown':(count===0?'yes':'no');
+  stats[firstHire]++;
   const p=cfg.people;
   out.push({ json: {
     domain:c.domain, existing_in_role: known?count:null, first_hire: firstHire,
-    cg:{ domain:[c.domain], title:p.titles, negate_title:p.never, has_linkedin:true, max_companies:1, results_by_company:p.cap },
+    cg:{ domain:[c.domain], department:['Technology','Executive'], seniority:['executive','vp','director','manager'], has_linkedin:true, max_companies:1, results_by_company:p.cap },
     sq:{ companies:[{ domain:c.domain }], filters:{ job_titles:p.titles, has_linkedin:true }, tier:'full', per_company_limit:p.cap, confirm:true }
   }});
 });

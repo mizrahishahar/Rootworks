@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-23T12:07:22.874Z",
+  "updatedAt": "2026-08-23T12:55:53.459Z",
   "createdAt": "2026-07-28T12:12:50.566Z",
   "id": "8oCb1lkbgeujqRz0",
   "name": "Add Intent Leads to Alta",
+  "description": "Daily 11:00 Alta enroller. Loops Clients with Intent Tables (tbl ids; base from Clayroots Base ID); pulls done+NEW rows with a webhook-URL Target Campaign and POSTs each lead to it. ROUTED/FAILED/NO EMAIL stamped; one log row per client.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -95,9 +96,14 @@
           "mode": "id",
           "value": "={{ $json.tableId }}"
         },
-        "filterByFormula": "=AND({Status}='done', {LinkedIn Campaign}!='', {LinkedIn Routed At}='', OR({Intent Status}='NEW', {Intent Status}='ROUTED', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))))",
         "returnAll": true,
-        "options": {}
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "name",
+            "value": "LinkedIn"
+          }
+        }
       },
       "credentials": {
         "airtableTokenApi": {
@@ -106,7 +112,8 @@
         }
       },
       "alwaysOutputData": true,
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "Reads the table's \"LinkedIn\" view: the Operator's filters decide which rows go. Route Rows still refuses rows already stamped for this channel."
     },
     {
       "id": "b8913565-e685-4334-9015-1c9c9bd91468",
@@ -961,23 +968,38 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": null,
-  "versionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
-  "activeVersionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
+  "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+  "activeVersionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+  "versionCounter": 13,
   "triggerCount": 2,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-07-28T12:12:50.572Z",
       "createdAt": "2026-07-28T12:12:50.572Z",
       "role": "workflow:owner",
       "workflowId": "8oCb1lkbgeujqRz0",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-23T12:07:23.052Z",
-    "createdAt": "2026-08-23T12:07:23.052Z",
-    "versionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
+    "updatedAt": "2026-08-23T12:55:53.489Z",
+    "createdAt": "2026-08-23T12:55:53.489Z",
+    "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
     "workflowId": "8oCb1lkbgeujqRz0",
     "nodes": [
       {
@@ -1069,9 +1091,14 @@
             "mode": "id",
             "value": "={{ $json.tableId }}"
           },
-          "filterByFormula": "=AND({Status}='done', {LinkedIn Campaign}!='', {LinkedIn Routed At}='', OR({Intent Status}='NEW', {Intent Status}='ROUTED', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))))",
           "returnAll": true,
-          "options": {}
+          "options": {
+            "view": {
+              "__rl": true,
+              "mode": "name",
+              "value": "LinkedIn"
+            }
+          }
         },
         "credentials": {
           "airtableTokenApi": {
@@ -1080,7 +1107,8 @@
           }
         },
         "alwaysOutputData": true,
-        "onError": "continueRegularOutput"
+        "onError": "continueRegularOutput",
+        "notes": "Reads the table's \"LinkedIn\" view: the Operator's filters decide which rows go. Route Rows still refuses rows already stamped for this channel."
       },
       {
         "id": "b8913565-e685-4334-9015-1c9c9bd91468",
@@ -1106,7 +1134,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "const out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const email=String(f['Final Email']||'').trim();\n  const linkedinUrl=String(f['LinkedIn URL']||'').trim();\n  const url=String(f['LinkedIn Campaign']||'').trim();\n  const otherDone=!String(f['Email Campaign']||'').trim()||!!String(f['Email Routed At']||'').trim();\n  const name=String(f['Name']||email||linkedinUrl||'').trim();\n  if(!/^https?:\\/\\//i.test(url)){\n    out.push({ json: { action:'failed_precheck', reason:'LinkedIn Campaign is not a valid URL', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  if(!email && !linkedinUrl){\n    out.push({ json: { action:'no_email', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  const dom=String(f['Domain']||'').trim();\n  const companyWebsite=dom?(/^https?:\\/\\//i.test(dom)?dom:'https://'+dom):'';\n  const body={\n    firstName: f['first_name']||'',\n    lastName: f['last_name']||'',\n    company: f['Company']||'',\n    extraInfoData: {\n      'Source': 'Apify Intent Scrape',\n      'Signal': f['Event Type']||'',\n      'Signal Detail': f['Signal Detail']||'',\n      'Sourced At': f['detected_at']||''\n    }\n  };\n  if(companyWebsite) body.companyWebsite=companyWebsite;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: { action:'enroll', otherDone, campaign_url:url, enroll_body:body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n}\nreturn out;"
+          "jsCode": "// Route Rows: one enroll per row the LinkedIn view handed us. The view decides which rows go\n// (Operator-owned filters, nothing in code); this node only refuses what cannot be enrolled and\n// never enrolls a row already stamped for this channel, so a loose view cannot double-enroll.\n//\n// Sent on every add, the same names on every sequencer, only when the row carries a value:\n// identity (first_name, last_name, company, company_website, email, linkedin_url) plus the\n// standard variables in VARS. The campaign copy picks from them; nothing per play to configure.\nconst VARS={ title:'Title', seniority:'Seniority', department:'Department', job_title:'Job Title', job_link:'Job Link', job_posted:'Job Posted', job_description:'Job Description', job_applicants:'Job Applicants', job_salary:'Job Salary', existing_in_role:'Existing In Role', icp_reason:'ICP Reason', company_description:'Description', industry_groups:'Industry Groups', employees:'Employees', revenue_range:'Revenue Range', company_city:'Company City', company_state:'Company State', country:'Country', event_type:'Event Type', signal_detail:'Signal Detail', sourced_at:'detected_at' };\nconst val=(f,k)=>{ const v=f[k]; if(v===undefined||v===null) return ''; if(typeof v==='object') return Array.isArray(v)?v.join(', '):String(v.name||''); return String(v).trim(); };\nconst out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const url=val(f,'LinkedIn Campaign');\n  const email=val(f,'Final Email');\n  const linkedinUrl=val(f,'LinkedIn URL');\n  const name=val(f,'Name')||email||linkedinUrl;\n  const base={ recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name };\n  if(val(f,'LinkedIn Routed At')) continue; // already stamped for this channel: the view is loose, not the row\n  if(!/^https?:\\/\\//i.test(url)){ out.push({ json: Object.assign({ action:'failed_precheck', reason:'LinkedIn Campaign is not a valid URL' },base) }); continue; }\n  if(!val(f,'first_name')||!val(f,'last_name')){ out.push({ json: Object.assign({ action:'failed_precheck', reason:'first_name / last_name missing' },base) }); continue; }\n  if(!email&&!linkedinUrl){ out.push({ json: Object.assign({ action:'no_email' },base) }); continue; }\n  const otherDone=!val(f,'Email Campaign')||!!val(f,'Email Routed At');\n  const dom=val(f,'Domain');\n  const extra={};\n  for(const [k,col] of Object.entries(VARS)){ const v=val(f,col); if(v) extra[k]=v.length>4000?v.slice(0,4000):v; }\n  const body={ firstName:val(f,'first_name'), lastName:val(f,'last_name'), company:val(f,'Company'), extraInfoData:extra };\n  if(dom) body.companyWebsite=/^https?:\\/\\//i.test(dom)?dom:'https://'+dom;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: Object.assign({ action:'enroll', otherDone, campaign_url:url, enroll_body:body },base) });\n}\nreturn out;\n"
         },
         "alwaysOutputData": true,
         "onError": "continueRegularOutput"
@@ -1903,7 +1931,40 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-23T12:55:53.743Z",
+        "id": 1760,
+        "workflowId": "8oCb1lkbgeujqRz0",
+        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-23T12:56:01.029Z",
+        "id": 1762,
+        "workflowId": "8oCb1lkbgeujqRz0",
+        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-23T12:55:53.636Z",
+        "id": 1759,
+        "workflowId": "8oCb1lkbgeujqRz0",
+        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-23T12:56:00.935Z",
+        "id": 1761,
+        "workflowId": "8oCb1lkbgeujqRz0",
+        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

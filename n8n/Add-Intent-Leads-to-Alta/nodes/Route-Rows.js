@@ -27,7 +27,9 @@ for(const it of $input.all()){
   const f=p.row||{};
   const base={ recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name:val(f['Name'])||val(f['LinkedIn URL']) };
   const fail=(reason)=>out.push({ json: Object.assign({ action:'failed_precheck', reason },base) });
-  if(val(f['LinkedIn Routed At'])) continue;                       // already done on this channel
+  if(val(f['LinkedIn Routed At'])) continue;
+  // FAILED stays out unless it is the spacing retry; NO EMAIL only blocks the email channel.
+  if(val(f['Intent Status'])==='FAILED'&&!/spacing/i.test(val(f['Enroll Error']))) continue;                       // already done on this channel
   const url=val(f['LinkedIn Campaign']);
   if(!/^https?:\/\//i.test(url)){ fail('LinkedIn Campaign is not a valid URL'); continue; }
   const linkedinUrl=val(f['LinkedIn URL']);

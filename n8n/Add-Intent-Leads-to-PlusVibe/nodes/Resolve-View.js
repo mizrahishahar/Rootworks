@@ -12,7 +12,7 @@ if(!tables.length) out.why='could not read base schema for '+cfg.baseId;
 else if(!t) out.why='table '+cfg.tableId+' not found in base '+cfg.baseId;
 else {
   for(const f of (t.fields||[])) out.fieldsById[f.id]=f.name;
-  const v=(t.views||[]).find(x=>x.name===VIEW);
+  const v=(t.views||[]).find(x=>String(x.name).trim().toLowerCase()===VIEW.toLowerCase()); // name match is case-insensitive
   if(!v) out.why='view "'+VIEW+'" not found on table '+(t.name||cfg.tableId)+'; create it (filter: Email Campaign is not empty)';
   else if((v.type||'grid')!=='grid') out.why='view "'+VIEW+'" is type '+v.type+', not grid';
   else { out.viewId=v.id; out.viewUrl='https://api.airtable.com/v0/meta/bases/'+cfg.baseId+'/views/'+v.id+'?include=visibleFieldIds'; }

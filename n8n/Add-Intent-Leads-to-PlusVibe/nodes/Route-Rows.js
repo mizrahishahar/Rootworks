@@ -30,7 +30,9 @@ for(const it of $input.all()){
   const email=val(f['Final Email']);
   const base={ recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name:val(f['Name'])||email };
   const fail=(reason)=>out.push({ json: Object.assign({ action:'failed_precheck', reason },base) });
-  if(val(f['Email Routed At'])) continue;                           // already done on this channel
+  if(val(f['Email Routed At'])) continue;
+  // FAILED stays out unless it is the spacing retry; NO EMAIL only blocks the email channel.
+  if(val(f['Intent Status'])==='FAILED'&&!/spacing/i.test(val(f['Enroll Error']))) continue;                           // already done on this channel
   const campaignId=val(f['Email Campaign']);
   if(!campaignId||/^https?:\/\//i.test(campaignId)){ fail('Email Campaign is not a PlusVibe campaign id'); continue; }
   if(!p.pvWorkspace){ fail('Client row has no PlusVibe Workspace ID'); continue; }

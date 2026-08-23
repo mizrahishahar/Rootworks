@@ -25,9 +25,11 @@ const id = args[0];
 if (!id) { console.error('Usage: node scripts/n8n-exec.js <executionId> [node name ...] [--chars 800]\n       node scripts/n8n-exec.js --list <workflowId> [limit]'); process.exit(1); }
 if (id === '--list') {
   // Recent executions of one workflow, newest first: the door that works when the MCP says "not available in MCP".
-  const wfId = args[1]; const limit = Number(args[2]) || 10;
+  // Optional 4th arg: a status filter (running | waiting | success | error). The API hides
+  // in-flight runs unless asked, so `--list <id> 5 running` is how to see one.
+  const wfId = args[1]; const limit = Number(args[2]) || 10; const status = args[3] ? `&status=${encodeURIComponent(args[3])}` : '';
   (async () => {
-    const res = await fetch(`${BASE}/api/v1/executions?workflowId=${encodeURIComponent(wfId)}&limit=${limit}`, { headers: { 'X-N8N-API-KEY': apiKey() } });
+    const res = await fetch(`${BASE}/api/v1/executions?workflowId=${encodeURIComponent(wfId)}&limit=${limit}${status}`, { headers: { 'X-N8N-API-KEY': apiKey() } });
     if (!res.ok) throw new Error(`GET /executions -> HTTP ${res.status}: ${await res.text()}`);
     const out = await res.json();
     for (const e of out.data || []) console.log(`${e.id}  ${e.status}  ${e.mode}  ${e.startedAt} -> ${e.stoppedAt || '...'}`);

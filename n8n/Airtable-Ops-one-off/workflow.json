@@ -156,6 +156,75 @@
           "name": "Airtable"
         }
       }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000008",
+      "name": "Create Records Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-records",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "d4000000-aaaa-4000-8000-000000000008"
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000009",
+      "name": "Split Create",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        400
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Split-Create.js"
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000010",
+      "name": "Create Records",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        440,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $json.base }}/{{ $json.table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { records: $json.records, typecast: true } }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
     }
   ],
   "connections": {
@@ -224,6 +293,39 @@
           }
         ]
       ]
+    },
+    "Create Records Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Create": {
+      "main": [
+        [
+          {
+            "node": "Create Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Records": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -245,6 +347,5 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
   "tags": []
 }

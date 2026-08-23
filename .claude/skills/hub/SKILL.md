@@ -46,13 +46,25 @@ A task created from a flag is named for the fix, not for the symptom.
 
 ### Steps
 
+`Steps` is rich text, and a step is a checkbox. The syntax is `[ ] ` at the start of the line, with nothing before it:
+
+```
+[ ] Open the Clients page.
+[ ] Flag any inbox with a bounce rate at 3% or above.
+[x] Create a task for each flag.
+```
+
+A leading `- ` breaks it. Airtable reads the dash as a bullet and prints the brackets as literal text, which kills both the checkbox and the `Progress` count. Never write `- [ ]`.
+
 One line, one action, starting with a verb.
 
 A step says where to go and what to flag. It carries no reasoning, no consequences, no explanation of why a number is the number. Numbers appear bare: "Flag any inbox with a bounce rate at 3% or above."
 
 A step you cannot tell you have finished is not a step. Judgment words without a number ("healthy", "sane", "not sliding") are not steps.
 
-Link where a link saves a search. `Steps` is rich text, so markdown links render.
+Link where a link saves a search. Markdown links render.
+
+`Progress` reads the checkboxes and shows the task as `4/6`. It is a formula counting `[x]` against `[x]` plus `[ ]`, so it only works while the syntax above is respected.
 
 Three to eight steps. More than eight is two tasks.
 

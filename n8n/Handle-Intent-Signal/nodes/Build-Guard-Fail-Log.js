@@ -1,7 +1,12 @@
-// Head guard tripped: the payload is missing something required. One error, nothing paid.
-// 'Failed' is the Error Logger's word for a crash; a guard trip is Succeeded with errors.
-const cfg=$('Parse Config').first().json||{};
-const missing=(cfg.missing||[]).join(', ')||'unknown';
+// A guard tripped before any paid call: the launch payload, the play row, or the client row
+// is missing something. One error, the row says exactly what. 'Failed' is the Error Logger's
+// word for a crash; a guard trip is Succeeded with errors.
+let g={};
+try{ const p=$('Parse Play').first().json; if(p&&p.config_ok===false) g=p; }catch(e){}
+if(!g.guard){ try{ const l=$('Parse Launch').first().json; if(l&&l.config_ok===false) g=l; }catch(e){} }
+let baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json; if(c&&!c.base){ baseMissing=true; g=Object.assign({},$('Parse Play').first().json,{guard:'client'}); } }catch(e){} }
+const what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'play row '+(g.play||''):'client row '+(g.client||''));
+const missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');
 const row={
  'Automation':'Handle Intent Signal',
  'Status':'Succeeded with errors',
@@ -9,11 +14,11 @@ const row={
  'Records In': 0,
  'Records Out': 0,
  'Errors': 1,
- 'Target': cfg.table||'(no table)',
+ 'Target': g.table||'(no table)',
  'Trigger':'event',
  'Execution ID': String($execution.id),
  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
- 'Description': '**Head guard tripped before any paid call, 1 error**\n\n**Missing/invalid params:** '+missing+'\n\n**Required on the Apify webhook payload:** client, table, campaign (URL), resource (carries the dataset id). Fix the payload template on the Apify task and rerun.'
+ 'Description': '**Guard tripped before any paid call, 1 error**\n\n**Where:** '+what+'\n\n**Missing / unreadable:** '+missing+'\n\nThe play row (KB Files, Type intent-play) needs: table, event, companies (country | max N employees | we sell to: ...), people (titles | never ... | N per company), tiers (rule -> url | rest -> url). The Apify payload needs {play, resource}. Fix and rerun.'
 };
-if(cfg.client) row['Client']=[cfg.client];
+if(g.client) row['Client']=[g.client];
 return [{json:row}];

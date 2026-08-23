@@ -5,7 +5,7 @@
 // Drops, in order: country, staffing (name / poster title / industry), body shop, headcount,
 // no domain, duplicate domain, already worked. An unknown headcount passes on purpose: a blank
 // LinkedIn count is not a large company, and the downstream contact calls are capped anyway.
-const cfg=$('Parse Config').first().json;
+const cfg=$('Parse Play').first().json;
 let items=$('Get Scraped Jobs').all().map(i=>i.json);
 if(items.length===1&&Array.isArray(items[0])) items=items[0];
 items=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));

@@ -50,6 +50,8 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Domains | `fldJUAJFb6jzL7wxs` | multipleRecordLinks |  |
 | Credits | `fldAXROZdXATgpav5` | multipleRecordLinks |  |
 | Booking Keys | `fldNZ0p7IWzLBZ83X` | multilineText | The scheduler identities that belong to this client, one per line: the host email, the Cal.com username, an event-type title. Handle New Booking matches a booking's organizer against these lines to find the client. Empty = bookings cannot be attributed to this client. Set at onboarding. |
+| Task Templates | `fldoZrz4vQhf0K5j8` | multipleRecordLinks |  |
+| Tasks | `fld83ot47MF0FURDv` | multipleRecordLinks |  |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -61,7 +63,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldeLzTbDBYwBU4oJ` | multipleRecordLinks |  |
 | Content | `fldVKPHO66ykhOBrj` | richText | The document itself, as text. A doc that outgrows the cell splits into part rows sharing the Name. |
 | Verified | `fldotNHjuUiOhr6JQ` | checkbox | Numbers and claims in this doc are confirmed with the client. Copy may use them verbatim. Unchecked = treat every number as unconfirmed. |
-| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, email-routine-prompt, linkedin-routine-prompt, Inbox-Agent-Prompt |
+| Type | `fldw8iva4GJ3hdPCv` | singleSelect | The retrieval key: sessions pull by Client + Type instead of loading everything. Read live by the reply intakes for qualification-prompt. - Choices: onboarding-form, overrides, product, research, intel, asset, qualification-prompt, email-routine-prompt, linkedin-routine-prompt, Inbox-Agent-Prompt, intent-play |
 | Link | `fldZn42JeTlp3amOV` | url | For asset rows: the live URL we actually send (case study page, calculator, video). Content holds the full text behind the link so sessions can read what the prospect will see without fetching. |
 | Creation Date | `fldq4gggdIbzlGYIW` | createdTime |  |
 
@@ -130,6 +132,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldw3B0DOFYnzGGRJ` | multipleRecordLinks | Set = this is a client meeting (check-in, onboarding, working session with a paying client). The client's meeting history hangs off their registry row. Mutually exclusive in practice with the Company prospect link. |
 | Meeting Type | `fldovXZY2n8RRdnkW` | singleSelect | sales = prospect-facing, pre-deal (the Company link points at the Prospects row). client = post-deal meeting with a paying client (the Client link points at the registry). Stamped by the Fathom sync and the backfill. - Choices: sales, client |
 | Transcript | `fld6GvkTVE47Pro74` | richText | Full meeting transcript text when it fits the cell (100k char cap); otherwise blank and the RecordingLink is the source. Filled by the backfill and, where the payload carries it, by the sync. |
+| Tasks | `fldffuARl0Vwe6T5x` | multipleRecordLinks |  |
 
 ## CONTROL PANEL (`tblLWcSxAPxB7BJzx`)
 
@@ -144,7 +147,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off) |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -496,3 +499,42 @@ One row per paid tool, refreshed daily by Sync Tool Credits to Hub (06:00 IL, pl
 | Client | `fldajNLgMrDr8hijN` | multipleRecordLinks | Only for per-client-billed tools. |
 | Days Left | `fldKwU8hjW4raLXyJ` | formula | Credits divided by Daily Burn. Blank until two reads exist or when burn is zero. |
 | Alert | `fldkLhtm5XSEGs73b` | formula | Credits under the Operator-set floor. Read by the sync for the Slack line. |
+
+## Task Templates (`tbl8E4UHtmhFLNH5T`)
+
+Reusable task definitions. One row = one repeatable thing. Fires two ways: on a schedule (Active + Recurrence, spawned each morning by the Spawn Recurring Tasks automation) or on demand. The spawner NEVER creates a second task while one from this template is still open, so a missed occurrence stays a single overdue row instead of piling up. Editing a template does not touch tasks already created; the copy happens once, at spawn.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Name | `fldO505hgf2a13IcK` | singleLineText |  |
+| Client | `fldbV93xajKQTUTaH` | multipleRecordLinks |  |
+| Area | `flds3rgSzepsqTsPU` | singleSelect | Choices: Sales, Marketing, Content, Fulfillment, Rootworks, Finance, Admin |
+| Steps | `fldLIBQd5i7BRWAxr` | richText |  |
+| Recurrence | `fldGsQ11kGJ57ccCr` | singleSelect | Choices: Daily, Weekly, Monthly, None |
+| Day | `fldbMt0ALgPaIGrZ4` | singleLineText | Weekly: one or more weekday names, e.g. Mon or Mon, Wed, Fri. Monthly: a number 1 to 28. Daily: leave empty. |
+| Active | `fldSoE5V6KKKr8HJZ` | checkbox |  |
+| Tasks | `fldWzrjY04DMSyidl` | multipleRecordLinks |  |
+| Open Tasks | `fld2Wpyi4h5Z5Atua` | rollup |  |
+| Due Today | `fldwibfsdRiSnusZr` | formula |  |
+| Spawn Now | `flduTYuTOQxZwhXk5` | formula |  |
+
+## Tasks (`tblpFK50lVGNVZgBU`)
+
+The task list. One row per thing to do. Due is the date it was meant to happen and never moves on its own: miss it and it sits overdue with its real date. Rows arrive two ways, typed in by hand (Template blank) or spawned from a Task Templates row (Template linked). No priority field by design.
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Task | `fld7frgFSmZl5vT4E` | singleLineText |  |
+| Status | `fldMe8ww2TFRNOcsD` | singleSelect | Choices: Todo, Doing, Done |
+| Area | `fldmLAl88SoVy0Ozu` | singleSelect | Choices: Sales, Marketing, Content, Fulfillment, Rootworks, Finance, Admin |
+| Due | `fldE8J5gr7MAnEWUN` | date |  |
+| Client | `fldbJi3ljg25on8fP` | multipleRecordLinks |  |
+| Client Name | `fldAc5TVVrFkxDRXl` | multipleLookupValues |  |
+| Steps | `fldVsBMTVdwaKNLf9` | richText |  |
+| Notes | `fld3cbiJCKPjTkfqf` | richText |  |
+| Template | `fldHg96af92T61wTx` | multipleRecordLinks |  |
+| Created | `fldIuWL5eZ5cLWUiZ` | formula |  |
+| Is Open | `fldzguefLM3Yd010o` | formula |  |
+| From Meeting | `fldXdeUUvrCosmtT7` | multipleRecordLinks |  |
+| Summary (Notes) | `fldVl9ghXZfXPqDSE` | aiText |  |
+| Headline (Notes) | `fldPWEqMFEgzIMTx5` | aiText |  |

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-23T12:55:54.553Z",
+  "updatedAt": "2026-08-23T13:10:14.588Z",
   "createdAt": "2026-07-28T12:30:26.203Z",
   "id": "low8PseCeZgfIqEu",
   "name": "Add Intent Leads to PlusVibe",
@@ -80,7 +80,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        480,
+        1360,
         -160
       ],
       "parameters": {
@@ -100,8 +100,8 @@
         "options": {
           "view": {
             "__rl": true,
-            "mode": "name",
-            "value": "Email"
+            "mode": "id",
+            "value": "={{ $json.viewId }}"
           }
         }
       },
@@ -113,7 +113,7 @@
       },
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "notes": "Reads the table's \"Email\" view: the Operator's filters decide which rows go. Route Rows still refuses rows already stamped for this channel."
+      "notes": "Every row of the table's \"Email\" view. The Operator's filter owns membership; Route Rows skips rows already stamped for this channel."
     },
     {
       "id": "764a6faa-a984-431f-805c-ebdef8da8957",
@@ -121,7 +121,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        700,
+        1580,
         -160
       ],
       "parameters": {
@@ -135,7 +135,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
+        1800,
         -160
       ],
       "parameters": {
@@ -150,7 +150,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1140,
+        2020,
         -260
       ],
       "parameters": {
@@ -223,7 +223,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1580,
+        2460,
         -340
       ],
       "parameters": {
@@ -237,7 +237,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1800,
+        2680,
         -340
       ],
       "parameters": {
@@ -271,7 +271,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        2020,
+        2900,
         -420
       ],
       "parameters": {
@@ -318,7 +318,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        2020,
+        2900,
         -260
       ],
       "parameters": {
@@ -364,7 +364,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1360,
+        2240,
         -140
       ],
       "parameters": {
@@ -410,7 +410,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1140,
+        2020,
         40
       ],
       "parameters": {
@@ -425,7 +425,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1360,
+        2240,
         40
       ],
       "parameters": {
@@ -683,6 +683,94 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "e6000000-0000-4000-8000-000000000001",
+      "name": "Get Base Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        -160
+      ],
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Tables, fields and views of the client's Clayroots base, for the view lookup."
+    },
+    {
+      "id": "e6000000-0000-4000-8000-000000000002",
+      "name": "Resolve View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Resolve-View.js"
+      }
+    },
+    {
+      "id": "e6000000-0000-4000-8000-000000000003",
+      "name": "Get View Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        920,
+        -160
+      ],
+      "parameters": {
+        "url": "={{ $json.viewUrl || 'https://api.airtable.com/v0/meta/bases/none/views/none' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The view's visible field ids: the contract for what is sent and required."
+    },
+    {
+      "id": "e6000000-0000-4000-8000-000000000004",
+      "name": "Plan View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Plan-View.js"
+      }
     }
   ],
   "connections": {
@@ -701,7 +789,7 @@
       "main": [
         [
           {
-            "node": "Get Ready Rows",
+            "node": "Get Base Schema",
             "type": "main",
             "index": 0
           }
@@ -938,6 +1026,50 @@
           }
         ]
       ]
+    },
+    "Get Base Schema": {
+      "main": [
+        [
+          {
+            "node": "Resolve View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve View": {
+      "main": [
+        [
+          {
+            "node": "Get View Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get View Meta": {
+      "main": [
+        [
+          {
+            "node": "Plan View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan View": {
+      "main": [
+        [
+          {
+            "node": "Get Ready Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -978,9 +1110,9 @@
   },
   "nodeGroups": [],
   "pinData": null,
-  "versionId": "77c6cc18-da84-460a-b4e1-c2036e80cfc7",
+  "versionId": "7612367d-0dea-435a-a37f-28fdce3bf7ea",
   "activeVersionId": null,
-  "versionCounter": 12,
+  "versionCounter": 14,
   "triggerCount": 2,
   "sourceWorkflowId": null,
   "shared": [

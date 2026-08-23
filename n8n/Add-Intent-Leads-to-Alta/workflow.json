@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-23T12:55:53.459Z",
+  "updatedAt": "2026-08-23T13:10:13.488Z",
   "createdAt": "2026-07-28T12:12:50.566Z",
   "id": "8oCb1lkbgeujqRz0",
   "name": "Add Intent Leads to Alta",
@@ -80,7 +80,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        480,
+        1360,
         -160
       ],
       "parameters": {
@@ -100,8 +100,8 @@
         "options": {
           "view": {
             "__rl": true,
-            "mode": "name",
-            "value": "LinkedIn"
+            "mode": "id",
+            "value": "={{ $json.viewId }}"
           }
         }
       },
@@ -113,7 +113,7 @@
       },
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "notes": "Reads the table's \"LinkedIn\" view: the Operator's filters decide which rows go. Route Rows still refuses rows already stamped for this channel."
+      "notes": "Every row of the table's \"LinkedIn\" view. The Operator's filter owns membership; Route Rows skips rows already stamped for this channel."
     },
     {
       "id": "b8913565-e685-4334-9015-1c9c9bd91468",
@@ -121,7 +121,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        700,
+        1580,
         -160
       ],
       "parameters": {
@@ -135,7 +135,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
+        1800,
         -160
       ],
       "parameters": {
@@ -150,7 +150,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1140,
+        2020,
         -260
       ],
       "parameters": {
@@ -183,7 +183,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1360,
+        2240,
         -340
       ],
       "parameters": {
@@ -215,7 +215,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1580,
+        2460,
         -340
       ],
       "parameters": {
@@ -229,7 +229,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1800,
+        2680,
         -340
       ],
       "parameters": {
@@ -263,7 +263,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        2020,
+        2900,
         -420
       ],
       "parameters": {
@@ -310,7 +310,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        2020,
+        2900,
         -260
       ],
       "parameters": {
@@ -356,7 +356,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1360,
+        2240,
         -140
       ],
       "parameters": {
@@ -402,7 +402,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1140,
+        2020,
         40
       ],
       "parameters": {
@@ -417,7 +417,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1360,
+        2240,
         40
       ],
       "parameters": {
@@ -675,6 +675,94 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "e5000000-0000-4000-8000-000000000001",
+      "name": "Get Base Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        -160
+      ],
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Tables, fields and views of the client's Clayroots base, for the view lookup."
+    },
+    {
+      "id": "e5000000-0000-4000-8000-000000000002",
+      "name": "Resolve View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Resolve-View.js"
+      }
+    },
+    {
+      "id": "e5000000-0000-4000-8000-000000000003",
+      "name": "Get View Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        920,
+        -160
+      ],
+      "parameters": {
+        "url": "={{ $json.viewUrl || 'https://api.airtable.com/v0/meta/bases/none/views/none' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The view's visible field ids: the contract for what is sent and required."
+    },
+    {
+      "id": "e5000000-0000-4000-8000-000000000004",
+      "name": "Plan View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "@@file:nodes/Plan-View.js"
+      }
     }
   ],
   "connections": {
@@ -693,7 +781,7 @@
       "main": [
         [
           {
-            "node": "Get Ready Rows",
+            "node": "Get Base Schema",
             "type": "main",
             "index": 0
           }
@@ -930,6 +1018,50 @@
           }
         ]
       ]
+    },
+    "Get Base Schema": {
+      "main": [
+        [
+          {
+            "node": "Resolve View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve View": {
+      "main": [
+        [
+          {
+            "node": "Get View Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get View Meta": {
+      "main": [
+        [
+          {
+            "node": "Plan View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan View": {
+      "main": [
+        [
+          {
+            "node": "Get Ready Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -970,9 +1102,9 @@
   },
   "nodeGroups": [],
   "pinData": null,
-  "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
-  "activeVersionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
-  "versionCounter": 13,
+  "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
+  "activeVersionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
+  "versionCounter": 15,
   "triggerCount": 2,
   "sourceWorkflowId": null,
   "shared": [
@@ -997,9 +1129,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-23T12:55:53.489Z",
-    "createdAt": "2026-08-23T12:55:53.489Z",
-    "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+    "updatedAt": "2026-08-23T13:10:13.493Z",
+    "createdAt": "2026-08-23T13:10:13.493Z",
+    "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
     "workflowId": "8oCb1lkbgeujqRz0",
     "nodes": [
       {
@@ -1075,7 +1207,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          480,
+          1360,
           -160
         ],
         "parameters": {
@@ -1095,8 +1227,8 @@
           "options": {
             "view": {
               "__rl": true,
-              "mode": "name",
-              "value": "LinkedIn"
+              "mode": "id",
+              "value": "={{ $json.viewId }}"
             }
           }
         },
@@ -1108,7 +1240,7 @@
         },
         "alwaysOutputData": true,
         "onError": "continueRegularOutput",
-        "notes": "Reads the table's \"LinkedIn\" view: the Operator's filters decide which rows go. Route Rows still refuses rows already stamped for this channel."
+        "notes": "Every row of the table's \"LinkedIn\" view. The Operator's filter owns membership; Route Rows skips rows already stamped for this channel."
       },
       {
         "id": "b8913565-e685-4334-9015-1c9c9bd91468",
@@ -1116,11 +1248,11 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          700,
+          1580,
           -160
         ],
         "parameters": {
-          "jsCode": "let tables=[]; try{ tables=$('Parse Client Config').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst rows=$input.all();\nconst out=[];\nfor(const it of rows){\n  const j=it.json||{};\n  let src=null;\n  try{ const pi=it.pairedItem; const idx=(typeof pi==='number')?pi:(pi&&pi.item); if(idx!==undefined&&idx!==null) src=tables[idx]||null; }catch(e){}\n  if(!src && tables.length===1) src=tables[0];\n  if(!src) src=tables[0]||{};\n  if(j.error){ out.push({ json: { _readError:true, tableId:src.tableId||'', errorMessage:String((j.error&&(j.error.message||j.error))||'read failed').slice(0,160) } }); continue; }\n  if(!j.id) continue;\n  out.push({ json: { recordId:j.id, baseId:src.baseId||'', tableId:src.tableId||'', clientRecId:src.clientRecId||'', clientName:src.clientName||'', row:(j.fields||j) } });\n}\n// No ready rows: emit one placeholder so the chain reaches Build Client Log and the run still writes its row.\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;"
+          "jsCode": "// Prep Rows: one item per row read from the view, carrying its table's plan (the visible\n// columns). A table whose view could not be read yields one read-error item with the reason,\n// so the run's row says exactly why nothing was enrolled from it.\nlet tables=[]; try{ tables=$('Plan View').all().map(i=>i.json).filter(t=>t&&t.baseId); }catch(e){}\nconst rows=$input.all();\nconst out=[];\nconst seenTables=new Set();\nfor(const it of rows){\n  const j=it.json||{};\n  let src=null;\n  try{ const pi=it.pairedItem; const idx=(typeof pi==='number')?pi:(pi&&pi.item); if(idx!==undefined&&idx!==null) src=tables[idx]||null; }catch(e){}\n  if(!src && tables.length===1) src=tables[0];\n  if(!src) src=tables[0]||{};\n  seenTables.add(src.tableId);\n  if(src.why){ if(!out.some(o=>o.json._readError&&o.json.tableId===src.tableId)) out.push({ json: { _readError:true, tableId:src.tableId||'', errorMessage:String(src.why).slice(0,160) } }); continue; }\n  if(j.error){ out.push({ json: { _readError:true, tableId:src.tableId||'', errorMessage:String((j.error&&(j.error.message||j.error))||'read failed').slice(0,160) } }); continue; }\n  if(!j.id) continue;\n  out.push({ json: { recordId:j.id, baseId:src.baseId||'', tableId:src.tableId||'', clientRecId:src.clientRecId||'', clientName:src.clientName||'', pvWorkspace:src.pvWorkspace||'', visible:src.visible||null, row:(j.fields||j) } });\n}\n// A table with a broken view may have produced no row items at all: still report it.\nfor(const t of tables){ if(t.why&&!seenTables.has(t.tableId)) out.push({ json: { _readError:true, tableId:t.tableId||'', errorMessage:String(t.why).slice(0,160) } }); }\n// No ready rows: emit one placeholder so the chain reaches Build Client Log and the run still writes its row.\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n"
         },
         "onError": "continueRegularOutput"
       },
@@ -1130,11 +1262,11 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          920,
+          1800,
           -160
         ],
         "parameters": {
-          "jsCode": "// Route Rows: one enroll per row the LinkedIn view handed us. The view decides which rows go\n// (Operator-owned filters, nothing in code); this node only refuses what cannot be enrolled and\n// never enrolls a row already stamped for this channel, so a loose view cannot double-enroll.\n//\n// Sent on every add, the same names on every sequencer, only when the row carries a value:\n// identity (first_name, last_name, company, company_website, email, linkedin_url) plus the\n// standard variables in VARS. The campaign copy picks from them; nothing per play to configure.\nconst VARS={ title:'Title', seniority:'Seniority', department:'Department', job_title:'Job Title', job_link:'Job Link', job_posted:'Job Posted', job_description:'Job Description', job_applicants:'Job Applicants', job_salary:'Job Salary', existing_in_role:'Existing In Role', icp_reason:'ICP Reason', company_description:'Description', industry_groups:'Industry Groups', employees:'Employees', revenue_range:'Revenue Range', company_city:'Company City', company_state:'Company State', country:'Country', event_type:'Event Type', signal_detail:'Signal Detail', sourced_at:'detected_at' };\nconst val=(f,k)=>{ const v=f[k]; if(v===undefined||v===null) return ''; if(typeof v==='object') return Array.isArray(v)?v.join(', '):String(v.name||''); return String(v).trim(); };\nconst out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const url=val(f,'LinkedIn Campaign');\n  const email=val(f,'Final Email');\n  const linkedinUrl=val(f,'LinkedIn URL');\n  const name=val(f,'Name')||email||linkedinUrl;\n  const base={ recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name };\n  if(val(f,'LinkedIn Routed At')) continue; // already stamped for this channel: the view is loose, not the row\n  if(!/^https?:\\/\\//i.test(url)){ out.push({ json: Object.assign({ action:'failed_precheck', reason:'LinkedIn Campaign is not a valid URL' },base) }); continue; }\n  if(!val(f,'first_name')||!val(f,'last_name')){ out.push({ json: Object.assign({ action:'failed_precheck', reason:'first_name / last_name missing' },base) }); continue; }\n  if(!email&&!linkedinUrl){ out.push({ json: Object.assign({ action:'no_email' },base) }); continue; }\n  const otherDone=!val(f,'Email Campaign')||!!val(f,'Email Routed At');\n  const dom=val(f,'Domain');\n  const extra={};\n  for(const [k,col] of Object.entries(VARS)){ const v=val(f,col); if(v) extra[k]=v.length>4000?v.slice(0,4000):v; }\n  const body={ firstName:val(f,'first_name'), lastName:val(f,'last_name'), company:val(f,'Company'), extraInfoData:extra };\n  if(dom) body.companyWebsite=/^https?:\\/\\//i.test(dom)?dom:'https://'+dom;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: Object.assign({ action:'enroll', otherDone, campaign_url:url, enroll_body:body },base) });\n}\nreturn out;\n"
+          "jsCode": "// Route Rows: one enroll per row of the \"LinkedIn\" view, on the Deploy View to Campaign doctrine.\n//\n// The view's visible columns are the contract. Every visible column that is not a machine field,\n// a never-block field or an identity field is a variable: sent to Alta as extraInfoData under its\n// snake_case name, and REQUIRED, a row missing it is skipped with \"missing <column>\". Hide a\n// column in the view and it is neither sent nor required. Nothing here is a list of what to send.\n//\n// Identity, hard: LinkedIn URL, first_name, Company (or company_clean). Target: LinkedIn Campaign,\n// a pull-in URL. A row already stamped LinkedIn Routed At is skipped: the view shows the whole\n// channel, history included; the stamp is what says \"done\".\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Email Source','Contact Source','Contact Key','Run ID','Build Date','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','Final Email','company_clean','First Hire']);\n// Never-block: sent when filled, never skip a row when empty. The ClayRoots build fields plus the\n// intent convention (contact, job, company, signal fields the intent machine writes, see\n// n8n/INTENT-PLAYS.md). A visible column OUTSIDE this set is a required variable: empty = row skipped.\nconst IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','LinkedIn URL','City','State','State Full','Country','Zip','Street',\n  'Seniority','Department','Job ID','Job Title','Job Link','Job Posted','Job Description','Job Seniority','Job Function','Job Employment Type','Job Industries','Job Applicants','Job Salary','Job Poster Name','Job Poster Title','Job Poster LinkedIn',\n  'Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Score','Keywords','Company Status','Start Date','Company City','Company State','Phones','Public Emails','Social URLs','Redirect Domain','Email Pattern','Signal Detail','detected_at']);\nconst IDENTITY=new Set(['first_name','Company']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); if(typeof v==='object'&&typeof v.name==='string') return v.name; return ''; };\nconst out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const base={ recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name:val(f['Name'])||val(f['LinkedIn URL']) };\n  const fail=(reason)=>out.push({ json: Object.assign({ action:'failed_precheck', reason },base) });\n  if(val(f['LinkedIn Routed At'])) continue;                       // already done on this channel\n  const url=val(f['LinkedIn Campaign']);\n  if(!/^https?:\\/\\//i.test(url)){ fail('LinkedIn Campaign is not a valid URL'); continue; }\n  const linkedinUrl=val(f['LinkedIn URL']);\n  if(!/^https?:\\/\\//i.test(linkedinUrl)){ fail('missing LinkedIn URL'); continue; }\n  const fn=val(f['first_name']); if(!fn){ fail('missing first_name'); continue; }\n  const comp=val(f['company_clean'])||val(f['Company']); if(!comp){ fail('missing Company'); continue; }\n  const otherDone=!val(f['Email Campaign'])||!!val(f['Email Routed At']);\n  const extra={}; const missing=[];\n  const visible=Array.isArray(p.visible)?p.visible:[];\n  for(const col of visible){\n    if(MACHINE.has(col)||IGNORE.has(col)||IDENTITY.has(col)) continue;\n    const v=val(f[col]);\n    if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; else missing.push(col);\n  }\n  if(missing.length){ fail('missing '+missing.join(', ').slice(0,140)); continue; }\n  // Never-block columns ride along when visible and filled, never skip a row when empty.\n  for(const col of visible){ if(!IGNORE.has(col)||col==='LinkedIn URL'||col==='last_name') continue; const v=val(f[col]); if(v) extra[snake(col)]=v; }\n  const dom=val(f['Domain']);\n  const body={ firstName:fn, lastName:val(f['last_name']), company:comp, linkedinUrl, extraInfoData:extra };\n  if(dom) body.companyWebsite=/^https?:\\/\\//i.test(dom)?dom:'https://'+dom;\n  const email=val(f['Final Email']); if(email) body.email=email;\n  out.push({ json: Object.assign({ action:'enroll', otherDone, campaign_url:url, enroll_body:body },base) });\n}\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n"
         },
         "alwaysOutputData": true,
         "onError": "continueRegularOutput"
@@ -1145,7 +1277,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          1140,
+          2020,
           -260
         ],
         "parameters": {
@@ -1178,7 +1310,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1360,
+          2240,
           -340
         ],
         "parameters": {
@@ -1210,7 +1342,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1580,
+          2460,
           -340
         ],
         "parameters": {
@@ -1224,7 +1356,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          1800,
+          2680,
           -340
         ],
         "parameters": {
@@ -1258,7 +1390,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          2020,
+          2900,
           -420
         ],
         "parameters": {
@@ -1305,7 +1437,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          2020,
+          2900,
           -260
         ],
         "parameters": {
@@ -1351,7 +1483,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          1360,
+          2240,
           -140
         ],
         "parameters": {
@@ -1397,7 +1529,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1140,
+          2020,
           40
         ],
         "parameters": {
@@ -1412,7 +1544,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          1360,
+          2240,
           40
         ],
         "parameters": {
@@ -1670,6 +1802,94 @@
           },
           "options": {}
         }
+      },
+      {
+        "id": "e5000000-0000-4000-8000-000000000001",
+        "name": "Get Base Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          480,
+          -160
+        ],
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Tables, fields and views of the client's Clayroots base, for the view lookup."
+      },
+      {
+        "id": "e5000000-0000-4000-8000-000000000002",
+        "name": "Resolve View",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          700,
+          -160
+        ],
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Resolve View (runs once per item): from the base schema, find this Intent table's \"LinkedIn\"\n// view and the field list, and build the URL that returns the view's visible fields. No view ->\n// viewUrl '' and a reason; the run logs it and enrolls nothing from that table.\nconst VIEW='LinkedIn';\nconst cfg=$('Parse Client Config').item.json||{};\nconst j=$input.item.json||{};\nconst body=j.body!==undefined?j.body:j;\nconst tables=Array.isArray(body.tables)?body.tables:[];\nconst out=Object.assign({},cfg,{ view:VIEW, viewId:'', viewUrl:'', fieldsById:{}, why:'' });\nconst t=tables.find(x=>x.id===cfg.tableId||x.name===cfg.tableId);\nif(!tables.length) out.why='could not read base schema for '+cfg.baseId;\nelse if(!t) out.why='table '+cfg.tableId+' not found in base '+cfg.baseId;\nelse {\n  for(const f of (t.fields||[])) out.fieldsById[f.id]=f.name;\n  const v=(t.views||[]).find(x=>x.name===VIEW);\n  if(!v) out.why='view \"'+VIEW+'\" not found on table '+(t.name||cfg.tableId)+'; create it (filter: LinkedIn Campaign is not empty)';\n  else if((v.type||'grid')!=='grid') out.why='view \"'+VIEW+'\" is type '+v.type+', not grid';\n  else { out.viewId=v.id; out.viewUrl='https://api.airtable.com/v0/meta/bases/'+cfg.baseId+'/views/'+v.id+'?include=visibleFieldIds'; }\n}\nreturn { json: out };\n"
+        }
+      },
+      {
+        "id": "e5000000-0000-4000-8000-000000000003",
+        "name": "Get View Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          920,
+          -160
+        ],
+        "parameters": {
+          "url": "={{ $json.viewUrl || 'https://api.airtable.com/v0/meta/bases/none/views/none' }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The view's visible field ids: the contract for what is sent and required."
+      },
+      {
+        "id": "e5000000-0000-4000-8000-000000000004",
+        "name": "Plan View",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1140,
+          -160
+        ],
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Plan View (runs once per item): the view's visible field names, in view order. This list is\n// the contract for every row read from it: each visible column that is not a machine, never-block\n// or identity field is a variable that must be filled (Deploy View to Campaign doctrine).\nconst r=$('Resolve View').item.json||{};\nconst j=$input.item.json||{};\nconst body=j.body!==undefined?j.body:j;\nconst out=Object.assign({},r,{ visible:null });\nif(r.viewUrl){\n  const ids=Array.isArray(body.visibleFieldIds)?body.visibleFieldIds:null;\n  if(ids){ out.visible=ids.map(id=>r.fieldsById[id]).filter(Boolean); }\n  else out.why='view metadata call failed for \"'+r.view+'\": '+String((body&&(body.error&&(body.error.message||body.error.type)))||('HTTP '+(j.statusCode||'?'))).slice(0,120);\n}\ndelete out.fieldsById;\nreturn { json: out };\n"
+        }
       }
     ],
     "connections": {
@@ -1688,7 +1908,7 @@
         "main": [
           [
             {
-              "node": "Get Ready Rows",
+              "node": "Get Base Schema",
               "type": "main",
               "index": 0
             }
@@ -1925,6 +2145,50 @@
             }
           ]
         ]
+      },
+      "Get Base Schema": {
+        "main": [
+          [
+            {
+              "node": "Resolve View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve View": {
+        "main": [
+          [
+            {
+              "node": "Get View Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get View Meta": {
+        "main": [
+          [
+            {
+              "node": "Plan View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan View": {
+        "main": [
+          [
+            {
+              "node": "Get Ready Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
@@ -1934,34 +2198,34 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-08-23T12:55:53.743Z",
-        "id": 1760,
+        "createdAt": "2026-08-23T13:10:13.762Z",
+        "id": 1768,
         "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-23T12:56:01.029Z",
-        "id": 1762,
+        "createdAt": "2026-08-23T13:10:23.732Z",
+        "id": 1770,
         "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-23T12:55:53.636Z",
-        "id": 1759,
+        "createdAt": "2026-08-23T13:10:13.648Z",
+        "id": 1767,
         "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-23T12:56:00.935Z",
-        "id": 1761,
+        "createdAt": "2026-08-23T13:10:23.664Z",
+        "id": 1769,
         "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "9ab564b5-d5e8-4234-a9c6-cc6fe6f94974",
+        "versionId": "3b96604f-0ed7-4e41-818b-f81813d785fe",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       }

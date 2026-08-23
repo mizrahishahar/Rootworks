@@ -76,27 +76,26 @@ One Automations row per run. Status computed from failures. Description carries:
 
 ## Enrollment: the view convention
 
-Every Intent table carries two views, named exactly **`LinkedIn`** and **`Email`**. The view decides which rows go; the Operator owns its filters; nothing about row selection lives in code.
+Same doctrine as `Deploy View to Campaign`. Every Intent table carries two views, named exactly **`LinkedIn`** and **`Email`**. A view is the channel's reachable people, history included; its **visible columns** are the contract for what is sent. Nothing in code says what to send.
 
-| View | Enroller | Filters that belong on it |
+| View | Enroller | The only filter |
 |---|---|---|
-| `LinkedIn` | `Add Intent Leads to Alta`, daily 07:30 UTC | Status is done · LinkedIn Campaign is not empty · LinkedIn Routed At is empty |
-| `Email` | `Add Intent Leads to PlusVibe`, daily 07:30 UTC | Status is done · Email Campaign is not empty · Email Routed At is empty |
+| `LinkedIn` | `Add Intent Leads to Alta`, daily 07:30 UTC | LinkedIn URL is not empty |
+| `Email` | `Add Intent Leads to PlusVibe`, daily 07:30 UTC | Final Email is not empty |
 
-Each enroller reads its view, enrolls, stamps its own `Routed At`, and sets `Intent Status` to `ROUTED` once every channel the row names has its date. A row already stamped for a channel is skipped even when the view shows it, so a loose view can never double-enroll. A missing view fails loud in the run log and enrolls nothing.
+The enroller reads the view's rows and its visible field list (Airtable meta API), then per row:
 
-**Must-have on the row, or the row is skipped with a reason**
+1. Already stamped `Routed At` for this channel: skipped. History sits in the view; the stamp says done. A loose view can never double-enroll.
+2. Target: the row's `LinkedIn Campaign` (Alta pull-in URL) / `Email Campaign` (PlusVibe campaign id). Missing or malformed: skipped, `FAILED` with the reason.
+3. Identity: `first_name`, `Company`, and the channel's address (`LinkedIn URL` / `Final Email` with `Status = done`). Missing: skipped with the reason.
+4. Every visible column outside the machine set is sent under its snake_case name (Alta `extraInfoData`, PlusVibe `custom_variables`; State, City, Country, Title as PlusVibe's own lead fields). A visible column in the **convention set** below is sent when filled and never blocks. A visible column **outside** the convention is a required variable: empty means the row is skipped, logged as "missing <column>".
+5. Stamp the channel's `Routed At`; `Intent Status` becomes `ROUTED` once every channel the row names has its date.
 
-| Channel | Required |
-|---|---|
-| LinkedIn | `LinkedIn Campaign` (Alta pull-in URL), `first_name`, `last_name`, and `LinkedIn URL` or `Final Email` |
-| Email | `Email Campaign` (PlusVibe campaign id), `first_name`, `last_name`, `Final Email`, a PlusVibe Workspace ID on the client row |
+**Convention set, sent when filled, never block:** the ClayRoots build fields (last_name, Title, Social, Phone, City, State, State Full, Country, Zip, Street, MX Provider) and the intent fields (Seniority, Department, Job ID, Job Title, Job Link, Job Posted, Job Description, Job Seniority, Job Function, Job Employment Type, Job Industries, Job Applicants, Job Salary, Job Poster Name / Title / LinkedIn, Existing In Role, ICP Reason, Description, Industry Groups, Employees, Revenue Range, Score, Keywords, Company Status, Start Date, Company City, Company State, Phones, Public Emails, Social URLs, Redirect Domain, Email Pattern, Signal Detail, detected_at).
 
-**Sent on every add, the same variable names on every sequencer, only when the row carries a value**
+**Machine set, never sent:** Status, the waterfall tiers (MV, P1..P3, BB), Email, Domain, Final Email, Contact Key / Source, Run ID, Build Date, Name, Intent Status, the four channel fields, Target Campaign, Enroll Confirmed / Error, Event Type, Campaigns and the sync columns.
 
-`first_name, last_name, company, company_website, email, linkedin_url, title, seniority, department, job_title, job_link, job_posted, job_description, job_applicants, job_salary, existing_in_role, icp_reason, company_description, industry_groups, employees, revenue_range, company_city, company_state, country, event_type, signal_detail, sourced_at`
-
-Alta receives them as `extraInfoData`, PlusVibe as `custom_variables`. Values over 4,000 characters are cut there. The campaign copy picks from these names; nothing per play to configure. Adding a variable means adding it to `VARS` in both enrollers' Route Rows, in the same commit.
+Hide a column: not sent. Unhide a convention column: sent when filled. Unhide any other column: sent and required. A missing view fails loud in the run log and enrolls nothing from that table.
 
 `Intent Status` is the row's summary (`NEW`, `ROUTED`, `FAILED`, `NO EMAIL`), read only by the intent writer, the two enrollers and the backfill. Per-channel truth is the two `Routed At` fields. The email waterfall is unchanged.
 

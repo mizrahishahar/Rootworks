@@ -15,6 +15,8 @@ const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','
 const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','LinkedIn URL','City','State','State Full','Country','Zip','Street',
   'Seniority','Department','Job ID','Job Title','Job Link','Job Posted','Job Description','Job Seniority','Job Function','Job Employment Type','Job Industries','Job Applicants','Job Salary','Job Poster Name','Job Poster Title','Job Poster LinkedIn',
   'Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Score','Keywords','Company Status','Start Date','Company City','Company State','Phones','Public Emails','Social URLs','Redirect Domain','Email Pattern','Signal Detail','detected_at']);
+// Any column whose name starts with 'Job ' is convention too (Operator ruling 2026-08-23).
+const neverBlock=(col)=>IGNORE.has(col)||/^job\s/i.test(String(col));
 const IDENTITY=new Set(['first_name','Company']);
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
 const val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); if(typeof v==='object'&&typeof v.name==='string') return v.name; return ''; };
@@ -36,13 +38,13 @@ for(const it of $input.all()){
   const extra={}; const missing=[];
   const visible=Array.isArray(p.visible)?p.visible:[];
   for(const col of visible){
-    if(MACHINE.has(col)||IGNORE.has(col)||IDENTITY.has(col)) continue;
+    if(MACHINE.has(col)||neverBlock(col)||IDENTITY.has(col)) continue;
     const v=val(f[col]);
     if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; else missing.push(col);
   }
   if(missing.length){ fail('missing '+missing.join(', ').slice(0,140)); continue; }
   // Never-block columns ride along when visible and filled, never skip a row when empty.
-  for(const col of visible){ if(!IGNORE.has(col)||col==='LinkedIn URL'||col==='last_name') continue; const v=val(f[col]); if(v) extra[snake(col)]=v; }
+  for(const col of visible){ if(!neverBlock(col)||col==='LinkedIn URL'||col==='last_name') continue; const v=val(f[col]); if(v) extra[snake(col)]=v; }
   const dom=val(f['Domain']);
   const body={ firstName:fn, lastName:val(f['last_name']), company:comp, linkedinUrl, extraInfoData:extra };
   if(dom) body.companyWebsite=/^https?:\/\//i.test(dom)?dom:'https://'+dom;

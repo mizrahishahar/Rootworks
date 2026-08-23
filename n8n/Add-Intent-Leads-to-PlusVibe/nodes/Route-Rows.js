@@ -16,6 +16,8 @@ const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','
 const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','LinkedIn URL','City','State','State Full','Country','Zip','Street',
   'Seniority','Department','Job ID','Job Title','Job Link','Job Posted','Job Description','Job Seniority','Job Function','Job Employment Type','Job Industries','Job Applicants','Job Salary','Job Poster Name','Job Poster Title','Job Poster LinkedIn',
   'Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Score','Keywords','Company Status','Start Date','Company City','Company State','Phones','Public Emails','Social URLs','Redirect Domain','Email Pattern','Signal Detail','detected_at']);
+// Any column whose name starts with 'Job ' is convention too (Operator ruling 2026-08-23).
+const neverBlock=(col)=>IGNORE.has(col)||/^job\s/i.test(String(col));
 const IDENTITY=new Set(['first_name','Company']);
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
 const val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); if(typeof v==='object'&&typeof v.name==='string') return v.name; return ''; };
@@ -41,7 +43,7 @@ for(const it of $input.all()){
   const custom={}; const missing=[];
   const visible=Array.isArray(p.visible)?p.visible:[];
   for(const col of visible){
-    if(MACHINE.has(col)||IGNORE.has(col)||IDENTITY.has(col)) continue;
+    if(MACHINE.has(col)||neverBlock(col)||IDENTITY.has(col)) continue;
     const v=val(f[col]);
     if(v) custom[snake(col)]=v.length>2000?v.slice(0,2000):v; else missing.push(col);
   }
@@ -51,7 +53,7 @@ for(const it of $input.all()){
   for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }
   const soc=val(f['LinkedIn URL'])||val(f['Social']); if(/^https?:\/\//i.test(soc)) lead.linkedin_person_url=soc;
   // Never-block columns ride along when visible and filled, never skip a row when empty.
-  for(const col of visible){ if(!IGNORE.has(col)||['LinkedIn URL','Social','last_name','Title','City','State','State Full','Country'].includes(col)) continue; const v=val(f[col]); if(v) custom[snake(col)]=v; }
+  for(const col of visible){ if(!neverBlock(col)||['LinkedIn URL','Social','last_name','Title','City','State','State Full','Country'].includes(col)) continue; const v=val(f[col]); if(v) custom[snake(col)]=v; }
   if(Object.keys(custom).length) lead.custom_variables=custom;
   const pv_body={ workspace_id:p.pvWorkspace, campaign_id:campaignId, skip_if_in_workspace:false, is_overwrite:true, leads:[lead] };
   out.push({ json: Object.assign({ action:'enroll', otherDone, pv_body },base) });

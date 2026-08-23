@@ -10,7 +10,7 @@
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
 // President -> vp) so a term written short still catches the long form. Nothing else.
 // Tier: the play's rules in order, first match wins, stamped as Target Campaign.
-// Company names go out raw; the Clean Fields helper writes Company / company_clean next.
+// Company names go out raw; the Clean Fields helper writes Company clean next (no company_clean column on Intent tables, Operator ruling 2026-08-23).
 const cfg=$('Parse Play').first().json;
 const titleCase=(s)=>String(s).replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());
 const cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\s+/)[0]||'';n=n.replace(/[^A-Za-z\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};
@@ -51,7 +51,6 @@ function baseRow(d){
   return {
     'Domain': d,
     'Company': String(c.company||b.name||'').trim(),
-    'company_clean': String(c.company||b.name||'').trim(),
     'Event Type': cfg.event_type,
     'Target Campaign': target,
     'Intent Status': 'NEW',

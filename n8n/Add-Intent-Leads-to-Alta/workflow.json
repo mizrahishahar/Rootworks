@@ -1,9 +1,8 @@
 {
-  "updatedAt": "2026-08-22T21:05:52.503Z",
+  "updatedAt": "2026-08-23T12:07:22.874Z",
   "createdAt": "2026-07-28T12:12:50.566Z",
   "id": "8oCb1lkbgeujqRz0",
   "name": "Add Intent Leads to Alta",
-  "description": "Daily 11:00 Alta enroller. Loops Clients with Intent Tables (tbl ids; base from Clayroots Base ID); pulls done+NEW rows with a webhook-URL Target Campaign and POSTs each lead to it. ROUTED/FAILED/NO EMAIL stamped; one log row per client.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -962,38 +961,23 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
-  "nodeGroups": [],
   "pinData": null,
-  "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-  "activeVersionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-  "versionCounter": 11,
+  "versionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
+  "activeVersionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
   "triggerCount": 2,
-  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-07-28T12:12:50.572Z",
       "createdAt": "2026-07-28T12:12:50.572Z",
       "role": "workflow:owner",
       "workflowId": "8oCb1lkbgeujqRz0",
-      "projectId": "pyoZAgnc0vv0Gq9W",
-      "project": {
-        "updatedAt": "2026-06-09T20:31:42.148Z",
-        "createdAt": "2026-06-09T20:29:57.588Z",
-        "id": "pyoZAgnc0vv0Gq9W",
-        "name": "Shahar Mizrahi <shahar@flowroots.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
+      "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-22T21:05:52.516Z",
-    "createdAt": "2026-08-22T21:05:52.516Z",
-    "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
+    "updatedAt": "2026-08-23T12:07:23.052Z",
+    "createdAt": "2026-08-23T12:07:23.052Z",
+    "versionId": "ee040d12-9f54-414a-975d-0e916bab99f6",
     "workflowId": "8oCb1lkbgeujqRz0",
     "nodes": [
       {
@@ -1085,7 +1069,7 @@
             "mode": "id",
             "value": "={{ $json.tableId }}"
           },
-          "filterByFormula": "=AND({Status}='done', OR({Intent Status}='NEW', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))), {Target Campaign}!='', FIND(\"http\", {Target Campaign}) = 1)",
+          "filterByFormula": "=AND({Status}='done', {LinkedIn Campaign}!='', {LinkedIn Routed At}='', OR({Intent Status}='NEW', {Intent Status}='ROUTED', AND({Intent Status}='FAILED', FIND(\"spacing\", {Enroll Error}))))",
           "returnAll": true,
           "options": {}
         },
@@ -1122,7 +1106,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "const out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const email=String(f['Final Email']||'').trim();\n  const linkedinUrl=String(f['LinkedIn URL']||'').trim();\n  const url=String(f['Target Campaign']||'').trim();\n  const name=String(f['Name']||email||linkedinUrl||'').trim();\n  if(!/^https?:\\/\\//i.test(url)){\n    out.push({ json: { action:'failed_precheck', reason:'Target Campaign is not a valid URL', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  if(!email && !linkedinUrl){\n    out.push({ json: { action:'no_email', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  const dom=String(f['Domain']||'').trim();\n  const companyWebsite=dom?(/^https?:\\/\\//i.test(dom)?dom:'https://'+dom):'';\n  const body={\n    firstName: f['first_name']||'',\n    lastName: f['last_name']||'',\n    company: f['Company']||'',\n    extraInfoData: {\n      'Source': 'Apify Intent Scrape',\n      'Signal': f['Event Type']||'',\n      'Signal Detail': f['Signal Detail']||'',\n      'Sourced At': f['detected_at']||''\n    }\n  };\n  if(companyWebsite) body.companyWebsite=companyWebsite;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: { action:'enroll', campaign_url:url, enroll_body:body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n}\nreturn out;"
+          "jsCode": "const out=[];\nfor(const it of $input.all()){\n  const p=it.json||{};\n  if(!p.recordId) continue;\n  const f=p.row||{};\n  const email=String(f['Final Email']||'').trim();\n  const linkedinUrl=String(f['LinkedIn URL']||'').trim();\n  const url=String(f['LinkedIn Campaign']||'').trim();\n  const otherDone=!String(f['Email Campaign']||'').trim()||!!String(f['Email Routed At']||'').trim();\n  const name=String(f['Name']||email||linkedinUrl||'').trim();\n  if(!/^https?:\\/\\//i.test(url)){\n    out.push({ json: { action:'failed_precheck', reason:'LinkedIn Campaign is not a valid URL', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  if(!email && !linkedinUrl){\n    out.push({ json: { action:'no_email', recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n    continue;\n  }\n  const dom=String(f['Domain']||'').trim();\n  const companyWebsite=dom?(/^https?:\\/\\//i.test(dom)?dom:'https://'+dom):'';\n  const body={\n    firstName: f['first_name']||'',\n    lastName: f['last_name']||'',\n    company: f['Company']||'',\n    extraInfoData: {\n      'Source': 'Apify Intent Scrape',\n      'Signal': f['Event Type']||'',\n      'Signal Detail': f['Signal Detail']||'',\n      'Sourced At': f['detected_at']||''\n    }\n  };\n  if(companyWebsite) body.companyWebsite=companyWebsite;\n  if(email) body.email=email;\n  if(linkedinUrl) body.linkedinUrl=linkedinUrl;\n  out.push({ json: { action:'enroll', otherDone, campaign_url:url, enroll_body:body, recordId:p.recordId, baseId:p.baseId, tableId:p.tableId, clientRecId:p.clientRecId, clientName:p.clientName, name } });\n}\nreturn out;"
         },
         "alwaysOutputData": true,
         "onError": "continueRegularOutput"
@@ -1202,7 +1186,7 @@
           -340
         ],
         "parameters": {
-          "jsCode": "const enrolls=$input.all();\nlet resolved=[]; try{ resolved=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.action==='enroll'); }catch(e){}\nconst out=[];\nfor(let i=0;i<enrolls.length;i++){\n  const e=(enrolls[i]&&enrolls[i].json)||{};\n  const r=resolved[i]||{};\n  if(!r.recordId) continue;\n  const ok=!(e&&e.error);\n  out.push({ json: {\n    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name,\n    ok: ok,\n    reason: ok?'':String((e.error&&(e.error.message||e.error))||'enroll failed after retries').slice(0,160)\n  }});\n}\nreturn out;"
+          "jsCode": "const enrolls=$input.all();\nlet resolved=[]; try{ resolved=$('Route Rows').all().map(i=>i.json).filter(r=>r&&r.action==='enroll'); }catch(e){}\nconst out=[];\nfor(let i=0;i<enrolls.length;i++){\n  const e=(enrolls[i]&&enrolls[i].json)||{};\n  const r=resolved[i]||{};\n  if(!r.recordId) continue;\n  const ok=!(e&&e.error);\n  out.push({ json: {\n    recordId:r.recordId, baseId:r.baseId, tableId:r.tableId, clientRecId:r.clientRecId, clientName:r.clientName, name:r.name, otherDone:!!r.otherDone,\n    ok: ok,\n    reason: ok?'':String((e.error&&(e.error.message||e.error))||'enroll failed after retries').slice(0,160)\n  }});\n}\nreturn out;"
         },
         "onError": "continueRegularOutput"
       },
@@ -1270,8 +1254,8 @@
             "schema": [],
             "value": {
               "id": "={{ $json.recordId }}",
-              "Intent Status": "ROUTED",
-              "routed_at": "={{ $now.toISO() }}",
+              "Intent Status": "={{ $json.otherDone ? \"ROUTED\" : \"NEW\" }}",
+              "LinkedIn Routed At": "={{ $now.toISO() }}",
               "Enroll Confirmed": true
             }
           },
@@ -1919,40 +1903,7 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false,
-    "workflowPublishHistory": [
-      {
-        "createdAt": "2026-08-22T21:05:52.893Z",
-        "id": 1677,
-        "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:06:23.507Z",
-        "id": 1679,
-        "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:05:52.808Z",
-        "id": 1676,
-        "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:06:23.375Z",
-        "id": 1678,
-        "workflowId": "8oCb1lkbgeujqRz0",
-        "versionId": "73a5160c-4421-4abf-856d-eba403729dcd",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
-    ]
-  }
+    "autosaved": false
+  },
+  "tags": []
 }

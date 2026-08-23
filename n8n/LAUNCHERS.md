@@ -15,6 +15,7 @@ Do not hand-edit; rerun the script after every pull.
 | Add-Intent-Leads-to-Alta | POST https://n8n.flowroots.com/webhook/launch-add-intent-alta |  | no |
 | Add-Intent-Leads-to-PlusVibe | POST https://n8n.flowroots.com/webhook/launch-add-intent-pv |  | no |
 | Add-rank-in-company-to-table | POST https://n8n.flowroots.com/webhook/launch-rank-in-company | Clayroots Base ID, Table ID, View ID | no |
+| Airtable-Ops-one-off | POST https://n8n.flowroots.com/webhook/add-fields-to-table <br> POST https://n8n.flowroots.com/webhook/patch-records |  | no |
 | Alta-OAuth-Callback | GET https://n8n.flowroots.com/webhook/alta-oauth-callback |  | no |
 | Append-fields-to-table | POST https://n8n.flowroots.com/webhook/launch-domain-merge | Clayroots Base ID, Table ID, Key column, Fields to attach, Domain CSV (file) | **yes - launch on Waiting** |
 | Backfill-Intent-Fields-one-off | POST https://n8n.flowroots.com/webhook/backfill-intent-fields |  | no |

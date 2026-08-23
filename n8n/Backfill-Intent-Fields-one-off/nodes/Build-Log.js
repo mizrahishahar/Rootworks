@@ -2,35 +2,30 @@
 const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;
 const cfg=$('Parse Launch').first().json||{};
 const nf=(x)=>Number(x||0).toLocaleString('en-US');
-let st={ rows:0, parsed:0, unparsed:0, datasets:0, datasetMisses:[], jobsIndexed:0, matched:0, rowsToWrite:0, untouched:0, batches:0 };
+let st={};
 try{ const s=$('Build Writes').first().json._stats; if(s) st=s; }catch(e){}
-const failed=[];
+const failed=[].concat(st.failed||[]);
 let written=0;
-try{
-  for(const it of $('Write Rows').all()){
-    const j=it.json||{}; const status=Number(j.statusCode)||0;
-    let body=j.body; if(typeof body==='string'){ try{ body=JSON.parse(body); }catch(e){} }
-    if(status>=200&&status<300&&body&&Array.isArray(body.records)) written+=body.records.length;
-    else failed.push({ name:'batch', reason:'HTTP '+status+' '+String((body&&body.error&&(body.error.message||body.error.type))||'').slice(0,120) });
-  }
-}catch(e){}
+try{ for(const it of $('Write Rows').all()){ const j=it.json||{}; const status=Number(j.statusCode)||0; let body=j.body; if(typeof body==='string'){ try{ body=JSON.parse(body); }catch(e){} }
+  if(status>=200&&status<300&&body&&Array.isArray(body.records)) written+=body.records.length; else failed.push({ name:'batch', reason:'HTTP '+status+' '+String((body&&body.error&&(body.error.message||body.error.type))||'').slice(0,120) }); } }catch(e){}
 for(const m of (st.datasetMisses||[])) failed.push({ name:'Apify dataset', reason:m });
-const gap=Math.max(0,(st.rowsToWrite||0)-written-failed.filter(f=>f.name==='batch').length*10);
 const errs=failed.length;
+const passes=Object.entries(cfg.do||{}).filter(([k,v])=>v).map(([k])=>k).join(', ');
 const lines=[
   '**'+nf(written)+' rows backfilled of '+nf(st.rows)+', '+errs+' error'+(errs===1?'':'s')+'**',
   '',
-  '**Table:** '+(cfg.table||'')+' in '+(cfg.base||''),
+  '**Table:** '+(cfg.table||'')+' in '+(cfg.base||'')+' · **Passes:** '+passes,
   '',
   '**Funnel**',
   '- **Rows read:** '+nf(st.rows),
-  '- **Signal Detail parsed:** '+nf(st.parsed)+' · unparsed '+nf(st.unparsed),
-  '- **Apify datasets fetched:** '+nf(st.datasets)+' of '+nf((cfg.datasetIds||[]).length)+' · jobs indexed '+nf(st.jobsIndexed),
-  '- **Rows matched to a scraped job:** '+nf(st.matched),
+  '- **Jobs:** Signal Detail parsed '+nf(st.parsed)+' · unparsed '+nf(st.unparsed)+' · datasets '+nf(st.datasets)+' of '+nf((cfg.datasetIds||[]).length)+' · jobs indexed '+nf(st.jobsIndexed)+' · rows matched '+nf(st.matched),
+  '- **Company:** BizData '+nf(st.biz_called)+' domains · matched '+nf(st.biz_matched)+' · unknown '+nf(st.biz_unknown)+' · errors '+nf(st.biz_errors),
+  '- **Role:** Existing In Role known for '+nf(st.role_known)+' domains · unknown '+nf(st.role_unknown),
+  '- **Contacts:** '+nf(st.lookups)+' lookups · matched on LinkedIn '+nf(st.lookup_matched)+' · no match '+nf(st.lookup_nomatch)+' · errors '+nf(st.lookup_errors),
   '- **Rows with something to write:** '+nf(st.rowsToWrite)+' · already complete '+nf(st.untouched),
   '- **Written:** '+nf(written)+' in '+nf(st.batches)+' batches'
 ];
-if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.name+': '+f.reason).join('\n'));
+if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.name+': '+f.reason).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(!st.rowsToWrite) lines.push('','Skipped (writes, every row already carries its fields)');
 const row={
  'Automation':'Backfill Intent Fields (one-off)',

@@ -1,10 +1,6 @@
 {
-  "updatedAt": "2026-08-23T08:08:48.716Z",
-  "createdAt": "2026-08-23T08:08:48.716Z",
   "id": "CSJ4boGKF7xeTDRC",
   "name": "Backfill Intent Fields (one-off)",
-  "active": false,
-  "isArchived": false,
   "nodes": [
     {
       "id": "b2000000-0000-4000-8000-000000000001",
@@ -61,7 +57,18 @@
         "options": {
           "fields": [
             "Signal Detail",
+            "Name",
+            "LinkedIn URL",
+            "Domain",
             "Title",
+            "Seniority",
+            "Department",
+            "State",
+            "Phone",
+            "Contact Source",
+            "Existing In Role",
+            "Description",
+            "Industry Groups",
             "Job ID",
             "Job Title",
             "Job Link",
@@ -88,12 +95,42 @@
       "executeOnce": true
     },
     {
+      "id": "b2000000-0000-4000-8000-000000000011",
+      "name": "Get Run Input",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "url": "=https://api.apify.com/v2/key-value-stores/{{ $('Parse Launch').first().json.kvStoreId || 'none' }}/records/INPUT",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aDxiCFTdpoU3NFzm",
+          "name": "Apify"
+        }
+      },
+      "executeOnce": true
+    },
+    {
       "id": "b2000000-0000-4000-8000-000000000004",
       "name": "Split Datasets",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        660,
+        880,
         0
       ],
       "parameters": {
@@ -106,7 +143,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        880,
+        1100,
         0
       ],
       "parameters": {
@@ -137,12 +174,190 @@
       }
     },
     {
+      "id": "b2000000-0000-4000-8000-000000000012",
+      "name": "Domain Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Domain-Calls.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000013",
+      "name": "BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $json.biz_url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000014",
+      "name": "SQ Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supersoniq.app/partner/v1/companies/match",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Domain Calls').item.json.sq }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000015",
+      "name": "CG Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $('Domain Calls').item.json.cg_url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000016",
+      "name": "Contact Lookups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Contact-Lookups.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000017",
+      "name": "CG Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2420,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/contacts/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.cg }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      }
+    },
+    {
       "id": "b2000000-0000-4000-8000-000000000006",
       "name": "Build Writes",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
+        2640,
         0
       ],
       "parameters": {
@@ -155,7 +370,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1320,
+        2860,
         0
       ],
       "parameters": {
@@ -189,7 +404,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1540,
+        3080,
         -100
       ],
       "parameters": {
@@ -228,7 +443,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        3300,
         0
       ],
       "parameters": {
@@ -242,7 +457,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1980,
+        3520,
         0
       ],
       "parameters": {
@@ -304,6 +519,17 @@
       "main": [
         [
           {
+            "node": "Get Run Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Run Input": {
+      "main": [
+        [
+          {
             "node": "Split Datasets",
             "type": "main",
             "index": 0
@@ -323,6 +549,72 @@
       ]
     },
     "Get Dataset": {
+      "main": [
+        [
+          {
+            "node": "Domain Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Domain Calls": {
+      "main": [
+        [
+          {
+            "node": "BizData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BizData": {
+      "main": [
+        [
+          {
+            "node": "SQ Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Count": {
+      "main": [
+        [
+          {
+            "node": "CG Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CG Count": {
+      "main": [
+        [
+          {
+            "node": "Contact Lookups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Lookups": {
+      "main": [
+        [
+          {
+            "node": "CG Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CG Lookup": {
       "main": [
         [
           {
@@ -386,28 +678,7 @@
     }
   },
   "settings": {
-    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
-    "executionOrder": "v1"
-  },
-  "staticData": {
-    "global": {
-      "runStartedAt": 1787472575218
-    }
-  },
-  "meta": null,
-  "pinData": null,
-  "versionId": "b825c898-8d65-4b91-810a-26a001b8cfa3",
-  "activeVersionId": null,
-  "triggerCount": 1,
-  "shared": [
-    {
-      "updatedAt": "2026-08-23T08:08:48.726Z",
-      "createdAt": "2026-08-23T08:08:48.726Z",
-      "role": "workflow:owner",
-      "workflowId": "CSJ4boGKF7xeTDRC",
-      "projectId": "pyoZAgnc0vv0Gq9W"
-    }
-  ],
-  "activeVersion": null,
-  "tags": []
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  }
 }

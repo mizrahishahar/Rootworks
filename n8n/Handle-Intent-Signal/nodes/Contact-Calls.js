@@ -1,9 +1,9 @@
 // Contact Calls: one row per ICP-approved company, carrying the first-hire verdict and the
 // request bodies for both contact sources, built from the play's people line.
 //
-// First hire: a source "knows" the company when it answered with a match; the count is the
-// highest across the sources that know it. Yes = known and 0; No = known and above 0;
-// Unknown = no source knows the company. Never guessed.
+// Existing In Role: a source "knows" the company when it answered with a match; the count is the
+// highest across the sources that know it; blank when no source knows the company. The tier rule
+// reads it as first hire: 0 = yes, above 0 = no, blank = unknown. Never guessed.
 const cfg=$('Parse Play').first().json;
 const parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };
 const calls=$('Count Calls').all().map(i=>i.json).filter(c=>c&&c.domain);

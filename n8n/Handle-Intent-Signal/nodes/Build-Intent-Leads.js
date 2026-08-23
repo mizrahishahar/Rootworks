@@ -9,7 +9,8 @@
 // People gate: a contact's actual title must contain one of the play's title terms and none
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
 // President -> vp) so a term written short still catches the long form. Nothing else.
-// Tier: the play's rules in order, first match wins, stamped as Target Campaign.
+// Tier: the play's rules in order, first match wins, stamped as Target Campaign. 'first hire'
+// is read off Existing In Role: 0 = yes, above 0 = no, blank (no source knows the company) = unknown.
 // Company names go out raw; the Clean Fields helper writes Company clean next (no company_clean column on Intent tables, Operator ruling 2026-08-23).
 const cfg=$('Parse Play').first().json;
 const titleCase=(s)=>String(s).replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());
@@ -57,7 +58,6 @@ function baseRow(d){
     'detected_at': nowIso,
     'ICP Reason': e.icp_reason||'',
     'Existing In Role': cc.existing_in_role,
-    'First Hire': firstHire,
     'Job ID': j.id||'', 'Job Title': j.title||'', 'Job Link': j.link||'', 'Job Posted': j.posted_at||null,
     'Job Description': j.description||'', 'Job Seniority': j.seniority||'', 'Job Function': j.function||'',
     'Job Employment Type': j.employment_type||'', 'Job Industries': j.industries||'', 'Job Applicants': j.applicants,

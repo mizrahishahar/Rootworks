@@ -8,18 +8,25 @@ They are not the wiring. A campaign holds its own explicit list of accounts, and
 
 ## The tag standard
 
-A tag names a pool with a meaning, and the pools nest:
+A tag names a pool with a meaning. The first three nest inside each other; the language tags cut across them:
 
 | Tag                                | Meaning                                                                         | Relation                       |
 | ---------------------------------- | ------------------------------------------------------------------------------- | ------------------------------ |
 | `active`                           | The current live sender pool. Every production campaign's full set              | the root pool                  |
 | `gateway`                          | The deliverability-clean subset that gateway campaigns send from                | strict subset of `active`      |
 | `{clientname}-{x}` (e.g. `dave-2`) | Rotation label: which provisioning wave an inbox came from, numbered per client, kept for history and rotation moves | subsets of `active` or retired |
+| `English` / `Hebrew` | **Only when a client sends in more than one language.** The language an inbox sends in. An inbox belongs to exactly one | crosses `active`, does not nest in it |
 | `internal` | The one sanctioned **campaign** label, for campaigns that are ours rather than a client's. Carries no inboxes | not a sender pool |
 
-Names are lowercase, always: `dave-1`, not `Dave-1`.
+Names are lowercase, always: `dave-1`, not `Dave-1`. The language tags are the exception and stay capitalised, as language names.
 
-A client may also carry an orthogonal axis when the work genuinely splits that way. Adelante runs `English` / `Hebrew`, because the copy is written in one language or the other and an inbox cannot serve both. That is a real second dimension, and it crosses `active` rather than nesting in it. What is **not** allowed is a third name for a set that already has one: Adelante's `UK` held exactly the same 40 inboxes as `adelante-2`, which is how a workspace stops being legible.
+**The language convention, in full.** Most clients never need it and must not have it. Reach for it only when the client's copy is genuinely written in two languages, because then an inbox cannot serve both: the signature, the sender name and the reply handling are all language-bound. Adelante is the live case, 40 `English` and 6 `Hebrew`. When it applies:
+
+- The two tags **partition the workspace**: every inbox carries exactly one, none carries both, and together they account for all of them.
+- They cross `active` instead of nesting inside it. `active ∩ English` is the English sending pool; `active ∩ Hebrew` is the Hebrew one. Neither language tag is itself a statement about whether an inbox is live.
+- Language is not geography. A market is not a language: `UK` and `US` are not this convention, they are the mistake below.
+
+**What is never allowed is a second name for a set that already has one.** Adelante's `UK` held exactly the same 40 inboxes as `adelante-2`, so the workspace carried three names for two ideas and stopped being readable. If a proposed tag would have identical membership to an existing one, it is not a new dimension, it is a synonym. Delete it.
 
 Rules that keep it coherent:
 

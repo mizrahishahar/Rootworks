@@ -1,37 +1,22 @@
+// Domains that went to Supersoniq and came back with no contacts -> overflow rows.
+// Rewritten 2026-08-24 for the batch loop: submitted domains come from Parse Domains
+// (every batch drew from that list) and contact-bearing domains from the loop tally,
+// instead of the retired parent-level Build SQ Requests / SQ Guard nodes.
 const sd = $getWorkflowStaticData('global');
 sd.overflowUrl = '';
 sd.overflowError = '';
 sd.overflowFolderId = '';
 sd.overflowCount = 0;
 
-const submitted = [];
-for (const it of $('Build SQ Requests').all()) {
-  const cs = Array.isArray(it.json.companies) ? it.json.companies : [];
-  for (const c of cs) {
-    const d = String((c && c.domain) || '').trim().toLowerCase();
-    if (d) submitted.push(d);
-  }
-}
-
-const withContacts = new Set();
-for (const it of $('SQ Guard').all()) {
-  const rs = Array.isArray(it.json.results) ? it.json.results : [];
-  for (const r of rs) {
-    const cts = (r && Array.isArray(r.contacts)) ? r.contacts : [];
-    for (const ct of cts) {
-      const d = String((ct && ct.company_domain) || '').trim().toLowerCase();
-      if (d) withContacts.add(d);
-    }
-  }
-}
-
-let cmap = {};
-try { cmap = $('Parse Domains').first().json._cmap || {}; } catch (e) { cmap = {}; }
+const pd = $('Parse Domains').first().json;
+const submitted = pd._domains || [];
+const cmap = pd._cmap || {};
+const withContacts = (sd.cbState && sd.cbState.withContacts) || {};
 
 const seen = new Set();
 const out = [];
 for (const d of submitted) {
-  if (withContacts.has(d) || seen.has(d)) continue;
+  if (withContacts[d] || seen.has(d)) continue;
   seen.add(d);
   const c = cmap[d] || {};
   out.push({ json: {

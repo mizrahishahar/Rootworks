@@ -15,6 +15,7 @@ if(D.dncTableId){
 }
 const plan=D.plan||{varCols:[]};
 const requiredCore=D.requiredCore||[];
+const needFirstName=D.needFirstName!==false;
 const emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };
 // A usable first name starts with a letter and has at least two letters, in any language.
@@ -30,10 +31,15 @@ for(const r of rowsArr){
   if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }
   const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();
   if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }
-  const fn=val(f['first_name']);
+  // The first name blocks only when the view shows it (D.needFirstName). On a
+  // company-inbox list it is absent by design: send the row, just without a name.
+  const fnRaw=val(f['first_name']);
   const fnHe=val(f['first_name_he']);
-  if(!fn&&!fnHe){ rec.skip='missing first name'; continue; }
-  if(!NAME_OK(fn)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fn||fnHe).slice(0,40); continue; }
+  if(needFirstName){
+    if(!fnRaw&&!fnHe){ rec.skip='missing first name'; continue; }
+    if(!NAME_OK(fnRaw)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fnRaw||fnHe).slice(0,40); continue; }
+  }
+  const fn=NAME_OK(fnRaw)?fnRaw:'';
   const comp=val(f['company_clean'])||val(f['Company']);
   if(!comp){ rec.skip='missing company name'; continue; }
   // Visible standard fields must be filled too.

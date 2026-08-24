@@ -8,7 +8,9 @@ D.dncTableId=dncT?dncT.id:'';
 const vm=D.viewMeta||{};
 const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.
-// IGNORE never blocks. IDENTITY is checked separately as a hard requirement.
+// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,
+// except the first name: it blocks only when the view actually shows first_name
+// or first_name_he, so company-inbox lists deploy without a person name.
 // CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.
 const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX']);
 const IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);
@@ -18,7 +20,7 @@ const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').to
 const fields=t.fields||[];
 let hasDe=false;
 for(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }
-const varCols=[]; const requiredCore=[];
+const varCols=[]; const requiredCore=[]; let needFirstName=true;
 const consider=(name)=>{
   if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;
   if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }
@@ -27,7 +29,8 @@ const consider=(name)=>{
 if(visible){
   const byId={};
   for(const f of fields) byId[f.id]=f;
-  for(const fid of visible){ const f=byId[fid]; if(f) consider(f.name); }
+  needFirstName=false;
+  for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }
 } else {
   let why='view metadata unavailable';
   if(!D.viewId) why='view "'+D.view+'" not found in table views list';
@@ -37,5 +40,7 @@ if(visible){
 }
 D.plan={varCols};
 D.requiredCore=requiredCore;
+D.needFirstName=needFirstName;
+if(!needFirstName) D.warnings.push('view "'+D.view+'" does not show first_name; the first name is not enforced and leads deploy without one');
 D.schemaTables=null; D.viewMeta=null;
 return [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId}}];

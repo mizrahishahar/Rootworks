@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-25T08:59:06.508Z",
+  "updatedAt": "2026-08-25T10:03:58.825Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to Campaign",
@@ -1953,7 +1953,10 @@
       "deploy_4690": null,
       "deploy_4691": null,
       "deploy_5005": null,
-      "deploy_5006": null
+      "deploy_5006": null,
+      "deploy_5009": null,
+      "deploy_5010": null,
+      "deploy_5012": null
     }
   },
   "meta": {
@@ -1962,9 +1965,9 @@
   },
   "nodeGroups": [],
   "pinData": null,
-  "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
-  "activeVersionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
-  "versionCounter": 27,
+  "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
+  "activeVersionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
+  "versionCounter": 28,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "shared": [
@@ -1989,9 +1992,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-25T08:59:06.513Z",
-    "createdAt": "2026-08-25T08:59:06.513Z",
-    "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
+    "updatedAt": "2026-08-25T10:03:58.831Z",
+    "createdAt": "2026-08-25T10:03:58.831Z",
+    "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -2931,7 +2934,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst patches=[];\nlet deployed=0, missing=0, stamped=0;\nconst skipCounts={};\nfor(const rid of Object.keys(D.rows||{})){\n  const r=D.rows[rid];\n  let v='', inCamp=false;\n  if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }\n  else if(D.rbFailed){ continue; }\n  else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; inCamp=true; }\n  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; }\n  const fields={'Deploy Error':v};\n  // Membership stamp: confirmed leads get this campaign's mirror row linked,\n  // as a union with the row's existing links, never a replacement.\n  if(inCamp&&D.mirrorRid){\n    const set={}; for(const c of (r.camps||[])) set[c]=1; set[D.mirrorRid]=1;\n    fields['Campaigns']=Object.keys(set); stamped++;\n  }\n  patches.push({id:rid, fields});\n}\nD.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts; D.campsStamped=stamped;\nif(deployed&&!stamped&&!D.rbFailed) D.warnings.push('deployed leads were not stamped with a Campaigns link (no mirror row resolved)');\nD.inCamp={}; D.emailToRow={};\nconst out=[];\nfor(let i=0;i<patches.length;i+=10) out.push({json:{crBase:D.crBase, tableId:D.tableId, body:{records:patches.slice(i,i+10), typecast:true}}});\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst patches=[];\nlet deployed=0, missing=0, stamped=0;\nconst skipCounts={};\nconst missingIdx=[];\nfor(const rid of Object.keys(D.rows||{})){\n  const r=D.rows[rid];\n  let v='', inCamp=false;\n  if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }\n  else if(D.rbFailed){ continue; }\n  else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; inCamp=true; }\n  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; missingIdx.push(patches.length); }\n  const fields={'Deploy Error':v};\n  // Membership stamp: confirmed leads get this campaign's mirror row linked,\n  // as a union with the row's existing links, never a replacement.\n  if(inCamp&&D.mirrorRid){\n    const set={}; for(const c of (r.camps||[])) set[c]=1; set[D.mirrorRid]=1;\n    fields['Campaigns']=Object.keys(set); stamped++;\n  }\n  patches.push({id:rid, fields});\n}\n// PV reports dedupe blocks as counts only, never per email. When every\n// sent-but-absent row is accounted for by those counts, all of them were\n// dedupe and the stamp can say so; any mismatch keeps the honest combined\n// wording, because a chunk failure also lands rows here.\nconst dedupeTotal=D.pv?(Number(D.pv.skipped||0)+Number(D.pv.already||0)):0;\nif(missing>0&&missing===dedupeTotal){\n  const lbl='blocked by dedupe mode \"'+(D.dedupe||'Strict')+'\" (already in the workspace or campaign)';\n  for(const i of missingIdx) patches[i].fields['Deploy Error']=lbl;\n}\nD.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts; D.campsStamped=stamped;\nif(deployed&&!stamped&&!D.rbFailed) D.warnings.push('deployed leads were not stamped with a Campaigns link (no mirror row resolved)');\nD.inCamp={}; D.emailToRow={};\nconst out=[];\nfor(let i=0;i<patches.length;i+=10) out.push({json:{crBase:D.crBase, tableId:D.tableId, body:{records:patches.slice(i,i+10), typecast:true}}});\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
         }
       },
       {
@@ -3928,34 +3931,34 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-08-25T08:59:06.670Z",
-        "id": 1800,
+        "createdAt": "2026-08-25T10:03:58.975Z",
+        "id": 1804,
         "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
+        "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-25T08:59:11.110Z",
-        "id": 1802,
+        "createdAt": "2026-08-25T10:04:03.986Z",
+        "id": 1806,
         "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
+        "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-25T08:59:06.628Z",
-        "id": 1799,
+        "createdAt": "2026-08-25T10:03:58.941Z",
+        "id": 1803,
         "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
+        "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-08-25T08:59:11.061Z",
-        "id": 1801,
+        "createdAt": "2026-08-25T10:04:03.943Z",
+        "id": 1805,
         "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "1df14ae8-7136-4565-abc0-2bba30d2bf63",
+        "versionId": "d29f0c5c-dc58-400e-bb6e-ba37115f14d9",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       }

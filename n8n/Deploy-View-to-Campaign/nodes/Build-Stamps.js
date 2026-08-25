@@ -2,13 +2,14 @@ const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; con
 const patches=[];
 let deployed=0, missing=0, stamped=0;
 const skipCounts={};
+const missingIdx=[];
 for(const rid of Object.keys(D.rows||{})){
   const r=D.rows[rid];
   let v='', inCamp=false;
   if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }
   else if(D.rbFailed){ continue; }
   else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; inCamp=true; }
-  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; }
+  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; missingIdx.push(patches.length); }
   const fields={'Deploy Error':v};
   // Membership stamp: confirmed leads get this campaign's mirror row linked,
   // as a union with the row's existing links, never a replacement.
@@ -17,6 +18,15 @@ for(const rid of Object.keys(D.rows||{})){
     fields['Campaigns']=Object.keys(set); stamped++;
   }
   patches.push({id:rid, fields});
+}
+// PV reports dedupe blocks as counts only, never per email. When every
+// sent-but-absent row is accounted for by those counts, all of them were
+// dedupe and the stamp can say so; any mismatch keeps the honest combined
+// wording, because a chunk failure also lands rows here.
+const dedupeTotal=D.pv?(Number(D.pv.skipped||0)+Number(D.pv.already||0)):0;
+if(missing>0&&missing===dedupeTotal){
+  const lbl='blocked by dedupe mode "'+(D.dedupe||'Strict')+'" (already in the workspace or campaign)';
+  for(const i of missingIdx) patches[i].fields['Deploy Error']=lbl;
 }
 D.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts; D.campsStamped=stamped;
 if(deployed&&!stamped&&!D.rbFailed) D.warnings.push('deployed leads were not stamped with a Campaigns link (no mirror row resolved)');

@@ -35,5 +35,7 @@ A view built from this craft is correct before it is handed over: every filter v
 - **Never sweep blank rows in by accident.** A `doesNotContain` condition matches blank rows too; state what happens to them.
 - **Never treat a clean count as proof.** The spot-check exists because a count can be exactly wrong.
 - **Reuse a verified layer's count** instead of re-querying it out of habit.
+- **Never use `isNotEmpty` on a select field.** A singleSelect whose choice list contains a blank-NAMED choice reads as non-empty on every row that carries it, so `isNotEmpty` returns the entire table with no error. On `USA DTC - Contacts` this made `Employees` unusable across all 29,177 rows and killed a segment's staff-size axis outright. Gate on explicit choice IDs with `isAnyOf` / `isNoneOf`, pulled from `get_table_schema`, always.
+- **Never trust a stale table listing.** A table read as absent from an earlier listing was live with 29,177 rows. Re-read the schema against the base before asserting a table or field does not exist.
 
 Deploy views, the prioritized cascade they form, their naming, and their reconciliation craft live in `deploy-views.md`; the counting and verification methods above are what that file's arithmetic runs on.

@@ -5,6 +5,11 @@ const t=tables.find(x=>x.id===D.tableId);
 if(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
 const dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');
 D.dncTableId=dncT?dncT.id:'';
+// The campaigns mirror table, found by the same signature the PV->CR sync uses:
+// has Campaign ID and Sequencer, does not have Final Email.
+const mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });
+D.mirrorTableId=mirT?mirT.id:'';
+if(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');
 const vm=D.viewMeta||{};
 const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.
@@ -43,4 +48,4 @@ D.requiredCore=requiredCore;
 D.needFirstName=needFirstName;
 if(!needFirstName) D.warnings.push('view "'+D.view+'" does not show first_name; the first name is not enforced and leads deploy without one');
 D.schemaTables=null; D.viewMeta=null;
-return [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId}}];
+return [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];

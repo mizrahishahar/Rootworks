@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-24T11:37:56.480Z",
+  "updatedAt": "2026-08-25T08:47:50.654Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to Campaign",
+  "description": "On-demand webhook: deploys an Airtable view's leads into a PlusVibe campaign (replaces manual CSV upload). Pre-validates emails, honors DNC, verifies by read-back, stamps Deploy Error, writes a Lead Lists receipt, updates the launch row. UNPUBLISHED.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -785,6 +786,154 @@
       }
     },
     {
+      "id": "a1f2c3d4-1111-4aaa-9bbb-000000000001",
+      "name": "Find Mirror Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4320,
+        -60
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Plan Variables').first().json.crBase }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Plan Variables').first().json.mirrorTableId || 'tblMISSING' }}"
+        },
+        "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1f2c3d4-2222-4aaa-9bbb-000000000002",
+      "name": "Resolve Mirror",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4460,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Resolve-Mirror.js"
+      }
+    },
+    {
+      "id": "a1f2c3d4-3333-4aaa-9bbb-000000000003",
+      "name": "Need Mirror Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4600,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "nm1",
+              "leftValue": "={{ $json.needCreate ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1f2c3d4-4444-4aaa-9bbb-000000000004",
+      "name": "Create Mirror Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4740,
+        -60
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Plan Variables').first().json.crBase }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Plan Variables').first().json.mirrorTableId }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Campaign": "={{ $json.campName }}",
+            "Campaign ID": "={{ $json.campaignId }}",
+            "Sequencer": "PlusVibe"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1f2c3d4-5555-4aaa-9bbb-000000000005",
+      "name": "Collect Mirror",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4880,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Mirror.js"
+      }
+    },
+    {
       "id": "4ebdff04-d0a0-42b4-aa5c-0140cf6dbb07",
       "name": "Build Stamps",
       "type": "n8n-nodes-base.code",
@@ -1517,7 +1666,7 @@
       "main": [
         [
           {
-            "node": "Build Stamps",
+            "node": "Find Mirror Row",
             "type": "main",
             "index": 0
           }
@@ -1525,6 +1674,68 @@
         [
           {
             "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Mirror Row": {
+      "main": [
+        [
+          {
+            "node": "Resolve Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Mirror": {
+      "main": [
+        [
+          {
+            "node": "Need Mirror Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need Mirror Row?": {
+      "main": [
+        [
+          {
+            "node": "Create Mirror Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Stamps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Mirror Row": {
+      "main": [
+        [
+          {
+            "node": "Collect Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Mirror": {
+      "main": [
+        [
+          {
+            "node": "Build Stamps",
             "type": "main",
             "index": 0
           }
@@ -1740,30 +1951,46 @@
       "deploy_4617": null,
       "deploy_4624": null,
       "deploy_4690": null,
-      "deploy_4691": null
+      "deploy_4691": null,
+      "deploy_5005": null
     }
   },
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": null,
-  "versionId": "8f58dbba-9b68-4895-8fb5-1890b3214b5c",
-  "activeVersionId": "8f58dbba-9b68-4895-8fb5-1890b3214b5c",
+  "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+  "activeVersionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+  "versionCounter": 26,
   "triggerCount": 1,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-08-08T20:41:34.896Z",
       "createdAt": "2026-08-08T20:41:34.896Z",
       "role": "workflow:owner",
       "workflowId": "JuWIbF6YCeRibhyg",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-24T11:37:56.497Z",
-    "createdAt": "2026-08-24T11:37:56.497Z",
-    "versionId": "8f58dbba-9b68-4895-8fb5-1890b3214b5c",
+    "updatedAt": "2026-08-25T08:47:50.661Z",
+    "createdAt": "2026-08-25T08:47:50.661Z",
+    "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -2023,7 +2250,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst tables=D.schemaTables||[];\nconst t=tables.find(x=>x.id===D.tableId);\nif(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');\nD.dncTableId=dncT?dncT.id:'';\nconst vm=D.viewMeta||{};\nconst visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;\n// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.\n// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,\n// except the first name: it blocks only when the view actually shows first_name\n// or first_name_he, so company-inbox lists deploy without a person name.\n// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.\nconst IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX']);\nconst IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);\nconst CORE_LEAD=new Set(['State','State Full','City','Country']);\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst fields=t.fields||[];\nlet hasDe=false;\nfor(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }\nconst varCols=[]; const requiredCore=[]; let needFirstName=true;\nconst consider=(name)=>{\n  if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;\n  if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }\n  varCols.push({name:name, key:snake(name)});\n};\nif(visible){\n  const byId={};\n  for(const f of fields) byId[f.id]=f;\n  needFirstName=false;\n  for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }\n} else {\n  let why='view metadata unavailable';\n  if(!D.viewId) why='view \"'+D.view+'\" not found in table views list';\n  else if(D.viewType&&D.viewType!=='grid') why='view \"'+D.view+'\" is type '+D.viewType+', not grid';\n  else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);\n  D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan={varCols};\nD.requiredCore=requiredCore;\nD.needFirstName=needFirstName;\nif(!needFirstName) D.warnings.push('view \"'+D.view+'\" does not show first_name; the first name is not enforced and leads deploy without one');\nD.schemaTables=null; D.viewMeta=null;\nreturn [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst tables=D.schemaTables||[];\nconst t=tables.find(x=>x.id===D.tableId);\nif(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');\nD.dncTableId=dncT?dncT.id:'';\n// The campaigns mirror table, found by the same signature the PV->CR sync uses:\n// has Campaign ID and Sequencer, does not have Final Email.\nconst mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });\nD.mirrorTableId=mirT?mirT.id:'';\nif(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');\nconst vm=D.viewMeta||{};\nconst visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;\n// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.\n// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,\n// except the first name: it blocks only when the view actually shows first_name\n// or first_name_he, so company-inbox lists deploy without a person name.\n// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.\nconst IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX']);\nconst IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);\nconst CORE_LEAD=new Set(['State','State Full','City','Country']);\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst fields=t.fields||[];\nlet hasDe=false;\nfor(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }\nconst varCols=[]; const requiredCore=[]; let needFirstName=true;\nconst consider=(name)=>{\n  if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;\n  if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }\n  varCols.push({name:name, key:snake(name)});\n};\nif(visible){\n  const byId={};\n  for(const f of fields) byId[f.id]=f;\n  needFirstName=false;\n  for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }\n} else {\n  let why='view metadata unavailable';\n  if(!D.viewId) why='view \"'+D.view+'\" not found in table views list';\n  else if(D.viewType&&D.viewType!=='grid') why='view \"'+D.view+'\" is type '+D.viewType+', not grid';\n  else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);\n  D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan={varCols};\nD.requiredCore=requiredCore;\nD.needFirstName=needFirstName;\nif(!needFirstName) D.warnings.push('view \"'+D.view+'\" does not show first_name; the first name is not enforced and leads deploy without one');\nD.schemaTables=null; D.viewMeta=null;\nreturn [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];"
         }
       },
       {
@@ -2277,7 +2504,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{ready:false, abort:true}}]; }\nconst rowsArr=D.viewRows||[];\nD.rowsTotal=rowsArr.length;\nif(!rowsArr.length){ D.abort='view empty or not found'; D.errors.push('view empty or not found: \"'+(D.view||'')+'\"; nothing was sent'); return [{json:{ready:false, abort:true}}]; }\nconst dnc={};\nif(D.dncTableId){\n  try{\n    for(const it of $('Read DNC').all()){\n      const j=it.json||{};\n      const recs=Array.isArray(j.records)?j.records:[];\n      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }\n    }\n  }catch(e){}\n}\nconst plan=D.plan||{varCols:[]};\nconst requiredCore=D.requiredCore||[];\nconst needFirstName=D.needFirstName!==false;\nconst emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu)||[]).length>=2; };\nD.rows={}; D.emailToRow={}; D.varMisses={};\nconst leads=[];\nfor(const r of rowsArr){\n  const f=r.fields||{};\n  const email=String(f['Final Email']||'').trim();\n  const rec={email:email.toLowerCase(), skip:null};\n  D.rows[r.id]=rec;\n  if(!email){ rec.skip='missing Final Email'; continue; }\n  if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }\n  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();\n  if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }\n  // The first name blocks only when the view shows it (D.needFirstName). On a\n  // company-inbox list it is absent by design: send the row, just without a name.\n  const fnRaw=val(f['first_name']);\n  const fnHe=val(f['first_name_he']);\n  if(needFirstName){\n    if(!fnRaw&&!fnHe){ rec.skip='missing first name'; continue; }\n    if(!NAME_OK(fnRaw)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fnRaw||fnHe).slice(0,40); continue; }\n  }\n  const fn=NAME_OK(fnRaw)?fnRaw:'';\n  const comp=val(f['company_clean'])||val(f['Company']);\n  if(!comp){ rec.skip='missing company name'; continue; }\n  // Visible standard fields must be filled too.\n  let coreMiss='';\n  for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }\n  if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }\n  const lead={email:email};\n  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};\n  const soc=val(f['Social']);\n  if(/^https?:\\/\\//i.test(soc)) core.linkedin_person_url=soc;\n  for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }\n  const cv={}; const missVars=[];\n  for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }\n  if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }\n  if(Object.keys(cv).length) lead.custom_variables=cv;\n  D.emailToRow[email.toLowerCase()]=r.id;\n  leads.push(lead);\n}\nD.viewRows=null;\nconst chunks=[];\nfor(let i=0;i<leads.length;i+=200) chunks.push(leads.slice(i,i+200));\nD.send={queue:chunks, idx:0, attempts:0};\nconst flagMap={'Standard':{skip_lead_in_active_pause_camp:true},'Strict':{skip_if_in_workspace:true},'Active-only':{skip_lead_for_active_only_camp:true},'None':{}};\nD.flags=Object.assign({is_overwrite:true}, flagMap[D.dedupe]||flagMap['Strict']);\nif(!chunks.length) return [{json:{ready:false, abort:false}}];\nreturn [{json:{ready:true, abort:false, body:Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunks[0]}, D.flags), wait:0}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{ready:false, abort:true}}]; }\nconst rowsArr=D.viewRows||[];\nD.rowsTotal=rowsArr.length;\nif(!rowsArr.length){ D.abort='view empty or not found'; D.errors.push('view empty or not found: \"'+(D.view||'')+'\"; nothing was sent'); return [{json:{ready:false, abort:true}}]; }\nconst dnc={};\nif(D.dncTableId){\n  try{\n    for(const it of $('Read DNC').all()){\n      const j=it.json||{};\n      const recs=Array.isArray(j.records)?j.records:[];\n      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }\n    }\n  }catch(e){}\n}\nconst plan=D.plan||{varCols:[]};\nconst requiredCore=D.requiredCore||[];\nconst needFirstName=D.needFirstName!==false;\nconst emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu)||[]).length>=2; };\nD.rows={}; D.emailToRow={}; D.varMisses={};\nconst leads=[];\nfor(const r of rowsArr){\n  const f=r.fields||{};\n  const email=String(f['Final Email']||'').trim();\n  const rec={email:email.toLowerCase(), skip:null};\n  D.rows[r.id]=rec;\n  if(!email){ rec.skip='missing Final Email'; continue; }\n  if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }\n  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();\n  if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }\n  // The first name blocks only when the view shows it (D.needFirstName). On a\n  // company-inbox list it is absent by design: send the row, just without a name.\n  const fnRaw=val(f['first_name']);\n  const fnHe=val(f['first_name_he']);\n  if(needFirstName){\n    if(!fnRaw&&!fnHe){ rec.skip='missing first name'; continue; }\n    if(!NAME_OK(fnRaw)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fnRaw||fnHe).slice(0,40); continue; }\n  }\n  const fn=NAME_OK(fnRaw)?fnRaw:'';\n  const comp=val(f['company_clean'])||val(f['Company']);\n  if(!comp){ rec.skip='missing company name'; continue; }\n  // Visible standard fields must be filled too.\n  let coreMiss='';\n  for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }\n  if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }\n  const lead={email:email};\n  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};\n  const soc=val(f['Social']);\n  if(/^https?:\\/\\//i.test(soc)) core.linkedin_person_url=soc;\n  for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }\n  const cv={}; const missVars=[];\n  for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }\n  if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }\n  if(Object.keys(cv).length) lead.custom_variables=cv;\n  // Existing Campaigns links, kept so the stamp appends and never replaces.\n  rec.camps=Array.isArray(f['Campaigns'])?f['Campaigns']:[];\n  D.emailToRow[email.toLowerCase()]=r.id;\n  leads.push(lead);\n}\nD.viewRows=null;\nconst chunks=[];\nfor(let i=0;i<leads.length;i+=200) chunks.push(leads.slice(i,i+200));\nD.send={queue:chunks, idx:0, attempts:0};\nconst flagMap={'Standard':{skip_lead_in_active_pause_camp:true},'Strict':{skip_if_in_workspace:true},'Active-only':{skip_lead_for_active_only_camp:true},'None':{}};\nD.flags=Object.assign({is_overwrite:true}, flagMap[D.dedupe]||flagMap['Strict']);\nif(!chunks.length) return [{json:{ready:false, abort:false}}];\nreturn [{json:{ready:true, abort:false, body:Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunks[0]}, D.flags), wait:0}}];"
         }
       },
       {
@@ -2545,6 +2772,154 @@
         }
       },
       {
+        "id": "a1f2c3d4-1111-4aaa-9bbb-000000000001",
+        "name": "Find Mirror Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4320,
+          -60
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Variables').first().json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Variables').first().json.mirrorTableId || 'tblMISSING' }}"
+          },
+          "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1f2c3d4-2222-4aaa-9bbb-000000000002",
+        "name": "Resolve Mirror",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4460,
+          -60
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nD.mirrorRid='';\n// No mirror table (warned in Plan Variables), aborted run, or a failed read-back:\n// no links get stamped, so no row is needed.\nif(D.abort||D.rbFailed||!D.mirrorTableId){ return [{json:{needCreate:false}}]; }\nlet rid='', err='';\nfor(const it of $input.all()){\n  const j=it.json||{};\n  if(j.error){ if(!err) err=JSON.stringify(j.error).slice(0,150); }\n  else if(j.id&&!rid) rid=j.id;\n}\n// A failed lookup must not create: a duplicate mirror row would split the links.\nif(err){ D.warnings.push('mirror row lookup failed: '+err+'; Campaigns not stamped'); return [{json:{needCreate:false}}]; }\nif(rid){ D.mirrorRid=rid; return [{json:{needCreate:false}}]; }\nreturn [{json:{needCreate:true, campName:D.campName||D.target||'', campaignId:D.target||''}}];\n"
+        }
+      },
+      {
+        "id": "a1f2c3d4-3333-4aaa-9bbb-000000000003",
+        "name": "Need Mirror Row?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          4600,
+          -60
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "nm1",
+                "leftValue": "={{ $json.needCreate ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1f2c3d4-4444-4aaa-9bbb-000000000004",
+        "name": "Create Mirror Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4740,
+          -60
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Variables').first().json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Variables').first().json.mirrorTableId }}"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $json.campName }}",
+              "Campaign ID": "={{ $json.campaignId }}",
+              "Sequencer": "PlusVibe"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1f2c3d4-5555-4aaa-9bbb-000000000005",
+        "name": "Collect Mirror",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4880,
+          -60
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst j=($input.first()||{}).json||{};\nif(j.id){ D.mirrorRid=j.id; D.warnings.push('mirror row created for campaign \"'+(D.campName||D.target||'?')+'\" (the deployment standard normally creates it at campaign build)'); }\nelse { D.mirrorRid=''; D.warnings.push('mirror row create failed: '+JSON.stringify(j.error||j).slice(0,150)+'; Campaigns not stamped'); }\nreturn [{json:{ok:true}}];\n"
+        }
+      },
+      {
         "id": "4ebdff04-d0a0-42b4-aa5c-0140cf6dbb07",
         "name": "Build Stamps",
         "type": "n8n-nodes-base.code",
@@ -2555,7 +2930,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst patches=[];\nlet deployed=0, missing=0;\nconst skipCounts={};\nfor(const rid of Object.keys(D.rows||{})){\n  const r=D.rows[rid];\n  let v='';\n  if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }\n  else if(D.rbFailed){ continue; }\n  else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; }\n  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; }\n  patches.push({id:rid, fields:{'Deploy Error':v}});\n}\nD.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts;\nD.inCamp={}; D.emailToRow={};\nconst out=[];\nfor(let i=0;i<patches.length;i+=10) out.push({json:{crBase:D.crBase, tableId:D.tableId, body:{records:patches.slice(i,i+10), typecast:true}}});\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst patches=[];\nlet deployed=0, missing=0, stamped=0;\nconst skipCounts={};\nfor(const rid of Object.keys(D.rows||{})){\n  const r=D.rows[rid];\n  let v='', inCamp=false;\n  if(r.skip){ v=r.skip; const key=r.skip.indexOf('DNC:')===0?'DNC':r.skip; skipCounts[key]=(skipCounts[key]||0)+1; }\n  else if(D.rbFailed){ continue; }\n  else if(r.email&&D.inCamp[r.email]){ v=''; deployed++; inCamp=true; }\n  else { v='not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; }\n  const fields={'Deploy Error':v};\n  // Membership stamp: confirmed leads get this campaign's mirror row linked,\n  // as a union with the row's existing links, never a replacement.\n  if(inCamp&&D.mirrorRid){\n    const set={}; for(const c of (r.camps||[])) set[c]=1; set[D.mirrorRid]=1;\n    fields['Campaigns']=Object.keys(set); stamped++;\n  }\n  patches.push({id:rid, fields});\n}\nD.deployed=deployed; D.missing=missing; D.skipCounts=skipCounts; D.campsStamped=stamped;\nif(deployed&&!stamped&&!D.rbFailed) D.warnings.push('deployed leads were not stamped with a Campaigns link (no mirror row resolved)');\nD.inCamp={}; D.emailToRow={};\nconst out=[];\nfor(let i=0;i<patches.length;i+=10) out.push({json:{crBase:D.crBase, tableId:D.tableId, body:{records:patches.slice(i,i+10), typecast:true}}});\nif(!out.length) return [{json:{_none:true}}];\nreturn out;"
         }
       },
       {
@@ -2761,7 +3136,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;\nconst D=sd[dk]||{errors:['deploy state missing'],warnings:[],counters:[],rows:{},skipCounts:{},launchId:''};\ntry{ const r=($('Create Lead List').first()||{}).json||{}; if(!r.id&&!D.abort) D.warnings.push('Lead Lists receipt creation failed'); }catch(e){ if(!D.abort) D.warnings.push('Lead Lists receipt not created'); }\nconst failed=D.errors||[];\nconst sc=D.skipCounts||{};\nconst skipTotal=Object.keys(sc).reduce((s,k)=>s+sc[k],0);\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst md=[];\nmd.push('**Deployed '+fmt(D.deployed||0)+' of '+fmt(D.rowsTotal||0)+' view rows to '+(D.campName||'?')+'**');\nmd.push('');\nmd.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+')');\nmd.push('**View:** '+(D.view||'?'));\nif(D.viewLink) md.push('**Link:** '+D.viewLink);\nmd.push('**Dedupe mode:** '+(D.dedupe||'Strict'));\nconst P=D.pv;\nif(P){\n  md.push('');\n  md.push('**Sent to PlusVibe**');\n  md.push('- Sent: '+fmt(P.sent));\n  md.push('- Accepted: '+fmt(P.uploaded));\n  const diff=(P.sent||0)-(P.uploaded||0);\n  md.push('- Not accepted: '+fmt(diff));\n  if(P.skipped) md.push('   - Already in the workspace, blocked by dedupe mode \"'+(D.dedupe||'Strict')+'\": '+fmt(P.skipped));\n  if(P.already) md.push('   - Already in this campaign: '+fmt(P.already));\n  if(P.duplicate) md.push('   - Same email twice in the upload: '+fmt(P.duplicate));\n  if(P.invalid) md.push('   - PlusVibe judged the email invalid: '+fmt(P.invalid));\n  if(P.overflowed) md.push('   - Over your plan limit: '+fmt(P.overflowed));\n  if(P.overwritten) md.push('   - Existing lead refreshed instead of added: '+fmt(P.overwritten));\n  if(P.remaining!==null&&P.remaining!==undefined) md.push('- Leads left in plan: '+fmt(P.remaining));\n}\nif(D.missing){ md.push('- Sent but not found in the campaign afterwards: '+fmt(D.missing)); }\nconst vm=D.varMisses||{};\nconst vmKeys=Object.keys(vm).sort((a,b)=>vm[b]-vm[a]);\nif(vmKeys.length){\n  md.push('');\n  md.push('**Not sent: a required column was empty**');\n  md.push('These rows never left Airtable. Fill the column or hide it from the view.');\n  for(const k of vmKeys) md.push('- '+k+' was empty on '+fmt(vm[k])+' row'+(vm[k]===1?'':'s'));\n}\nif(skipTotal){\n  md.push('');\n  md.push('**Not sent: other reasons ('+fmt(skipTotal)+')**');\n  for(const k of Object.keys(sc)) md.push('- '+k+': '+fmt(sc[k]));\n}\nif(D.receiptName){ md.push(''); md.push('**Lead list receipt:** '+D.receiptName); }\nif((D.warnings||[]).length){ md.push(''); md.push('**Warnings ('+D.warnings.length+')**'); for(const w of D.warnings) md.push('- '+w); }\nif(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }\nconst desc=md.join('\\n');\nconst durS=Math.round((Date.now()-(D.startedAt||Date.now()))/1000);\nsd[dk]=null;\nconst row={\n  'Status':failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Run at':D.runAt||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':D.rowsTotal||0,\n  'Records Out':D.deployed||0,\n  'Errors':failed.length,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':desc.slice(0,95000)\n};\nreturn [{json:row}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;\nconst D=sd[dk]||{errors:['deploy state missing'],warnings:[],counters:[],rows:{},skipCounts:{},launchId:''};\ntry{ const r=($('Create Lead List').first()||{}).json||{}; if(!r.id&&!D.abort) D.warnings.push('Lead Lists receipt creation failed'); }catch(e){ if(!D.abort) D.warnings.push('Lead Lists receipt not created'); }\nconst failed=D.errors||[];\nconst sc=D.skipCounts||{};\nconst skipTotal=Object.keys(sc).reduce((s,k)=>s+sc[k],0);\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst md=[];\nmd.push('**Deployed '+fmt(D.deployed||0)+' of '+fmt(D.rowsTotal||0)+' view rows to '+(D.campName||'?')+'**');\nmd.push('');\nmd.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+')');\nmd.push('**View:** '+(D.view||'?'));\nif(D.viewLink) md.push('**Link:** '+D.viewLink);\nmd.push('**Dedupe mode:** '+(D.dedupe||'Strict'));\nif(D.campsStamped) md.push('**Campaigns links stamped:** '+fmt(D.campsStamped)+' (this list = filter Campaigns has the campaign)');\nconst P=D.pv;\nif(P){\n  md.push('');\n  md.push('**Sent to PlusVibe**');\n  md.push('- Sent: '+fmt(P.sent));\n  md.push('- Accepted: '+fmt(P.uploaded));\n  const diff=(P.sent||0)-(P.uploaded||0);\n  md.push('- Not accepted: '+fmt(diff));\n  if(P.skipped) md.push('   - Already in the workspace, blocked by dedupe mode \"'+(D.dedupe||'Strict')+'\": '+fmt(P.skipped));\n  if(P.already) md.push('   - Already in this campaign: '+fmt(P.already));\n  if(P.duplicate) md.push('   - Same email twice in the upload: '+fmt(P.duplicate));\n  if(P.invalid) md.push('   - PlusVibe judged the email invalid: '+fmt(P.invalid));\n  if(P.overflowed) md.push('   - Over your plan limit: '+fmt(P.overflowed));\n  if(P.overwritten) md.push('   - Existing lead refreshed instead of added: '+fmt(P.overwritten));\n  if(P.remaining!==null&&P.remaining!==undefined) md.push('- Leads left in plan: '+fmt(P.remaining));\n}\nif(D.missing){ md.push('- Sent but not found in the campaign afterwards: '+fmt(D.missing)); }\nconst vm=D.varMisses||{};\nconst vmKeys=Object.keys(vm).sort((a,b)=>vm[b]-vm[a]);\nif(vmKeys.length){\n  md.push('');\n  md.push('**Not sent: a required column was empty**');\n  md.push('These rows never left Airtable. Fill the column or hide it from the view.');\n  for(const k of vmKeys) md.push('- '+k+' was empty on '+fmt(vm[k])+' row'+(vm[k]===1?'':'s'));\n}\nif(skipTotal){\n  md.push('');\n  md.push('**Not sent: other reasons ('+fmt(skipTotal)+')**');\n  for(const k of Object.keys(sc)) md.push('- '+k+': '+fmt(sc[k]));\n}\nif(D.receiptName){ md.push(''); md.push('**Lead list receipt:** '+D.receiptName); }\nif((D.warnings||[]).length){ md.push(''); md.push('**Warnings ('+D.warnings.length+')**'); for(const w of D.warnings) md.push('- '+w); }\nif(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }\nconst desc=md.join('\\n');\nconst durS=Math.round((Date.now()-(D.startedAt||Date.now()))/1000);\nsd[dk]=null;\nconst row={\n  'Status':failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Run at':D.runAt||new Date().toISOString(),\n  'Duration s':durS,\n  'Records In':D.rowsTotal||0,\n  'Records Out':D.deployed||0,\n  'Errors':failed.length,\n  'Execution ID':String($execution.id),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Description':desc.slice(0,95000)\n};\nreturn [{json:row}];"
         }
       },
       {
@@ -3277,7 +3652,7 @@
         "main": [
           [
             {
-              "node": "Build Stamps",
+              "node": "Find Mirror Row",
               "type": "main",
               "index": 0
             }
@@ -3285,6 +3660,68 @@
           [
             {
               "node": "RB Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Resolve Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Mirror": {
+        "main": [
+          [
+            {
+              "node": "Need Mirror Row?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Need Mirror Row?": {
+        "main": [
+          [
+            {
+              "node": "Create Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Stamps",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Collect Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Mirror": {
+        "main": [
+          [
+            {
+              "node": "Build Stamps",
               "type": "main",
               "index": 0
             }
@@ -3487,7 +3924,40 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-25T08:47:50.857Z",
+        "id": 1796,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-25T08:47:55.150Z",
+        "id": 1798,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-25T08:47:50.811Z",
+        "id": 1795,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-25T08:47:55.113Z",
+        "id": 1797,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "0cd2a1e2-b88c-4432-8d0e-4d772b154bf0",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

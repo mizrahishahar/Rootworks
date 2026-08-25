@@ -55,6 +55,8 @@ for(const r of rowsArr){
   for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }
   if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }
   if(Object.keys(cv).length) lead.custom_variables=cv;
+  // Existing Campaigns links, kept so the stamp appends and never replaces.
+  rec.camps=Array.isArray(f['Campaigns'])?f['Campaigns']:[];
   D.emailToRow[email.toLowerCase()]=r.id;
   leads.push(lead);
 }

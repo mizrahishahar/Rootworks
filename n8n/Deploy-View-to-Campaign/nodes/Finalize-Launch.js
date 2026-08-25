@@ -12,6 +12,7 @@ md.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+')');
 md.push('**View:** '+(D.view||'?'));
 if(D.viewLink) md.push('**Link:** '+D.viewLink);
 md.push('**Dedupe mode:** '+(D.dedupe||'Strict'));
+if(D.campsStamped) md.push('**Campaigns links stamped:** '+fmt(D.campsStamped)+' (this list = filter Campaigns has the campaign)');
 const P=D.pv;
 if(P){
   md.push('');

@@ -32,6 +32,8 @@ Both checkboxes exist on purpose: `relevance` is what the rule computes and a ru
 | `Relevant & Found : Campaigns` | same rows as Found, a lens, not a narrowing | `Final Email` + campaign fields |
 | `Relevant & Found : Never Contacted` | Found AND (`Messages Sent` empty OR = 0) | same |
 
+**`Relevant & Found : Campaigns` is deploy-gating.** Deploy View to Campaign refuses to deploy from a table that does not carry this view, by exact name, and aborts before anything is sent. It is the durable lead-list window: every Lead Lists receipt links to it (never to the selector view that deployed, whose filter dissolves), and the deploy stamps `Campaigns` membership so the lens shows every deployed list forever.
+
 A checkbox has two states, so `Relevant` and `Cut review` are exact complements by construction and every new row lands in one of them the moment it arrives. Unchecked means both *cut* and *not yet judged*, the same bucket, and correctly so: both need eyes.
 
 **A LinkedIn table drops the waterfall spine entirely.** Its chain is `Grid view`, `Relevant`, `Cut review`, and `Relevant & LinkedIn` (Relevant AND `Social` not empty), and that last view is the sender feed.

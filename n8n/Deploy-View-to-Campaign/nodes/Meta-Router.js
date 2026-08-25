@@ -12,6 +12,12 @@ if(!D.metaPhase||D.metaPhase==='schema'){
       if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }
     } else {
       D.tableId=t.id; D.tableName=t.name;
+      // The standing receipt view is a hard gate: no deploy without it. It is the
+      // one durable window (filter: Relevant AND Status=done, campaign fields)
+      // that every Lead Lists receipt links to, per the clayroots-tables standard.
+      const rv=(t.views||[]).find(x=>String(x.name||'').trim().toLowerCase()==='relevant & found : campaigns');
+      if(rv){ D.receiptViewId=rv.id; }
+      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table "'+t.name+'" has no "Relevant & Found : Campaigns" view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }
       const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);
       if(v){
         D.viewId=v.id; D.viewType=v.type||'';

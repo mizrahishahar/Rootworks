@@ -35,7 +35,7 @@ calls.forEach((c,i)=>{
   out.push({ json: {
     domain:c.domain, existing_in_role: known?count:null, first_hire: firstHire,
     cg:{ domain:[c.domain], department:['Technology','Executive'], seniority:['executive','vp','director','manager'], has_linkedin:true, max_companies:1, results_by_company:p.cap },
-    sq:{ companies:[{ domain:c.domain }], filters:{ job_titles:p.titles, has_linkedin:true }, tier:'full', per_company_limit:p.cap, confirm:true }
+    sq:{ companies:[{ domain:c.domain }], filters:{ job_titles:p.titles }, tier:'full', per_company_limit:p.cap, confirm:true }
   }});
 });
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];

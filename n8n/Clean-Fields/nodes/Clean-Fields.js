@@ -7,6 +7,14 @@
 //   State Full               <- stateFull(State)
 //   first_name, last_name    <- cleanFirst/cleanLast(Name) when the row has no first_name
 //   public_emails_clean      <- keepPublic(parseEmails(Public Emails)) when 'Public Emails' is on the row
+//   LinkedIn URL, Social     <- BLANKED when the /in/ slug contains neither first nor last name
+//
+// The LinkedIn name guard (Operator ruling 2026-08-25, after mispaired vendor URLs reached
+// sequencers): a personal LinkedIn URL is written only if its slug contains the row's first
+// or last name. Slug and names are URL-decoded, diacritic-stripped (NFD), lowercased and
+// reduced to a-z0-9 before comparing, so %c3%b6-style encodings and hyphenated surnames
+// compare correctly. A row without a usable name, or a non-/in/ URL, is left untouched.
+// Vendor-independent and permanent. Callers detect a rejection as set-before/empty-after.
 //
 // Rows are never dropped; a row the rules cannot clean comes back unchanged.
 
@@ -65,6 +73,17 @@ const BLACK = new Set(['hr', 'careers', 'career', 'jobs', 'job', 'legal', 'priva
 const parseEmails = (cell) => { if (!cell) return []; const s = String(cell).trim().replace(/^\[|\]$/g, ''); return s.split(/[,;]+/).map((e) => e.replace(/['"\s]/g, '').trim()).filter((e) => e.includes('@')); };
 const keepPublic = (arr) => arr.filter((e) => { const lp = e.split('@')[0].toLowerCase().split('+')[0]; return !BLACK.has(lp); });
 
+// LinkedIn name guard helpers. liMatch: true = slug carries the name, false = mismatch
+// (blank it), null = cannot judge (no /in/ slug, or no usable name) so leave it alone.
+const stripName = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const liSlug = (u) => { const m = String(u || '').match(/linkedin\.com\/in\/([^/?#]+)/i); if (!m) return null; let s = m[1]; try { s = decodeURIComponent(s); } catch (e) {} return stripName(s); };
+const liMatch = (url, first, last) => {
+  const slug = liSlug(url); if (slug === null || !slug) return null;
+  const f = stripName(first), l = stripName(last);
+  if (f.length < 2 && l.length < 2) return null;
+  return (f.length >= 2 && slug.includes(f)) || (l.length >= 2 && slug.includes(l));
+};
+
 const has = (r, k) => Object.prototype.hasOwnProperty.call(r, k);
 const out = [];
 for (const item of $input.all()) {
@@ -84,6 +103,12 @@ for (const item of $input.all()) {
   // Person rows only (they carry a Contact Key); a domains row's Name is a company, never split.
   if (has(r, 'Contact Key') && has(r, 'Name') && !(r.first_name || r.last_name)) { r.first_name = cleanFirst(r.Name); r.last_name = cleanLast(r.Name); }
   if (has(r, 'Public Emails') && has(r, 'public_emails_clean')) r.public_emails_clean = keepPublic(parseEmails(r['Public Emails'])).join(', ');
+  // LinkedIn name guard: a personal URL whose slug carries neither name is never written on.
+  for (const k of ['LinkedIn URL', 'Social']) {
+    if (!has(r, k) || !r[k]) continue;
+    const first = r.first_name || cleanFirst(r.Name), last = r.last_name || cleanLast(r.Name);
+    if (liMatch(r[k], first, last) === false) r[k] = '';
+  }
   out.push({ json: r, pairedItem: { item: out.length } });
 }
 return out;

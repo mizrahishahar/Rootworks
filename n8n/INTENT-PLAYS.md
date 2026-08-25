@@ -99,6 +99,16 @@ Hide a column: not sent. Unhide a convention column: sent when filled. Unhide an
 
 `Intent Status` is the row's summary (`NEW`, `ROUTED`, `FAILED`, `NO EMAIL`), read only by the intent writer, the two enrollers and the backfill. Per-channel truth is the two `Routed At` fields. The email waterfall is unchanged.
 
+## LinkedIn identity (ruling 2026-08-25)
+
+Supersoniq is **not** a LinkedIn identity source: ~11% of its URLs belonged to a different person (prospects replied "I'm not Pavan"). Its email, phone and firmographics stay; its URLs never reach a sequencer.
+
+- **At build** (Build Intent Leads): a Supersoniq contact's URL is discarded. The URL is recovered from the raw ContaGen batch for that domain by unique normalised full-name match, or the row stays email-only.
+- **The name guard** (Clean Fields, vendor-independent, permanent): any personal LinkedIn URL whose `/in/` slug contains neither first nor last name is blanked before write. Slug and names are URL-decoded, diacritic-stripped, lowercased, reduced to a-z0-9. Rejections are named in the intent run log.
+- **The fence**: every intent table carries a `linkedin_name_match` formula (hyphen-stripped both sides) and its `Linkedin` view filters on `= 1`. The enrollers can never see a mismatched URL.
+- **Backfill**: the one-off's `liurl` pass re-derives mismatched URLs from DiscoLike by name, or blanks them. Rows are never deleted.
+- URLs are stored URL-decoded (unicode slugs), so the formula and the guard read them alike.
+
 ## Open inputs
 
 - The first play row is created by the build and reviewed by the Operator before the payload is switched.

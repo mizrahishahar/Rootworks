@@ -6,6 +6,12 @@
 // then Supersoniq NET-NEW ONLY on Contact Key (first+last+domain). Provider items are
 // {statusCode, body} (fullResponse + neverError) aligned by index to Contact Calls.
 //
+// Supersoniq is NOT a LinkedIn identity source (Operator ruling 2026-08-25: ~11% of its URLs
+// belonged to a different person; prospects replied "I'm not Pavan"). A Supersoniq contact's
+// URL is never written. Recovery: the same person found in the raw ContaGen batch for that
+// domain (exact normalised full-name match, unique) supplies the URL instead; no match = the
+// row is email-channel-only. The Clean Fields name guard still checks every URL downstream.
+//
 // People gate: a contact's actual title must contain one of the play's title terms and none
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
 // President -> vp) so a term written short still catches the long form. Nothing else.
@@ -101,7 +107,11 @@ function push(d,p,source){
   return 'ok';
 }
 
-// Source 1: ContaGen.
+// Source 1: ContaGen. Every raw contact (gated or not) is indexed by normalised full name per
+// domain, so Supersoniq contacts can recover a trusted LinkedIn URL from it below.
+const nameKey=(s)=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const cgRaw={};
+const recoverLi=(d,full)=>{ const k=nameKey(full); if(!k) return ''; const hits=(cgRaw[d]||[]).filter(x=>x.key===k&&x.li); const uniq=[...new Set(hits.map(x=>x.li.toLowerCase()))]; return uniq.length===1?hits[0].li:''; };
 const cg={called:0,matched:0,contacts:0,kept:0,errors:0};
 let cgItems=[]; try{ cgItems=$('ContaGen Contacts').all(); }catch(e){}
 cgItems.forEach((it,i)=>{
@@ -119,12 +129,14 @@ cgItems.forEach((it,i)=>{
   else if(entry&&e.biz&&!e.biz.revenue_range&&entry.revenue_range) e.biz.revenue_range=entry.revenue_range;
   for(const p of contacts){
     cg.contacts++;
+    (cgRaw[call.domain]=cgRaw[call.domain]||[]).push({ key:nameKey(p.name), li:linkedinOf(p.social_urls) });
     if(push(call.domain,{ name:p.name, title:p.title, seniority:p.seniority, department:p.department, email:p.email, linkedin:linkedinOf(p.social_urls), phone:firstPhone(p.phone), city:'', state:p.state||'' },'ContaGen')==='ok') cg.kept++;
   }
 });
 
-// Source 2: Supersoniq, net-new only.
-const sq={called:0,matched:0,contacts:0,kept:0,errors:0,credits:0};
+// Source 2: Supersoniq, net-new only. Its linkedin_url is discarded, never written (ruling
+// 2026-08-25); the URL comes from the raw ContaGen batch by unique name match, or stays blank.
+const sq={called:0,matched:0,contacts:0,kept:0,errors:0,credits:0,li_dropped:0,li_recovered:0};
 let sqItems=[]; try{ sqItems=$('Supersoniq Contacts').all(); }catch(e){}
 sqItems.forEach((it,i)=>{
   const call=calls[i]; if(!call||!companies[call.domain]) return;
@@ -140,7 +152,10 @@ sqItems.forEach((it,i)=>{
       if(!p||!(p.first_name||p.full_name)) continue;
       any=true; sq.contacts++;
       const full=p.full_name||((p.first_name||'')+' '+(p.last_name||'')).trim();
-      if(push(call.domain,{ name:full, title:p.job_title, seniority:p.seniority, department:p.function, email:p.email, linkedin:p.linkedin_url, phone:'', city:p.contact_city||'', state:p.contact_region||'' },'Supersoniq')==='ok') sq.kept++;
+      if(p.linkedin_url) sq.li_dropped++;
+      const li=recoverLi(call.domain, full);
+      if(li) sq.li_recovered++;
+      if(push(call.domain,{ name:full, title:p.job_title, seniority:p.seniority, department:p.function, email:p.email, linkedin:li, phone:'', city:p.contact_city||'', state:p.contact_region||'' },'Supersoniq')==='ok') sq.kept++;
     }
   }
   if(any) sq.matched++;

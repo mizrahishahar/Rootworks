@@ -49,16 +49,35 @@ try{
   });
 }catch(e){}
 
-// contacts pass, by row id
-const contact={};
+// contacts + liurl passes, by row id, both fed by the same CG Lookup call aligned by index.
+// liurl (Operator ruling 2026-08-25): the row's URL failed the name guard; a replacement is
+// accepted only from a DiscoLike contact whose normalised full name equals the row's AND whose
+// URL passes the guard itself. No such contact = the URL is blanked, the row stays email-only.
+const stripName=(s)=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const liSlug=(u)=>{ const m=String(u||'').match(/linkedin\.com\/in\/([^/?#]+)/i); if(!m) return null; let s=m[1]; try{ s=decodeURIComponent(s); }catch(e){} return stripName(s); };
+const liMatch=(url,first,last)=>{ const slug=liSlug(url); if(slug===null||!slug) return null; const f=stripName(first), l=stripName(last); if(f.length<2&&l.length<2) return null; return (f.length>=2&&slug.includes(f))||(l.length>=2&&slug.includes(l)); };
+const linkedinOf=(urls)=>Array.isArray(urls)?(urls.find(u=>/linkedin\.com\/in\//i.test(u))||''):'';
+const firstOf=(n)=>String(n||'').trim().split(/\s+/)[0]||'';
+const lastOf=(n)=>{ const p=String(n||'').trim().split(/\s+/); return p.length>1?p.slice(1).join(' '):''; };
+st.liurl_checked=0; st.liurl_recovered=0; st.liurl_blanked=0; st.liurl_rows=[];
+const contact={}; const liurl={};
 try{
   const lk=$('Contact Lookups').all().map(i=>i.json).filter(c=>c&&c.id);
   let res=[]; try{ res=$('CG Lookup').all(); }catch(e){}
   lk.forEach((c,i)=>{
     const r=rsp(res[i]); st.lookups++;
-    if(!(r.status>=200&&r.status<300)||!r.body||typeof r.body!=='object'){ st.lookup_errors++; if(r.status) st.failed.push({ name:'Lookup '+c.name, reason:'HTTP '+r.status }); return; }
+    if(!(r.status>=200&&r.status<300)||!r.body||typeof r.body!=='object'){ st.lookup_errors++; if(r.status) st.failed.push({ name:'Lookup '+c.name, reason:'HTTP '+r.status }); if(c.mode==='liurl'){ st.liurl_checked++; liurl[c.id]=''; st.liurl_blanked++; st.liurl_rows.push(c.name+': blanked (lookup errored)'); } return; }
     const entry=(r.body.results&&(r.body.results[c.domain]||Object.values(r.body.results)[0]))||null;
     const contacts=(entry&&entry.contacts)||[];
+    if(c.mode==='liurl'){
+      st.liurl_checked++;
+      const want=stripName(c.name);
+      const hit=contacts.find(p=>stripName(p.name)===want);
+      const url=hit?linkedinOf(hit.social_urls):'';
+      if(url&&liMatch(url, firstOf(c.name), lastOf(c.name))===true){ liurl[c.id]=url; st.liurl_recovered++; st.liurl_rows.push(c.name+': recovered '+url); }
+      else { liurl[c.id]=''; st.liurl_blanked++; st.liurl_rows.push(c.name+': blanked ('+c.linkedin+')'); }
+      return;
+    }
     const want=normLi(c.linkedin);
     const hit=contacts.find(p=>Array.isArray(p.social_urls)&&p.social_urls.some(u=>normLi(u)===want));
     if(hit){ contact[c.id]=hit; st.lookup_matched++; } else st.lookup_nomatch++;
@@ -103,6 +122,8 @@ for(const r of rows){
     if(p){ put('Seniority',p.seniority); put('Department',p.department); put('State',p.state); put('Phone',firstPhone(p.phone)); }
     if(!has(r,'Contact Source')) out['Contact Source']='Supersoniq';
   }
+  // liurl: overwrite deliberately, recovered URL or blank; the only pass allowed to clear a cell.
+  if(cfg.do.liurl&&liurl[r.id]!==undefined&&liurl[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=liurl[r.id];
   if(!Object.keys(out).length){ st.untouched++; continue; }
   writes.push({ id:r.id, fields:out });
 }

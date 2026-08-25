@@ -28,3 +28,17 @@ KB Files is where a client actually lives: one row per document, retrieved by Cl
 ## Placing new knowledge
 
 New information about a client lands in the row whose type answers "who needs this, doing what": a rule for the reply agent goes in Inbox-Agent-Prompt, a delta from the default in overrides, a new number in its product or asset row (Verified only once confirmed), a change in who qualifies in qualification-prompt. Update the existing row over creating a sibling; delete what turned out wrong. Date the entries that will age, the way the existing rows do.
+
+## Source and steer are different things
+
+A `product` row carries the client's own material: their page, their deck, their words. It never carries our recommendation about what outreach should lead with. Write one in and every later session reads an opinion as the client's instruction, with the Verified box appearing to vouch for it (Verified speaks only to numbers).
+
+Our reads, angles and rulings live where they are owned, dated and attributed: a voice ruling in the onboarding form's voice notes or in overrides, a working note in intel. The only thing we add to a product row is provenance: what this is, where it came from, and what it is not evidence of.
+
+Paid for on Dave.io, 2026-08-25: one session's line, "the flagship pain is the overnight incident", sat inside a Verified product row and steered every copy and inbox run toward an angle the client had rejected repeatedly.
+
+## Repair the words, never stack a ban on top
+
+When the KB keeps producing something the client rejects, find the sentences generating it and change those. A prohibition added to overrides while the contradicting text stays put leaves two instructions in the KB, and the one nearest the drafting context tends to win.
+
+Prefer demotion to deletion. Most rejected angles are rejected as the lead, not as a fact. Say where it may still appear, a supporting line or one factor among several in qualification, instead of scrubbing it; otherwise the next session rediscovers it in the source material and promotes it back to the front.

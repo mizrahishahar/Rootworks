@@ -471,6 +471,65 @@
         }
       },
       "onError": "stopWorkflow"
+    },
+    {
+      "id": "a2000000-0000-4000-8000-000000000001",
+      "name": "Ark Lookups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Lookups.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a2000000-0000-4000-8000-000000000002",
+      "name": "Ark Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2780,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ai-ark.com/api/developer-portal/v1/people",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.arkBody }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 350
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TFaSEjm5g2RUVDCA",
+          "name": "ai-ark"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput",
+      "notes": "AI-Ark people search by full name + company domain. 0.5 credits per returned result."
     }
   ],
   "connections": {
@@ -588,7 +647,7 @@
       "main": [
         [
           {
-            "node": "Build Writes",
+            "node": "Ark Lookups",
             "type": "main",
             "index": 0
           }
@@ -640,6 +699,28 @@
         [
           {
             "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Lookups": {
+      "main": [
+        [
+          {
+            "node": "Ark Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Search": {
+      "main": [
+        [
+          {
+            "node": "Build Writes",
             "type": "main",
             "index": 0
           }

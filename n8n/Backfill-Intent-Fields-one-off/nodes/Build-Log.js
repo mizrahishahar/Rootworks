@@ -26,8 +26,11 @@ const lines=[
   '- **Written:** '+nf(written)+' in '+nf(st.batches)+' batches'
 ];
 if(st.liurl_checked) lines.splice(lines.length-2, 0, '- **LinkedIn URL guard:** '+nf(st.liurl_checked)+' mismatched · recovered '+nf(st.liurl_recovered)+' · blanked (email-only) '+nf(st.liurl_blanked));
+if(st.ark_checked) lines.splice(lines.length-2, 0, '- **AI-Ark identity:** '+nf(st.ark_checked)+' looked up · URL written '+nf(st.ark_written)+' · left company '+nf(st.ark_left)+' · no match '+nf(st.ark_nomatch)+' · errors '+nf(st.ark_errors)+' (~'+(Math.round((st.ark_checked||0)*0.5*10)/10)+' credits)');
 const liRows=st.liurl_rows||[];
 if(liRows.length) lines.push('','**LinkedIn URL re-derived ('+nf(liRows.length)+')**\n'+liRows.slice(0,40).map(x=>'- '+x).join('\n')+(liRows.length>40?'\n- ...and '+(liRows.length-40)+' more':''));
+const arkRows=st.ark_rows||[];
+if(arkRows.length) lines.push('','**AI-Ark URL verdicts ('+nf(arkRows.length)+')**\n'+arkRows.slice(0,40).map(x=>'- '+x).join('\n')+(arkRows.length>40?'\n- ...and '+(arkRows.length-40)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.name+': '+f.reason).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(!st.rowsToWrite) lines.push('','Skipped (writes, every row already carries its fields)');
 const row={

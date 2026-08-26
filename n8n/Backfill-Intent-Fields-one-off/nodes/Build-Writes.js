@@ -84,6 +84,32 @@ try{
   });
 }catch(e){}
 
+// arkurl pass: AI-Ark identity by row id, aligned by index to Ark Lookups. A hit counts only
+// when the returned profile's name matches and its current company domain is the row's domain;
+// then its canonical URL is written (overwrite). Left-company or no-match on the 'all' scope
+// blanks a standing URL; on the 'blanked' scope there is nothing to blank.
+st.ark_checked=0; st.ark_written=0; st.ark_left=0; st.ark_nomatch=0; st.ark_errors=0; st.ark_rows=[];
+const arkRes={};
+try{
+  const lk=$('Ark Lookups').all().map(i=>i.json).filter(c=>c&&c.id);
+  let res=[]; try{ res=$('Ark Search').all(); }catch(e){}
+  lk.forEach((c,i)=>{
+    const r=rsp(res[i]); st.ark_checked++;
+    if(!(r.status>=200&&r.status<300)||!r.body||typeof r.body!=='object'){ st.ark_errors++; st.failed.push({ name:'Ark '+c.name, reason:'HTTP '+r.status }); return; }
+    const hits=Array.isArray(r.body.content)?r.body.content:[];
+    const want=stripName(c.name);
+    const named=hits.filter(h=>h&&h.profile&&stripName(h.profile.full_name)===want);
+    const pool=named.length?named:hits;
+    if(!pool.length){ st.ark_nomatch++; arkRes[c.id]=''; st.ark_rows.push(c.name+': no profile found at '+c.domain); return; }
+    const hit=pool.find(h=>c.linkedin&&h.link&&String(h.link.linkedin||'').toLowerCase()===c.linkedin.toLowerCase())||pool[0];
+    const curDomain=String(((hit.company||{}).link||{}).domain||'').toLowerCase().trim();
+    if(curDomain&&curDomain!==c.domain){ st.ark_left++; arkRes[c.id]=''; st.ark_rows.push(c.name+': now at '+curDomain+', no URL'); return; }
+    const url=String((hit.link||{}).linkedin||'').trim();
+    if(url){ arkRes[c.id]=url; st.ark_written++; st.ark_rows.push(c.name+': '+url); }
+    else { st.ark_nomatch++; arkRes[c.id]=''; st.ark_rows.push(c.name+': profile has no URL'); }
+  });
+}catch(e){}
+
 const writes=[];
 for(const r of rows){
   const f=r.fields||{}; const out={};
@@ -124,6 +150,9 @@ for(const r of rows){
   }
   // liurl: overwrite deliberately, recovered URL or blank; the only pass allowed to clear a cell.
   if(cfg.do.liurl&&liurl[r.id]!==undefined&&liurl[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=liurl[r.id];
+  // arkurl: AI-Ark's canonical URL overwrites (stamped LinkedIn Verified At so the view fence
+  // admits handle slugs); a verified departure or no-match blanks URL and stamp alike.
+  if(cfg.do.arkurl&&arkRes[r.id]!==undefined&&arkRes[r.id]!==String(f['LinkedIn URL']||'').trim()){ out['LinkedIn URL']=arkRes[r.id]; out['LinkedIn Verified At']=arkRes[r.id]?new Date().toISOString():null; }
   if(!Object.keys(out).length){ st.untouched++; continue; }
   writes.push({ id:r.id, fields:out });
 }

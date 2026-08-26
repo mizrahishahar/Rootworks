@@ -31,14 +31,10 @@ for(const f of (bl.failed||[])) failed.push(f);
 const cg=bl.contagen||{}, sq=bl.supersoniq||{}, pg=bl.people_gate||{};
 
 let cleaned=0; try{ cleaned=$('Clean Fields').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}
-// LinkedIn name guard rejections: a URL set before Clean Fields and empty after was blanked
-// by the guard (slug carried neither name). Named per row; the row itself stays, email-only.
-let liRejected=[];
-try{
-  const pre=$('Build Intent Leads').all().map(i=>i.json);
-  const post=$('Clean Fields').all().map(i=>i.json);
-  post.forEach((r,i)=>{ const p=pre[i]||{}; if(p['LinkedIn URL']&&r&&!r['LinkedIn URL']) liRejected.push((r.Name||p.Name||'?')+' ('+(r.Domain||p.Domain||'')+'): '+p['LinkedIn URL']); });
-}catch(e){}
+// AI-Ark identity stage: verdicts, URL replacements and decision-maker drops.
+let ark={ checked:0, verified:0, url_replaced:0, left_company:0, no_match:0, ambiguous:0, errors:0, dm_dropped:0, dm_pass:0, dm_unknown:0, dropped:[], notes:[] };
+try{ const s=$('Ark Apply').first().json._arkStats; if(s) ark=s; }catch(e){}
+if(ark.errors) failed.push({ tier:'AI-Ark identity', name:ark.errors+' call(s)', reason:'errored, rows passed through unverified' });
 let afterDnc=0; try{ afterDnc=$('Apply DNC').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}
 const dncDropped=Math.max(0,cleaned-afterDnc);
 let upserted=0; const upsertErr=[];
@@ -75,7 +71,8 @@ const lines=[
   '- **First hire:** yes '+nf(fh.yes)+' · no '+nf(fh.no)+' · unknown '+nf(fh.unknown),
   '- **ContaGen:** '+nf(cg.called)+' calls · '+nf(cg.matched)+' returned people · '+nf(cg.contacts)+' contacts · '+nf(cg.kept)+' kept · '+nf(cg.errors)+' errors',
   '- **Supersoniq:** '+nf(sq.called)+' calls · '+nf(sq.matched)+' returned people · '+nf(sq.contacts)+' contacts · '+nf(sq.kept)+' net-new kept · '+nf(sq.credits)+' credits · '+nf(sq.errors)+' errors',
-  '- **LinkedIn identity:** Supersoniq URLs discarded '+nf(sq.li_dropped)+' · recovered from ContaGen '+nf(sq.li_recovered)+' · name guard blanked '+nf(liRejected.length),
+  '- **AI-Ark identity:** '+nf(ark.checked)+' checked · verified '+nf(ark.verified)+' · URL set/replaced '+nf(ark.url_replaced)+' · left company '+nf(ark.left_company)+' · no match '+nf(ark.no_match)+' · errors '+nf(ark.errors)+' (~'+(Math.round((ark.checked||0)*0.5*10)/10)+' credits)',
+  '- **DM gate (AI-Ark seniority x function):** pass '+nf(ark.dm_pass)+' · dropped '+nf(ark.dm_dropped)+' · no structured data (kept on title gate) '+nf(ark.dm_unknown),
   '- **People gate:** '+nf(pg.checked)+' checked · dropped '+nf(pg.dropped_never)+' on never terms · dropped '+nf(pg.dropped_no_title)+' on no title match',
   '- **Contacts kept:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',
   '- **Channels:** '+tierLine,
@@ -89,7 +86,8 @@ const lines=[
 const droppedTitles=(pg.dropped||[]);
 if(droppedTitles.length) lines.push('','**People gate dropped ('+nf(droppedTitles.length)+')**\n'+droppedTitles.slice(0,25).map(x=>'- '+x).join('\n')+(droppedTitles.length>25?'\n- ...and '+(droppedTitles.length-25)+' more':''));
 if(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\n'+rejLines.join('\n')+((icp.rejected||[]).length>10?'\n- ...and '+((icp.rejected||[]).length-10)+' more':''));
-if(liRejected.length) lines.push('','**LinkedIn name guard blanked ('+nf(liRejected.length)+', rows kept email-only)**\n'+liRejected.slice(0,15).map(x=>'- '+x).join('\n')+(liRejected.length>15?'\n- ...and '+(liRejected.length-15)+' more':''));
+if((ark.dropped||[]).length) lines.push('','**DM gate dropped ('+nf(ark.dropped.length)+', verified but not decision makers)**\n'+ark.dropped.slice(0,15).map(x=>'- '+x).join('\n')+(ark.dropped.length>15?'\n- ...and '+(ark.dropped.length-15)+' more':''));
+if((ark.notes||[]).length) lines.push('','**AI-Ark identity notes ('+nf(ark.notes.length)+')**\n'+ark.notes.slice(0,10).map(x=>'- '+x).join('\n')+(ark.notes.length>10?'\n- ...and '+(ark.notes.length-10)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(skips.length) lines.push('',skips.join('\n'));
 const row={

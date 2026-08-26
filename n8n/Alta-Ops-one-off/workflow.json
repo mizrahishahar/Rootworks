@@ -1,0 +1,241 @@
+{
+  "name": "Alta Ops (one-off)",
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "nodes": [
+    {
+      "id": "c1000000-0000-4000-8000-000000000001",
+      "name": "List Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alta-list-prospects",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "c1c1c1c1-alta-list-prospects-01"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000002",
+      "name": "Fetch Prospects",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -180,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.altahq.com/v1/prospects",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "campaignId",
+              "value": "={{ $json.body.campaignId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "cursor",
+                    "value": "={{ $response.body.next }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.hasMore }}",
+              "limitPagesFetched": true,
+              "maxRequests": 60,
+              "requestInterval": 300
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "sx4wc41lcV5NSNM8",
+          "name": "Alta"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Every prospect of one campaign, cursor-paginated (limit 100, cursor param, hasMore stop)."
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000010",
+      "name": "Compact Ids",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Compact-Ids.js"
+      }
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000011",
+      "name": "Persons Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alta-persons",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "c1c1c1c1-alta-persons-000001"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000012",
+      "name": "Split Person Ids",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        300
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Split-Person-Ids.js"
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000013",
+      "name": "Fetch Person",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        40,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.altahq.com/v1/persons/{{ $json.personId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 500
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "sx4wc41lcV5NSNM8",
+          "name": "Alta"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000014",
+      "name": "Compact Persons",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Compact-Persons.js"
+      }
+    }
+  ],
+  "connections": {
+    "List Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prospects": {
+      "main": [
+        [
+          {
+            "node": "Compact Ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persons Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Person Ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Person Ids": {
+      "main": [
+        [
+          {
+            "node": "Fetch Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Person": {
+      "main": [
+        [
+          {
+            "node": "Compact Persons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "z3ddeS1zbyIH9iFX"
+}

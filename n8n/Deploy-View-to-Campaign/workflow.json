@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-25T10:16:57.543Z",
+  "updatedAt": "2026-08-26T10:18:05.603Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to Campaign",
+  "description": "On-demand webhook: deploys an Airtable view's leads into a PlusVibe campaign (replaces manual CSV upload). Pre-validates emails, honors DNC, verifies by read-back, stamps Deploy Error, writes a Lead Lists receipt, updates the launch row. UNPUBLISHED.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1964,23 +1965,38 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": null,
-  "versionId": "620ab0e3-edd4-474b-8bb9-c3dee7c30567",
-  "activeVersionId": "620ab0e3-edd4-474b-8bb9-c3dee7c30567",
+  "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+  "activeVersionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+  "versionCounter": 32,
   "triggerCount": 1,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-08-08T20:41:34.896Z",
       "createdAt": "2026-08-08T20:41:34.896Z",
       "role": "workflow:owner",
       "workflowId": "JuWIbF6YCeRibhyg",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-25T10:16:57.552Z",
-    "createdAt": "2026-08-25T10:16:57.552Z",
-    "versionId": "620ab0e3-edd4-474b-8bb9-c3dee7c30567",
+    "updatedAt": "2026-08-26T10:18:05.609Z",
+    "createdAt": "2026-08-26T10:18:05.609Z",
+    "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -3064,7 +3080,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nlet hubId='';\ntry{ const r=($('Find Hub Campaign').first()||{}).json||{}; if(r.id) hubId=r.id; }catch(e){}\nD.receiptName=(D.tableName||D.tableId||'table')+' - '+(D.view||'view');\nif(!hubId) D.warnings.push('no Hub Campaigns row for '+D.target+'; receipt created without campaign link');\n// The receipt link is the per-view share link of the standing\n// \"Relevant & Found : Campaigns\" view (password {Client}01), parsed from the\n// table description at gate time. Client-safe: shows only that view, never\n// the base. Never the selector view that deployed; its filter dissolves.\nlet viewLink=D.shareViewLink||'';\nif(!viewLink){ D.warnings.push('share link unresolved; receipt written without a View Link'); }\nD.viewLink=viewLink;\nreturn [{json:{Name:D.receiptName, Campaign:hubId?[hubId]:[], ViewLink:viewLink}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nlet hubId='';\ntry{ const r=($('Find Hub Campaign').first()||{}).json||{}; if(r.id) hubId=r.id; }catch(e){}\n// The receipt is named by the CAMPAIGN, because that name is what clients\n// filter the shared Campaigns view by. The table and view live in View Link.\nD.receiptName=D.campName||D.target||((D.tableName||D.tableId||'table')+' - '+(D.view||'view'));\nif(!hubId) D.warnings.push('no Hub Campaigns row for '+D.target+'; receipt created without campaign link');\n// List CSV carries the per-view share link of the standing\n// \"Relevant & Found : Campaigns\" view (password {Client}01), parsed from the\n// table description at gate time. Client-safe: shows only that view, never\n// the base. View Link keeps the internal deep link to the exact selector\n// view that deployed, our debugging trail. Deployed = confirmed lead count.\nlet viewLink=D.shareViewLink||'';\nif(!viewLink){ D.warnings.push('share link unresolved; receipt written without a client link'); }\nD.viewLink=viewLink;\nlet internalLink='';\nif(D.share&&D.tableId&&D.viewId){ internalLink=D.share+'/'+D.tableId+'/'+D.viewId; }\nconst out={Name:D.receiptName, Campaign:hubId?[hubId]:[], ViewLink:viewLink, InternalLink:internalLink, Deployed:Number(D.deployed||0)};\nreturn [{json:out}];"
         }
       },
       {
@@ -3096,7 +3112,9 @@
             "value": {
               "Name": "={{ $json.Name }}",
               "Campaign": "={{ $json.Campaign }}",
-              "List CSV": "={{ $json.ViewLink }}"
+              "List CSV": "={{ $json.ViewLink }}",
+              "View Link": "={{ $json.InternalLink }}",
+              "Deployed": "={{ $json.Deployed }}"
             }
           },
           "options": {
@@ -3217,7 +3235,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst j=($input.first()||{}).json||{};\nif(!D.metaPhase||D.metaPhase==='schema'){\n  const tables=Array.isArray(j.tables)?j.tables:[];\n  D.schemaTables=tables;\n  let viewUrl='';\n  if(!tables.length){\n    if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }\n  } else {\n    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);\n    if(!t){\n      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }\n    } else {\n      D.tableId=t.id; D.tableName=t.name;\n      // The standing receipt view is a hard gate: no deploy without it. It is the\n      // one durable window (filter: Relevant AND Status=done, campaign fields)\n      // that every Lead Lists receipt links to, per the clayroots-tables standard.\n      const rv=(t.views||[]).find(x=>String(x.name||'').trim().toLowerCase()==='relevant & found : campaigns');\n      if(rv){ D.receiptViewId=rv.id; }\n      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table \"'+t.name+'\" has no \"Relevant & Found : Campaigns\" view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }\n      // The client-facing share link for that view lives in the table description\n      // (\"Campaigns view: https://airtable.com/shr...\"), pasted at setup; the API\n      // cannot mint share links, so its absence is the second hard gate.\n      const shrM=String(t.description||'').match(/https:\\/\\/airtable\\.com\\/shr[A-Za-z0-9]+/);\n      if(shrM){ D.shareViewLink=shrM[0]; }\n      else if(!D.abort){ D.abort='missing share link'; D.errors.push('table \"'+t.name+'\" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste \"Campaigns view: https://airtable.com/shr...\" into the table description (clayroots-tables table-setup); nothing was sent'); }\n      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);\n      if(v){\n        D.viewId=v.id; D.viewType=v.type||'';\n        if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }\n      }\n    }\n  }\n  if(viewUrl && !D.abort){ D.metaPhase='view'; return [{json:{metaUrl:viewUrl, again:true}}]; }\n  D.metaPhase='done'; D.viewMeta=null;\n  return [{json:{again:false}}];\n}\nD.metaPhase='done';\nD.viewMeta=j;\nreturn [{json:{again:false}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst j=($input.first()||{}).json||{};\nif(!D.metaPhase||D.metaPhase==='schema'){\n  const tables=Array.isArray(j.tables)?j.tables:[];\n  D.schemaTables=tables;\n  let viewUrl='';\n  if(!tables.length){\n    if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }\n  } else {\n    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);\n    if(!t){\n      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }\n    } else {\n      D.tableId=t.id; D.tableName=t.name;\n      // The standing receipt view is a hard gate: no deploy without it. It is the\n      // one durable window (filter: Relevant AND Status=done, campaign fields)\n      // that every Lead Lists receipt links to, per the clayroots-tables standard.\n      const rv=(t.views||[]).find(x=>String(x.name||'').trim().toLowerCase()==='relevant & found : campaigns');\n      if(rv){ D.receiptViewId=rv.id; }\n      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table \"'+t.name+'\" has no \"Relevant & Found : Campaigns\" view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }\n      // The client-facing share link for that view lives in the table description\n      // (\"Campaigns view: https://airtable.com/shr...\"), pasted at setup; the API\n      // cannot mint share links, so its absence is the second hard gate.\n      const shrM=String(t.description||'').match(/https:\\/\\/airtable\\.com\\/(?:app[A-Za-z0-9]{14}\\/)?shr[A-Za-z0-9]+/);\n      if(shrM){ D.shareViewLink=shrM[0]; }\n      else if(!D.abort){ D.abort='missing share link'; D.errors.push('table \"'+t.name+'\" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste \"Campaigns view: https://airtable.com/shr...\" into the table description (clayroots-tables table-setup); nothing was sent'); }\n      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);\n      if(v){\n        D.viewId=v.id; D.viewType=v.type||'';\n        if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }\n      }\n    }\n  }\n  if(viewUrl && !D.abort){ D.metaPhase='view'; return [{json:{metaUrl:viewUrl, again:true}}]; }\n  D.metaPhase='done'; D.viewMeta=null;\n  return [{json:{again:false}}];\n}\nD.metaPhase='done';\nD.viewMeta=j;\nreturn [{json:{again:false}}];"
         }
       },
       {
@@ -3914,7 +3932,40 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-26T10:18:05.819Z",
+        "id": 1897,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-26T10:18:12.631Z",
+        "id": 1899,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-26T10:18:05.763Z",
+        "id": 1896,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-08-26T10:18:12.597Z",
+        "id": 1898,
+        "workflowId": "JuWIbF6YCeRibhyg",
+        "versionId": "944bf47a-8eaf-42ae-8aea-42fbc6e25e3c",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

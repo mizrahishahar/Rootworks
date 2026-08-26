@@ -21,7 +21,7 @@ if(!D.metaPhase||D.metaPhase==='schema'){
       // The client-facing share link for that view lives in the table description
       // ("Campaigns view: https://airtable.com/shr..."), pasted at setup; the API
       // cannot mint share links, so its absence is the second hard gate.
-      const shrM=String(t.description||'').match(/https:\/\/airtable\.com\/shr[A-Za-z0-9]+/);
+      const shrM=String(t.description||'').match(/https:\/\/airtable\.com\/(?:app[A-Za-z0-9]{14}\/)?shr[A-Za-z0-9]+/);
       if(shrM){ D.shareViewLink=shrM[0]; }
       else if(!D.abort){ D.abort='missing share link'; D.errors.push('table "'+t.name+'" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste "Campaigns view: https://airtable.com/shr..." into the table description (clayroots-tables table-setup); nothing was sent'); }
       const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);

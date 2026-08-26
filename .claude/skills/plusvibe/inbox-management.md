@@ -64,6 +64,12 @@ for d in domain-a.com domain-b.com; do r=$(host -t A "$d.multi.surbl.org" 2>&1);
 
 **Always run controls in the same pass.** A resolver that is being refused by SURBL can answer positively for everything, and a wall of identical hits looks exactly like a real mass listing. `surbl-org-permanent-test-point.com` must come back listed (127.0.0.254) and `google.com` / `microsoft.com` must come back clean. If the controls are wrong, the results are worthless.
 
+**Query 8.8.8.8 explicitly; the default resolver lies in the dangerous direction.** Measured 2026-08-25: the machine's own resolver and 1.1.1.1 both fail SURBL, and the failure reads as **clean**, not as an error. A full pass came back "clean" on seven domains that are in fact ABUSE-listed, and only the control caught it. 8.8.8.8 and 9.9.9.9 answer correctly; 1.1.1.1 returns SERVFAIL. Append the resolver to every lookup:
+
+```bash
+for d in domain-a.com surbl-org-permanent-test-point.com google.com; do r=$(host -t A "$d.multi.surbl.org" 8.8.8.8 2>&1); case "$r" in *"has address"*) echo "LISTED  $d  ${r##* }";; *SERVFAIL*) echo "SERVFAIL $d";; *) echo "clean    $d";; esac; done
+```
+
 **A clearance tag is not a gateway pool.** Piper's `info-ok` marks .info inboxes that earned a genuine reply and were cleared for reuse. Every single one of its domains is SURBL-listed. Reputation-with-us and reputation-with-receivers are different axes; never map one onto the other.
 
 **Where the fleet stood on 2026-08-23** (clean domains within each client's `active`): Dave.io 7 of 20 · Adelante 2 of 23 · Piper AI 4 of 20 · Move PLNR 3 of 7. Adelante's entire English sending pool, all 20 `adelante-2` domains, is listed. Treat this as the baseline to re-measure against, not as a fact that stays true.

@@ -420,6 +420,7 @@ One row per deployed final view: {table} - {view}. Created by the Deploy View to
 | Campaign | `fldeLPjBDcQ9pCdLy` | multipleRecordLinks | Exactly one campaign per row |
 | List CSV | `fldx7jBAH2o1XuIqH` | url | Client-facing link to the list (share view / CSV). Mechanism TBD; Operator-pasted for now |
 | View Link | `fldQSPR23nP39jXvl` | url | Deep link to the exact Airtable view this list was deployed from. Built by Deploy View to Campaign as <client Clayroots shareable link>/<tableId>/<viewId>. |
+| Deployed | `fldQkDnj1kE4U5jEj` | number | How many leads this deploy confirmed into the campaign at read-back. Written by Deploy View to Campaign. |
 
 ## Logs (`tbl70VAPYGBUhkyAp`)
 
@@ -442,7 +443,7 @@ One row per PlusVibe sending inbox, upserted by Account ID. Mirrors Campaigns: c
 | Account ID | `fldSrSCkm5dgB91uh` | singleLineText | PlusVibe account _id. THE upsert key for all writers. |
 | Client | `fldpAz2N7oTNWScd3` | multipleRecordLinks |  |
 | Domain | `fldQgpTvyzirUaurs` | singleLineText |  |
-| Status | `fldsAbMUF6G1gnqIm` | singleSelect | Choices: ACTIVE, PAUSED, ERROR |
+| Status | `fldsAbMUF6G1gnqIm` | singleSelect | Choices: ACTIVE, PAUSED, ERROR, ALERT |
 | Warmup Status | `fld94dAgNrjXGRJ9t` | singleSelect | Choices: ACTIVE, PAUSED, INACTIVE |
 | Provider | `fldI7wCBPUk2incqK` | singleLineText |  |
 | Daily Limit | `fld8bDsP2TRj8X4Gw` | number |  |
@@ -538,3 +539,4 @@ The task list. One row per thing to do. Due is the date it was meant to happen a
 | From Meeting | `fldXdeUUvrCosmtT7` | multipleRecordLinks |  |
 | Summary (Notes) | `fldVl9ghXZfXPqDSE` | aiText |  |
 | Headline (Notes) | `fldPWEqMFEgzIMTx5` | aiText |  |
+| Progress | `fldFDhquOrBqaVzBX` | formula |  |

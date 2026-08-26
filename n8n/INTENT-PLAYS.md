@@ -101,13 +101,12 @@ Hide a column: not sent. Unhide a convention column: sent when filled. Unhide an
 
 ## LinkedIn identity and sources (rulings 2026-08-25/26)
 
-**Supersoniq is out of the intent machine entirely** (2026-08-26): ~11% of its URLs belonged to a different person (prospects replied "I'm not Pavan"). **AI-Ark is the LinkedIn identity authority**; LinkedIn matters more than email, so URLs are replaced with verified ones, never given up.
+**Supersoniq is out of the intent machine entirely** (~11% of its URLs belonged to a different person; prospects replied "I'm not Pavan"). Two rules, nothing more:
 
-- **Sources:** ContaGen (DiscoLike /contacts/discover, wide) + AI-Ark people search (leaders at the domain: founder/owner/partner/cxo/vp/head/director/manager, cap per company, 0.5 credits per profile). AI-Ark contacts arrive identity-true and stamped `LinkedIn Verified At` at build. Emails come from ContaGen and the waterfall.
-- **Ark Identity stage:** every ContaGen contact is looked up by name + company domain (0.5 credits). Verified: canonical URL written + `LinkedIn Verified At` stamped. Left company: URL blank, row kept, logged. No match: row kept as-is. Errors fail open (fence still stands).
-- **DM gate, in code on AI-Ark's structured labels, never on title strings or the play md:** an executive of any function passes (founder/owner/partner/cxo/president); below executive only technical functions (engineering/IT/technology) pass. Non-DMs are not written; every drop is named in the run log for play tuning. The play's `people:` titles remain the coarse pre-filter (acronym terms match whole words: the dire-CTO-r fix).
-- **The fence:** every intent table carries `linkedin_name_match` (hyphen-stripped both sides) + `LinkedIn Verified At`; the `Linkedin` view filters `LinkedIn URL not empty AND (match = 1 OR Verified not empty)`. The enrollers can never see an unverified mismatched URL. `LinkedIn Verified At` is in the enrollers' machine set, never sent as a variable.
-- **Backfill:** the one-off's `arkurl` pass (scopes `blanked` / `all-supersoniq`) restores or re-verifies URLs from AI-Ark by name + domain; `liurl` (DiscoLike slug re-derivation) is superseded but kept. Rows are never deleted.
+1. **Sources:** ContaGen (DiscoLike /contacts/discover, wide) + **AI-Ark people search** (leaders at the domain: founder/owner/partner/cxo/vp/head/director/manager, the play's cap per company, 0.5 credits per returned profile; an AI-Ark hit is the person's own profile, so its URL is theirs by construction). Emails come from ContaGen and the waterfall. The play's `people:` titles gate both sources; acronym terms (3 chars or less) match whole words only (the dire-CTO-r fix).
+2. **The fence:** every intent table carries the `linkedin_name_match` formula (name in slug, hyphen-stripped both sides) and its `Linkedin` view filters `LinkedIn URL is not empty AND linkedin_name_match = 1`. A mismatched URL never enters the view, so it never reaches an enroller.
+
+**Backfill:** the one-off's `arkurl` pass (scopes `blanked` / `all-supersoniq`) re-derives URLs from AI-Ark by name + domain for legacy rows. Rows are never deleted.
 
 ## Open inputs
 

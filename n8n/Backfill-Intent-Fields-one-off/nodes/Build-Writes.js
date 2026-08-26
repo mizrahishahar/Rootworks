@@ -150,9 +150,8 @@ for(const r of rows){
   }
   // liurl: overwrite deliberately, recovered URL or blank; the only pass allowed to clear a cell.
   if(cfg.do.liurl&&liurl[r.id]!==undefined&&liurl[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=liurl[r.id];
-  // arkurl: AI-Ark's canonical URL overwrites (stamped LinkedIn Verified At so the view fence
-  // admits handle slugs); a verified departure or no-match blanks URL and stamp alike.
-  if(cfg.do.arkurl&&arkRes[r.id]!==undefined&&arkRes[r.id]!==String(f['LinkedIn URL']||'').trim()){ out['LinkedIn URL']=arkRes[r.id]; out['LinkedIn Verified At']=arkRes[r.id]?new Date().toISOString():null; }
+  // arkurl: AI-Ark's canonical URL overwrites; a verified departure or no-match blanks it.
+  if(cfg.do.arkurl&&arkRes[r.id]!==undefined&&arkRes[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=arkRes[r.id];
   if(!Object.keys(out).length){ st.untouched++; continue; }
   writes.push({ id:r.id, fields:out });
 }

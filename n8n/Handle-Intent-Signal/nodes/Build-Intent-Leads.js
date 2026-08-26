@@ -7,10 +7,9 @@
 // people search NET-NEW ONLY on Contact Key (first+last+domain). Provider items are
 // {statusCode, body} (fullResponse + neverError) aligned by index to Contact Calls.
 //
-// An AI-Ark contact IS the person's canonical profile: URL and structured seniority arrive
-// identity-true, so the row is stamped LinkedIn Verified At at build and the Ark Identity
-// stage skips it. The decision-maker gate (exec any function; below exec only technical)
-// applies to AI-Ark contacts here, on their structured labels.
+// An AI-Ark contact IS the person's canonical profile, so its URL is theirs by construction.
+// The table's linkedin_name_match formula and the Linkedin view's filter own the fence:
+// a URL whose slug does not carry the contact's name never enters the view.
 //
 // People gate: a contact's actual title must contain one of the play's title terms and none
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
@@ -112,11 +111,7 @@ function push(d,p,source){
   return 'ok';
 }
 
-// Source 1: ContaGen. Every raw contact (gated or not) is indexed by normalised full name per
-// domain, so Supersoniq contacts can recover a trusted LinkedIn URL from it below.
-const nameKey=(s)=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-const cgRaw={};
-const recoverLi=(d,full)=>{ const k=nameKey(full); if(!k) return ''; const hits=(cgRaw[d]||[]).filter(x=>x.key===k&&x.li); const uniq=[...new Set(hits.map(x=>x.li.toLowerCase()))]; return uniq.length===1?hits[0].li:''; };
+// Source 1: ContaGen.
 const cg={called:0,matched:0,contacts:0,kept:0,errors:0};
 let cgItems=[]; try{ cgItems=$('ContaGen Contacts').all(); }catch(e){}
 cgItems.forEach((it,i)=>{
@@ -134,20 +129,14 @@ cgItems.forEach((it,i)=>{
   else if(entry&&e.biz&&!e.biz.revenue_range&&entry.revenue_range) e.biz.revenue_range=entry.revenue_range;
   for(const p of contacts){
     cg.contacts++;
-    (cgRaw[call.domain]=cgRaw[call.domain]||[]).push({ key:nameKey(p.name), li:linkedinOf(p.social_urls) });
     if(push(call.domain,{ name:p.name, title:p.title, seniority:p.seniority, department:p.department, email:p.email, linkedin:linkedinOf(p.social_urls), phone:firstPhone(p.phone), city:'', state:p.state||'' },'ContaGen')==='ok') cg.kept++;
   }
 });
 
-// Source 2: AI-Ark people search, net-new only. Each hit is the person's own profile:
-// canonical URL, structured seniority and function. The decision-maker gate runs here on
-// those labels: an executive of any function passes; below executive only the technical
-// function does. Passing rows are stamped LinkedIn Verified At so Ark Identity skips them.
-const EXEC=['c_suite','csuite','cxo','founder','co_founder','cofounder','owner','partner','president','chairman','executive'];
-const LEAD=['vp','vice_president','head','director','manager','lead'];
-const TECH=/engineer|technical|technolog|information|infrastructure|devops|platform|cloud|software|entrepreneur|it\b/i;
-const dmVerdict=(dep)=>{ const s=String((dep||{}).seniority||'').toLowerCase(); const fn=[].concat((dep||{}).departments||[],(dep||{}).sub_departments||[],(dep||{}).functions||[]).join(' ').toLowerCase(); if(!s) return 'unknown'; if(EXEC.some(x=>s.includes(x))) return 'pass'; if(LEAD.some(x=>s.includes(x))&&TECH.test(fn)) return 'pass'; return 'drop'; };
-const ark={called:0,matched:0,contacts:0,kept:0,errors:0,dm_dropped:0,dm_list:[]};
+// Source 2: AI-Ark people search, net-new only. Each hit is the person's own profile, so the
+// URL is theirs by construction; the search's seniority filter already selects leaders, and
+// the same people gate (the play's titles) applies as everywhere else.
+const ark={called:0,matched:0,contacts:0,kept:0,errors:0};
 let arkItems=[]; try{ arkItems=$('Ark People').all(); }catch(e){}
 arkItems.forEach((it,i)=>{
   const call=calls[i]; if(!call||!companies[call.domain]) return;
@@ -159,11 +148,8 @@ arkItems.forEach((it,i)=>{
   for(const h of hits){
     const prof=h&&h.profile; if(!prof||!prof.full_name) continue;
     ark.contacts++;
-    const dm=dmVerdict(h.department);
-    if(dm==='drop'){ ark.dm_dropped++; ark.dm_list.push(call.domain+': '+prof.full_name+' ('+(prof.title||'')+' · '+String((h.department||{}).seniority||'')+')'); continue; }
     const loc=h.location||{};
-    const res=push(call.domain,{ name:prof.full_name, title:prof.title||prof.headline, seniority:String((h.department||{}).seniority||''), department:[].concat((h.department||{}).functions||[]).join(', '), email:'', linkedin:String((h.link||{}).linkedin||''), phone:'', city:loc.city||'', state:loc.state||'' },'AI-Ark');
-    if(res==='ok'){ ark.kept++; out[out.length-1].json['LinkedIn Verified At']=nowIso; }
+    if(push(call.domain,{ name:prof.full_name, title:prof.title||prof.headline, seniority:String((h.department||{}).seniority||''), department:[].concat((h.department||{}).functions||[]).join(', '), email:'', linkedin:String((h.link||{}).linkedin||''), phone:'', city:loc.city||'', state:loc.state||'' },'AI-Ark')==='ok') ark.kept++;
   }
 });
 

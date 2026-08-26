@@ -1,7 +1,9 @@
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 let hubId='';
 try{ const r=($('Find Hub Campaign').first()||{}).json||{}; if(r.id) hubId=r.id; }catch(e){}
-D.receiptName=(D.tableName||D.tableId||'table')+' - '+(D.view||'view');
+// The receipt is named by the CAMPAIGN, because that name is what clients
+// filter the shared Campaigns view by. The table and view live in View Link.
+D.receiptName=D.campName||D.target||((D.tableName||D.tableId||'table')+' - '+(D.view||'view'));
 if(!hubId) D.warnings.push('no Hub Campaigns row for '+D.target+'; receipt created without campaign link');
 // List CSV carries the per-view share link of the standing
 // "Relevant & Found : Campaigns" view (password {Client}01), parsed from the

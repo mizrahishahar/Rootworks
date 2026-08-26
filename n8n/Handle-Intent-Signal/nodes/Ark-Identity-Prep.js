@@ -5,9 +5,11 @@
 // structured seniority/function the decision-maker gate reads. 0.5 credits per returned result,
 // size 2 so a same-name ambiguity is visible. The _empty placeholder gets a no-op body.
 const out=[];
+const NOOP={ contact:{ fullName:{ any:{ include:{ mode:'STRICT', content:['zzz-nobody-zzz'] } } } }, account:{ domain:{ any:{ include:['none.invalid'] } } }, page:0, size:1 };
 for(const it of $input.all()){
   const j=it.json||{};
-  if(j._empty){ out.push({ json: Object.assign({}, j, { arkBody:{ contact:{ fullName:{ any:{ include:{ mode:'STRICT', content:['zzz-nobody-zzz'] } } } }, account:{ domain:{ any:{ include:['none.invalid'] } } }, page:0, size:1 } }) }); continue; }
+  // AI-Ark-sourced contacts arrive identity-true (stamped at build): no second lookup.
+  if(j._empty||j['LinkedIn Verified At']){ out.push({ json: Object.assign({}, j, { arkBody:NOOP, _preverified:!j._empty }) }); continue; }
   out.push({ json: Object.assign({}, j, { arkBody: {
     contact:{ fullName:{ any:{ include:{ mode:'SMART', content:[String(j.Name||'').trim()] } } } },
     account:{ domain:{ any:{ include:[String(j.Domain||'').toLowerCase().trim()] } } },

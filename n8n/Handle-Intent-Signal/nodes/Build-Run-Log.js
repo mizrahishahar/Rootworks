@@ -25,10 +25,10 @@ let fh={ yes:0, no:0, unknown:0, failed:[] };
 try{ const s=$('Contact Calls').first().json._stats; if(s) fh=s; }catch(e){}
 for(const f of (fh.failed||[])) failed.push(f);
 
-let bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, supersoniq:{}, people_gate:{}, tiers:{}, failed:[] };
+let bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, ark_people:{}, people_gate:{}, tiers:{}, failed:[] };
 try{ const s=$('Build Intent Leads').first().json._stats; if(s) bl=s; }catch(e){}
 for(const f of (bl.failed||[])) failed.push(f);
-const cg=bl.contagen||{}, sq=bl.supersoniq||{}, pg=bl.people_gate||{};
+const cg=bl.contagen||{}, arkP=bl.ark_people||{}, pg=bl.people_gate||{};
 
 let cleaned=0; try{ cleaned=$('Clean Fields').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}
 // AI-Ark identity stage: verdicts, URL replacements and decision-maker drops.
@@ -70,9 +70,9 @@ const lines=[
   '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),
   '- **First hire:** yes '+nf(fh.yes)+' · no '+nf(fh.no)+' · unknown '+nf(fh.unknown),
   '- **ContaGen:** '+nf(cg.called)+' calls · '+nf(cg.matched)+' returned people · '+nf(cg.contacts)+' contacts · '+nf(cg.kept)+' kept · '+nf(cg.errors)+' errors',
-  '- **Supersoniq:** '+nf(sq.called)+' calls · '+nf(sq.matched)+' returned people · '+nf(sq.contacts)+' contacts · '+nf(sq.kept)+' net-new kept · '+nf(sq.credits)+' credits · '+nf(sq.errors)+' errors',
-  '- **AI-Ark identity:** '+nf(ark.checked)+' checked · verified '+nf(ark.verified)+' · URL set/replaced '+nf(ark.url_replaced)+' · left company '+nf(ark.left_company)+' · no match '+nf(ark.no_match)+' · errors '+nf(ark.errors)+' (~'+(Math.round((ark.checked||0)*0.5*10)/10)+' credits)',
-  '- **DM gate (AI-Ark seniority x function):** pass '+nf(ark.dm_pass)+' · dropped '+nf(ark.dm_dropped)+' · no structured data (kept on title gate) '+nf(ark.dm_unknown),
+  '- **AI-Ark people:** '+nf(arkP.called)+' calls · '+nf(arkP.matched)+' returned people · '+nf(arkP.contacts)+' profiles · '+nf(arkP.kept)+' net-new kept · DM-dropped '+nf(arkP.dm_dropped)+' · errors '+nf(arkP.errors)+' (~'+(Math.round((arkP.contacts||0)*0.5*10)/10)+' credits)',
+  '- **AI-Ark identity (ContaGen contacts):** '+nf(ark.checked)+' checked · verified '+nf(ark.verified)+' · URL set/replaced '+nf(ark.url_replaced)+' · left company '+nf(ark.left_company)+' · no match '+nf(ark.no_match)+' · errors '+nf(ark.errors)+' (~'+(Math.round((ark.checked||0)*0.5*10)/10)+' credits)',
+  '- **DM gate (AI-Ark seniority x function):** pass '+nf((ark.dm_pass||0)+(arkP.kept||0))+' · dropped '+nf((ark.dm_dropped||0)+(arkP.dm_dropped||0))+' · no structured data (kept on title gate) '+nf(ark.dm_unknown),
   '- **People gate:** '+nf(pg.checked)+' checked · dropped '+nf(pg.dropped_never)+' on never terms · dropped '+nf(pg.dropped_no_title)+' on no title match',
   '- **Contacts kept:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',
   '- **Channels:** '+tierLine,
@@ -86,7 +86,8 @@ const lines=[
 const droppedTitles=(pg.dropped||[]);
 if(droppedTitles.length) lines.push('','**People gate dropped ('+nf(droppedTitles.length)+')**\n'+droppedTitles.slice(0,25).map(x=>'- '+x).join('\n')+(droppedTitles.length>25?'\n- ...and '+(droppedTitles.length-25)+' more':''));
 if(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\n'+rejLines.join('\n')+((icp.rejected||[]).length>10?'\n- ...and '+((icp.rejected||[]).length-10)+' more':''));
-if((ark.dropped||[]).length) lines.push('','**DM gate dropped ('+nf(ark.dropped.length)+', verified but not decision makers)**\n'+ark.dropped.slice(0,15).map(x=>'- '+x).join('\n')+(ark.dropped.length>15?'\n- ...and '+(ark.dropped.length-15)+' more':''));
+const dmAll=[].concat(ark.dropped||[], arkP.dm_list||[]);
+if(dmAll.length) lines.push('','**DM gate dropped ('+nf(dmAll.length)+', verified but not decision makers)**\n'+dmAll.slice(0,15).map(x=>'- '+x).join('\n')+(dmAll.length>15?'\n- ...and '+(dmAll.length-15)+' more':''));
 if((ark.notes||[]).length) lines.push('','**AI-Ark identity notes ('+nf(ark.notes.length)+')**\n'+ark.notes.slice(0,10).map(x=>'- '+x).join('\n')+(ark.notes.length>10?'\n- ...and '+(ark.notes.length-10)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(skips.length) lines.push('',skips.join('\n'));

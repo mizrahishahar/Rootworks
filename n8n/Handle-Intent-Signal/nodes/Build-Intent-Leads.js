@@ -2,15 +2,15 @@
 // the job that triggered the signal, the company's DiscoLike firmographics, the ICP reason,
 // the first-hire verdict and the tier's campaign.
 //
-// Sources in the builders' order: ContaGen (DiscoLike /contacts/discover) every contact kept,
-// then Supersoniq NET-NEW ONLY on Contact Key (first+last+domain). Provider items are
+// Sources in the builders' order (Operator ruling 2026-08-26: Supersoniq is out of this
+// machine entirely): ContaGen (DiscoLike /contacts/discover) every contact kept, then AI-Ark
+// people search NET-NEW ONLY on Contact Key (first+last+domain). Provider items are
 // {statusCode, body} (fullResponse + neverError) aligned by index to Contact Calls.
 //
-// Supersoniq is NOT a LinkedIn identity source (Operator ruling 2026-08-25: ~11% of its URLs
-// belonged to a different person; prospects replied "I'm not Pavan"). A Supersoniq contact's
-// URL is never written. Recovery: the same person found in the raw ContaGen batch for that
-// domain (exact normalised full-name match, unique) supplies the URL instead; no match = the
-// row is email-channel-only. The Clean Fields name guard still checks every URL downstream.
+// An AI-Ark contact IS the person's canonical profile: URL and structured seniority arrive
+// identity-true, so the row is stamped LinkedIn Verified At at build and the Ark Identity
+// stage skips it. The decision-maker gate (exec any function; below exec only technical)
+// applies to AI-Ark contacts here, on their structured labels.
 //
 // People gate: a contact's actual title must contain one of the play's title terms and none
 // of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice
@@ -139,35 +139,36 @@ cgItems.forEach((it,i)=>{
   }
 });
 
-// Source 2: Supersoniq, net-new only. Its linkedin_url is discarded, never written (ruling
-// 2026-08-25); the URL comes from the raw ContaGen batch by unique name match, or stays blank.
-const sq={called:0,matched:0,contacts:0,kept:0,errors:0,credits:0,li_dropped:0,li_recovered:0};
-let sqItems=[]; try{ sqItems=$('Supersoniq Contacts').all(); }catch(e){}
-sqItems.forEach((it,i)=>{
+// Source 2: AI-Ark people search, net-new only. Each hit is the person's own profile:
+// canonical URL, structured seniority and function. The decision-maker gate runs here on
+// those labels: an executive of any function passes; below executive only the technical
+// function does. Passing rows are stamped LinkedIn Verified At so Ark Identity skips them.
+const EXEC=['c_suite','csuite','cxo','founder','co_founder','cofounder','owner','partner','president','chairman','executive'];
+const LEAD=['vp','vice_president','head','director','manager','lead'];
+const TECH=/engineer|technical|technolog|information|infrastructure|devops|platform|cloud|software|entrepreneur|it\b/i;
+const dmVerdict=(dep)=>{ const s=String((dep||{}).seniority||'').toLowerCase(); const fn=[].concat((dep||{}).departments||[],(dep||{}).sub_departments||[],(dep||{}).functions||[]).join(' ').toLowerCase(); if(!s) return 'unknown'; if(EXEC.some(x=>s.includes(x))) return 'pass'; if(LEAD.some(x=>s.includes(x))&&TECH.test(fn)) return 'pass'; return 'drop'; };
+const ark={called:0,matched:0,contacts:0,kept:0,errors:0,dm_dropped:0,dm_list:[]};
+let arkItems=[]; try{ arkItems=$('Ark People').all(); }catch(e){}
+arkItems.forEach((it,i)=>{
   const call=calls[i]; if(!call||!companies[call.domain]) return;
-  sq.called++;
+  ark.called++;
   const r=body(it); const b=parse(r.body);
-  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'||b.success===false){ sq.errors++; failed.push({ tier:'Supersoniq', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }
-  sq.credits+=Number(b.credits_used)||0;
-  const comps=Array.isArray(b.results)?b.results:[];
-  let any=false;
-  for(const comp of comps){
-    const contacts=Array.isArray(comp.contacts)?comp.contacts:[comp];
-    for(const p of contacts){
-      if(!p||!(p.first_name||p.full_name)) continue;
-      any=true; sq.contacts++;
-      const full=p.full_name||((p.first_name||'')+' '+(p.last_name||'')).trim();
-      if(p.linkedin_url) sq.li_dropped++;
-      const li=recoverLi(call.domain, full);
-      if(li) sq.li_recovered++;
-      if(push(call.domain,{ name:full, title:p.job_title, seniority:p.seniority, department:p.function, email:p.email, linkedin:li, phone:'', city:p.contact_city||'', state:p.contact_region||'' },'Supersoniq')==='ok') sq.kept++;
-    }
+  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'){ ark.errors++; failed.push({ tier:'AI-Ark people', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }
+  const hits=Array.isArray(b.content)?b.content:[];
+  if(hits.length) ark.matched++;
+  for(const h of hits){
+    const prof=h&&h.profile; if(!prof||!prof.full_name) continue;
+    ark.contacts++;
+    const dm=dmVerdict(h.department);
+    if(dm==='drop'){ ark.dm_dropped++; ark.dm_list.push(call.domain+': '+prof.full_name+' ('+(prof.title||'')+' · '+String((h.department||{}).seniority||'')+')'); continue; }
+    const loc=h.location||{};
+    const res=push(call.domain,{ name:prof.full_name, title:prof.title||prof.headline, seniority:String((h.department||{}).seniority||''), department:[].concat((h.department||{}).functions||[]).join(', '), email:'', linkedin:String((h.link||{}).linkedin||''), phone:'', city:loc.city||'', state:loc.state||'' },'AI-Ark');
+    if(res==='ok'){ ark.kept++; out[out.length-1].json['LinkedIn Verified At']=nowIso; }
   }
-  if(any) sq.matched++;
 });
 
 const companiesWithContact=new Set(out.map(o=>o.json.Domain)).size;
-const stats={ companies:Object.keys(companies).length, companies_with_contact:companiesWithContact, contacts:out.length, contagen:cg, supersoniq:sq, people_gate:gate, tiers, failed };
+const stats={ companies:Object.keys(companies).length, companies_with_contact:companiesWithContact, contacts:out.length, contagen:cg, ark_people:ark, people_gate:gate, tiers, failed };
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];
 out[0].json._stats=stats;
 return out;

@@ -25,6 +25,8 @@ const resp=$input.all();
 const out=[];
 for(let i=0;i<preps.length;i++){
   const j=Object.assign({}, preps[i]); delete j.arkBody;
+  if(j._preverified){ delete j._preverified; out.push({ json:j }); continue; }        // AI-Ark-sourced, already identity-true
+  delete j._preverified;
   if(j._empty){ out.push({ json:j }); continue; }
   const r=(resp[i]&&resp[i].json)||{};
   const status=Number(r.statusCode)||0;

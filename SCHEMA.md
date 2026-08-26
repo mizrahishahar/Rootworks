@@ -418,7 +418,7 @@ One row per deployed final view: {table} - {view}. Created by the Deploy View to
 |---|---|---|---|
 | Name | `fldoUbdZNq2XQrSO1` | singleLineText | {table} - {view}, written at deploy run time |
 | Campaign | `fldeLPjBDcQ9pCdLy` | multipleRecordLinks | Exactly one campaign per row |
-| List CSV | `fldx7jBAH2o1XuIqH` | url | Client-facing link to the list (share view / CSV). Mechanism TBD; Operator-pasted for now |
+| List URL | `fldx7jBAH2o1XuIqH` | url | Client-facing link to the list (share view / CSV). Mechanism TBD; Operator-pasted for now |
 | View Link | `fldQSPR23nP39jXvl` | url | Deep link to the exact Airtable view this list was deployed from. Built by Deploy View to Campaign as <client Clayroots shareable link>/<tableId>/<viewId>. |
 | Deployed | `fldQkDnj1kE4U5jEj` | number | How many leads this deploy confirmed into the campaign at read-back. Written by Deploy View to Campaign. |
 

@@ -37,7 +37,12 @@ const SYN=[[/chief executive officer/g,'ceo'],[/chief technology officer|chief t
 const norm=(t)=>{ let s=String(t||'').toLowerCase(); for(const [re,rep] of SYN) s=s.replace(re,rep); return s.trim(); };
 const titleTerms=(cfg.people.titles||[]).map(norm).filter(Boolean);
 const neverTerms=(cfg.people.never||[]).map(norm).filter(Boolean);
-const passesPeople=(title)=>{ const t=norm(title); if(!t) return false; if(neverTerms.some(n=>t.includes(n))) return false; return titleTerms.some(x=>t.includes(x)); };
+// A term of 3 characters or less is an acronym and must match a whole word: 'cto' must never
+// match 'director', 'coo' never 'coordinator', 'ceo' never 'assistant to the ceo' is fine but
+// bare substrings are not (the dire-CTO-r collision, caught live 2026-08-25).
+const esc=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const termHit=(t,x)=> x.length<=3 ? new RegExp('(^|[^a-z0-9])'+esc(x)+'($|[^a-z0-9])').test(t) : t.includes(x);
+const passesPeople=(title)=>{ const t=norm(title); if(!t) return false; if(neverTerms.some(n=>termHit(t,n))) return false; return titleTerms.some(x=>termHit(t,x)); };
 const tierFor=(tiers,firstHire)=>{ for(const t of (tiers||[])){ if(t.kind==='rest') return t.target; if(t.kind==='first_hire'&&t.value===firstHire) return t.target; } return ''; };
 
 // Companies: Apply ICP rows (company + biz + reason), Contact Calls rows (first hire + bodies).
@@ -91,8 +96,8 @@ function push(d,p,source){
   if(seenKey.has(key)||(li&&seenLi.has(li.toLowerCase()))) return 'dup';
   gate.checked++;
   const t=norm(p.title);
-  if(neverTerms.some(n=>t.includes(n))){ gate.dropped_never++; gate.dropped.push(d+': '+(p.title||'')+' (never)'); return 'never'; }
-  if(!titleTerms.some(x=>t.includes(x))){ gate.dropped_no_title++; gate.dropped.push(d+': '+(p.title||'')); return 'notitle'; }
+  if(neverTerms.some(n=>termHit(t,n))){ gate.dropped_never++; gate.dropped.push(d+': '+(p.title||'')+' (never)'); return 'never'; }
+  if(!titleTerms.some(x=>termHit(t,x))){ gate.dropped_no_title++; gate.dropped.push(d+': '+(p.title||'')); return 'notitle'; }
   seenKey.add(key); if(li) seenLi.add(li.toLowerCase());
   const row=Object.assign(baseRow(d), {
     'Name': full, 'first_name': first, 'last_name': last,

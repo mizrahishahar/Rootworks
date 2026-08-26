@@ -4,9 +4,9 @@
 // Sources (Operator ruling 2026-08-26: Supersoniq is out of this machine entirely):
 //   ContaGen (DiscoLike /contacts/discover)  pulled WIDE: every Technology / Executive person
 //   at any decision level, so nobody is lost before the gates (DiscoLike bills net-new only).
-//   AI-Ark people search                     leaders at the domain (founder/owner/partner/cxo/
-//   vp/head/director/manager), the play's cap per company; 0.5 credits per returned profile.
-//   AI-Ark profiles arrive identity-true (their own canonical URL + structured seniority).
+//   AI-Ark people search                     people whose CURRENT title matches the play's
+//   `people:` titles (WORD mode), the play's cap per company; 0.5 credits per returned
+//   profile. The play dictates the titles; nothing is hardcoded here.
 //
 // Existing In Role: DiscoLike contact count on the play's roles; the company must be known to
 // BizData for the count to mean anything. The tier rule reads it as first hire: 0 = yes,
@@ -31,7 +31,7 @@ calls.forEach((c,i)=>{
   out.push({ json: {
     domain:c.domain, existing_in_role: known?count:null, first_hire: firstHire,
     cg:{ domain:[c.domain], department:['Technology','Executive'], seniority:['executive','vp','director','manager'], has_linkedin:true, max_companies:1, results_by_company:p.cap },
-    ark:{ contact:{ seniority:{ any:{ include:['founder','owner','partner','cxo','vp','head','director','manager'] } } }, account:{ domain:{ any:{ include:[c.domain] } } }, page:0, size:p.cap }
+    ark:{ contact:{ experience:{ current:{ title:{ any:{ include:{ mode:'WORD', content:p.titles } } } } } }, account:{ domain:{ any:{ include:[c.domain] } } }, page:0, size:p.cap }
   }});
 });
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];

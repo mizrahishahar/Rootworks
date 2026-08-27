@@ -1,4 +1,4 @@
-Teaches: the tag standard that names the sending pools, the SURBL check behind the gateway pool, and why tags describe the fleet while campaigns still carry their own sender lists.
+Teaches: the tag standard that names the sending pools, why inbox deliverability is a black box and how to react when it breaks, the SURBL check behind the gateway pool, and why tags describe the fleet while campaigns still carry their own sender lists.
 
 # Inbox management
 
@@ -52,7 +52,47 @@ Rewriting a campaign's senders: `set_campaign_email_accounts` **merges, it never
 
 **The failure this prevents.** Dave.io rotated on 2026-08-17: tags were reassigned correctly, and five of six live campaigns were repointed by hand. The sixth was missed and kept sending from the rested `dave-1` wave. Nobody noticed because the tags looked right. When you rotate, the proof is the campaign read-back, never the tag counts.
 
+## Inbox deliverability is a black box
+
+**Nothing tells you where the mail landed.** There is no placement score, no API field, no dashboard that separates the inbox from the promotions tab from spam. Receivers do not report it and the sender cannot see it. Every check available to us, SURBL included, is a narrow proxy on one axis; passing all of them is not evidence that mail is landing, and a healthy-looking inbox object is not evidence of anything at all.
+
+So the posture is not measurement. It is two things:
+
+**1. Hold the practices, always.** They are already the standard, and they exist because they are the only lever that is actually ours:
+
+- Limits live on the inbox, never the campaign, and the inbox limit is the rest mechanism. Never raise it to buy capacity; shorten or lengthen the sending window instead.
+- Warmup stays on. Ramp slowly and leave it alone.
+- One lead per domain per day (`is_max_lead_domain_per_day`), stop on reply at the domain, unsubscribes straight to the blocklist.
+- The gateway fence (`send_seg_email: 0`) on, and gateway campaigns sending only from clean domains.
+- Two markets never share a pool without their windows compared in one converted timezone.
+
+**2. Watch the numbers and react fast when one is horribly off.** The instrument is the copywriter's diagnosis ladder in `cold-email-copywriter/diagnosis.md`, and infrastructure is its top rung: it gates every row below it, so no campaign-level verdict means anything until this row reads clean.
+
+**Replies are the signal, not bounces.** A bounce only catches the crude failures, a dead domain or an outright block. A domain can bounce at zero and still be filed straight to spam on every send; the only thing that proves mail reached a human is a human answering. So the per-domain read is **genuine replies**, and bounce is the second column, not the first.
+
+| Signal | Level | Healthy | Worrying | Broken | Judge from |
+|---|---|---|---|---|---|
+| Genuine replies vs siblings | per domain | in line | lagging | silent while siblings reply | 500+ sends per domain |
+| Genuine replies per domain | per domain | 0.5%+ | | under 0.5% | 500+ sends per domain |
+| Bounce rate | per domain | in line | lagging | 80%+ of the sender's sends | 500+ sends per domain |
+| Bounce rate | workspace | under 3% | | 3%+ | any volume |
+
+**500 sends is the floor for a domain verdict, and 0.5% genuine is the bar.** Below 500 there is no read, keep sending. At 500 that bar is two or three real humans, so count the replies themselves rather than staring at a percentage: a domain that has taken 500 sends and produced no human answer is the suspect, whatever its bounce rate says.
+
+Counting rules, the copywriter's and ours both:
+
+- **OOO and auto-replies are not replies.** Neither are unsubscribe requests fired by a filter. Count humans.
+- Replies are unique people, not messages.
+- A rate without its volume is noise. One reply in forty proves nothing in either direction.
+- Opens never drive a verdict: unmeasured unless tracking was on, inflated by scanners even then.
+
+The sibling comparison is the whole trick: the same copy, the same list, the same window, split by domain. One domain silent while its siblings answer is that domain not landing. All of them silent together is not an inbox problem, it is the row below, and the ladder says which.
+
+**Locate, then swap.** Per-domain splits say whether the break is one domain, one provisioning wave, or the pool. **The reaction is almost always to switch the inboxes, not to nurse them.** A dead domain is replaced fast; it costs more to keep sending through it than a new one costs to buy. Do not run an investigation into a black box: there is no diagnosis waiting at the end of it, and every day spent looking is a day of sends burned. The swap itself is a rotation, so it is the full move, tags plus a hand-rewrite of every live campaign's sender list, read back one at a time.
+
 ## SURBL, and the gateway pool
+
+One narrow check on one axis, cheap and binary. It catches a real and fatal condition, and it is worth running on the whole fleet; it is not a deliverability verdict.
 
 **What SURBL is:** a DNS-based reputation blocklist of domains that have appeared in spam. Mail receivers query it during filtering; when a sending domain (or a domain in the body's links) is listed, deliverability drops hard regardless of how healthy the inbox itself looks. Listing happens to a DOMAIN, not an inbox, so one listed domain taints every inbox on it.
 

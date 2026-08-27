@@ -20,4 +20,4 @@ The main email sender we use. One workspace per client; the workspace id lives o
 
 ## This folder
 
-Every file opens with a line saying what it teaches. `deployment-standard.md` is the house standard any campaign on the platform is held to, whatever the job that touches it. `inbox-management.md` is the tag standard, the inbox pools, and deliverability hygiene (SURBL). `lessons.md` is the MCP surface and every trap it has already cost us.
+Every file opens with a line saying what it teaches. `deployment-standard.md` is the house standard any campaign on the platform is held to, whatever the job that touches it. `inbox-management.md` is the tag standard, the inbox pools, why deliverability is a black box and how to react when it breaks, and the SURBL check. `lessons.md` is the MCP surface and every trap it has already cost us.

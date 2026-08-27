@@ -178,6 +178,88 @@
       "parameters": {
         "jsCode": "@@file:nodes/Compact-Persons.js"
       }
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000020",
+      "name": "Pause Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        600
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alta-pause-prospects",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "c1c1c1c1-alta-pause-00000001"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000021",
+      "name": "Split Pause Ids",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        600
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Split-Pause-Ids.js"
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000022",
+      "name": "Pause Prospect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        40,
+        600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.altahq.com/v1/prospects/{{ $json.prospectId }}/{{ $json.action }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 500
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "sx4wc41lcV5NSNM8",
+          "name": "Alta"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000023",
+      "name": "Compact Pause",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        600
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Compact-Pause.js"
+      }
     }
   ],
   "connections": {
@@ -230,6 +312,39 @@
         [
           {
             "node": "Compact Persons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Pause Ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Pause Ids": {
+      "main": [
+        [
+          {
+            "node": "Pause Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause Prospect": {
+      "main": [
+        [
+          {
+            "node": "Compact Pause",
             "type": "main",
             "index": 0
           }

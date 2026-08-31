@@ -12,7 +12,9 @@ D.tableName=t.name||D.tableId;
 const m=String(t.description||'').match(/https:\/\/airtable\.com\/[^\s")]+\/shr[A-Za-z0-9]+/);
 D.shareViewLink=m?m[0]:'';
 if(!D.shareViewLink) D.warnings.push('table description carries no share link; receipt written without a client link');
-const v=(t.views||[]).find(x=>String(x.name)===D.view);
+// The launch's View accepts a view id (viw...) or an exact name; ids are rename-proof and
+// the Signal View convention on Campaigns holds ids (Operator ruling 2026-08-31).
+const v=(t.views||[]).find(x=>x.id===D.view||String(x.name)===D.view);
 if(!v){ D.abort='view not found'; D.errors.push('view "'+D.view+'" not on table "'+D.tableName+'"'); return [{json:{viewUrl:'', rowsUrl:''}}]; }
 D.viewId=v.id;
 const mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });

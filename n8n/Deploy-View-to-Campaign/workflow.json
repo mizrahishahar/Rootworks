@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-31T11:24:42.366Z",
+  "updatedAt": "2026-08-31T12:58:28.642Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to Campaign",
@@ -2394,8 +2394,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
-  "activeVersionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
+  "versionId": "58654d0f-6966-4e44-97fa-a9414c25b17b",
+  "activeVersionId": "58654d0f-6966-4e44-97fa-a9414c25b17b",
   "triggerCount": 2,
   "shared": [
     {
@@ -2407,9 +2407,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-31T11:24:42.371Z",
-    "createdAt": "2026-08-31T11:24:42.371Z",
-    "versionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
+    "updatedAt": "2026-08-31T12:58:28.647Z",
+    "createdAt": "2026-08-31T12:58:28.647Z",
+    "versionId": "58654d0f-6966-4e44-97fa-a9414c25b17b",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -3651,7 +3651,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst j=($input.first()||{}).json||{};\nif(!D.metaPhase||D.metaPhase==='schema'){\n  const tables=Array.isArray(j.tables)?j.tables:[];\n  D.schemaTables=tables;\n  let viewUrl='';\n  if(!tables.length){\n    if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }\n  } else {\n    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);\n    if(!t){\n      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }\n    } else {\n      D.tableId=t.id; D.tableName=t.name;\n      // The standing receipt view is a hard gate: no deploy without it. It is the\n      // one durable window (filter: Relevant AND Status=done, campaign fields)\n      // that every Lead Lists receipt links to, per the clayroots-tables standard.\n      const rv=(t.views||[]).find(x=>String(x.name||'').trim().toLowerCase()==='relevant & found : campaigns');\n      if(rv){ D.receiptViewId=rv.id; }\n      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table \"'+t.name+'\" has no \"Relevant & Found : Campaigns\" view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }\n      // The client-facing share link for that view lives in the table description\n      // (\"Campaigns view: https://airtable.com/shr...\"), pasted at setup; the API\n      // cannot mint share links, so its absence is the second hard gate.\n      const shrM=String(t.description||'').match(/https:\\/\\/airtable\\.com\\/(?:app[A-Za-z0-9]{14}\\/)?shr[A-Za-z0-9]+/);\n      if(shrM){ D.shareViewLink=shrM[0]; }\n      else if(!D.abort){ D.abort='missing share link'; D.errors.push('table \"'+t.name+'\" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste \"Campaigns view: https://airtable.com/shr...\" into the table description (clayroots-tables table-setup); nothing was sent'); }\n      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);\n      if(v){\n        D.viewId=v.id; D.viewType=v.type||'';\n        if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }\n      }\n    }\n  }\n  if(viewUrl && !D.abort){ D.metaPhase='view'; return [{json:{metaUrl:viewUrl, again:true}}]; }\n  D.metaPhase='done'; D.viewMeta=null;\n  return [{json:{again:false}}];\n}\nD.metaPhase='done';\nD.viewMeta=j;\nreturn [{json:{again:false}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nconst j=($input.first()||{}).json||{};\nif(!D.metaPhase||D.metaPhase==='schema'){\n  const tables=Array.isArray(j.tables)?j.tables:[];\n  D.schemaTables=tables;\n  let viewUrl='';\n  if(!tables.length){\n    if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }\n  } else {\n    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);\n    if(!t){\n      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }\n    } else {\n      D.tableId=t.id; D.tableName=t.name;\n      // The standing receipt view is a hard gate: no deploy without it. It is the\n      // one durable window (filter: Relevant AND Status=done, campaign fields)\n      // that every Lead Lists receipt links to, per the clayroots-tables standard.\n      const rv=(t.views||[]).find(x=>['relevant & found : campaigns','relevant : campaigns'].includes(String(x.name||'').trim().toLowerCase()));\n      if(rv){ D.receiptViewId=rv.id; }\n      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table \"'+t.name+'\" has no \"Relevant & Found : Campaigns\" (or intent \"Relevant : Campaigns\") view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }\n      // The client-facing share link for that view lives in the table description\n      // (\"Campaigns view: https://airtable.com/shr...\"), pasted at setup; the API\n      // cannot mint share links, so its absence is the second hard gate.\n      const shrM=String(t.description||'').match(/https:\\/\\/airtable\\.com\\/(?:app[A-Za-z0-9]{14}\\/)?shr[A-Za-z0-9]+/);\n      if(shrM){ D.shareViewLink=shrM[0]; }\n      else if(!D.abort){ D.abort='missing share link'; D.errors.push('table \"'+t.name+'\" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste \"Campaigns view: https://airtable.com/shr...\" into the table description (clayroots-tables table-setup); nothing was sent'); }\n      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);\n      if(v){\n        D.viewId=v.id; D.viewType=v.type||'';\n        if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }\n      }\n    }\n  }\n  if(viewUrl && !D.abort){ D.metaPhase='view'; return [{json:{metaUrl:viewUrl, again:true}}]; }\n  D.metaPhase='done'; D.viewMeta=null;\n  return [{json:{again:false}}];\n}\nD.metaPhase='done';\nD.viewMeta=j;\nreturn [{json:{again:false}}];"
         }
       },
       {

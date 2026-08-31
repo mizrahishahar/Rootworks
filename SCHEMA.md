@@ -32,7 +32,7 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Campaign Snapshots | `fld4JTnvDBXogj2mp` | singleLineText |  |
 | Billing Date | `fldhckiADqhdwylvk` | date |  |
 | Reports | `fldfk1lrNDfMAkGCx` | multipleRecordLinks |  |
-| Report Day | `fld16FKbFWTUeYZwk` | singleSelect | Weekday (Asia/Jerusalem) the PlusVibe Weekly Report goes out for this client. Empty = Friday default. Read by the daily PlusVibe Weekly Report automation. - Choices: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday |
+| Report Day | `fld16FKbFWTUeYZwk` | singleSelect | Weekday (Asia/Jerusalem) the PlusVibe Weekly Report goes out for this client. Empty = Friday default. Read by the daily PlusVibe Weekly Report automation. - Choices: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Daily |
 | Openers | `fldZcb0974UTxUSg6` | multipleRecordLinks |  |
 | DashboardURL | `fldM9hy9hfgL5DGv7` | url |  |
 | BDR Slack Channel ID | `fldXdAOneX5IESiSa` | singleLineText |  |

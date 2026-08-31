@@ -25,10 +25,10 @@ let fh={ yes:0, no:0, unknown:0, failed:[] };
 try{ const s=$('Contact Calls').first().json._stats; if(s) fh=s; }catch(e){}
 for(const f of (fh.failed||[])) failed.push(f);
 
-let bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, ark_people:{}, people_gate:{}, tiers:{}, failed:[] };
+let bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, ark:{}, failed:[] };
 try{ const s=$('Build Intent Leads').first().json._stats; if(s) bl=s; }catch(e){}
 for(const f of (bl.failed||[])) failed.push(f);
-const cg=bl.contagen||{}, arkP=bl.ark_people||{}, pg=bl.people_gate||{};
+const cg=bl.contagen||{}, arkP=bl.ark||{};
 
 let cleaned=0; try{ cleaned=$('Clean Fields').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}
 let afterDnc=0; try{ afterDnc=$('Apply DNC').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}
@@ -47,17 +47,16 @@ if(wfErrorPages) failed.push({ tier:'Waterfall', name:wfErrorPages+' page(s)', r
 
 if(!fq.qualified) skips.push('Skipped (everything after the hard lines, no company survived them)');
 if(fq.qualified&&!(icp.yes+icp.partial)&&!icp.error) skips.push('Skipped (contacts, no company passed the ICP check)');
-if((icp.yes+icp.partial)&&!bl.contacts) skips.push('Skipped (enrollment, no contact passed the people gate at '+nf(icp.yes)+' companies)');
+if((icp.yes+icp.partial)&&!bl.contacts) skips.push('Skipped (landing, the sources returned no contacts at '+nf(icp.yes+icp.partial)+' companies)');
 if(bl.contacts&&!afterDnc) skips.push('Skipped (enrollment, all '+nf(bl.contacts)+' contacts on DNC)');
 
 const errs=failed.length;
 const status=errs?'Succeeded with errors':'Succeeded';
-const tierLine=Object.entries(bl.tiers||{}).map(([u,n])=>nf(n)+' -> '+(u?u.replace(/https?:\/\/[^/]+\/audience\/webhook\//g,'').replace(/\/pull-in-prospect/g,''):'(no channel)')).join(' · ')||'none';
 const rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);
 const lines=[
   '**'+nf(upserted)+' upserted from '+nf(bl.contacts)+' contacts at '+nf(bl.companies_with_contact)+' of '+nf(icp.yes+icp.partial)+' ICP companies, '+errs+' error'+(errs===1?'':'s')+'**',
   '',
-  '**Play:** '+(cfg.play_name||cfg.play||'')+' · **Table:** '+(cfg.table||'')+' in '+(base||'')+' · **Event:** '+(cfg.event_type||''),
+  '**Signal:** '+(cfg.play_name||cfg.play||'')+(cfg.legacy_launch_id?' (legacy launch id, update the Apify webhook to the Signals record id)':'')+' · **Table:** '+(cfg.table||'')+' in '+(base||'')+' · **Type:** '+(cfg.event_type||''),
   '',
   '**Funnel**',
   '- **Jobs scraped:** '+nf(fq.jobs_in),
@@ -66,24 +65,21 @@ const lines=[
   '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),
   '- **First hire:** yes '+nf(fh.yes)+' · no '+nf(fh.no)+' · unknown '+nf(fh.unknown),
   '- **ContaGen:** '+nf(cg.called)+' calls · '+nf(cg.matched)+' returned people · '+nf(cg.contacts)+' contacts · '+nf(cg.kept)+' kept · '+nf(cg.errors)+' errors',
-  '- **AI-Ark people:** '+nf(arkP.called)+' calls · '+nf(arkP.matched)+' returned people · '+nf(arkP.contacts)+' profiles · '+nf(arkP.kept)+' net-new kept · errors '+nf(arkP.errors)+' (~'+(Math.round((arkP.contacts||0)*0.5*10)/10)+' credits)',
-  '- **People gate:** '+nf(pg.checked)+' checked · dropped '+nf(pg.dropped_never)+' on never terms · dropped '+nf(pg.dropped_no_title)+' on no title match',
-  '- **Contacts kept:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',
-  '- **Channels:** '+tierLine,
+  '- **AI-Ark people:** '+nf(arkP.called)+' calls · '+nf(arkP.matched)+' returned people · '+nf(arkP.profiles)+' profiles · '+nf(arkP.kept)+' net-new kept · errors '+nf(arkP.errors)+' (~'+(Math.round((arkP.profiles||0)*0.5*10)/10)+' credits)',
+  '- **No people gate:** everything the sources returned lands; relevance and the views cut in the base',
+  '- **Contacts landed:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',
   '- **Cleaned:** '+nf(cleaned)+' · **after DNC:** '+nf(afterDnc)+(dncDropped?' ('+nf(dncDropped)+' on DNC)':''),
   '- **Upserted to intent table:** '+nf(upserted),
   '',
   '**Waterfall batch fired:** '+(afterDnc?(wfOk?'yes (sweeps all rows not done/verifying)':'no / errored'):'not needed'),
   '',
-  '**Enrollment:** handled by the daily Add Leads runs'
+  '**Enrollment:** none here; the deploy doors feed campaigns from the views (Signal link on Campaigns)'
 ];
-const droppedTitles=(pg.dropped||[]);
-if(droppedTitles.length) lines.push('','**People gate dropped ('+nf(droppedTitles.length)+')**\n'+droppedTitles.slice(0,25).map(x=>'- '+x).join('\n')+(droppedTitles.length>25?'\n- ...and '+(droppedTitles.length-25)+' more':''));
 if(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\n'+rejLines.join('\n')+((icp.rejected||[]).length>10?'\n- ...and '+((icp.rejected||[]).length-10)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(skips.length) lines.push('',skips.join('\n'));
 const row={
- 'Automation':'Handle Intent Signal',
+ 'Automation':'Handle Hiring Intent Signal',
  'Status':status,
  'Run at': $now.toISO(),
  'Records In': bl.contacts||0,

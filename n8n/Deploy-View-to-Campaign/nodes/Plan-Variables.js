@@ -17,17 +17,18 @@ const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // except the first name: it blocks only when the view actually shows first_name
 // or first_name_he, so company-inbox lists deploy without a person name.
 // CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.
-const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX']);
+const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','Seniority','Department','Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Keywords','Company Status','Company City','Company State','Phones','Public Emails','Social URLs','Email Pattern','Signal Detail','detected_at','LinkedIn URL']);
 const IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);
 const CORE_LEAD=new Set(['State','State Full','City','Country']);
-const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid']);
+const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','relevance','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','First Hire','linkedin_name_match','Tag']);
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
 const fields=t.fields||[];
 let hasDe=false;
 for(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }
-const varCols=[]; const requiredCore=[]; let needFirstName=true;
+const varCols=[]; const rideCols=[]; const requiredCore=[]; let needFirstName=true;
 const consider=(name)=>{
-  if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;
+  if(MACHINE.has(name)||IDENTITY.has(name)) return;
+  if(IGNORE.has(name)||/^job\s/i.test(String(name))){ rideCols.push({name:name, key:snake(name)}); return; }
   if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }
   varCols.push({name:name, key:snake(name)});
 };
@@ -43,7 +44,7 @@ if(visible){
   else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);
   D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');
 }
-D.plan={varCols};
+D.plan={varCols, rideCols};
 D.requiredCore=requiredCore;
 D.needFirstName=needFirstName;
 if(!needFirstName) D.warnings.push('view "'+D.view+'" does not show first_name; the first name is not enforced and leads deploy without one');

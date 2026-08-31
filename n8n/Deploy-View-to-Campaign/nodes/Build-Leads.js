@@ -54,9 +54,14 @@ for(const r of rowsArr){
   const cv={}; const missVars=[];
   for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }
   if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }
+  // Convention (never-block) columns ride along when visible and filled, never skip a row.
+  for(const col of (plan.rideCols||[])){ const v=val(f[col.name]); if(v&&cv[col.key]===undefined) cv[col.key]=v.slice(0,2000); }
   if(Object.keys(cv).length) lead.custom_variables=cv;
   // Existing Campaigns links, kept so the stamp appends and never replaces.
   rec.camps=Array.isArray(f['Campaigns'])?f['Campaigns']:[];
+  // The stamp-gate (Operator 2026-08-28): already linked to this campaign's mirror row =
+  // already enrolled here once; never re-sent, whatever the sequencer's dedupe would say.
+  if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }
   D.emailToRow[email.toLowerCase()]=r.id;
   leads.push(lead);
 }

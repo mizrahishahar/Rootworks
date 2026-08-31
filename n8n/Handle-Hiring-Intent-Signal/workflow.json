@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-08-23T12:12:23.581Z",
+  "updatedAt": "2026-08-31T11:08:00.322Z",
   "createdAt": "2026-07-28T09:25:51.367Z",
   "id": "9iMXBGRlPk3O6pDZ",
-  "name": "Handle Intent Signal",
+  "name": "Handle Hiring Intent Signal",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -753,7 +753,7 @@
       ],
       "parameters": {
         "resource": "record",
-        "operation": "get",
+        "operation": "search",
         "base": {
           "__rl": true,
           "mode": "id",
@@ -762,9 +762,9 @@
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblJAWVcCaW6TmfbC"
+          "value": "tblDtJeqkUB2JFga1"
         },
-        "id": "={{ $('Parse Launch').first().json.play }}",
+        "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'hiring')",
         "options": {}
       },
       "credentials": {
@@ -774,7 +774,8 @@
         }
       },
       "executeOnce": true,
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "id": "c3000000-0000-4000-8000-000000000003",
@@ -1711,7 +1712,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1787652288571
+      "runStartedAt": 1788175979274
     }
   },
   "meta": {
@@ -1719,8 +1720,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "cb39b605-cdec-466b-801a-effc06a56728",
-  "activeVersionId": "cb39b605-cdec-466b-801a-effc06a56728",
+  "versionId": "22b3f4d3-6657-421a-a50a-5f50b7a91f41",
+  "activeVersionId": "22b3f4d3-6657-421a-a50a-5f50b7a91f41",
   "triggerCount": 1,
   "shared": [
     {
@@ -1732,9 +1733,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-23T12:12:23.585Z",
-    "createdAt": "2026-08-23T12:12:23.585Z",
-    "versionId": "cb39b605-cdec-466b-801a-effc06a56728",
+    "updatedAt": "2026-08-31T11:08:00.329Z",
+    "createdAt": "2026-08-31T11:08:00.329Z",
+    "versionId": "22b3f4d3-6657-421a-a50a-5f50b7a91f41",
     "workflowId": "9iMXBGRlPk3O6pDZ",
     "nodes": [
       {
@@ -1917,7 +1918,7 @@
           -360
         ],
         "parameters": {
-          "jsCode": "// Build Intent Leads: one row per contact at an ICP-approved company, carrying the contact,\n// the job that triggered the signal, the company's DiscoLike firmographics, the ICP reason,\n// the first-hire verdict and the tier's campaign.\n//\n// Sources in the builders' order: ContaGen (DiscoLike /contacts/discover) every contact kept,\n// then Supersoniq NET-NEW ONLY on Contact Key (first+last+domain). Provider items are\n// {statusCode, body} (fullResponse + neverError) aligned by index to Contact Calls.\n//\n// People gate: a contact's actual title must contain one of the play's title terms and none\n// of its never terms. Titles are normalised first (Chief Executive Officer -> ceo, Vice\n// President -> vp) so a term written short still catches the long form. Nothing else.\n// Channels: the play's linkedin / email lines, each one target or tiers in order, first match wins,\n// stamped as LinkedIn Campaign / Email Campaign. 'first hire' is read off Existing In Role:\n// 0 = yes, above 0 = no, blank (no source knows the company) = unknown. Every title the people\n// gate drops is listed in _stats so the play's list can be widened from real misses.\n// Company names go out raw; the Clean Fields helper writes Company clean next (no company_clean column on Intent tables, Operator ruling 2026-08-23).\nconst cfg=$('Parse Play').first().json;\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).join(', '):'';\nconst kv=(o)=>o&&typeof o==='object'?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):'';\nconst firstPhone=(p)=>Array.isArray(p)&&p.length?String((p[0]&&p[0].phone)||p[0]||''):'';\nconst linkedinOf=(urls)=>Array.isArray(urls)?(urls.find(u=>/linkedin\\.com\\/in\\//i.test(u))||''):'';\nconst body=(it)=>{ const j=(it&&it.json)||{}; if(j.statusCode!==undefined) return { status:Number(j.statusCode)||0, body:(j.body===undefined?null:j.body) }; return { status: j.error?0:200, body:j }; };\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,120); };\n\n// Title normalisation: universal vocabulary, not client logic.\nconst SYN=[[/chief executive officer/g,'ceo'],[/chief technology officer|chief technical officer/g,'cto'],[/chief operating officer/g,'coo'],[/chief financial officer/g,'cfo'],[/chief information officer/g,'cio'],[/chief product officer/g,'cpo'],[/chief revenue officer/g,'cro'],[/chief marketing officer/g,'cmo'],[/senior vice president|executive vice president/g,'svp'],[/vice president/g,'vp'],[/co[\\s-]*founder/g,'co-founder'],[/\\bsr\\.?\\b/g,'senior'],[/&/g,'and'],[/\\s+of\\s+/g,' '],[/[^a-z0-9\\- ]+/g,' '],[/\\s+/g,' ']];\nconst norm=(t)=>{ let s=String(t||'').toLowerCase(); for(const [re,rep] of SYN) s=s.replace(re,rep); return s.trim(); };\nconst titleTerms=(cfg.people.titles||[]).map(norm).filter(Boolean);\nconst neverTerms=(cfg.people.never||[]).map(norm).filter(Boolean);\nconst passesPeople=(title)=>{ const t=norm(title); if(!t) return false; if(neverTerms.some(n=>t.includes(n))) return false; return titleTerms.some(x=>t.includes(x)); };\nconst tierFor=(tiers,firstHire)=>{ for(const t of (tiers||[])){ if(t.kind==='rest') return t.target; if(t.kind==='first_hire'&&t.value===firstHire) return t.target; } return ''; };\n\n// Companies: Apply ICP rows (company + biz + reason), Contact Calls rows (first hire + bodies).\nconst companies={};\nfor(const it of $('Apply ICP').all()){ const j=it.json||{}; if(j.domain) companies[j.domain]=j; }\nconst calls=$('Contact Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\nconst callByDomain={}; for(const c of calls) callByDomain[c.domain]=c;\n\nconst failed=[];\nconst out=[];\nconst seenKey=new Set(); const seenLi=new Set();\nconst nowIso=new Date().toISOString();\nconst gate={ checked:0, dropped_never:0, dropped_no_title:0, dropped:[] };\nconst tiers={};\n\nfunction baseRow(d){\n  const e=companies[d]||{}; const c=e.company||{}; const b=e.biz||{}; const j=c.job||{}; const addr=b.address||{}; const cc=callByDomain[d]||{};\n  const firstHire=cc.first_hire||'unknown';\n  const li=tierFor(cfg.channels&&cfg.channels.linkedin,firstHire); const em=tierFor(cfg.channels&&cfg.channels.email,firstHire);\n  return {\n    'Domain': d,\n    'Company': String(c.company||b.name||'').trim(),\n    'Event Type': cfg.event_type,\n    'LinkedIn Campaign': li, 'Email Campaign': em,\n    'Intent Status': 'NEW',\n    'detected_at': nowIso,\n    'ICP Reason': e.icp_reason||'',\n    'Existing In Role': cc.existing_in_role,\n    'Job ID': j.id||'', 'Job Title': j.title||'', 'Job Link': j.link||'', 'Job Posted': j.posted_at||null,\n    'Job Description': j.description||'', 'Job Seniority': j.seniority||'', 'Job Function': j.function||'',\n    'Job Employment Type': j.employment_type||'', 'Job Industries': j.industries||'', 'Job Applicants': j.applicants,\n    'Job Salary': j.salary||'', 'Job Poster Name': j.poster_name||'', 'Job Poster Title': j.poster_title||'', 'Job Poster LinkedIn': j.poster_linkedin||'',\n    'Description': b.description||'', 'Industry Groups': kv(b.industry_groups), 'Employees': b.employees||'',\n    'Revenue Range': b.revenue_range||'', 'Score': b.score!=null?String(b.score):'', 'Keywords': b.keywords?Object.keys(b.keywords).join(', '):'',\n    'Company Status': b.status?(b.status.status+(b.status.confidence!=null?' ('+b.status.confidence+')':'')):'',\n    'Start Date': b.start_date||'', 'Street': addr.street||'', 'Company City': addr.city||'', 'Company State': addr.state||'',\n    'Country': addr.country||c.country||'', 'Zip': addr.zip||'',\n    'Phones': join(b.phones), 'Public Emails': join(b.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(b.social_urls), 'MX Provider': b.mx_provider||'', 'Redirect Domain': b.redirect_domain||'',\n    'Email Pattern': patterns[d]||''\n  };\n}\nconst patterns={};\nfunction signal(d){ const c=(companies[d]||{}).company||{}; const j=c.job||{}; const cc=callByDomain[d]||{}; return 'Hiring '+(j.title||'a role')+(j.posted_at?' (posted '+j.posted_at+')':'')+' · first hire '+(cc.first_hire||'Unknown')+(cc.existing_in_role!=null?' ('+cc.existing_in_role+' in role today)':'')+'. Job: '+(j.link||''); }\nfunction push(d,p,source){\n  const full=String(p.name||'').trim();\n  const first=cleanFirst(full), last=cleanLast(full);\n  const key=(first.toLowerCase()+last.toLowerCase()+d).trim();\n  const li=String(p.linkedin||'').trim();\n  if(!key||!first) return 'nokey';\n  if(seenKey.has(key)||(li&&seenLi.has(li.toLowerCase()))) return 'dup';\n  gate.checked++;\n  const t=norm(p.title);\n  if(neverTerms.some(n=>t.includes(n))){ gate.dropped_never++; gate.dropped.push(d+': '+(p.title||'')+' (never)'); return 'never'; }\n  if(!titleTerms.some(x=>t.includes(x))){ gate.dropped_no_title++; gate.dropped.push(d+': '+(p.title||'')); return 'notitle'; }\n  seenKey.add(key); if(li) seenLi.add(li.toLowerCase());\n  const row=Object.assign(baseRow(d), {\n    'Name': full, 'first_name': first, 'last_name': last,\n    'LinkedIn URL': li, 'Email': String(p.email||'').trim(),\n    'Title': String(p.title||'').trim(), 'Seniority': String(p.seniority||'').trim(), 'Department': String(p.department||'').trim(),\n    'Phone': p.phone||'', 'City': p.city||'', 'State': p.state||'',\n    'Contact Key': key, 'Contact Source': source,\n    'Signal Detail': signal(d)+' · '+source+' · '+(p.title||'')\n  });\n  const tk=(row['LinkedIn Campaign']?'linkedin:'+row['LinkedIn Campaign']:'')+(row['Email Campaign']?' email:'+row['Email Campaign']:''); tiers[tk.trim()]=(tiers[tk.trim()]||0)+1;\n  out.push({ json: row });\n  return 'ok';\n}\n\n// Source 1: ContaGen.\nconst cg={called:0,matched:0,contacts:0,kept:0,errors:0};\nlet cgItems=[]; try{ cgItems=$('ContaGen Contacts').all(); }catch(e){}\ncgItems.forEach((it,i)=>{\n  const call=calls[i]; if(!call||!companies[call.domain]) return;\n  cg.called++;\n  const r=body(it); const b=parse(r.body);\n  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'){ cg.errors++; failed.push({ tier:'ContaGen', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }\n  const entry=(b.results&&(b.results[call.domain]||Object.values(b.results)[0]))||null;\n  const contacts=(entry&&entry.contacts)||[];\n  if(contacts.length) cg.matched++;\n  const pattern=entry&&entry.email_pattern?entry.email_pattern+(entry.email_pattern_confidence!=null?' ('+entry.email_pattern_confidence+')':''):'';\n  if(pattern&&!patterns[call.domain]) patterns[call.domain]=pattern;\n  const e=companies[call.domain];\n  if(entry&&!e.biz) e.biz={ name:entry.name, employees:entry.employees, revenue_range:entry.revenue_range, industry_groups:entry.industry_groups, address:entry.address };\n  else if(entry&&e.biz&&!e.biz.revenue_range&&entry.revenue_range) e.biz.revenue_range=entry.revenue_range;\n  for(const p of contacts){\n    cg.contacts++;\n    if(push(call.domain,{ name:p.name, title:p.title, seniority:p.seniority, department:p.department, email:p.email, linkedin:linkedinOf(p.social_urls), phone:firstPhone(p.phone), city:'', state:p.state||'' },'ContaGen')==='ok') cg.kept++;\n  }\n});\n\n// Source 2: Supersoniq, net-new only.\nconst sq={called:0,matched:0,contacts:0,kept:0,errors:0,credits:0};\nlet sqItems=[]; try{ sqItems=$('Supersoniq Contacts').all(); }catch(e){}\nsqItems.forEach((it,i)=>{\n  const call=calls[i]; if(!call||!companies[call.domain]) return;\n  sq.called++;\n  const r=body(it); const b=parse(r.body);\n  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'||b.success===false){ sq.errors++; failed.push({ tier:'Supersoniq', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }\n  sq.credits+=Number(b.credits_used)||0;\n  const comps=Array.isArray(b.results)?b.results:[];\n  let any=false;\n  for(const comp of comps){\n    const contacts=Array.isArray(comp.contacts)?comp.contacts:[comp];\n    for(const p of contacts){\n      if(!p||!(p.first_name||p.full_name)) continue;\n      any=true; sq.contacts++;\n      const full=p.full_name||((p.first_name||'')+' '+(p.last_name||'')).trim();\n      if(push(call.domain,{ name:full, title:p.job_title, seniority:p.seniority, department:p.function, email:p.email, linkedin:p.linkedin_url, phone:'', city:p.contact_city||'', state:p.contact_region||'' },'Supersoniq')==='ok') sq.kept++;\n    }\n  }\n  if(any) sq.matched++;\n});\n\nconst companiesWithContact=new Set(out.map(o=>o.json.Domain)).size;\nconst stats={ companies:Object.keys(companies).length, companies_with_contact:companiesWithContact, contacts:out.length, contagen:cg, supersoniq:sq, people_gate:gate, tiers, failed };\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+          "jsCode": "// Build Intent Leads: one row per contact at an ICP-approved company, carrying the contact,\n// the job that triggered the signal, the company's DiscoLike firmographics, the ICP reason\n// and the first-hire verdict.\n//\n// Sources in the builders' order: ContaGen (DiscoLike /contacts/discover) every contact kept,\n// then AI-Ark NET-NEW ONLY on Contact Key (first+last+domain) and LinkedIn URL. Provider items\n// are {statusCode, body} (fullResponse) aligned by index to Contact Calls.\n//\n// NO people gate. The estate law: overshoot, then cut cheaply. Everything the sources return\n// lands in the table (dedupe and DNC only); the relevance formula classifies each row the\n// moment it arrives and the views segment. A dropped person is a visible row, never a silent\n// code decision. Channel/campaign stamping is gone with it: membership lives in the Campaigns\n// links, written by the deploy doors at verified landing, and feeds live on the Campaigns table.\n// Company names go out raw; the Clean Fields helper writes Company clean next.\nconst cfg=$('Parse Play').first().json;\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).join(', '):'';\nconst kv=(o)=>o&&typeof o==='object'?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):'';\nconst firstPhone=(p)=>Array.isArray(p)&&p.length?String((p[0]&&p[0].phone)||p[0]||''):'';\nconst linkedinOf=(urls)=>Array.isArray(urls)?(urls.find(u=>/linkedin\\.com\\/in\\//i.test(u))||''):'';\nconst body=(it)=>{ const j=(it&&it.json)||{}; if(j.statusCode!==undefined) return { status:Number(j.statusCode)||0, body:(j.body===undefined?null:j.body) }; return { status: j.error?0:200, body:j }; };\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,120); };\n\n// Companies: Apply ICP rows (company + biz + reason), Contact Calls rows (first hire + bodies).\nconst companies={};\nfor(const it of $('Apply ICP').all()){ const j=it.json||{}; if(j.domain) companies[j.domain]=j; }\nconst calls=$('Contact Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\nconst callByDomain={}; for(const c of calls) callByDomain[c.domain]=c;\n\nconst failed=[];\nconst out=[];\nconst seenKey=new Set(); const seenLi=new Set();\nconst nowIso=new Date().toISOString();\n\nfunction baseRow(d){\n  const e=companies[d]||{}; const c=e.company||{}; const b=e.biz||{}; const j=c.job||{}; const addr=b.address||{}; const cc=callByDomain[d]||{};\n  return {\n    'Domain': d,\n    'Company': String(c.company||b.name||'').trim(),\n    'Intent Status': 'NEW',\n    'detected_at': nowIso,\n    'ICP Reason': e.icp_reason||'',\n    'Existing In Role': cc.existing_in_role,\n    'First Hire': (cc.first_hire||'unknown'),\n    'Job ID': j.id||'', 'Job Title': j.title||'', 'Job Link': j.link||'', 'Job Posted': j.posted_at||null,\n    'Job Description': j.description||'', 'Job Seniority': j.seniority||'', 'Job Function': j.function||'',\n    'Job Employment Type': j.employment_type||'', 'Job Industries': j.industries||'', 'Job Applicants': j.applicants,\n    'Job Salary': j.salary||'', 'Job Poster Name': j.poster_name||'', 'Job Poster Title': j.poster_title||'', 'Job Poster LinkedIn': j.poster_linkedin||'',\n    'Description': b.description||'', 'Industry Groups': kv(b.industry_groups), 'Employees': b.employees||'',\n    'Revenue Range': b.revenue_range||'', 'Keywords': b.keywords?Object.keys(b.keywords).join(', '):'',\n    'Company Status': b.status?(b.status.status+(b.status.confidence!=null?' ('+b.status.confidence+')':'')):'',\n    'Street': addr.street||'', 'Company City': addr.city||'', 'Company State': addr.state||'',\n    'Country': addr.country||c.country||'', 'Zip': addr.zip||'',\n    'Phones': join(b.phones), 'Public Emails': join(b.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(b.social_urls), 'MX Provider': b.mx_provider||'',\n    'Email Pattern': patterns[d]||''\n  };\n}\nconst patterns={};\nfunction signal(d){ const c=(companies[d]||{}).company||{}; const j=c.job||{}; const cc=callByDomain[d]||{}; return 'Hiring '+(j.title||'a role')+(j.posted_at?' (posted '+j.posted_at+')':'')+' · first hire '+(cc.first_hire||'Unknown')+(cc.existing_in_role!=null?' ('+cc.existing_in_role+' in role today)':'')+'. Job: '+(j.link||''); }\nfunction push(d,p,source){\n  const full=String(p.name||'').trim();\n  const first=cleanFirst(full), last=cleanLast(full);\n  const key=(first.toLowerCase()+last.toLowerCase()+d).trim();\n  const li=String(p.linkedin||'').trim();\n  if(!key||!first) return 'nokey';\n  if(seenKey.has(key)||(li&&seenLi.has(li.toLowerCase()))) return 'dup';\n  seenKey.add(key); if(li) seenLi.add(li.toLowerCase());\n  const row=Object.assign(baseRow(d), {\n    'Name': full, 'first_name': first, 'last_name': last,\n    'LinkedIn URL': li, 'Email': String(p.email||'').trim(),\n    'Title': String(p.title||'').trim(), 'Seniority': String(p.seniority||'').trim(), 'Department': String(p.department||'').trim(),\n    'Phone': p.phone||'', 'City': p.city||'', 'State': p.state||'',\n    'Contact Key': key, 'Contact Source': source,\n    'Signal Detail': signal(d)+' · '+source+' · '+(p.title||'')\n  });\n  out.push({ json: row });\n  return 'ok';\n}\n\n// Source 1: ContaGen.\nconst cg={called:0,matched:0,contacts:0,kept:0,errors:0};\nlet cgItems=[]; try{ cgItems=$('ContaGen Contacts').all(); }catch(e){}\ncgItems.forEach((it,i)=>{\n  const call=calls[i]; if(!call||!companies[call.domain]) return;\n  cg.called++;\n  const r=body(it); const b=parse(r.body);\n  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'){ cg.errors++; failed.push({ tier:'ContaGen', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }\n  const entry=(b.results&&(b.results[call.domain]||Object.values(b.results)[0]))||null;\n  const contacts=(entry&&entry.contacts)||[];\n  if(contacts.length) cg.matched++;\n  const pattern=entry&&entry.email_pattern?entry.email_pattern+(entry.email_pattern_confidence!=null?' ('+entry.email_pattern_confidence+')':''):'';\n  if(pattern&&!patterns[call.domain]) patterns[call.domain]=pattern;\n  const e=companies[call.domain];\n  if(entry&&!e.biz) e.biz={ name:entry.name, employees:entry.employees, revenue_range:entry.revenue_range, industry_groups:entry.industry_groups, address:entry.address };\n  else if(entry&&e.biz&&!e.biz.revenue_range&&entry.revenue_range) e.biz.revenue_range=entry.revenue_range;\n  for(const p of contacts){\n    cg.contacts++;\n    if(push(call.domain,{ name:p.name, title:p.title, seniority:p.seniority, department:p.department, email:p.email, linkedin:linkedinOf(p.social_urls), phone:firstPhone(p.phone), city:'', state:p.state||'' },'ContaGen')==='ok') cg.kept++;\n  }\n});\n\n// Source 2: AI-Ark, net-new only. 0.5 credits per returned profile.\nconst ark={called:0,matched:0,profiles:0,kept:0,errors:0};\nlet arkItems=[]; try{ arkItems=$('Ark People').all(); }catch(e){}\narkItems.forEach((it,i)=>{\n  const call=calls[i]; if(!call||!companies[call.domain]) return;\n  ark.called++;\n  const r=body(it); const b=parse(r.body);\n  if(!(r.status>=200&&r.status<300)||!b||typeof b!=='object'){ ark.errors++; failed.push({ tier:'AI-Ark', name:call.domain, reason:'HTTP '+r.status+' '+why(b,r.body) }); return; }\n  const hits=Array.isArray(b.content)?b.content:[];\n  if(hits.length) ark.matched++;\n  for(const h of hits){\n    const prof=h&&h.profile; if(!prof||!prof.full_name) continue;\n    ark.profiles++;\n    const loc=h.location||{};\n    if(push(call.domain,{ name:prof.full_name, title:prof.title||prof.headline, seniority:String((h.department||{}).seniority||''), department:[].concat((h.department||{}).functions||[]).join(', '), email:'', linkedin:String((h.link||{}).linkedin||''), phone:'', city:loc.city||'', state:loc.state||'' },'AI-Ark')==='ok') ark.kept++;\n  }\n});\n\nconst companiesWithContact=new Set(out.map(o=>o.json.Domain)).size;\nconst stats={ companies:Object.keys(companies).length, companies_with_contact:companiesWithContact, contacts:out.length, contagen:cg, ark:ark, failed };\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
         },
         "alwaysOutputData": true
       },
@@ -2121,7 +2122,7 @@
           300
         ],
         "parameters": {
-          "jsCode": "// A guard tripped before any paid call: the launch payload, the play row, or the client row\n// is missing something. One error, the row says exactly what. 'Failed' is the Error Logger's\n// word for a crash; a guard trip is Succeeded with errors.\nlet g={};\ntry{ const p=$('Parse Play').first().json; if(p&&p.config_ok===false) g=p; }catch(e){}\nif(!g.guard){ try{ const l=$('Parse Launch').first().json; if(l&&l.config_ok===false) g=l; }catch(e){} }\nlet baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json; if(c&&!c.base){ baseMissing=true; g=Object.assign({},$('Parse Play').first().json,{guard:'client'}); } }catch(e){} }\nconst what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'play row '+(g.play||''):'client row '+(g.client||''));\nconst missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');\nconst row={\n 'Automation':'Handle Intent Signal',\n 'Status':'Succeeded with errors',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': g.table||'(no table)',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Guard tripped before any paid call, 1 error**\\n\\n**Where:** '+what+'\\n\\n**Missing / unreadable:** '+missing+'\\n\\nThe play row (KB Files, Type intent-play) needs: table, event, companies (country | max N employees | we sell to: ...), people (titles | never ... | N per company), tiers (rule -> url | rest -> url). The Apify payload needs {play, resource}. Fix and rerun.'\n};\nif(g.client) row['Client']=[g.client];\nreturn [{json:row}];\n"
+          "jsCode": "// A guard tripped before any paid call: the launch payload, the play row, or the client row\n// is missing something. One error, the row says exactly what. 'Failed' is the Error Logger's\n// word for a crash; a guard trip is Succeeded with errors.\nlet g={};\ntry{ const p=$('Parse Play').first().json; if(p&&p.config_ok===false) g=p; }catch(e){}\nif(!g.guard){ try{ const l=$('Parse Launch').first().json; if(l&&l.config_ok===false) g=l; }catch(e){} }\nlet baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json; if(c&&!c.base){ baseMissing=true; g=Object.assign({},$('Parse Play').first().json,{guard:'client'}); } }catch(e){} }\nconst what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'play row '+(g.play||''):'client row '+(g.client||''));\nconst missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');\nconst row={\n 'Automation':'Handle Hiring Intent Signal',\n 'Status':'Succeeded with errors',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': g.table||'(no table)',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Guard tripped before any paid call, 1 error**\\n\\n**Where:** '+what+'\\n\\n**Missing / unreadable:** '+missing+'\\n\\nThe play row (KB Files, Type intent-play) needs: table, event, companies (country | max N employees | we sell to: ...), people (titles | never ... | N per company), tiers (rule -> url | rest -> url). The Apify payload needs {play, resource}. Fix and rerun.'\n};\nif(g.client) row['Client']=[g.client];\nreturn [{json:row}];\n"
         },
         "onError": "continueRegularOutput"
       },
@@ -2175,7 +2176,7 @@
           100
         ],
         "parameters": {
-          "jsCode": "// Build Run Log: the one row this run writes, per the logging standard. Status computed from\n// failed[], skips separated, the Description is the whole funnel. Every node reference is\n// guarded: a branch that never ran reads as 0.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst failed=[]; const skips=[];\n\nlet fq={ jobs_in:0, qualified:0, drops:{} };\ntry{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(e){}\nconst d=fq.drops||{};\nconst dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'duplicate '+nf(d.duplicate),'already in table '+nf(d.worked)].join(' · ');\n\nlet bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];\ntry{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}\nfor(const f of (bz.failed||[])) failed.push(f);\n\nlet icp={ checked:0, yes:0, partial:0, no:0, missing:0, error:'', rejected:[] }; let polls=0;\ntry{ const s=$('Apply ICP').first().json._stats; if(s) icp=s; }catch(e){}\ntry{ polls=Number($('Poll Check').last().json.passes)||0; }catch(e){}\nif(icp.error) failed.push({ tier:'ICP check', name:'task', reason:icp.error });\n\nlet fh={ yes:0, no:0, unknown:0, failed:[] };\ntry{ const s=$('Contact Calls').first().json._stats; if(s) fh=s; }catch(e){}\nfor(const f of (fh.failed||[])) failed.push(f);\n\nlet bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, supersoniq:{}, people_gate:{}, tiers:{}, failed:[] };\ntry{ const s=$('Build Intent Leads').first().json._stats; if(s) bl=s; }catch(e){}\nfor(const f of (bl.failed||[])) failed.push(f);\nconst cg=bl.contagen||{}, sq=bl.supersoniq||{}, pg=bl.people_gate||{};\n\nlet cleaned=0; try{ cleaned=$('Clean Fields').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}\nlet afterDnc=0; try{ afterDnc=$('Apply DNC').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}\nconst dncDropped=Math.max(0,cleaned-afterDnc);\nlet upserted=0; const upsertErr=[];\nfor(const n of ['Upsert by Email','Upsert by Name+Domain']){\n  try{ for(const it of $(n).all()){ const j=it.json||{}; if(j&&j.id) upserted++; else if(j&&j.error) upsertErr.push({ tier:'Upsert', name:n, reason:String((j.error&&(j.error.message||j.error))||'upsert failed').slice(0,120) }); } }catch(e){}\n}\nfor(const f of upsertErr) failed.push(f);\nconst upsertGap=Math.max(0, afterDnc-upserted-upsertErr.length);\nif(upsertGap) failed.push({ tier:'Upsert', name:upsertGap+' row(s)', reason:'no record id came back' });\nlet wfOk=null, wfErrorPages=0;\ntry{ const w=$('Run Waterfall').first().json||{}; wfOk=!w.error; wfErrorPages=Number(w.errorPages)||0; }catch(e){}\nif(afterDnc&&wfOk===false) failed.push({ tier:'Waterfall', name:'batch call', reason:'errored' });\nif(wfErrorPages) failed.push({ tier:'Waterfall', name:wfErrorPages+' page(s)', reason:'error pages' });\n\nif(!fq.qualified) skips.push('Skipped (everything after the hard lines, no company survived them)');\nif(fq.qualified&&!(icp.yes+icp.partial)&&!icp.error) skips.push('Skipped (contacts, no company passed the ICP check)');\nif((icp.yes+icp.partial)&&!bl.contacts) skips.push('Skipped (enrollment, no contact passed the people gate at '+nf(icp.yes)+' companies)');\nif(bl.contacts&&!afterDnc) skips.push('Skipped (enrollment, all '+nf(bl.contacts)+' contacts on DNC)');\n\nconst errs=failed.length;\nconst status=errs?'Succeeded with errors':'Succeeded';\nconst tierLine=Object.entries(bl.tiers||{}).map(([u,n])=>nf(n)+' -> '+(u?u.replace(/https?:\\/\\/[^/]+\\/audience\\/webhook\\//g,'').replace(/\\/pull-in-prospect/g,''):'(no channel)')).join(' · ')||'none';\nconst rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);\nconst lines=[\n  '**'+nf(upserted)+' upserted from '+nf(bl.contacts)+' contacts at '+nf(bl.companies_with_contact)+' of '+nf(icp.yes+icp.partial)+' ICP companies, '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Play:** '+(cfg.play_name||cfg.play||'')+' · **Table:** '+(cfg.table||'')+' in '+(base||'')+' · **Event:** '+(cfg.event_type||''),\n  '',\n  '**Funnel**',\n  '- **Jobs scraped:** '+nf(fq.jobs_in),\n  '- **Hard lines dropped:** '+dropLine,\n  '- **Companies to BizData:** '+nf(fq.qualified)+' · matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+(closedList.length?' ('+closedList.join(', ')+')':'')+' · errors '+nf(bz.errors),\n  '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),\n  '- **First hire:** yes '+nf(fh.yes)+' · no '+nf(fh.no)+' · unknown '+nf(fh.unknown),\n  '- **ContaGen:** '+nf(cg.called)+' calls · '+nf(cg.matched)+' returned people · '+nf(cg.contacts)+' contacts · '+nf(cg.kept)+' kept · '+nf(cg.errors)+' errors',\n  '- **Supersoniq:** '+nf(sq.called)+' calls · '+nf(sq.matched)+' returned people · '+nf(sq.contacts)+' contacts · '+nf(sq.kept)+' net-new kept · '+nf(sq.credits)+' credits · '+nf(sq.errors)+' errors',\n  '- **People gate:** '+nf(pg.checked)+' checked · dropped '+nf(pg.dropped_never)+' on never terms · dropped '+nf(pg.dropped_no_title)+' on no title match',\n  '- **Contacts kept:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',\n  '- **Channels:** '+tierLine,\n  '- **Cleaned:** '+nf(cleaned)+' · **after DNC:** '+nf(afterDnc)+(dncDropped?' ('+nf(dncDropped)+' on DNC)':''),\n  '- **Upserted to intent table:** '+nf(upserted),\n  '',\n  '**Waterfall batch fired:** '+(afterDnc?(wfOk?'yes (sweeps all rows not done/verifying)':'no / errored'):'not needed'),\n  '',\n  '**Enrollment:** handled by the daily Add Leads runs'\n];\nconst droppedTitles=(pg.dropped||[]);\nif(droppedTitles.length) lines.push('','**People gate dropped ('+nf(droppedTitles.length)+')**\\n'+droppedTitles.slice(0,25).map(x=>'- '+x).join('\\n')+(droppedTitles.length>25?'\\n- ...and '+(droppedTitles.length-25)+' more':''));\nif(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\\n'+rejLines.join('\\n')+((icp.rejected||[]).length>10?'\\n- ...and '+((icp.rejected||[]).length-10)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(skips.length) lines.push('',skips.join('\\n'));\nconst row={\n 'Automation':'Handle Intent Signal',\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': bl.contacts||0,\n 'Records Out': upserted,\n 'Errors': errs,\n 'Target': cfg.table||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{json:row}];\n"
+          "jsCode": "// Build Run Log: the one row this run writes, per the logging standard. Status computed from\n// failed[], skips separated, the Description is the whole funnel. Every node reference is\n// guarded: a branch that never ran reads as 0.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst failed=[]; const skips=[];\n\nlet fq={ jobs_in:0, qualified:0, drops:{} };\ntry{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(e){}\nconst d=fq.drops||{};\nconst dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'duplicate '+nf(d.duplicate),'already in table '+nf(d.worked)].join(' · ');\n\nlet bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];\ntry{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}\nfor(const f of (bz.failed||[])) failed.push(f);\n\nlet icp={ checked:0, yes:0, partial:0, no:0, missing:0, error:'', rejected:[] }; let polls=0;\ntry{ const s=$('Apply ICP').first().json._stats; if(s) icp=s; }catch(e){}\ntry{ polls=Number($('Poll Check').last().json.passes)||0; }catch(e){}\nif(icp.error) failed.push({ tier:'ICP check', name:'task', reason:icp.error });\n\nlet fh={ yes:0, no:0, unknown:0, failed:[] };\ntry{ const s=$('Contact Calls').first().json._stats; if(s) fh=s; }catch(e){}\nfor(const f of (fh.failed||[])) failed.push(f);\n\nlet bl={ companies:0, companies_with_contact:0, contacts:0, contagen:{}, ark:{}, failed:[] };\ntry{ const s=$('Build Intent Leads').first().json._stats; if(s) bl=s; }catch(e){}\nfor(const f of (bl.failed||[])) failed.push(f);\nconst cg=bl.contagen||{}, arkP=bl.ark||{};\n\nlet cleaned=0; try{ cleaned=$('Clean Fields').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}\nlet afterDnc=0; try{ afterDnc=$('Apply DNC').all().map(i=>i.json).filter(j=>j&&!j._empty).length; }catch(e){}\nconst dncDropped=Math.max(0,cleaned-afterDnc);\nlet upserted=0; const upsertErr=[];\nfor(const n of ['Upsert by Email','Upsert by Name+Domain']){\n  try{ for(const it of $(n).all()){ const j=it.json||{}; if(j&&j.id) upserted++; else if(j&&j.error) upsertErr.push({ tier:'Upsert', name:n, reason:String((j.error&&(j.error.message||j.error))||'upsert failed').slice(0,120) }); } }catch(e){}\n}\nfor(const f of upsertErr) failed.push(f);\nconst upsertGap=Math.max(0, afterDnc-upserted-upsertErr.length);\nif(upsertGap) failed.push({ tier:'Upsert', name:upsertGap+' row(s)', reason:'no record id came back' });\nlet wfOk=null, wfErrorPages=0;\ntry{ const w=$('Run Waterfall').first().json||{}; wfOk=!w.error; wfErrorPages=Number(w.errorPages)||0; }catch(e){}\nif(afterDnc&&wfOk===false) failed.push({ tier:'Waterfall', name:'batch call', reason:'errored' });\nif(wfErrorPages) failed.push({ tier:'Waterfall', name:wfErrorPages+' page(s)', reason:'error pages' });\n\nif(!fq.qualified) skips.push('Skipped (everything after the hard lines, no company survived them)');\nif(fq.qualified&&!(icp.yes+icp.partial)&&!icp.error) skips.push('Skipped (contacts, no company passed the ICP check)');\nif((icp.yes+icp.partial)&&!bl.contacts) skips.push('Skipped (landing, the sources returned no contacts at '+nf(icp.yes+icp.partial)+' companies)');\nif(bl.contacts&&!afterDnc) skips.push('Skipped (enrollment, all '+nf(bl.contacts)+' contacts on DNC)');\n\nconst errs=failed.length;\nconst status=errs?'Succeeded with errors':'Succeeded';\nconst rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);\nconst lines=[\n  '**'+nf(upserted)+' upserted from '+nf(bl.contacts)+' contacts at '+nf(bl.companies_with_contact)+' of '+nf(icp.yes+icp.partial)+' ICP companies, '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Signal:** '+(cfg.play_name||cfg.play||'')+(cfg.legacy_launch_id?' (legacy launch id, update the Apify webhook to the Signals record id)':'')+' · **Table:** '+(cfg.table||'')+' in '+(base||'')+' · **Type:** '+(cfg.event_type||''),\n  '',\n  '**Funnel**',\n  '- **Jobs scraped:** '+nf(fq.jobs_in),\n  '- **Hard lines dropped:** '+dropLine,\n  '- **Companies to BizData:** '+nf(fq.qualified)+' · matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+(closedList.length?' ('+closedList.join(', ')+')':'')+' · errors '+nf(bz.errors),\n  '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),\n  '- **First hire:** yes '+nf(fh.yes)+' · no '+nf(fh.no)+' · unknown '+nf(fh.unknown),\n  '- **ContaGen:** '+nf(cg.called)+' calls · '+nf(cg.matched)+' returned people · '+nf(cg.contacts)+' contacts · '+nf(cg.kept)+' kept · '+nf(cg.errors)+' errors',\n  '- **AI-Ark people:** '+nf(arkP.called)+' calls · '+nf(arkP.matched)+' returned people · '+nf(arkP.profiles)+' profiles · '+nf(arkP.kept)+' net-new kept · errors '+nf(arkP.errors)+' (~'+(Math.round((arkP.profiles||0)*0.5*10)/10)+' credits)',\n  '- **No people gate:** everything the sources returned lands; relevance and the views cut in the base',\n  '- **Contacts landed:** '+nf(bl.contacts)+' at '+nf(bl.companies_with_contact)+' companies',\n  '- **Cleaned:** '+nf(cleaned)+' · **after DNC:** '+nf(afterDnc)+(dncDropped?' ('+nf(dncDropped)+' on DNC)':''),\n  '- **Upserted to intent table:** '+nf(upserted),\n  '',\n  '**Waterfall batch fired:** '+(afterDnc?(wfOk?'yes (sweeps all rows not done/verifying)':'no / errored'):'not needed'),\n  '',\n  '**Enrollment:** none here; the deploy doors feed campaigns from the views (Signal link on Campaigns)'\n];\nif(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\\n'+rejLines.join('\\n')+((icp.rejected||[]).length>10?'\\n- ...and '+((icp.rejected||[]).length-10)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(skips.length) lines.push('',skips.join('\\n'));\nconst row={\n 'Automation':'Handle Hiring Intent Signal',\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': bl.contacts||0,\n 'Records Out': upserted,\n 'Errors': errs,\n 'Target': cfg.table||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{json:row}];\n"
         },
         "executeOnce": true,
         "onError": "continueRegularOutput"
@@ -2398,46 +2399,6 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "a1000000-0000-4000-8000-000000000005",
-        "name": "Supersoniq Contacts",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          5040,
-          -360
-        ],
-        "parameters": {
-          "method": "POST",
-          "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ $('Contact Calls').item.json.sq }}",
-          "options": {
-            "batching": {
-              "batch": {
-                "batchSize": 1,
-                "batchInterval": 250
-              }
-            },
-            "response": {
-              "response": {
-                "fullResponse": true,
-                "neverError": true
-              }
-            }
-          }
-        },
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "CQpoAyABVQwob0vN",
-            "name": "supersoniq"
-          }
-        },
-        "notes": "Source 2, net-new only. One call per ICP-approved company, job_titles = the play's people terms. Billed per delivered contact."
-      },
-      {
         "id": "a1000000-0000-4000-8000-000000000006",
         "name": "Clean Fields",
         "type": "n8n-nodes-base.executeWorkflow",
@@ -2524,7 +2485,7 @@
         ],
         "parameters": {
           "resource": "record",
-          "operation": "get",
+          "operation": "search",
           "base": {
             "__rl": true,
             "mode": "id",
@@ -2533,9 +2494,9 @@
           "table": {
             "__rl": true,
             "mode": "id",
-            "value": "tblJAWVcCaW6TmfbC"
+            "value": "tblDtJeqkUB2JFga1"
           },
-          "id": "={{ $('Parse Launch').first().json.play }}",
+          "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'hiring')",
           "options": {}
         },
         "credentials": {
@@ -2545,7 +2506,8 @@
           }
         },
         "executeOnce": true,
-        "onError": "continueRegularOutput"
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
       },
       {
         "id": "c3000000-0000-4000-8000-000000000003",
@@ -2557,7 +2519,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "// Parse Play: the play row (KB Files, Type intent-play) into the run's config. Every line\n// below is required except linkedin / email, of which at least one must be present. A missing\n// or unreadable line stops the run before any paid call. Nothing about a client exists in code.\n// Airtable rich text escapes markdown, so \\_ and friends are unescaped first.\n//\n//   table: tblXXXXXXXXXXXXXX\n//   event: became_hiring\n//   companies: US | max 200 employees | we sell to: <ICP sentence>\n//   roles: <title terms counted as \"already in the role\", comma list>\n//   people: <title terms we keep, comma list> | never <terms> | <N> per company\n//   linkedin: <Alta pull-in URL>                       or tiers: first hire = yes -> <url> | rest -> <url>\n//   email: <PlusVibe campaign id>                      or tiers, same grammar\nconst row=$input.first().json||{};\nconst f=row.fields||row;\nconst raw=String(f['Content']||'').replace(/\\\\([_*#\\[\\]()~`>\\-|])/g,'$1').replace(/\\r/g,'');\nconst clientLink=Array.isArray(f['Client'])?f['Client'][0]:'';\nconst client=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\nconst missing=[];\nconst lines={};\nfor(const ln of raw.split('\\n')){ const m=ln.match(/^\\s*([a-z]+)\\s*:\\s*(.*)$/i); if(m) lines[m[1].toLowerCase()]=m[2].trim(); }\nconst need=(k)=>{ if(!lines[k]){ missing.push(k); return ''; } return lines[k]; };\nconst list=(s)=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);\n\nif(!client) missing.push('Client link on the play row');\nconst table=need('table'); if(table&&!/^tbl[A-Za-z0-9]{14}$/.test(table)) missing.push('table (not a tbl id)');\nconst event=need('event');\n\nlet country='', maxEmployees=0, icp='';\nconst comp=need('companies');\nif(comp){\n  for(const p of comp.split('|').map(s=>s.trim())){\n    let m;\n    if((m=p.match(/^max\\s+(\\d+)\\s+employees$/i))) maxEmployees=Number(m[1]);\n    else if((m=p.match(/^we sell to\\s*:\\s*(.+)$/i))) icp=m[1].trim();\n    else if(/^[A-Z]{2}$/.test(p)) country=p;\n    else missing.push('companies: unreadable part \"'+p+'\"');\n  }\n  if(!country) missing.push('companies: country');\n  if(!maxEmployees) missing.push('companies: max N employees');\n  if(!icp) missing.push('companies: we sell to');\n}\n\nconst roles=list(need('roles'));\nif(lines['roles']&&!roles.length) missing.push('roles: empty');\n\nlet titles=[], never=[], cap=0;\nconst ppl=need('people');\nif(ppl){\n  for(const p of ppl.split('|').map(s=>s.trim())){\n    let m;\n    if((m=p.match(/^never\\s+(.+)$/i))) never=list(m[1]);\n    else if((m=p.match(/^(\\d+)\\s+per company$/i))) cap=Number(m[1]);\n    else if(!titles.length) titles=list(p);\n    else missing.push('people: unreadable part \"'+p+'\"');\n  }\n  if(!titles.length) missing.push('people: titles');\n  if(!cap) missing.push('people: N per company');\n}\n\n// A channel line is one target, or tiers: \"<rule> -> <target> | rest -> <target>\".\n// Rules: first hire = yes|no|unknown. Targets: Alta pull-in URL for linkedin, PlusVibe campaign id for email.\nconst channel=(key,isTarget,label)=>{\n  const s=lines[key]; if(!s) return null;\n  const tiers=[];\n  const parts=s.split('|').map(x=>x.trim()).filter(Boolean);\n  if(parts.length===1&&!/->/.test(parts[0])){ if(!isTarget(parts[0])) missing.push(key+': not a '+label); return [{ kind:'rest', target:parts[0] }]; }\n  for(const p of parts){\n    const m=p.match(/^(.+?)\\s*->\\s*(\\S+)$/);\n    if(!m){ missing.push(key+': unreadable \"'+p+'\"'); continue; }\n    const rule=m[1].trim().toLowerCase(); const target=m[2];\n    if(!isTarget(target)){ missing.push(key+': \"'+target+'\" is not a '+label); continue; }\n    let r;\n    if(rule==='rest') tiers.push({ kind:'rest', target });\n    else if((r=rule.match(/^first hire\\s*=\\s*(yes|no|unknown)$/))) tiers.push({ kind:'first_hire', value:r[1], target });\n    else missing.push(key+': unknown rule \"'+rule+'\"');\n  }\n  if(!tiers.some(t=>t.kind==='rest')) missing.push(key+': no rest rule');\n  return tiers;\n};\nconst linkedin=channel('linkedin',(t)=>/^https?:\\/\\//i.test(t),'URL');\nconst email=channel('email',(t)=>!/^https?:\\/\\//i.test(t)&&t.length>0,'PlusVibe campaign id');\nif(!linkedin&&!email) missing.push('linkedin or email (at least one channel)');\nif(lines['tiers']) missing.push('tiers: retired, write the tiers on the linkedin: or email: line');\n\nconst launch=$('Parse Launch').first().json;\nreturn [{ json: {\n  play: launch.play, datasetId: launch.datasetId, kvStoreId: launch.kvStoreId, sender: launch.sender,\n  play_name: f['Name']||'', client, table, event_type: event,\n  country, max_headcount: maxEmployees, icp_text: icp,\n  roles,\n  people: { titles, never, cap },\n  channels: { linkedin: linkedin||[], email: email||[] },\n  config_ok: missing.length===0, missing, guard:'play'\n}}];\n"
+          "jsCode": "// Parse Play: the Signals row (Hub, one row per signal) into the run's config. Typed fields,\n// no grammar: Name, Client (link), Signal Type, Target Table, Roles, Country, Max Employees, ICP.\n// The upstream node searches Signals with OR(RECORD_ID() = launch play id, {Signal Type} = 'hiring'),\n// so a legacy launch id (the retired KB play row) still resolves as long as exactly ONE hiring\n// signal exists; ambiguity or no match stops the run before any paid call.\n// Who gets MESSAGED is not config here or anywhere in this machine: relevance and the views\n// on the target table decide that. This machine only lands rows.\nconst launch=$('Parse Launch').first().json;\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));\nconst norm=(r)=>({ id:r.id, f:(r.fields||r) });\nconst wanted=launch.play;\nconst all=rows.map(norm);\nconst missing=[];\nlet hit=all.find(r=>r.id===wanted);\nlet legacy=false;\nif(!hit){\n  const hiring=all.filter(r=>String(r.f['Signal Type']||'')==='hiring');\n  if(hiring.length===1){ hit=hiring[0]; legacy=true; }\n  else missing.push(hiring.length===0?'no Signals row found for launch id '+wanted:'launch id '+wanted+' unknown and '+hiring.length+' hiring signals exist (ambiguous); update the Apify webhook payload to the Signals record id');\n}\nconst f=hit?hit.f:{};\nconst list=(s)=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);\nconst clientLink=Array.isArray(f['Client'])?f['Client'][0]:'';\nconst client=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\nconst table=String(f['Target Table']||'').trim();\nconst roles=list(f['Roles']);\nconst country=String(f['Country']||'').trim();\nconst maxEmployees=Number(f['Max Employees'])||0;\nconst icp=String(f['ICP']||'').trim();\nif(hit){\n  if(!client) missing.push('Client link on the Signals row');\n  if(!/^tbl[A-Za-z0-9]{14}$/.test(table)) missing.push('Target Table (not a tbl id)');\n  if(!roles.length) missing.push('Roles');\n  if(!country) missing.push('Country');\n  if(!maxEmployees) missing.push('Max Employees');\n  if(!icp) missing.push('ICP');\n}\nreturn [{ json: {\n  play: launch.play, datasetId: launch.datasetId, kvStoreId: launch.kvStoreId, sender: launch.sender,\n  play_name: f['Name']||'', signal_row: hit?hit.id:'', legacy_launch_id: legacy,\n  client, table, event_type: String(f['Signal Type']||'hiring'),\n  country, max_headcount: maxEmployees, icp_text: icp,\n  roles,\n  config_ok: missing.length===0, missing, guard:'play'\n}}];\n"
         }
       },
       {
@@ -2845,48 +2807,8 @@
           -360
         ],
         "parameters": {
-          "jsCode": "// Count Calls: one row per ICP-approved company with the two FREE count requests that answer\n// \"does this company already employ the role it is hiring for?\". The role terms are the play's\n// `roles` line, nothing else.\n//   sq: Supersoniq POST /companies/match, filters.job_titles\n//   cg_url: DiscoLike GET /contacts/count?domain=&title=...\nconst cfg=$('Parse Play').first().json;\nconst terms=Array.isArray(cfg.roles)?cfg.roles:[];\nconst out=[];\nfor(const it of $('Apply ICP').all()){\n  const c=it.json||{}; if(!c.domain) continue;\n  const q=['domain='+encodeURIComponent(c.domain)].concat(terms.map(t=>'title='+encodeURIComponent(t))).join('&');\n  out.push({ json: { domain:c.domain, terms,\n    sq:{ companies:[{ domain:c.domain }], filters:{ job_titles: terms } },\n    cg_url:'https://api.discolike.com/v1/contacts/count?'+q } });\n}\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n"
+          "jsCode": "// Count Calls: one row per ICP-approved company with the FREE count request that answers\n// \"does this company already employ the role it is hiring for?\". The role terms are the play's\n// `roles` line, nothing else. (Supersoniq's match count left with Supersoniq, ruling 2026-08-26.)\n//   cg_url: DiscoLike GET /contacts/count?domain=&title=...\nconst cfg=$('Parse Play').first().json;\nconst terms=Array.isArray(cfg.roles)?cfg.roles:[];\nconst out=[];\nfor(const it of $('Apply ICP').all()){\n  const c=it.json||{}; if(!c.domain) continue;\n  const q=['domain='+encodeURIComponent(c.domain)].concat(terms.map(t=>'title='+encodeURIComponent(t))).join('&');\n  out.push({ json: { domain:c.domain, terms,\n    cg_url:'https://api.discolike.com/v1/contacts/count?'+q } });\n}\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n"
         }
-      },
-      {
-        "id": "c3000000-0000-4000-8000-000000000017",
-        "name": "SQ Count",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          4160,
-          -360
-        ],
-        "parameters": {
-          "method": "POST",
-          "url": "https://api.supersoniq.app/partner/v1/companies/match",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ $json.sq }}",
-          "options": {
-            "batching": {
-              "batch": {
-                "batchSize": 1,
-                "batchInterval": 250
-              }
-            },
-            "response": {
-              "response": {
-                "fullResponse": true,
-                "neverError": true
-              }
-            }
-          }
-        },
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "CQpoAyABVQwob0vN",
-            "name": "supersoniq"
-          }
-        },
-        "notes": "FREE. How many people at this domain carry the scraped role today."
       },
       {
         "id": "c3000000-0000-4000-8000-000000000018",
@@ -2938,8 +2860,53 @@
           -360
         ],
         "parameters": {
-          "jsCode": "// Contact Calls: one row per ICP-approved company, carrying Existing In Role and the request\n// bodies for both contact sources.\n//\n// Pull WIDE, gate later: ContaGen is asked for every Technology / Executive person at any\n// decision level (DiscoLike bills net-new only), so nobody is lost before the people gate in\n// Build Intent Leads. Supersoniq bills per delivered contact, so it is asked by the play's titles.\n//\n// Existing In Role: a source \"knows\" the company when it answered with a match; the count is the\n// highest across the sources that know it; blank when no source knows the company. The tier rule\n// reads it as first hire: 0 = yes, above 0 = no, blank = unknown. Never guessed.\nconst cfg=$('Parse Play').first().json;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst calls=$('Count Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\nlet sqItems=[], cgItems=[];\ntry{ sqItems=$('SQ Count').all(); }catch(e){}\ntry{ cgItems=$('CG Count').all(); }catch(e){}\nconst stats={ yes:0, no:0, unknown:0, sq_errors:0, cg_errors:0, failed:[] };\nconst out=[];\ncalls.forEach((c,i)=>{\n  let known=false, count=0;\n  const sj=(sqItems[i]&&sqItems[i].json)||{}; const sb=parse(sj.body===undefined?null:sj.body);\n  const ss=Number(sj.statusCode)||0;\n  if(ss>=200&&ss<300&&sb&&typeof sb==='object'){\n    const m=Array.isArray(sb.matched)?sb.matched[0]:(Array.isArray(sb.results)?sb.results[0]:null);\n    if(m&&(m.company_id||m.company_name)){ known=true; count=Math.max(count, Number(m.available_contacts)||0); }\n  } else if(ss){ stats.sq_errors++; stats.failed.push({ tier:'In role (Supersoniq)', name:c.domain, reason:'HTTP '+ss+' '+String((sb&&(sb.error||sb.message))||'').slice(0,100) }); }\n  const cj=(cgItems[i]&&cgItems[i].json)||{}; const cb=parse(cj.body===undefined?null:cj.body);\n  const cs=Number(cj.statusCode)||0;\n  const bizKnown=!!(($('Apply ICP').all()[i]||{}).json||{}).biz;\n  if(cs>=200&&cs<300&&cb&&typeof cb==='object'&&cb.count!==undefined){ if(bizKnown){ known=true; count=Math.max(count, Number(cb.count)||0); } }\n  else if(cs){ stats.cg_errors++; stats.failed.push({ tier:'In role (DiscoLike)', name:c.domain, reason:'HTTP '+cs+' '+String((cb&&(cb.detail||cb.error))||'').slice(0,100) }); }\n  const firstHire=!known?'unknown':(count===0?'yes':'no');\n  stats[firstHire]++;\n  const p=cfg.people;\n  out.push({ json: {\n    domain:c.domain, existing_in_role: known?count:null, first_hire: firstHire,\n    cg:{ domain:[c.domain], department:['Technology','Executive'], seniority:['executive','vp','director','manager'], has_linkedin:true, max_companies:1, results_by_company:p.cap },\n    sq:{ companies:[{ domain:c.domain }], filters:{ job_titles:p.titles, has_linkedin:true }, tier:'full', per_company_limit:p.cap, confirm:true }\n  }});\n});\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+          "jsCode": "// Contact Calls: one row per ICP-approved company, carrying Existing In Role and the request\n// bodies for both contact sources.\n//\n// PULL DOCTRINE (the estate standard, mirrored from SQ Contacts Batch, Operator 2026-08-28):\n// pull WIDE, cut in the base. The seniority net is fixed in code, never per-signal config:\n// nothing about who gets MESSAGED lives here; the relevance formula and the views on the\n// target table do all the cutting, visibly and reversibly.\n//   ContaGen (DiscoLike /contacts/discover): seniority net only, NO department filter (we do\n//   not trust the classifier enough to let it silently exclude someone), limit 12 per company\n//   (a circuit-breaker, not a target; DiscoLike bills net-new only).\n//   AI-Ark people search: a fixed wide title vocabulary (decision makers AND the infra\n//   practitioners), WORD mode, size 12; 0.5 credits per returned profile (max 6 cr/company).\n//\n// Existing In Role: DiscoLike contact count on the signal's roles; the company must be known to\n// BizData for the count to mean anything. 0 = first hire yes, above 0 = no, blank = unknown.\nconst cfg=$('Parse Play').first().json;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst calls=$('Count Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\nlet cgItems=[];\ntry{ cgItems=$('CG Count').all(); }catch(e){}\nconst stats={ yes:0, no:0, unknown:0, cg_errors:0, failed:[] };\n\nconst CG_SENIORITY=['executive','vp','director','manager'];\nconst PER_COMPANY_LIMIT=12;\nconst ARK_TITLES=['CTO','CEO','COO','CIO','CISO','Founder','Co-Founder','Owner','President','Partner','Chief Architect','Chief Engineer','Chief Information Security Officer','VP Engineering','VP Technology','VP Infrastructure','VP Platform','VP DevOps','VP Software Engineering','VP Cloud','VP Security','VP Information Technology','Head of Engineering','Head of Technology','Head of Infrastructure','Head of Platform','Head of DevOps','Head of Cloud','Head of Software Architecture','Head of Solutions Architecture','Head of Product Engineering','Head of Information Technology','Director of Engineering','Director of Technology','Director of Infrastructure','Director of Platform','Director of DevOps','Director of Cloud','Director of Software Engineering','Director of Software Development','Director of Security','Director of Information Security','Director of Cyber Security','Director of IT','IT Director','Technical Director','Managing Director','Engineering Manager','Infrastructure Manager','DevOps Manager','Platform Manager','Principal Engineer','Staff Engineer','Founding Engineer','Lead Engineer','Tech Lead','Engineering Lead','DevOps Engineer','Site Reliability Engineer','Platform Engineer','Infrastructure Engineer','Cloud Engineer','Systems Engineer','Production Engineer','Release Engineer'];\n\nconst out=[];\ncalls.forEach((c,i)=>{\n  let known=false, count=0;\n  const cj=(cgItems[i]&&cgItems[i].json)||{}; const cb=parse(cj.body===undefined?null:cj.body);\n  const cs=Number(cj.statusCode)||0;\n  const bizKnown=!!(($('Apply ICP').all()[i]||{}).json||{}).biz;\n  if(cs>=200&&cs<300&&cb&&typeof cb==='object'&&cb.count!==undefined){ if(bizKnown){ known=true; count=Number(cb.count)||0; } }\n  else if(cs){ stats.cg_errors++; stats.failed.push({ tier:'In role (DiscoLike)', name:c.domain, reason:'HTTP '+cs+' '+String((cb&&(cb.detail||cb.error))||'').slice(0,100) }); }\n  const firstHire=!known?'unknown':(count===0?'yes':'no');\n  stats[firstHire]++;\n  out.push({ json: {\n    domain:c.domain, existing_in_role: known?count:null, first_hire: firstHire,\n    cg:{ domain:[c.domain], seniority:CG_SENIORITY, has_linkedin:true, max_companies:1, results_by_company:PER_COMPANY_LIMIT },\n    ark:{ contact:{ experience:{ current:{ title:{ any:{ include:{ mode:'WORD', content:ARK_TITLES } } } } } }, account:{ domain:{ any:{ include:[c.domain] } } }, page:0, size:PER_COMPANY_LIMIT }\n  }});\n});\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
         }
+      },
+      {
+        "id": "a3000000-0000-4000-8000-000000000001",
+        "name": "Ark People",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5040,
+          -360
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.ai-ark.com/api/developer-portal/v1/people",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Contact Calls').item.json.ark }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 350
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 3000,
+        "onError": "continueRegularOutput",
+        "notes": "AI-Ark leaders at the domain (source 2, replaced Supersoniq 2026-08-26). 0.5 credits per returned profile."
       }
     ],
     "connections": {
@@ -3213,18 +3180,7 @@
         "main": [
           [
             {
-              "node": "Supersoniq Contacts",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Supersoniq Contacts": {
-        "main": [
-          [
-            {
-              "node": "Build Intent Leads",
+              "node": "Ark People",
               "type": "main",
               "index": 0
             }
@@ -3440,17 +3396,6 @@
         "main": [
           [
             {
-              "node": "SQ Count",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "SQ Count": {
-        "main": [
-          [
-            {
               "node": "CG Count",
               "type": "main",
               "index": 0
@@ -3474,6 +3419,17 @@
           [
             {
               "node": "ContaGen Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark People": {
+        "main": [
+          [
+            {
+              "node": "Build Intent Leads",
               "type": "main",
               "index": 0
             }

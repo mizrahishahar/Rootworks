@@ -1,9 +1,8 @@
 {
-  "updatedAt": "2026-08-26T12:32:57.467Z",
+  "updatedAt": "2026-08-31T11:24:42.366Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to Campaign",
-  "description": "On-demand webhook: deploys an Airtable view's leads into a PlusVibe campaign (replaces manual CSV upload). Pre-validates emails, honors DNC, verifies by read-back, stamps Deploy Error, writes a Lead Lists receipt, updates the launch row. UNPUBLISHED.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1376,6 +1375,321 @@
       },
       "notes": "Writes live upload progress onto the launch row after every chunk, so a long deploy is readable while it runs instead of only at the end.",
       "onError": "stopWorkflow"
+    },
+    {
+      "id": "feed-trigger-01",
+      "name": "Daily Feed 13:45 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1900,
+        700
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 45
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "feed-getcamps-01",
+      "name": "Get Fed Campaigns",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1700,
+        700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "filterByFormula": "=AND({Signal} != '', {Sequencer} = 'PlusVibe')",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "feed-getsigs-01",
+      "name": "Get Signals Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1500,
+        700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblDtJeqkUB2JFga1"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "feed-prep-01",
+      "name": "Prep Feed Launches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1300,
+        700
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Feed-Launches.js"
+      }
+    },
+    {
+      "id": "feed-ok-01",
+      "name": "Feed OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1100,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fk1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "feed-launchrow-01",
+      "name": "Create Feed Launch",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -900,
+        620
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "Client": "={{ [$json.clientId] }}",
+            "Table ID": "={{ $json.tableId }}",
+            "View": "={{ $json.view }}",
+            "Target": "={{ $json.target }}",
+            "Dedupe Mode": "Strict",
+            "Automation": "Deploy View to Campaign",
+            "Status": "Waiting"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "feed-fire-01",
+      "name": "Fire Feed Deploy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -700,
+        620
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/deploy-view-to-campaign",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { recordId: $json.id } }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "feed-skiplog-01",
+      "name": "Build Feed Skip Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -900,
+        800
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Feed-Skip-Log.js"
+      }
+    },
+    {
+      "id": "feed-logrun-01",
+      "name": "Log Feed Refusals",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -700,
+        800
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "mirror-early-01",
+      "name": "Find Mirror Rid",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -260,
+        -40
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.crBase }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.mirrorTableId || 'tblMISSING' }}"
+        },
+        "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "mirror-early-02",
+      "name": "Set Mirror Rid",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -40
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "jsCode": "@@file:nodes/Set-Mirror-Rid.js"
+      }
     }
   ],
   "connections": {
@@ -1467,7 +1781,7 @@
       "main": [
         [
           {
-            "node": "Need DE Field?",
+            "node": "Find Mirror Rid",
             "type": "main",
             "index": 0
           }
@@ -1937,6 +2251,112 @@
           }
         ]
       ]
+    },
+    "Find Mirror Rid": {
+      "main": [
+        [
+          {
+            "node": "Set Mirror Rid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Mirror Rid": {
+      "main": [
+        [
+          {
+            "node": "Need DE Field?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Feed 13:45 IL": {
+      "main": [
+        [
+          {
+            "node": "Get Fed Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Fed Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Get Signals Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Signals Rows": {
+      "main": [
+        [
+          {
+            "node": "Prep Feed Launches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Feed Launches": {
+      "main": [
+        [
+          {
+            "node": "Feed OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feed OK?": {
+      "main": [
+        [
+          {
+            "node": "Create Feed Launch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Feed Skip Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Feed Launch": {
+      "main": [
+        [
+          {
+            "node": "Fire Feed Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Feed Skip Log": {
+      "main": [
+        [
+          {
+            "node": "Log Feed Refusals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1961,45 +2381,35 @@
       "deploy_5006": null,
       "deploy_5009": null,
       "deploy_5010": null,
-      "deploy_5012": null
+      "deploy_5012": null,
+      "deploy_5490": null,
+      "deploy_5491": null
+    },
+    "node:Daily Feed 13:45 IL": {
+      "recurrenceRules": []
     }
   },
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
-  "nodeGroups": [],
   "pinData": null,
-  "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-  "activeVersionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-  "versionCounter": 34,
-  "triggerCount": 1,
-  "sourceWorkflowId": null,
+  "versionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
+  "activeVersionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-08-08T20:41:34.896Z",
       "createdAt": "2026-08-08T20:41:34.896Z",
       "role": "workflow:owner",
       "workflowId": "JuWIbF6YCeRibhyg",
-      "projectId": "pyoZAgnc0vv0Gq9W",
-      "project": {
-        "updatedAt": "2026-06-09T20:31:42.148Z",
-        "createdAt": "2026-06-09T20:29:57.588Z",
-        "id": "pyoZAgnc0vv0Gq9W",
-        "name": "Shahar Mizrahi <shahar@flowroots.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
+      "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-26T12:32:57.472Z",
-    "createdAt": "2026-08-26T12:32:57.472Z",
-    "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
+    "updatedAt": "2026-08-31T11:24:42.371Z",
+    "createdAt": "2026-08-31T11:24:42.371Z",
+    "versionId": "9771d33c-9d5a-49e5-8a7a-82594c89daf9",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -2259,7 +2669,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst tables=D.schemaTables||[];\nconst t=tables.find(x=>x.id===D.tableId);\nif(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');\nD.dncTableId=dncT?dncT.id:'';\n// The campaigns mirror table, found by the same signature the PV->CR sync uses:\n// has Campaign ID and Sequencer, does not have Final Email.\nconst mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });\nD.mirrorTableId=mirT?mirT.id:'';\nif(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');\nconst vm=D.viewMeta||{};\nconst visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;\n// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.\n// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,\n// except the first name: it blocks only when the view actually shows first_name\n// or first_name_he, so company-inbox lists deploy without a person name.\n// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.\nconst IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX']);\nconst IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);\nconst CORE_LEAD=new Set(['State','State Full','City','Country']);\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','public_emails_clean','Email','Domain','Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst fields=t.fields||[];\nlet hasDe=false;\nfor(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }\nconst varCols=[]; const requiredCore=[]; let needFirstName=true;\nconst consider=(name)=>{\n  if(MACHINE.has(name)||IGNORE.has(name)||IDENTITY.has(name)) return;\n  if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }\n  varCols.push({name:name, key:snake(name)});\n};\nif(visible){\n  const byId={};\n  for(const f of fields) byId[f.id]=f;\n  needFirstName=false;\n  for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }\n} else {\n  let why='view metadata unavailable';\n  if(!D.viewId) why='view \"'+D.view+'\" not found in table views list';\n  else if(D.viewType&&D.viewType!=='grid') why='view \"'+D.view+'\" is type '+D.viewType+', not grid';\n  else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);\n  D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan={varCols};\nD.requiredCore=requiredCore;\nD.needFirstName=needFirstName;\nif(!needFirstName) D.warnings.push('view \"'+D.view+'\" does not show first_name; the first name is not enforced and leads deploy without one');\nD.schemaTables=null; D.viewMeta=null;\nreturn [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst tables=D.schemaTables||[];\nconst t=tables.find(x=>x.id===D.tableId);\nif(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }\nconst dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');\nD.dncTableId=dncT?dncT.id:'';\n// The campaigns mirror table, found by the same signature the PV->CR sync uses:\n// has Campaign ID and Sequencer, does not have Final Email.\nconst mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });\nD.mirrorTableId=mirT?mirT.id:'';\nif(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');\nconst vm=D.viewMeta||{};\nconst visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;\n// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.\n// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,\n// except the first name: it blocks only when the view actually shows first_name\n// or first_name_he, so company-inbox lists deploy without a person name.\n// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.\nconst IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','Seniority','Department','Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Keywords','Company Status','Company City','Company State','Phones','Public Emails','Social URLs','Email Pattern','Signal Detail','detected_at','LinkedIn URL']);\nconst IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);\nconst CORE_LEAD=new Set(['State','State Full','City','Country']);\nconst MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','relevance','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','First Hire','linkedin_name_match','Tag']);\nconst snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();\nconst fields=t.fields||[];\nlet hasDe=false;\nfor(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }\nconst varCols=[]; const rideCols=[]; const requiredCore=[]; let needFirstName=true;\nconst consider=(name)=>{\n  if(MACHINE.has(name)||IDENTITY.has(name)) return;\n  if(IGNORE.has(name)||/^job\\s/i.test(String(name))){ rideCols.push({name:name, key:snake(name)}); return; }\n  if(CORE_LEAD.has(name)){ requiredCore.push(name); return; }\n  varCols.push({name:name, key:snake(name)});\n};\nif(visible){\n  const byId={};\n  for(const f of fields) byId[f.id]=f;\n  needFirstName=false;\n  for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }\n} else {\n  let why='view metadata unavailable';\n  if(!D.viewId) why='view \"'+D.view+'\" not found in table views list';\n  else if(D.viewType&&D.viewType!=='grid') why='view \"'+D.view+'\" is type '+D.viewType+', not grid';\n  else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);\n  D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan={varCols, rideCols};\nD.requiredCore=requiredCore;\nD.needFirstName=needFirstName;\nif(!needFirstName) D.warnings.push('view \"'+D.view+'\" does not show first_name; the first name is not enforced and leads deploy without one');\nD.schemaTables=null; D.viewMeta=null;\nreturn [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];"
         }
       },
       {
@@ -2513,7 +2923,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{ready:false, abort:true}}]; }\nconst rowsArr=D.viewRows||[];\nD.rowsTotal=rowsArr.length;\nif(!rowsArr.length){ D.abort='view empty or not found'; D.errors.push('view empty or not found: \"'+(D.view||'')+'\"; nothing was sent'); return [{json:{ready:false, abort:true}}]; }\nconst dnc={};\nif(D.dncTableId){\n  try{\n    for(const it of $('Read DNC').all()){\n      const j=it.json||{};\n      const recs=Array.isArray(j.records)?j.records:[];\n      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }\n    }\n  }catch(e){}\n}\nconst plan=D.plan||{varCols:[]};\nconst requiredCore=D.requiredCore||[];\nconst needFirstName=D.needFirstName!==false;\nconst emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu)||[]).length>=2; };\nD.rows={}; D.emailToRow={}; D.varMisses={};\nconst leads=[];\nfor(const r of rowsArr){\n  const f=r.fields||{};\n  const email=String(f['Final Email']||'').trim();\n  const rec={email:email.toLowerCase(), skip:null};\n  D.rows[r.id]=rec;\n  if(!email){ rec.skip='missing Final Email'; continue; }\n  if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }\n  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();\n  if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }\n  // The first name blocks only when the view shows it (D.needFirstName). On a\n  // company-inbox list it is absent by design: send the row, just without a name.\n  const fnRaw=val(f['first_name']);\n  const fnHe=val(f['first_name_he']);\n  if(needFirstName){\n    if(!fnRaw&&!fnHe){ rec.skip='missing first name'; continue; }\n    if(!NAME_OK(fnRaw)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fnRaw||fnHe).slice(0,40); continue; }\n  }\n  const fn=NAME_OK(fnRaw)?fnRaw:'';\n  const comp=val(f['company_clean'])||val(f['Company']);\n  if(!comp){ rec.skip='missing company name'; continue; }\n  // Visible standard fields must be filled too.\n  let coreMiss='';\n  for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }\n  if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }\n  const lead={email:email};\n  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};\n  const soc=val(f['Social']);\n  if(/^https?:\\/\\//i.test(soc)) core.linkedin_person_url=soc;\n  for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }\n  const cv={}; const missVars=[];\n  for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }\n  if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }\n  if(Object.keys(cv).length) lead.custom_variables=cv;\n  // Existing Campaigns links, kept so the stamp appends and never replaces.\n  rec.camps=Array.isArray(f['Campaigns'])?f['Campaigns']:[];\n  D.emailToRow[email.toLowerCase()]=r.id;\n  leads.push(lead);\n}\nD.viewRows=null;\nconst chunks=[];\nfor(let i=0;i<leads.length;i+=200) chunks.push(leads.slice(i,i+200));\nD.send={queue:chunks, idx:0, attempts:0};\nconst flagMap={'Standard':{skip_lead_in_active_pause_camp:true},'Strict':{skip_if_in_workspace:true},'Active-only':{skip_lead_for_active_only_camp:true},'None':{}};\nD.flags=Object.assign({is_overwrite:true}, flagMap[D.dedupe]||flagMap['Strict']);\nif(!chunks.length) return [{json:{ready:false, abort:false}}];\nreturn [{json:{ready:true, abort:false, body:Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunks[0]}, D.flags), wait:0}}];"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nif(D.abort){ return [{json:{ready:false, abort:true}}]; }\nconst rowsArr=D.viewRows||[];\nD.rowsTotal=rowsArr.length;\nif(!rowsArr.length){ D.abort='view empty or not found'; D.errors.push('view empty or not found: \"'+(D.view||'')+'\"; nothing was sent'); return [{json:{ready:false, abort:true}}]; }\nconst dnc={};\nif(D.dncTableId){\n  try{\n    for(const it of $('Read DNC').all()){\n      const j=it.json||{};\n      const recs=Array.isArray(j.records)?j.records:[];\n      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }\n    }\n  }catch(e){}\n}\nconst plan=D.plan||{varCols:[]};\nconst requiredCore=D.requiredCore||[];\nconst needFirstName=D.needFirstName!==false;\nconst emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu)||[]).length>=2; };\nD.rows={}; D.emailToRow={}; D.varMisses={};\nconst leads=[];\nfor(const r of rowsArr){\n  const f=r.fields||{};\n  const email=String(f['Final Email']||'').trim();\n  const rec={email:email.toLowerCase(), skip:null};\n  D.rows[r.id]=rec;\n  if(!email){ rec.skip='missing Final Email'; continue; }\n  if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }\n  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();\n  if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }\n  // The first name blocks only when the view shows it (D.needFirstName). On a\n  // company-inbox list it is absent by design: send the row, just without a name.\n  const fnRaw=val(f['first_name']);\n  const fnHe=val(f['first_name_he']);\n  if(needFirstName){\n    if(!fnRaw&&!fnHe){ rec.skip='missing first name'; continue; }\n    if(!NAME_OK(fnRaw)&&!NAME_OK(fnHe)){ rec.skip='unusable first name: '+String(fnRaw||fnHe).slice(0,40); continue; }\n  }\n  const fn=NAME_OK(fnRaw)?fnRaw:'';\n  const comp=val(f['company_clean'])||val(f['Company']);\n  if(!comp){ rec.skip='missing company name'; continue; }\n  // Visible standard fields must be filled too.\n  let coreMiss='';\n  for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }\n  if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }\n  const lead={email:email};\n  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};\n  const soc=val(f['Social']);\n  if(/^https?:\\/\\//i.test(soc)) core.linkedin_person_url=soc;\n  for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }\n  const cv={}; const missVars=[];\n  for(const col of plan.varCols){ const v=val(f[col.name]); if(v) cv[col.key]=v.slice(0,2000); else missVars.push(col.name); }\n  if(missVars.length){ for(const m of missVars){ D.varMisses[m]=(D.varMisses[m]||0)+1; } rec.skip='missing '+missVars.join(', ').slice(0,120); continue; }\n  // Convention (never-block) columns ride along when visible and filled, never skip a row.\n  for(const col of (plan.rideCols||[])){ const v=val(f[col.name]); if(v&&cv[col.key]===undefined) cv[col.key]=v.slice(0,2000); }\n  if(Object.keys(cv).length) lead.custom_variables=cv;\n  // Existing Campaigns links, kept so the stamp appends and never replaces.\n  rec.camps=Array.isArray(f['Campaigns'])?f['Campaigns']:[];\n  // The stamp-gate (Operator 2026-08-28): already linked to this campaign's mirror row =\n  // already enrolled here once; never re-sent, whatever the sequencer's dedupe would say.\n  if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }\n  D.emailToRow[email.toLowerCase()]=r.id;\n  leads.push(lead);\n}\nD.viewRows=null;\nconst chunks=[];\nfor(let i=0;i<leads.length;i+=200) chunks.push(leads.slice(i,i+200));\nD.send={queue:chunks, idx:0, attempts:0};\nconst flagMap={'Standard':{skip_lead_in_active_pause_camp:true},'Strict':{skip_if_in_workspace:true},'Active-only':{skip_lead_for_active_only_camp:true},'None':{}};\nD.flags=Object.assign({is_overwrite:true}, flagMap[D.dedupe]||flagMap['Strict']);\nif(!chunks.length) return [{json:{ready:false, abort:false}}];\nreturn [{json:{ready:true, abort:false, body:Object.assign({workspace_id:D.ws, campaign_id:D.target, leads:chunks[0]}, D.flags), wait:0}}];"
         }
       },
       {
@@ -3371,6 +3781,321 @@
         },
         "notes": "Writes live upload progress onto the launch row after every chunk, so a long deploy is readable while it runs instead of only at the end.",
         "onError": "stopWorkflow"
+      },
+      {
+        "id": "feed-trigger-01",
+        "name": "Daily Feed 13:45 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -1900,
+          700
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 10,
+                "triggerAtMinute": 45
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "feed-getcamps-01",
+        "name": "Get Fed Campaigns",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1700,
+          700
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "=AND({Signal} != '', {Sequencer} = 'PlusVibe')",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "feed-getsigs-01",
+        "name": "Get Signals Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1500,
+          700
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblDtJeqkUB2JFga1"
+          },
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "feed-prep-01",
+        "name": "Prep Feed Launches",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1300,
+          700
+        ],
+        "parameters": {
+          "jsCode": "// The daily feed: every Campaigns row whose Signal link is set drinks from its Signal View.\n// One launch row per feed, entering the door exactly like a manual launch, dedupe Strict plus\n// the Campaigns-stamp gate. Refused with a named error, deploying nothing: an empty Signal\n// View, an unresolvable Signal link, a missing Campaign ID or Client, and any view feeding\n// two campaigns at once.\nconst camps=$('Get Fed Campaigns').all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));\nconst sigs={};\ntry{ for(const it of $('Get Signals Rows').all()){ const j=it.json||{}; const f=j.fields||j; if(j.id) sigs[j.id]={ table:String(f['Target Table']||'').trim(), name:String(f['Name']||'') }; } }catch(e){}\nconst out=[]; const seenView={};\nfor(const c of camps){\n  const f=c.fields||c;\n  if(!f['Campaign ID']&&!f['Signal']) continue;\n  const link=Array.isArray(f['Signal'])?f['Signal'][0]:null;\n  const sigId=link&&typeof link==='object'?String(link.id||''):String(link||'');\n  const sig=sigs[sigId];\n  const view=String(f['Signal View']||'').trim();\n  const target=String(f['Campaign ID']||'').trim();\n  const clientLink=Array.isArray(f['Client'])?f['Client'][0]:null;\n  const clientId=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\n  const name=String(f['Campaign']||target||'?');\n  const err=(why)=>out.push({json:{ok:false, campaign:name, why}});\n  if(!sig||!sig.table){ err('Signal link does not resolve to a Signals row with a Target Table'); continue; }\n  if(!view){ err('Signal View is empty; fill it or remove the Signal link'); continue; }\n  if(!target){ err('Campaign ID is empty'); continue; }\n  if(!clientId){ err('no Client link on the campaign row'); continue; }\n  const vk=sig.table+'|'+view;\n  if(seenView[vk]){\n    err('view \"'+view+'\" already feeds \"'+seenView[vk]+'\"; one view feeds one campaign');\n    for(const o of out){ if(o.json.ok&&o.json.view===view&&o.json.tableId===sig.table){ o.json.ok=false; o.json.why='view \"'+view+'\" feeds two campaigns; one view feeds one campaign'; } }\n    continue;\n  }\n  seenView[vk]=name;\n  out.push({json:{ok:true, clientId, tableId:sig.table, view, target, campaign:name, signal:sig.name}});\n}\nif(!out.length) return [{json:{_none:true, ok:false}}];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "feed-ok-01",
+        "name": "Feed OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -1100,
+          700
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "fk1",
+                "leftValue": "={{ $json.ok }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "feed-launchrow-01",
+        "name": "Create Feed Launch",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -900,
+          620
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Client": "={{ [$json.clientId] }}",
+              "Table ID": "={{ $json.tableId }}",
+              "View": "={{ $json.view }}",
+              "Target": "={{ $json.target }}",
+              "Dedupe Mode": "Strict",
+              "Automation": "Deploy View to Campaign",
+              "Status": "Waiting"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "feed-fire-01",
+        "name": "Fire Feed Deploy",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -700,
+          620
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.flowroots.com/webhook/deploy-view-to-campaign",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { recordId: $json.id } }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 5000
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "feed-skiplog-01",
+        "name": "Build Feed Skip Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -900,
+          800
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "jsCode": "// One loud run-log row when the daily feed refuses campaigns; silence when there was simply\n// nothing to feed. A refused feed deploys nothing, so the error must be impossible to miss.\nconst bad=$input.all().map(i=>i.json).filter(j=>j&&j.ok===false&&!j._none);\nif(!bad.length) return [];\nconst lines=bad.map(b=>'- '+(b.campaign||'?')+': '+(b.why||''));\nreturn [{json:{\n 'Automation':'Deploy View to Campaign',\n 'Status':'Failed',\n 'Run at':$now.toISO(),\n 'Trigger':'schedule',\n 'Errors':bad.length,\n 'Execution ID':String($execution.id),\n 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description':'**Daily feed refused '+bad.length+' campaign(s), nothing deployed for them**\\n'+lines.join('\\n')\n}}];\n"
+        }
+      },
+      {
+        "id": "feed-logrun-01",
+        "name": "Log Feed Refusals",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -700,
+          800
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "mirror-early-01",
+        "name": "Find Mirror Rid",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -260,
+          -40
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.mirrorTableId || 'tblMISSING' }}"
+          },
+          "filterByFormula": "={Campaign ID} = '{{ $('Check Campaign').first().json.target }}'",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "mirror-early-02",
+        "name": "Set Mirror Rid",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -140,
+          -40
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "jsCode": "// Early mirror resolution for the stamp-gate (Operator ruling 2026-08-28): on every PlusVibe\n// deploy, a row whose Campaigns links already carry this campaign's mirror row is skipped\n// before anything is sent, on top of the sequencer's own dedupe. The daily feeds rely on it.\n// No mirror row yet (first deploy into the campaign) resolves to '' and gates nothing.\nconst sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];\nlet rid='';\ntry{ const r=$input.first().json||{}; if(r.id) rid=r.id; }catch(e){}\nD.stampMirrorRid=rid||'';\nreturn [{json: $('Plan Variables').first().json}];\n"
+        }
       }
     ],
     "connections": {
@@ -3462,7 +4187,7 @@
         "main": [
           [
             {
-              "node": "Need DE Field?",
+              "node": "Find Mirror Rid",
               "type": "main",
               "index": 0
             }
@@ -3932,46 +4657,119 @@
             }
           ]
         ]
+      },
+      "Find Mirror Rid": {
+        "main": [
+          [
+            {
+              "node": "Set Mirror Rid",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Mirror Rid": {
+        "main": [
+          [
+            {
+              "node": "Need DE Field?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Daily Feed 13:45 IL": {
+        "main": [
+          [
+            {
+              "node": "Get Fed Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Fed Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Get Signals Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Signals Rows": {
+        "main": [
+          [
+            {
+              "node": "Prep Feed Launches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Feed Launches": {
+        "main": [
+          [
+            {
+              "node": "Feed OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Feed OK?": {
+        "main": [
+          [
+            {
+              "node": "Create Feed Launch",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Feed Skip Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Feed Launch": {
+        "main": [
+          [
+            {
+              "node": "Fire Feed Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Feed Skip Log": {
+        "main": [
+          [
+            {
+              "node": "Log Feed Refusals",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false,
-    "workflowPublishHistory": [
-      {
-        "createdAt": "2026-08-26T12:32:57.714Z",
-        "id": 1908,
-        "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-26T12:33:04.476Z",
-        "id": 1910,
-        "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-26T12:32:57.657Z",
-        "id": 1907,
-        "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-26T12:33:04.389Z",
-        "id": 1909,
-        "workflowId": "JuWIbF6YCeRibhyg",
-        "versionId": "0fdc848b-bcc2-4a0e-bdaf-d0b7bb72a2c3",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
-    ]
-  }
+    "autosaved": false
+  },
+  "tags": []
 }

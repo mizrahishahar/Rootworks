@@ -52,6 +52,7 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Booking Keys | `fldNZ0p7IWzLBZ83X` | multilineText | The scheduler identities that belong to this client, one per line: the host email, the Cal.com username, an event-type title. Handle New Booking matches a booking's organizer against these lines to find the client. Empty = bookings cannot be attributed to this client. Set at onboarding. |
 | Task Templates | `fldoZrz4vQhf0K5j8` | multipleRecordLinks |  |
 | Tasks | `fld83ot47MF0FURDv` | multipleRecordLinks |  |
+| Signals | `fldX22tSP2fGWY4rY` | multipleRecordLinks |  |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -147,7 +148,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off) |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -362,6 +363,9 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Openers | `fldQSNF5FHrhEtL0D` | multipleRecordLinks |  |
 | PV Leads View | `fldiVF3811bpVr1ix` | formula | Deep link to this campaign's lead list in the PlusVibe app. Derived from Campaign ID, nothing to sync. Blank for non-PlusVibe (Alta) campaigns. |
 | Lead Lists | `fldOyL4INmC7cMu4p` | multipleRecordLinks |  |
+| Signal | `fld0fqwBbRfLIThPz` | multipleRecordLinks |  |
+| Signal View | `fldNrTQTlrGEpRPd6` | singleLineText |  |
+| Pull-in URL | `fldleh9GZLj3V83EN` | url |  |
 
 ## Reports (`tblUFzAV4sysSJktK`)
 
@@ -540,3 +544,17 @@ The task list. One row per thing to do. Due is the date it was meant to happen a
 | Summary (Notes) | `fldVl9ghXZfXPqDSE` | aiText |  |
 | Headline (Notes) | `fldPWEqMFEgzIMTx5` | aiText |  |
 | Progress | `fldFDhquOrBqaVzBX` | formula |  |
+
+## Signals (`tblDtJeqkUB2JFga1`)
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Name | `fldSxLq0GqMKRsAD8` | singleLineText |  |
+| Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring |
+| Roles | `fldWNyb4tVR7K4e1l` | multilineText |  |
+| Target Table | `fldPmV7Fi6JRrPjVk` | singleLineText |  |
+| Country | `fldpzI1Fe3VmBgnK9` | singleLineText |  |
+| Max Employees | `fldXd78J9ZdrXOxV7` | number |  |
+| ICP | `fldrZ7I8ai7caze5b` | multilineText |  |
+| Client | `fldW6Binf0wnpLxZs` | multipleRecordLinks |  |
+| Campaigns | `fldNSaJ1fsF4QGGlT` | multipleRecordLinks |  |

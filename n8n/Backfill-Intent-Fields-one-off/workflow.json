@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-08-23T12:10:16.961Z",
+  "updatedAt": "2026-08-26T08:03:11.748Z",
   "createdAt": "2026-08-23T08:08:48.716Z",
   "id": "CSJ4boGKF7xeTDRC",
   "name": "Backfill Intent Fields (one-off)",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -734,13 +734,13 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1787488032869
+      "runStartedAt": 1787730254932
     }
   },
   "meta": null,
   "pinData": null,
-  "versionId": "7caa133f-f41f-4a20-b771-287712e14139",
-  "activeVersionId": null,
+  "versionId": "e97fef44-eb5a-4ba1-a4cb-dde31b268202",
+  "activeVersionId": "e97fef44-eb5a-4ba1-a4cb-dde31b268202",
   "triggerCount": 1,
   "shared": [
     {
@@ -751,6 +751,739 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-08-26T08:03:11.749Z",
+    "createdAt": "2026-08-26T08:03:11.749Z",
+    "versionId": "e97fef44-eb5a-4ba1-a4cb-dde31b268202",
+    "workflowId": "CSJ4boGKF7xeTDRC",
+    "nodes": [
+      {
+        "id": "b2000000-0000-4000-8000-000000000001",
+        "name": "Backfill Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "backfill-intent-fields",
+          "options": {}
+        },
+        "webhookId": "b2000000-aaaa-4000-8000-000000000001"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000002",
+        "name": "Parse Launch",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// One-off backfill of an Intent table. Body:\n//   { client, base, table, datasetIds: [...], roles: [...], passes: [...], email_campaign }\n// client = Hub Clients record id (for the log row); base/table = the Intent table;\n// datasetIds = Apify datasets still retrievable (jobs pass); roles = the play's roles line (role pass);\n// passes = which fills to run, any of: jobs, company, contacts, role, campaigns, liurl, arkurl.\n// Default: all except liurl and arkurl.\n// liurl (ruling 2026-08-25, first pass): mismatched URLs re-derived from DiscoLike or blanked.\n// arkurl (ruling 2026-08-25, second pass): AI-Ark is the LinkedIn identity authority. Looks the\n// person up by name + domain and writes their canonical profile URL. arkurl_scope on the body:\n// 'blanked' (default) = Supersoniq rows with an empty URL (restores contacts lost to the guard);\n// 'all-supersoniq' = every Supersoniq row, verifying and replacing standing URLs too.\n// email_campaign = PlusVibe campaign id written as Email Campaign where blank (campaigns pass).\nconst sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst b=($input.first().json||{}).body||{};\nconst list=(v)=>Array.isArray(v)?v.map(String):String(v||'').split(',').map(s=>s.trim()).filter(Boolean);\nconst passes=list(b.passes); const all=!passes.length;\nconst cfg={ client:String(b.client||''), base:String(b.base||''), table:String(b.table||''), datasetIds:list(b.datasetIds), roles:list(b.roles), email_campaign:String(b.email_campaign||''),\n  arkurl_scope:String(b.arkurl_scope||'blanked'),\n  do:{ jobs: all||passes.includes('jobs'), company: all||passes.includes('company'), contacts: all||passes.includes('contacts'), role: all||passes.includes('role'), campaigns: all||passes.includes('campaigns'), liurl: passes.includes('liurl'), arkurl: passes.includes('arkurl') } };\nconst missing=[];\nif(!cfg.client) missing.push('client'); if(!cfg.base) missing.push('base'); if(!cfg.table) missing.push('table');\nif(cfg.do.role&&!cfg.roles.length) missing.push('roles (needed for the role pass)');\nif(missing.length) throw new Error('Backfill launch missing: '+missing.join(', '));\nreturn [{ json: cfg }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000003",
+        "name": "Fetch Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.table }}"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Signal Detail",
+              "Name",
+              "LinkedIn URL",
+              "Domain",
+              "Title",
+              "Seniority",
+              "Department",
+              "State",
+              "Phone",
+              "Contact Source",
+              "Existing In Role",
+              "Description",
+              "Industry Groups",
+              "Job ID",
+              "Job Title",
+              "Job Link",
+              "Job Posted",
+              "Job Description",
+              "Job Seniority",
+              "Job Function",
+              "Job Employment Type",
+              "Job Industries",
+              "Job Applicants",
+              "Job Salary",
+              "Job Poster Name",
+              "Job Poster Title",
+              "Job Poster LinkedIn",
+              "Target Campaign",
+              "Intent Status",
+              "routed_at",
+              "LinkedIn Campaign",
+              "Email Campaign",
+              "LinkedIn Routed At",
+              "Email Routed At"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000004",
+        "name": "Split Datasets",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// One item per Apify dataset to fetch. Zero datasets still emits a placeholder so the chain\n// reaches Build Writes (Signal Detail parsing needs no dataset).\nconst cfg=$('Parse Launch').first().json;\nconst ids=cfg.datasetIds||[];\nif(!ids.length) return [{ json: { _empty:true } }];\nreturn ids.map(id=>({ json: { datasetId:id } }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000005",
+        "name": "Get Dataset",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          0
+        ],
+        "parameters": {
+          "url": "=https://api.apify.com/v2/datasets/{{ $json.datasetId }}/items?clean=true&format=json",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 300
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "aDxiCFTdpoU3NFzm",
+            "name": "Apify"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000012",
+        "name": "Domain Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Domain Calls: one item per distinct domain that still needs company fields or the in-role\n// count. Carries the BizData URL, the Supersoniq match body and the DiscoLike count URL.\n// The role terms are the play's roles line, passed on the launch body.\nconst cfg=$('Parse Launch').first().json;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst roles=Array.isArray(cfg.roles)?cfg.roles:[];\nconst terms=roles;\nconst rows=$('Fetch Rows').all().map(i=>i.json).filter(r=>r&&r.id);\nconst has=(f,k)=>{ const v=f[k]; return v!==undefined&&v!==null&&String(v).trim()!==''; };\nconst need={};\nfor(const r of rows){\n  const f=r.fields||{}; const d=String(f['Domain']||'').toLowerCase().trim(); if(!d) continue;\n  const n=need[d]||(need[d]={ company:false, role:false });\n  if(cfg.do.company&&!has(f,'Description')&&!has(f,'Industry Groups')) n.company=true;\n  if(cfg.do.role&&terms.length&&!has(f,'Existing In Role')) n.role=true;\n}\nconst out=[];\nfor(const d of Object.keys(need)){\n  const n=need[d]; if(!n.company&&!n.role) continue;\n  const q=['domain='+encodeURIComponent(d)].concat(terms.map(t=>'title='+encodeURIComponent(t))).join('&');\n  out.push({ json: { domain:d, want_company:n.company, want_role:n.role, roles, terms,\n    biz_url: 'https://api.discolike.com/v1/bizdata?domain='+encodeURIComponent(d),\n    sq: { companies:[{ domain:d }], filters:{ job_titles:terms } },\n    cg_url: 'https://api.discolike.com/v1/contacts/count?'+q } });\n}\nif(!out.length) return [{ json: { _empty:true, domain:'', biz_url:'https://api.discolike.com/v1/bizdata?domain=none.invalid', cg_url:'https://api.discolike.com/v1/contacts/count?domain=none.invalid', sq:{ companies:[{ domain:'none.invalid' }] } } }];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000013",
+        "name": "BizData",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1540,
+          0
+        ],
+        "parameters": {
+          "url": "={{ $json.biz_url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2100
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000014",
+        "name": "SQ Count",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1760,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/companies/match",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Domain Calls').item.json.sq }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000015",
+        "name": "CG Count",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1980,
+          0
+        ],
+        "parameters": {
+          "url": "={{ $('Domain Calls').item.json.cg_url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2100
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000016",
+        "name": "Contact Lookups",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Contact Lookups: one item per row that needs a DiscoLike /contacts/discover call, two modes.\n//\n// mode 'contact' (contacts pass): rows lacking Seniority; DiscoLike in domain mode with the\n// name as filter, capped at 2; Build Writes accepts a result only when its LinkedIn URL matches\n// the row's, never on name alone.\n//\n// mode 'liurl' (liurl pass, Operator ruling 2026-08-25): rows whose LinkedIn URL slug carries\n// neither first nor last name (URL-decoded, diacritic-stripped compare). Same DiscoLike call;\n// Build Writes matches the returned contact by exact normalised full name, keeps its URL only\n// when it passes the same name guard, else blanks the row's URL (row becomes email-only).\nconst cfg=$('Parse Launch').first().json;\nconst rows=$('Fetch Rows').all().map(i=>i.json).filter(r=>r&&r.id);\nconst has=(f,k)=>{ const v=f[k]; return v!==undefined&&v!==null&&String(v).trim()!==''; };\nconst stripName=(s)=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');\nconst liSlug=(u)=>{ const m=String(u||'').match(/linkedin\\.com\\/in\\/([^/?#]+)/i); if(!m) return null; let s=m[1]; try{ s=decodeURIComponent(s); }catch(e){} return stripName(s); };\nconst liMatch=(url,first,last)=>{ const slug=liSlug(url); if(slug===null||!slug) return null; const f=stripName(first), l=stripName(last); if(f.length<2&&l.length<2) return null; return (f.length>=2&&slug.includes(f))||(l.length>=2&&slug.includes(l)); };\nconst firstOf=(n)=>String(n||'').trim().split(/\\s+/)[0]||'';\nconst lastOf=(n)=>{ const p=String(n||'').trim().split(/\\s+/); return p.length>1?p.slice(1).join(' '):''; };\nconst out=[];\nif(cfg.do.contacts){\n  for(const r of rows){\n    const f=r.fields||{};\n    if(has(f,'Seniority')) continue;\n    const li=String(f['LinkedIn URL']||'').trim(); const d=String(f['Domain']||'').toLowerCase().trim(); const name=String(f['Name']||'').trim();\n    if(!li||!d||!name) continue;\n    out.push({ json: { mode:'contact', id:r.id, domain:d, linkedin:li, name, cg:{ domain:[d], name, has_linkedin:true, max_companies:1, results_by_company:2 } } });\n  }\n}\nif(cfg.do.liurl){\n  for(const r of rows){\n    const f=r.fields||{};\n    const li=String(f['LinkedIn URL']||'').trim(); const d=String(f['Domain']||'').toLowerCase().trim(); const name=String(f['Name']||'').trim();\n    if(!li||!d||!name) continue;\n    if(liMatch(li, firstOf(name), lastOf(name))!==false) continue;                       // only mismatched URLs\n    out.push({ json: { mode:'liurl', id:r.id, domain:d, linkedin:li, name, cg:{ domain:[d], name, has_linkedin:true, max_companies:1, results_by_company:3 } } });\n  }\n}\nif(!out.length) return [{ json: { _empty:true, id:'', cg:{ domain:['none.invalid'], max_companies:1, results_by_company:1 } } }];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000017",
+        "name": "CG Lookup",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2420,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.discolike.com/v1/contacts/discover",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.cg }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 4100
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000006",
+        "name": "Build Writes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Build Writes: for every row of the Intent table, fill what it lacks. Four passes, each only\n// writing a field the row does not already carry; rows the live machine produced are left alone.\n//\n//   jobs      Signal Detail -> Title, Job Title, Job Link, Job Posted, Job ID; Apify datasets\n//             (joined on Job ID) -> the full job record\n//   company   DiscoLike BizData per domain -> Description, Industry Groups, Employees, Revenue\n//             Range, Score, Keywords, Company Status, Start Date, address, Phones, Public\n//             Emails, Social URLs, MX Provider, Redirect Domain\n//   role      Supersoniq match + DiscoLike count on the scraped roles -> Existing In Role\n//             (highest across the sources that know the company; left blank when none does)\n//   contacts  DiscoLike contact lookup, accepted only on a LinkedIn URL match -> Seniority,\n//             Department, State, Phone; Contact Source = Supersoniq for rows that have none\n//             (every row before 2026-08-23 came from Supersoniq)\n// Writes go out in PATCH batches of 10.\nconst cfg=$('Parse Launch').first().json;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst rsp=(it)=>{ const j=(it&&it.json)||{}; return { status:Number(j.statusCode)||0, body:parse(j.body===undefined?null:j.body) }; };\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).join(', '):'';\nconst kv=(o)=>o&&typeof o==='object'?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):'';\nconst firstPhone=(p)=>Array.isArray(p)&&p.length?String((p[0]&&p[0].phone)||p[0]||''):'';\nconst normLi=(u)=>String(u||'').toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/+$/,'').split('?')[0];\nconst has=(r,k)=>{ const f=r.fields||{}; const v=f[k]; return v!==undefined&&v!==null&&String(v).trim()!==''; };\nconst rows=$('Fetch Rows').all().map(i=>i.json).filter(r=>r&&r.id);\nconst st={ rows:rows.length, parsed:0, unparsed:0, datasets:0, datasetMisses:[], jobsIndexed:0, matched:0, biz_called:0, biz_matched:0, biz_unknown:0, biz_errors:0, role_known:0, role_unknown:0, lookups:0, lookup_matched:0, lookup_nomatch:0, lookup_errors:0, rowsToWrite:0, untouched:0, batches:0, failed:[] };\n\n// jobs pass\nconst jobs={};\nif(cfg.do.jobs){ try{ for(const it of $('Get Dataset').all()){ const r=rsp(it); if(r.status>=200&&r.status<300&&Array.isArray(r.body)){ st.datasets++; for(const job of r.body){ const id=String(job.id||''); if(id&&!jobs[id]){ jobs[id]=job; st.jobsIndexed++; } } } else if(r.status) st.datasetMisses.push('HTTP '+r.status); } }catch(e){} }\nconst LEGACY=/^Hiring\\s+(.+?)\\s+\\(posted\\s+(\\d{4}-\\d{2}-\\d{2})\\)\\.\\s*Decision maker\\s+\\((.*?)\\)\\s+via[\\s\\S]*?Job:\\s*(\\S+)/;\nconst LOOSE=/^Hiring\\s+(.+?)(?:\\s+\\(posted\\s+(\\d{4}-\\d{2}-\\d{2})\\))?[\\s\\S]*?Job:\\s*(\\S+)/;\nconst idFromLink=(link)=>{ const m=String(link||'').match(/-(\\d{8,})(?:\\?|$)/); return m?m[1]:''; };\n\n// company + role passes, by domain\nconst biz={}, role={};\ntry{\n  const calls=$('Domain Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\n  let bz=[], sq=[], cg=[]; try{ bz=$('BizData').all(); }catch(e){} try{ sq=$('SQ Count').all(); }catch(e){} try{ cg=$('CG Count').all(); }catch(e){}\n  calls.forEach((c,i)=>{\n    const b=rsp(bz[i]); st.biz_called++;\n    if(b.status>=200&&b.status<300&&b.body&&typeof b.body==='object'&&(b.body.domain||b.body.name)){ biz[c.domain]=b.body; st.biz_matched++; }\n    else if(b.status===204||b.status===404) st.biz_unknown++;\n    else if(b.status){ st.biz_errors++; st.failed.push({ name:'BizData '+c.domain, reason:'HTTP '+b.status }); }\n    let known=false, count=0;\n    const s=rsp(sq[i]);\n    if(s.status>=200&&s.status<300&&s.body&&typeof s.body==='object'){ const m=Array.isArray(s.body.matched)?s.body.matched[0]:(Array.isArray(s.body.results)?s.body.results[0]:null); if(m&&(m.company_id||m.company_name)){ known=true; count=Math.max(count,Number(m.available_contacts)||0); } }\n    const g=rsp(cg[i]);\n    if(g.status>=200&&g.status<300&&g.body&&typeof g.body==='object'&&g.body.count!==undefined&&biz[c.domain]){ known=true; count=Math.max(count,Number(g.body.count)||0); }\n    if(known){ role[c.domain]=count; st.role_known++; } else st.role_unknown++;\n  });\n}catch(e){}\n\n// contacts + liurl passes, by row id, both fed by the same CG Lookup call aligned by index.\n// liurl (Operator ruling 2026-08-25): the row's URL failed the name guard; a replacement is\n// accepted only from a DiscoLike contact whose normalised full name equals the row's AND whose\n// URL passes the guard itself. No such contact = the URL is blanked, the row stays email-only.\nconst stripName=(s)=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');\nconst liSlug=(u)=>{ const m=String(u||'').match(/linkedin\\.com\\/in\\/([^/?#]+)/i); if(!m) return null; let s=m[1]; try{ s=decodeURIComponent(s); }catch(e){} return stripName(s); };\nconst liMatch=(url,first,last)=>{ const slug=liSlug(url); if(slug===null||!slug) return null; const f=stripName(first), l=stripName(last); if(f.length<2&&l.length<2) return null; return (f.length>=2&&slug.includes(f))||(l.length>=2&&slug.includes(l)); };\nconst linkedinOf=(urls)=>Array.isArray(urls)?(urls.find(u=>/linkedin\\.com\\/in\\//i.test(u))||''):'';\nconst firstOf=(n)=>String(n||'').trim().split(/\\s+/)[0]||'';\nconst lastOf=(n)=>{ const p=String(n||'').trim().split(/\\s+/); return p.length>1?p.slice(1).join(' '):''; };\nst.liurl_checked=0; st.liurl_recovered=0; st.liurl_blanked=0; st.liurl_rows=[];\nconst contact={}; const liurl={};\ntry{\n  const lk=$('Contact Lookups').all().map(i=>i.json).filter(c=>c&&c.id);\n  let res=[]; try{ res=$('CG Lookup').all(); }catch(e){}\n  lk.forEach((c,i)=>{\n    const r=rsp(res[i]); st.lookups++;\n    if(!(r.status>=200&&r.status<300)||!r.body||typeof r.body!=='object'){ st.lookup_errors++; if(r.status) st.failed.push({ name:'Lookup '+c.name, reason:'HTTP '+r.status }); if(c.mode==='liurl'){ st.liurl_checked++; liurl[c.id]=''; st.liurl_blanked++; st.liurl_rows.push(c.name+': blanked (lookup errored)'); } return; }\n    const entry=(r.body.results&&(r.body.results[c.domain]||Object.values(r.body.results)[0]))||null;\n    const contacts=(entry&&entry.contacts)||[];\n    if(c.mode==='liurl'){\n      st.liurl_checked++;\n      const want=stripName(c.name);\n      const hit=contacts.find(p=>stripName(p.name)===want);\n      const url=hit?linkedinOf(hit.social_urls):'';\n      if(url&&liMatch(url, firstOf(c.name), lastOf(c.name))===true){ liurl[c.id]=url; st.liurl_recovered++; st.liurl_rows.push(c.name+': recovered '+url); }\n      else { liurl[c.id]=''; st.liurl_blanked++; st.liurl_rows.push(c.name+': blanked ('+c.linkedin+')'); }\n      return;\n    }\n    const want=normLi(c.linkedin);\n    const hit=contacts.find(p=>Array.isArray(p.social_urls)&&p.social_urls.some(u=>normLi(u)===want));\n    if(hit){ contact[c.id]=hit; st.lookup_matched++; } else st.lookup_nomatch++;\n  });\n}catch(e){}\n\n// arkurl pass: AI-Ark identity by row id, aligned by index to Ark Lookups. A hit counts only\n// when the returned profile's name matches and its current company domain is the row's domain;\n// then its canonical URL is written (overwrite). Left-company or no-match on the 'all' scope\n// blanks a standing URL; on the 'blanked' scope there is nothing to blank.\nst.ark_checked=0; st.ark_written=0; st.ark_left=0; st.ark_nomatch=0; st.ark_errors=0; st.ark_rows=[];\nconst arkRes={};\ntry{\n  const lk=$('Ark Lookups').all().map(i=>i.json).filter(c=>c&&c.id);\n  let res=[]; try{ res=$('Ark Search').all(); }catch(e){}\n  lk.forEach((c,i)=>{\n    const r=rsp(res[i]); st.ark_checked++;\n    if(!(r.status>=200&&r.status<300)||!r.body||typeof r.body!=='object'){ st.ark_errors++; st.failed.push({ name:'Ark '+c.name, reason:'HTTP '+r.status }); return; }\n    const hits=Array.isArray(r.body.content)?r.body.content:[];\n    const want=stripName(c.name);\n    const named=hits.filter(h=>h&&h.profile&&stripName(h.profile.full_name)===want);\n    const pool=named.length?named:hits;\n    if(!pool.length){ st.ark_nomatch++; arkRes[c.id]=''; st.ark_rows.push(c.name+': no profile found at '+c.domain); return; }\n    const hit=pool.find(h=>c.linkedin&&h.link&&String(h.link.linkedin||'').toLowerCase()===c.linkedin.toLowerCase())||pool[0];\n    const curDomain=String(((hit.company||{}).link||{}).domain||'').toLowerCase().trim();\n    if(curDomain&&curDomain!==c.domain){ st.ark_left++; arkRes[c.id]=''; st.ark_rows.push(c.name+': now at '+curDomain+', no URL'); return; }\n    const url=String((hit.link||{}).linkedin||'').trim();\n    if(url){ arkRes[c.id]=url; st.ark_written++; st.ark_rows.push(c.name+': '+url); }\n    else { st.ark_nomatch++; arkRes[c.id]=''; st.ark_rows.push(c.name+': profile has no URL'); }\n  });\n}catch(e){}\n\nconst writes=[];\nfor(const r of rows){\n  const f=r.fields||{}; const out={};\n  const put=(k,v)=>{ if(v!==undefined&&v!==null&&String(v).trim()!==''&&!has(r,k)) out[k]=v; };\n  // jobs\n  if(cfg.do.jobs){\n    const sd=String(f['Signal Detail']||'');\n    let jobTitle='', posted='', contactTitle='', link='';\n    let m=sd.match(LEGACY); if(m){ jobTitle=m[1]; posted=m[2]; contactTitle=m[3]; link=m[4]; } else { m=sd.match(LOOSE); if(m){ jobTitle=m[1]; posted=m[2]||''; link=m[3]; } }\n    if(m){ st.parsed++;\n      const jobId=has(r,'Job ID')?String(f['Job ID']):idFromLink(link);\n      put('Title',contactTitle.trim()); put('Job Title',jobTitle.trim()); put('Job Link',link.replace(/[.,;]+$/,'')); put('Job Posted',posted); put('Job ID',jobId);\n      const job=jobId?jobs[jobId]:null;\n      if(job){ st.matched++; put('Job Description',job.descriptionText); put('Job Seniority',job.seniorityLevel); put('Job Function',job.jobFunction); put('Job Employment Type',job.employmentType); put('Job Industries',job.industries); if(!has(r,'Job Applicants')&&Number(job.applicantsCount)) out['Job Applicants']=Number(job.applicantsCount); put('Job Salary',job.salary); put('Job Poster Name',job.jobPosterName); put('Job Poster Title',job.jobPosterTitle); put('Job Poster LinkedIn',job.jobPosterProfileUrl); }\n    } else st.unparsed++;\n  }\n  const d=String(f['Domain']||'').toLowerCase().trim();\n  // company\n  const b=d?biz[d]:null;\n  if(cfg.do.company&&b){ const addr=b.address||{};\n    put('Description',b.description); put('Industry Groups',kv(b.industry_groups)); put('Employees',b.employees); put('Revenue Range',b.revenue_range); put('Score',b.score!=null?String(b.score):''); put('Keywords',b.keywords?Object.keys(b.keywords).join(', '):'');\n    put('Company Status',b.status?(b.status.status+(b.status.confidence!=null?' ('+b.status.confidence+')':'')):''); put('Start Date',b.start_date); put('Street',addr.street); put('Company City',addr.city); put('Company State',addr.state); put('Country',addr.country); put('Zip',addr.zip);\n    put('Phones',join(b.phones)); put('Public Emails',join(b.public_emails)); put('Social URLs',join(b.social_urls)); put('MX Provider',b.mx_provider); put('Redirect Domain',b.redirect_domain); }\n  // role\n  if(cfg.do.role&&d&&role[d]!==undefined&&!has(r,'Existing In Role')) out['Existing In Role']=role[d];\n  // campaigns: carry the old single Target Campaign into the channel fields; Email Campaign from the launch body\n  if(cfg.do.campaigns){\n    const tc=String(f['Target Campaign']||'').trim();\n    if(tc&&/^https?:\\/\\//i.test(tc)){ put('LinkedIn Campaign',tc); if(String(f['Intent Status']||'')==='ROUTED'&&f['routed_at']) put('LinkedIn Routed At',f['routed_at']); }\n    else if(tc){ put('Email Campaign',tc); if(String(f['Intent Status']||'')==='ROUTED'&&f['routed_at']) put('Email Routed At',f['routed_at']); }\n    if(cfg.email_campaign) put('Email Campaign',cfg.email_campaign);\n  }\n  // contacts\n  if(cfg.do.contacts){\n    const p=contact[r.id];\n    if(p){ put('Seniority',p.seniority); put('Department',p.department); put('State',p.state); put('Phone',firstPhone(p.phone)); }\n    if(!has(r,'Contact Source')) out['Contact Source']='Supersoniq';\n  }\n  // liurl: overwrite deliberately, recovered URL or blank; the only pass allowed to clear a cell.\n  if(cfg.do.liurl&&liurl[r.id]!==undefined&&liurl[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=liurl[r.id];\n  // arkurl: AI-Ark's canonical URL overwrites; a verified departure or no-match blanks it.\n  if(cfg.do.arkurl&&arkRes[r.id]!==undefined&&arkRes[r.id]!==String(f['LinkedIn URL']||'').trim()) out['LinkedIn URL']=arkRes[r.id];\n  if(!Object.keys(out).length){ st.untouched++; continue; }\n  writes.push({ id:r.id, fields:out });\n}\nst.rowsToWrite=writes.length;\nconst batches=[];\nfor(let i=0;i<writes.length;i+=10) batches.push({ json: { records:writes.slice(i,i+10), typecast:true } });\nst.batches=batches.length;\nif(!batches.length) return [{ json: { _empty:true, _stats:st } }];\nbatches[0].json._stats=st;\nreturn batches;\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000007",
+        "name": "Any Writes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2860,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "w1",
+                "leftValue": "={{ $json._empty === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000008",
+        "name": "Write Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3080,
+          -100
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Parse Launch').first().json.base }}/{{ $('Parse Launch').first().json.table }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { records: $json.records, typecast: true } }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000009",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3300,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// One row per run, per the logging standard. Status from failed[]; nothing-to-do is a skip.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nconst cfg=$('Parse Launch').first().json||{};\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nlet st={};\ntry{ const s=$('Build Writes').first().json._stats; if(s) st=s; }catch(e){}\nconst failed=[].concat(st.failed||[]);\nlet written=0;\ntry{ for(const it of $('Write Rows').all()){ const j=it.json||{}; const status=Number(j.statusCode)||0; let body=j.body; if(typeof body==='string'){ try{ body=JSON.parse(body); }catch(e){} }\n  if(status>=200&&status<300&&body&&Array.isArray(body.records)) written+=body.records.length; else failed.push({ name:'batch', reason:'HTTP '+status+' '+String((body&&body.error&&(body.error.message||body.error.type))||'').slice(0,120) }); } }catch(e){}\nfor(const m of (st.datasetMisses||[])) failed.push({ name:'Apify dataset', reason:m });\nconst errs=failed.length;\nconst passes=Object.entries(cfg.do||{}).filter(([k,v])=>v).map(([k])=>k).join(', ');\nconst lines=[\n  '**'+nf(written)+' rows backfilled of '+nf(st.rows)+', '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Table:** '+(cfg.table||'')+' in '+(cfg.base||'')+' · **Passes:** '+passes,\n  '',\n  '**Funnel**',\n  '- **Rows read:** '+nf(st.rows),\n  '- **Jobs:** Signal Detail parsed '+nf(st.parsed)+' · unparsed '+nf(st.unparsed)+' · datasets '+nf(st.datasets)+' of '+nf((cfg.datasetIds||[]).length)+' · jobs indexed '+nf(st.jobsIndexed)+' · rows matched '+nf(st.matched),\n  '- **Company:** BizData '+nf(st.biz_called)+' domains · matched '+nf(st.biz_matched)+' · unknown '+nf(st.biz_unknown)+' · errors '+nf(st.biz_errors),\n  '- **Role:** Existing In Role known for '+nf(st.role_known)+' domains · unknown '+nf(st.role_unknown),\n  '- **Contacts:** '+nf(st.lookups)+' lookups · matched on LinkedIn '+nf(st.lookup_matched)+' · no match '+nf(st.lookup_nomatch)+' · errors '+nf(st.lookup_errors),\n  '- **Rows with something to write:** '+nf(st.rowsToWrite)+' · already complete '+nf(st.untouched),\n  '- **Written:** '+nf(written)+' in '+nf(st.batches)+' batches'\n];\nif(st.liurl_checked) lines.splice(lines.length-2, 0, '- **LinkedIn URL guard:** '+nf(st.liurl_checked)+' mismatched · recovered '+nf(st.liurl_recovered)+' · blanked (email-only) '+nf(st.liurl_blanked));\nif(st.ark_checked) lines.splice(lines.length-2, 0, '- **AI-Ark identity:** '+nf(st.ark_checked)+' looked up · URL written '+nf(st.ark_written)+' · left company '+nf(st.ark_left)+' · no match '+nf(st.ark_nomatch)+' · errors '+nf(st.ark_errors)+' (~'+(Math.round((st.ark_checked||0)*0.5*10)/10)+' credits)');\nconst liRows=st.liurl_rows||[];\nif(liRows.length) lines.push('','**LinkedIn URL re-derived ('+nf(liRows.length)+')**\\n'+liRows.slice(0,40).map(x=>'- '+x).join('\\n')+(liRows.length>40?'\\n- ...and '+(liRows.length-40)+' more':''));\nconst arkRows=st.ark_rows||[];\nif(arkRows.length) lines.push('','**AI-Ark URL verdicts ('+nf(arkRows.length)+')**\\n'+arkRows.slice(0,40).map(x=>'- '+x).join('\\n')+(arkRows.length>40?'\\n- ...and '+(arkRows.length-40)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.name+': '+f.reason).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(!st.rowsToWrite) lines.push('','Skipped (writes, every row already carries its fields)');\nconst row={\n 'Automation':'Backfill Intent Fields (one-off)',\n 'Status': errs?'Succeeded with errors':'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': st.rows||0,\n 'Records Out': written,\n 'Errors': errs,\n 'Target': cfg.table||'',\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{ json: row }];\n"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000010",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3520,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "a2000000-0000-4000-8000-000000000001",
+        "name": "Ark Lookups",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2600,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Ark Lookups (arkurl pass): one AI-Ark people-search body per target row.\n// Scope 'blanked' = Supersoniq rows with no LinkedIn URL (restore the contacts the guard\n// blanked, ruling 2026-08-25: LinkedIn matters more than email, nothing is given up).\n// Scope 'all-supersoniq' = every Supersoniq row, standing URLs verified and replaced too.\n// 0.5 credits per returned result, size 2 so ambiguity is visible.\nconst cfg=$('Parse Launch').first().json;\nconst rows=$('Fetch Rows').all().map(i=>i.json).filter(r=>r&&r.id);\nconst out=[];\nif(cfg.do.arkurl){\n  for(const r of rows){\n    const f=r.fields||{};\n    if(String(f['Contact Source']||'')!=='Supersoniq') continue;\n    const li=String(f['LinkedIn URL']||'').trim();\n    if(cfg.arkurl_scope==='blanked'&&li) continue;\n    const name=String(f['Name']||'').trim(); const d=String(f['Domain']||'').toLowerCase().trim();\n    if(!name||!d) continue;\n    out.push({ json: { id:r.id, name, domain:d, linkedin:li, arkBody:{\n      contact:{ fullName:{ any:{ include:{ mode:'SMART', content:[name] } } } },\n      account:{ domain:{ any:{ include:[d] } } },\n      page:0, size:2 } } });\n  }\n}\nif(!out.length) return [{ json: { _empty:true, id:'', arkBody:{ contact:{ fullName:{ any:{ include:{ mode:'STRICT', content:['zzz-nobody-zzz'] } } } }, account:{ domain:{ any:{ include:['none.invalid'] } } }, page:0, size:1 } } }];\nreturn out;\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a2000000-0000-4000-8000-000000000002",
+        "name": "Ark Search",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2780,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.ai-ark.com/api/developer-portal/v1/people",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.arkBody }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 350
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 3000,
+        "onError": "continueRegularOutput",
+        "notes": "AI-Ark people search by full name + company domain. 0.5 credits per returned result."
+      }
+    ],
+    "connections": {
+      "Backfill Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse Launch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Launch": {
+        "main": [
+          [
+            {
+              "node": "Fetch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Rows": {
+        "main": [
+          [
+            {
+              "node": "Split Datasets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Datasets": {
+        "main": [
+          [
+            {
+              "node": "Get Dataset",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Dataset": {
+        "main": [
+          [
+            {
+              "node": "Domain Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Domain Calls": {
+        "main": [
+          [
+            {
+              "node": "BizData",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BizData": {
+        "main": [
+          [
+            {
+              "node": "SQ Count",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Count": {
+        "main": [
+          [
+            {
+              "node": "CG Count",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CG Count": {
+        "main": [
+          [
+            {
+              "node": "Contact Lookups",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contact Lookups": {
+        "main": [
+          [
+            {
+              "node": "CG Lookup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CG Lookup": {
+        "main": [
+          [
+            {
+              "node": "Ark Lookups",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Writes": {
+        "main": [
+          [
+            {
+              "node": "Any Writes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Writes?": {
+        "main": [
+          [
+            {
+              "node": "Write Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Rows": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Lookups": {
+        "main": [
+          [
+            {
+              "node": "Ark Search",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Search": {
+        "main": [
+          [
+            {
+              "node": "Build Writes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": []
 }

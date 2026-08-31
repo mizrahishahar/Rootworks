@@ -1,10 +1,10 @@
 {
+  "updatedAt": "2026-08-27T06:17:24.591Z",
+  "createdAt": "2026-08-26T22:13:18.286Z",
+  "id": "z3ddeS1zbyIH9iFX",
   "name": "Alta Ops (one-off)",
-  "settings": {
-    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
-    "executionOrder": "v1",
-    "availableInMCP": true
-  },
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "id": "c1000000-0000-4000-8000-000000000001",
@@ -352,5 +352,382 @@
       ]
     }
   },
-  "id": "z3ddeS1zbyIH9iFX"
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "66b5db2f-cde5-48b0-8d87-e8e5b8062874",
+  "activeVersionId": "66b5db2f-cde5-48b0-8d87-e8e5b8062874",
+  "triggerCount": 3,
+  "shared": [
+    {
+      "updatedAt": "2026-08-26T22:13:18.293Z",
+      "createdAt": "2026-08-26T22:13:18.293Z",
+      "role": "workflow:owner",
+      "workflowId": "z3ddeS1zbyIH9iFX",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-27T06:17:24.597Z",
+    "createdAt": "2026-08-27T06:17:24.597Z",
+    "versionId": "66b5db2f-cde5-48b0-8d87-e8e5b8062874",
+    "workflowId": "z3ddeS1zbyIH9iFX",
+    "nodes": [
+      {
+        "id": "c1000000-0000-4000-8000-000000000001",
+        "name": "List Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -400,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "alta-list-prospects",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "webhookId": "c1c1c1c1-alta-list-prospects-01"
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000002",
+        "name": "Fetch Prospects",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -180,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.altahq.com/v1/prospects",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "campaignId",
+                "value": "={{ $json.body.campaignId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "cursor",
+                      "value": "={{ $response.body.next }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.hasMore }}",
+                "limitPagesFetched": true,
+                "maxRequests": 60,
+                "requestInterval": 300
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "sx4wc41lcV5NSNM8",
+            "name": "Alta"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "Every prospect of one campaign, cursor-paginated (limit 100, cursor param, hasMore stop)."
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000010",
+        "name": "Compact Ids",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          40,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Compact Ids: every prospect of one campaign, ids only. n8n's own cursor pagination handles the\n// paging here (hand-rolled cursor paging stalled after 4 pages); person records are fetched\n// separately through the persons door, because a person lookup each blows the webhook timeout.\nconst rows=[];\nfor(const it of $input.all()){\n  const b=it.json||{};\n  const list=b.data||b.prospects||b.items||b.results||(Array.isArray(b)?b:[]);\n  for(const p of (Array.isArray(list)?list:[])){\n    if(!p||!p.id) continue;\n    rows.push({ prospectId:p.id, personId:p.personId||'', status:p.status||'', sequenceStatus:p.sequenceStatus||'', createdAt:p.createdAt||'' });\n  }\n}\nreturn [{ json: { count:rows.length, rows } }];\n"
+        }
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000011",
+        "name": "Persons Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -400,
+          300
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "alta-persons",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "webhookId": "c1c1c1c1-alta-persons-000001"
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000012",
+        "name": "Split Person Ids",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -180,
+          300
+        ],
+        "parameters": {
+          "jsCode": "// Split Person Ids: one item per person id the caller asked for. Keep the batch small (the\n// caller sends ~40); Alta 429s the person endpoint hard, so the fetch node paces and retries.\nconst b=($input.first().json||{}).body||{};\nconst ids=Array.isArray(b.personIds)?b.personIds.map(String).filter(Boolean):[];\nif(!ids.length) return [{ json: { _empty:true, personId:'00000000-0000-0000-0000-000000000000' } }];\nreturn ids.map(id=>({ json: { personId:id } }));\n"
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000013",
+        "name": "Fetch Person",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          40,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://api.altahq.com/v1/persons/{{ $json.personId }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "sx4wc41lcV5NSNM8",
+            "name": "Alta"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 2500,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000014",
+        "name": "Compact Persons",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          260,
+          300
+        ],
+        "parameters": {
+          "jsCode": "// Compact Persons: the persons door's response, aligned by index to the ids asked for.\n// { count, errors, rows:[{personId, name, firstName, lastName, title, linkedinUrl, email, http}] }\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nlet asked=[]; try{ asked=$('Split Person Ids').all().map(i=>i.json); }catch(e){}\nconst resp=$input.all();\nconst rows=[]; let errors=0;\nfor(let i=0;i<asked.length;i++){\n  const a=asked[i]||{};\n  if(a._empty) continue;\n  const r=(resp[i]&&resp[i].json)||{};\n  const http=Number(r.statusCode)||0;\n  const body=parse(r.body===undefined?r:r.body)||{};\n  const first=String(body.firstName||'').trim(), last=String(body.lastName||'').trim();\n  if(!(http>=200&&http<300)||!(first||last||body.linkedinUrl)) errors++;\n  rows.push({ personId:a.personId, name:(first+' '+last).trim(), firstName:first, lastName:last,\n    title:String(body.title||'').trim(), linkedinUrl:String(body.linkedinUrl||'').trim(),\n    email:String(body.email||'').trim(), http });\n}\nreturn [{ json: { count:rows.length, errors, rows } }];\n"
+        }
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000020",
+        "name": "Pause Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -400,
+          600
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "alta-pause-prospects",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "webhookId": "c1c1c1c1-alta-pause-00000001"
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000021",
+        "name": "Split Pause Ids",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -180,
+          600
+        ],
+        "parameters": {
+          "jsCode": "// Split Pause Ids: one item per prospect to pause (or resume). Body:\n// { prospectIds:[...], action?: 'pause'|'resume' }. The caller keeps batches small; the pause\n// node paces and retries because Alta 429s hard.\nconst b=($input.first().json||{}).body||{};\nconst action=String(b.action||'pause').toLowerCase()==='resume'?'resume':'pause';\nconst ids=Array.isArray(b.prospectIds)?b.prospectIds.map(String).filter(Boolean):[];\nif(!ids.length) return [{ json: { _empty:true, prospectId:'00000000-0000-0000-0000-000000000000', action } }];\nreturn ids.map(id=>({ json: { prospectId:id, action } }));\n"
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000022",
+        "name": "Pause Prospect",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          40,
+          600
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.altahq.com/v1/prospects/{{ $json.prospectId }}/{{ $json.action }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "sx4wc41lcV5NSNM8",
+            "name": "Alta"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000023",
+        "name": "Compact Pause",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          260,
+          600
+        ],
+        "parameters": {
+          "jsCode": "// Compact Pause: per-prospect outcome of the pause/resume call, reported by the sequenceStatus\n// the API echoed back rather than by the HTTP code alone, so the caller can verify by value.\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nlet asked=[]; try{ asked=$('Split Pause Ids').all().map(i=>i.json); }catch(e){}\nconst resp=$input.all();\nconst rows=[]; let ok=0, failed=0;\nfor(let i=0;i<asked.length;i++){\n  const a=asked[i]||{};\n  if(a._empty) continue;\n  const r=(resp[i]&&resp[i].json)||{};\n  const http=Number(r.statusCode)||0;\n  const body=parse(r.body===undefined?r:r.body)||{};\n  const seq=String(body.sequenceStatus||'');\n  const good=http>=200&&http<300;\n  if(good) ok++; else failed++;\n  rows.push({ prospectId:a.prospectId, http, sequenceStatus:seq });\n}\nreturn [{ json: { count:rows.length, ok, failed, rows } }];\n"
+        }
+      }
+    ],
+    "connections": {
+      "List Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Prospects": {
+        "main": [
+          [
+            {
+              "node": "Compact Ids",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Persons Webhook": {
+        "main": [
+          [
+            {
+              "node": "Split Person Ids",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Person Ids": {
+        "main": [
+          [
+            {
+              "node": "Fetch Person",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Person": {
+        "main": [
+          [
+            {
+              "node": "Compact Persons",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pause Webhook": {
+        "main": [
+          [
+            {
+              "node": "Split Pause Ids",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Pause Ids": {
+        "main": [
+          [
+            {
+              "node": "Pause Prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pause Prospect": {
+        "main": [
+          [
+            {
+              "node": "Compact Pause",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

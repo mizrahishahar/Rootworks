@@ -8,7 +8,7 @@ let baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json;
 const what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'play row '+(g.play||''):'client row '+(g.client||''));
 const missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');
 const row={
- 'Automation':'Handle Intent Signal',
+ 'Automation':'Handle Hiring Intent Signal',
  'Status':'Succeeded with errors',
  'Run at': $now.toISO(),
  'Records In': 0,

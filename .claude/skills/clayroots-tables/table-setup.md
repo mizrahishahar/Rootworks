@@ -65,3 +65,21 @@ State every count, and prove these two:
 - `Not Waterfalled` + `Not Found` + `Found` = `Relevant`, exactly. (LinkedIn: `Relevant & LinkedIn` <= `Relevant`, and name the gap: contacts with no profile.)
 
 A count that looks right is not a count that is right; read rows on both sides of anything new. Per-build deploy views are a separate job with their own naming (`views.md`). Report what was left undone: legacy views that should die, fields marked safe to delete, any view whose filter could not be reproduced.
+
+## Intent tables (the signal-fed variant, standard 2026-09-01)
+
+An intent table IS a standard contacts table; the signal only lands rows. Three deltas, nothing else:
+
+**Fields.** The standard contact fields, plus the signal's payload columns (the hiring signal's are the `Job ...` set, `Existing In Role`, `ICP Reason`, `detected_at`), plus four machine fields every intent table carries: `relevance` (the buyer-rule formula: exec branch, president-not-vice, tech-leadership branch, infra ICs, standalone director/partner, minus the never-terms; `manually_approved` only widens), `linkedin_name_match` (1 = the URL slug contains the contact's name; the LinkedIn identity fence), `Deploy Error`, and the `Campaigns` link with a **`Channel (from Campaigns)` lookup** of the campaign's Channel. Sessions create the table and fields through the API; only the share link is a Chrome click.
+
+**The chain.** `Grid view` / `Relevant` / `Cut review` / **`Relevant : Campaigns`** (the client window; its share link IS the table description; no Found gating, intent runs multi-channel). No waterfall spine views unless the Operator asks.
+
+**Campaign queue views, one per campaign, live draining queues, never receipts.** Every queue's tree, in full per the SKILL.md format:
+
+- ANY of: `relevance` = 1, `manually_approved` is checked (the floor)
+- Channel identity: Email queue: `Final Email` is not empty. LinkedIn queue: `LinkedIn URL` is not empty AND `linkedin_name_match` = 1
+- The segment axis, as a prioritized cascade across that channel's queues: every later view carries the negation of the views above it, blanks stated, the last view a true catch-all (deploy-views.md owns the craft)
+- **The drain:** `Channel (from Campaigns)` has none of this queue's channel, `Multi`. Enrolled anywhere on the channel = out of every queue on it, live
+- A not-empty condition on **every** column the campaign's copy uses as a variable, and those columns visible in the view (visible non-machine columns are the doors' variable contract)
+
+The queue view's id goes into `Signal View` on the Hub Campaigns row; the `Signal` link on that row is the feed's on/off switch. The machines behind this (handler funnel, doors, feeds, dedupe layers, Alta gotchas) are Rootworks' side: `n8n/INTENT-PLAYS.md`.

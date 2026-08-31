@@ -30,7 +30,12 @@ function looksLikeBodyShop(j){
   return true;
 }
 
-const drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,duplicate:0,worked:0};
+// A company whose "website" lives on a free-hosting subdomain is not a company: a personal
+// vercel.app page posting a DevOps job put its own author into the table (2026-08-31).
+const HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com','carrd.co','notion.site','framer.website','framer.app','glitch.me','herokuapp.com','pages.dev','web.app','firebaseapp.com','squarespace.com','weebly.com','wordpress.com','godaddysites.com','mystrikingly.com','super.site'];
+const isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));
+
+const drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0,worked:0};
 const seen=new Set();
 const out=[];
 for(const j of items){
@@ -43,6 +48,7 @@ for(const j of items){
   if(emp>cfg.max_headcount){ drops.headcount++; continue; }
   const domain=String(j.companyWebsite||'').toLowerCase().replace('https://','').replace('http://','').replace('www.','').split('?')[0].split('#')[0].split('/')[0].trim();
   if(!domain){ drops.no_domain++; continue; }
+  if(isHosted(domain)){ drops.hosted_platform++; continue; }
   if(seen.has(domain)){ drops.duplicate++; continue; }
   if(worked.has(domain)){ drops.worked++; continue; }
   seen.add(domain);

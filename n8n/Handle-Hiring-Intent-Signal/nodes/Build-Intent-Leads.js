@@ -40,11 +40,9 @@ function baseRow(d){
   return {
     'Domain': d,
     'Company': String(c.company||b.name||'').trim(),
-    'Intent Status': 'NEW',
     'detected_at': nowIso,
     'ICP Reason': e.icp_reason||'',
     'Existing In Role': cc.existing_in_role,
-    'First Hire': (cc.first_hire||'unknown'),
     'Job ID': j.id||'', 'Job Title': j.title||'', 'Job Link': j.link||'', 'Job Posted': j.posted_at||null,
     'Job Description': j.description||'', 'Job Seniority': j.seniority||'', 'Job Function': j.function||'',
     'Job Employment Type': j.employment_type||'', 'Job Industries': j.industries||'', 'Job Applicants': j.applicants,
@@ -60,7 +58,6 @@ function baseRow(d){
   };
 }
 const patterns={};
-function signal(d){ const c=(companies[d]||{}).company||{}; const j=c.job||{}; const cc=callByDomain[d]||{}; return 'Hiring '+(j.title||'a role')+(j.posted_at?' (posted '+j.posted_at+')':'')+' · first hire '+(cc.first_hire||'Unknown')+(cc.existing_in_role!=null?' ('+cc.existing_in_role+' in role today)':'')+'. Job: '+(j.link||''); }
 function push(d,p,source){
   const full=String(p.name||'').trim();
   const first=cleanFirst(full), last=cleanLast(full);
@@ -74,8 +71,7 @@ function push(d,p,source){
     'LinkedIn URL': li, 'Email': String(p.email||'').trim(),
     'Title': String(p.title||'').trim(), 'Seniority': String(p.seniority||'').trim(), 'Department': String(p.department||'').trim(),
     'Phone': p.phone||'', 'City': p.city||'', 'State': p.state||'',
-    'Contact Key': key, 'Contact Source': source,
-    'Signal Detail': signal(d)+' · '+source+' · '+(p.title||'')
+    'Contact Key': key, 'Contact Source': source
   });
   out.push({ json: row });
   return 'ok';

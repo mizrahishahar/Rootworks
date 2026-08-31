@@ -10,7 +10,7 @@ campaigns. Nothing about who gets messaged lives in code or in signal config.
 |---|---|---|
 | **Signals** table | Hub `tblDtJeqkUB2JFga1` | one row per signal: Name, Client (link), Signal Type (select), Target Table, Roles, Country, Max Employees, ICP |
 | **Signal handler** | one workflow per Signal Type (`hiring` = Handle Hiring Intent Signal, `9iMXBGRlPk3O6pDZ`) | trigger + signal-specific filtering; everything downstream is signal-agnostic |
-| **The intent table** | client ClayRoots base | table standard, intent chain (Operator ruling 2026-08-31): `Grid view`, `Relevant`, `Cut review`, **`Relevant : Campaigns`** (the client window; NOT gated on Found, intent is dual-channel and LinkedIn leads never waterfall), then the campaign/deploy views. No waterfall-spine views in the intent chain. Plus `relevance` + `manually_approved`, share link in the description, `Campaigns` links, `Deploy Error` |
+| **The intent table** | client ClayRoots base | table standard, intent chain (Operator ruling 2026-08-31): `Grid view`, `Relevant`, `Cut review`, **`Relevant : Campaigns`** (the client window; NOT gated on Found, intent is dual-channel and LinkedIn leads never waterfall), then the **Add-to queues**: one live view per fed campaign, named `Add to {campaign name}`, filter = segment conditions AND `Campaigns` does not contain that campaign. A queue, not a receipt: it holds exactly who is waiting to enter and drains to zero as the door stamps. `Signal View` on the campaign row points at its Add-to queue. No waterfall-spine views in the intent chain. Plus `relevance` + `manually_approved`, share link in the description, `Campaigns` links, `Deploy Error` |
 | **Feeds** | `Signal` (link) + `Signal View` on Hub Campaigns | the link IS the switch: linked = the campaign drinks daily from that view; remove the link = drip stops. Empty Signal View with a link = refused loudly |
 | **Deploy doors** | `Deploy View to Campaign` (PlusVibe), `Deploy View to Alta Campaign` (`VIojA84aR72tg7k7`) | one launch = one view into one campaign; on-demand by launch row + webhook, daily by each door's feed trigger walking its Signal-linked campaigns |
 | **Membership** | `Campaigns` links on rows, stamped at verified landing | THE dedupe. PlusVibe: stamp-gate on top of sequencer dedupe. Alta: the stamp is the only dedupe |
@@ -48,7 +48,7 @@ Adding an intent TABLE on an existing type: Signals row + table to the setup sta
 1. **Same row, same campaign, across runs**: the Campaigns stamp-gate in both doors.
 2. **Crash between push and stamp (Alta)**: healed; when pushed rows outnumber fresh prospects, the readback resolves older members too and stamps a matching row instead of re-pushing it forever.
 3. **Same URL twice inside one view**: in-run duplicate-URL guard in the Alta door (PlusVibe dedupes by email upstream).
-4. **Workspace-wide (PlusVibe)**: Strict dedupe flags on every send.
+4. **PlusVibe sequencer mode**: feeds run Dedupe Mode 'None' (Operator ruling 2026-08-31): the Add-to queue and the stamp are the law; is_overwrite makes a same-campaign re-add harmless and cross-campaign adds stay deliberate.
 5. **Cross-campaign (Alta)**: deliberate non-block (multi-campaign is allowed); mutual exclusion is the cascade views' job at design time.
 
 ## Known legacy (as of 2026-08-31)

@@ -15,9 +15,9 @@ if(!D.metaPhase||D.metaPhase==='schema'){
       // The standing receipt view is a hard gate: no deploy without it. It is the
       // one durable window (filter: Relevant AND Status=done, campaign fields)
       // that every Lead Lists receipt links to, per the clayroots-tables standard.
-      const rv=(t.views||[]).find(x=>String(x.name||'').trim().toLowerCase()==='relevant & found : campaigns');
+      const rv=(t.views||[]).find(x=>['relevant & found : campaigns','relevant : campaigns'].includes(String(x.name||'').trim().toLowerCase()));
       if(rv){ D.receiptViewId=rv.id; }
-      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table "'+t.name+'" has no "Relevant & Found : Campaigns" view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }
+      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table "'+t.name+'" has no "Relevant & Found : Campaigns" (or intent "Relevant : Campaigns") view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }
       // The client-facing share link for that view lives in the table description
       // ("Campaigns view: https://airtable.com/shr..."), pasted at setup; the API
       // cannot mint share links, so its absence is the second hard gate.

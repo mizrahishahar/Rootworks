@@ -23,6 +23,7 @@ for(const r of rows){
   if(!/^https?:\/\//i.test(li)){ rec.skip='missing LinkedIn URL'; continue; }
   rec.url=normUrl(li);
   if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }
+  if(D.urlToRow[rec.url]){ rec.skip='duplicate LinkedIn URL in view (row '+D.urlToRow[rec.url]+' already queued)'; continue; }
   const fn=val(f['first_name']); if(!fn){ rec.skip='missing first_name'; continue; }
   const comp=val(f['company_clean'])||val(f['Company']); if(!comp){ rec.skip='missing company name'; continue; }
   const extra={}; const missing=[];

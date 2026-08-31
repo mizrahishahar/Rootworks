@@ -20,9 +20,15 @@ const passes=(title)=>{ const t=roleOnly(title); if(!t) return false; if(NEVER.t
 const pause=[]; const pausedNames=[];
 let landed=0, titleFail=0, urlMismatch=0, noData=0;
 for(const p of persons){
-  const fp=D.freshProspects[p.personId]; if(!fp) continue;
+  const fp=D.freshProspects[p.personId];
   const url=normUrl(p.linkedinUrl);
   const rowId=url?D.urlToRow[url]:'';
+  if(!fp){
+    // An older member matching a row we just pushed: it landed in a prior run and was never
+    // stamped. Stamp it now; never pause old actives here (the standing audit owns them).
+    if(rowId&&D.rows[rowId]&&!D.rows[rowId].skip&&!D.rows[rowId].landed){ landed++; D.rows[rowId].landed=true; D.rows[rowId].healed=true; }
+    continue;
+  }
   if(!p.name&&!p.linkedinUrl){ noData++; pause.push(fp.prospectId); pausedNames.push((p.personId||'?')+' (no person data)'); continue; }
   if(!rowId){ urlMismatch++; pause.push(fp.prospectId); pausedNames.push((p.name||url||'?')+' (URL not one we pushed)'); continue; }
   if(!passes(p.title)){ titleFail++; pause.push(fp.prospectId); pausedNames.push((p.name||'?')+' ('+(roleOnly(p.title)||'no title')+')'); if(D.rows[rowId]) D.rows[rowId].skip='paused: Alta-side title failed the buyer rule'; continue; }

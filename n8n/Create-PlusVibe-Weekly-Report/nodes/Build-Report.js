@@ -20,21 +20,27 @@ try{
  for(const p of pages){ if(Array.isArray(p.data)){ msgs.push(...p.data); } else if(p.error||p.message){ uniboxErrPages++; } }
  if(uniboxErrPages && !msgs.length){ pvErr+=(pvErr?' | ':'')+'PV unibox: all '+uniboxErrPages+' page(s) failed'; }
  const startMs=Date.parse(cw.weekStart+'T00:00:00+03:00');
+ // Daily reports cover a closed calendar day: weekEnd = weekStart = yesterday, so the window ends at today 00:00.
+ const endMs=cw.daily ? Date.parse(cw.weekEnd+'T00:00:00+03:00')+86400000 : Infinity;
  const humans=new Set(); const autos=new Set(); let oldestMs=Infinity;
- for(const m of msgs){ const t=Date.parse(m.timestamp_created||m.sent_on||''); if(isNaN(t)) continue; if(t<oldestMs) oldestMs=t; if(String(m.direction||'').toUpperCase()!=='IN') continue; if(!m.campaign_id||!m.lead_id) continue; if(t<startMs) continue; const lead=String(m.lead||m.lead_id||'').toLowerCase(); const lbl=String(m.label||'').toUpperCase(); if(lbl==='AUTOMATIC_REPLY'||lbl==='OUT_OF_OFFICE'){ autos.add(lead); } else { humans.add(lead); } }
+ for(const m of msgs){ const t=Date.parse(m.timestamp_created||m.sent_on||''); if(isNaN(t)) continue; if(t<oldestMs) oldestMs=t; if(String(m.direction||'').toUpperCase()!=='IN') continue; if(!m.campaign_id||!m.lead_id) continue; if(t<startMs||t>=endMs) continue; const lead=String(m.lead||m.lead_id||'').toLowerCase(); const lbl=String(m.label||'').toUpperCase(); if(lbl==='AUTOMATIC_REPLY'||lbl==='OUT_OF_OFFICE'){ autos.add(lead); } else { humans.add(lead); } }
  repliesWeek=humans.size;
  autoRepliesWeek=autos.size;
  if(msgs.length && oldestMs>=startMs && (pages.length>=40 || uniboxErrPages)) uniboxTruncated=true;
 }catch(e){ pvErr+=(pvErr?' | ':'')+'unibox read: '+String(e).slice(0,150); }
 const posWeek=cw.newLeadsWeek;
 const bookedWeek=cw.callsBookedWeek||0;
+const daily=cw.daily===true;
+const kind=daily?'Daily':'Weekly';
+const periodTitle=daily?'Yesterday':'This week';
+const periodLine=daily?cw.weekEnd:(cw.weekStart+' to '+cw.weekEnd);
 const labels=['Campaigns launched','Emails sent','Prospects contacted','Replies','Positive replies','Calls booked'];
 const weekVals=[launchedWeek, sentWeek, contactedWeek, repliesWeek, posWeek, bookedWeek];
 const allVals=[campaignsAllTime, sentAll, contactedAll, repliesAll, cw.positiveAllTime||0, cw.callsBooked||0];
 const campLines=(cw.campaigns&&cw.campaigns.length)?cw.campaigns.map(c=>'- **'+c.name+':** '+c.contacted+' contacted, '+c.sent+' emails, '+c.replies+' replies'+(c.replyRate?' ('+c.replyRate+')':'')+', '+c.positives+' positive'):['- No campaigns synced yet'];
-const md=['# Weekly Report: '+cw.clientName,'**Week:** '+cw.weekStart+' to '+cw.weekEnd,'','## This week'].concat(labels.map((l,i)=>'- **'+l+':** '+weekVals[i])).concat(['','## All time']).concat(labels.map((l,i)=>'- **'+l+':** '+allVals[i])).concat(['','## Campaigns (lifetime)']).concat(campLines).join('\n');
+const md=['# '+kind+' Report: '+cw.clientName,'**'+(daily?'Day':'Week')+':** '+periodLine,'','## '+periodTitle].concat(labels.map((l,i)=>'- **'+l+':** '+weekVals[i])).concat(['','## All time']).concat(labels.map((l,i)=>'- **'+l+':** '+allVals[i])).concat(['','## Campaigns (lifetime)']).concat(campLines).join('\n');
 const bullets=(vals)=>labels.map((l,i)=>'• '+l+': *'+vals[i]+'*').join('\n');
-const head='📊 *Weekly Report: '+cw.clientName+'*\n_'+cw.weekStart+' to '+cw.weekEnd+'_';
-const blocks=[{type:'section',text:{type:'mrkdwn',text:head}},{type:'divider'},{type:'section',text:{type:'mrkdwn',text:'*This week*\n'+bullets(weekVals)}},{type:'section',text:{type:'mrkdwn',text:'*All time*\n'+bullets(allVals)}}];
+const head='📊 *'+kind+' Report: '+cw.clientName+'*\n_'+periodLine+'_';
+const blocks=[{type:'section',text:{type:'mrkdwn',text:head}},{type:'divider'},{type:'section',text:{type:'mrkdwn',text:'*'+periodTitle+'*\n'+bullets(weekVals)}},{type:'section',text:{type:'mrkdwn',text:'*All time*\n'+bullets(allVals)}}];
 sd.weeklyReportResults.push({client:cw.clientName, reportDay:cw.reportDay, sentWeek, contactedWeek, repliesWeek, autoRepliesWeek, launchedWeek, newLeads:posWeek, bookedWeek, excluded:cw.excludedNonPV||0, ok:!pvErr, pvErr, noChannel:!cw.slackChannel, truncated:uniboxTruncated, errPages:uniboxErrPages});
-return [{ json: { 'Name': cw.clientName+' - Week of '+cw.weekStart, 'Type': 'Weekly', 'Client': [cw.clientRecId], 'Week Start': cw.weekStart, 'Week End': cw.weekEnd, 'Campaigns Launched (Week)': launchedWeek, 'Emails Sent (Week)': sentWeek, 'Prospects Contacted (Week)': contactedWeek, 'Replies (Week)': repliesWeek, 'Positive Replies (Week)': posWeek, 'Calls Booked (Week)': bookedWeek, 'Campaigns All-Time': campaignsAllTime, 'Emails Sent All-Time': sentAll, 'Prospects Contacted All-Time': contactedAll, 'Replies All-Time': repliesAll, 'Prospects All-Time': cw.prospectsAllTime||0, 'Positive Replies All-Time': cw.positiveAllTime||0, 'Calls Booked All-Time': cw.callsBooked||0, 'Report': md, blocksJson: JSON.stringify({blocks}), slackChannel: cw.slackChannel, clientName: cw.clientName } }];
+return [{ json: { 'Name': cw.clientName+(daily?' - Daily '+cw.weekEnd:' - Week of '+cw.weekStart), 'Type': kind, 'Client': [cw.clientRecId], 'Week Start': cw.weekStart, 'Week End': cw.weekEnd, 'Campaigns Launched (Week)': launchedWeek, 'Emails Sent (Week)': sentWeek, 'Prospects Contacted (Week)': contactedWeek, 'Replies (Week)': repliesWeek, 'Positive Replies (Week)': posWeek, 'Calls Booked (Week)': bookedWeek, 'Campaigns All-Time': campaignsAllTime, 'Emails Sent All-Time': sentAll, 'Prospects Contacted All-Time': contactedAll, 'Replies All-Time': repliesAll, 'Prospects All-Time': cw.prospectsAllTime||0, 'Positive Replies All-Time': cw.positiveAllTime||0, 'Calls Booked All-Time': cw.callsBooked||0, 'Report': md, blocksJson: JSON.stringify({blocks}), slackChannel: cw.slackChannel, clientName: cw.clientName } }];

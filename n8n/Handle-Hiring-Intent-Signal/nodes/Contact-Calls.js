@@ -22,7 +22,7 @@ const stats={ yes:0, no:0, unknown:0, cg_errors:0, failed:[] };
 
 const CG_SENIORITY=['executive','vp','director','manager'];
 const PER_COMPANY_LIMIT=12;
-const ARK_TITLES=['CTO','CEO','COO','CIO','CISO','Founder','Co-Founder','Owner','President','Partner','Chief Architect','Chief Engineer','Chief Information Security Officer','VP Engineering','VP Technology','VP Infrastructure','VP Platform','VP DevOps','VP Software Engineering','VP Cloud','VP Security','VP Information Technology','Head of Engineering','Head of Technology','Head of Infrastructure','Head of Platform','Head of DevOps','Head of Cloud','Head of Software Architecture','Head of Solutions Architecture','Head of Product Engineering','Head of Information Technology','Director of Engineering','Director of Technology','Director of Infrastructure','Director of Platform','Director of DevOps','Director of Cloud','Director of Software Engineering','Director of Software Development','Director of Security','Director of Information Security','Director of Cyber Security','Director of IT','IT Director','Technical Director','Managing Director','Engineering Manager','Infrastructure Manager','DevOps Manager','Platform Manager','Principal Engineer','Staff Engineer','Founding Engineer','Lead Engineer','Tech Lead','Engineering Lead','DevOps Engineer','Site Reliability Engineer','Platform Engineer','Infrastructure Engineer','Cloud Engineer','Systems Engineer','Production Engineer','Release Engineer'];
+const ARK_TITLES=['Founder','Co-Founder','Owner','Partner','President','CEO','CTO','COO','CIO','CISO','CPO','CRO','CFO','Chief','VP','Vice President','SVP','EVP','Head','Director','Manager','Principal','Staff','Lead'];
 
 const out=[];
 calls.forEach((c,i)=>{

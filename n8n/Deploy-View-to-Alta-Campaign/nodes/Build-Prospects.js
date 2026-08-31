@@ -1,5 +1,6 @@
 // Build Prospects: the view's rows into pull-in bodies, one item per prospect to push.
-// Identity, hard: LinkedIn URL (this door's key), first_name, Company (or company_clean).
+// Identity, hard: LinkedIn URL (this door's key) and Company (or company_clean); the name
+// rides when present, Alta resolves the person from the URL.
 // The stamp-gate: a row whose Campaigns links already carry this campaign's mirror row is
 // skipped, the door's ONLY dedupe and the whole of it (Operator 2026-08-28: Alta relies
 // solely on the stamp). Every required variable missing skips the row with its name.
@@ -24,13 +25,17 @@ for(const r of rows){
   rec.url=normUrl(li);
   if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }
   if(D.urlToRow[rec.url]){ rec.skip='duplicate LinkedIn URL in view (row '+D.urlToRow[rec.url]+' already queued)'; continue; }
-  const fn=val(f['first_name']); if(!fn){ rec.skip='missing first_name'; continue; }
+  // first_name is NOT identity here (Operator 2026-08-31): Alta resolves the person from the
+  // LinkedIn URL, so the name rides along when present and never blocks.
+  const fn=val(f['first_name']);
   const comp=val(f['company_clean'])||val(f['Company']); if(!comp){ rec.skip='missing company name'; continue; }
   const extra={}; const missing=[];
   for(const col of plan.varCols){ const v=val(f[col]); if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; else missing.push(col); }
   if(missing.length){ for(const m of missing) D.varMisses[m]=(D.varMisses[m]||0)+1; rec.skip='missing '+missing.join(', ').slice(0,120); continue; }
   for(const col of plan.rideCols){ const v=val(f[col]); if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; }
-  const body={ firstName:fn, lastName:val(f['last_name']), company:comp, linkedinUrl:li, extraInfoData:extra };
+  const body={ company:comp, linkedinUrl:li, extraInfoData:extra };
+  if(fn) body.firstName=fn;
+  const ln=val(f['last_name']); if(ln) body.lastName=ln;
   const dom=val(f['Domain']); if(dom) body.companyWebsite=/^https?:\/\//i.test(dom)?dom:'https://'+dom;
   const email=val(f['Final Email']); if(email) body.email=email;
   D.urlToRow[rec.url]=r.id;

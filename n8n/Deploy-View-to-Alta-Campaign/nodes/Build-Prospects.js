@@ -33,7 +33,18 @@ for(const r of rows){
   for(const col of plan.varCols){ const v=val(f[col]); if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; else missing.push(col); }
   if(missing.length){ for(const m of missing) D.varMisses[m]=(D.varMisses[m]||0)+1; rec.skip='missing '+missing.join(', ').slice(0,120); continue; }
   for(const col of plan.rideCols){ const v=val(f[col]); if(v) extra[snake(col)]=v.length>4000?v.slice(0,4000):v; }
+  // Vars ride twice: extraInfoData is Alta's display blob; customFields populate the DEFINED
+  // prospect fields, the only place sequence templates render from (proven 2026-09-01: values
+  // visible on the card but blank in the copy until the defined field carries them).
+  // customFields accepts ONLY defined keys and 400s the whole prospect on an unknown one, so
+  // keys that are really Alta system fields ship top-level under Alta's name, and every other
+  // var key must exist as a defined prospect field (create_prospect_field, once per account);
+  // that is part of campaign setup, and a missing one fails loud in the push responses.
+  const SYSKEY={title:'jobTitle',seniority:'seniority',city:'city',state:'state',country:'country',description:'description'};
   const body={ company:comp, linkedinUrl:li, extraInfoData:extra };
+  const custom={};
+  for(const k of Object.keys(extra)){ if(SYSKEY[k]) body[SYSKEY[k]]=extra[k]; else custom[k]=extra[k]; }
+  if(Object.keys(custom).length) body.customFields=custom;
   if(fn) body.firstName=fn;
   const ln=val(f['last_name']); if(ln) body.lastName=ln;
   const dom=val(f['Domain']); if(dom) body.companyWebsite=/^https?:\/\//i.test(dom)?dom:'https://'+dom;

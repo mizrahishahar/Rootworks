@@ -112,7 +112,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Follow-ups | `fld9TuOQLLS2SN7BI` | multipleRecordLinks |  |
 | Niche Company | `fldvtTaBFg0P9GjbG` | singleLineText |  |
 | Twitter | `flduIgh2eUljbofZF` | url |  |
-| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none, ai-ark, prospeo |
+| Phone Source | `fldaZfRpakqtc3aVM` | singleSelect | Where this phone number came from, so a BDR knows whether they are dialing a direct line or a switchboard. The -tollfree variants mean the only number we could find is an 800/833/844/855/866/877/888 company line: it will reach a receptionist, not the prospect. - Choices: signature, GPT, LeadMagic, signature-tollfree, GPT-tollfree, none, ai-ark, prospeo, supersoniq |
 | Automations | `fld1HbJ64M0T6YRtR` | multipleRecordLinks |  |
 
 ## Meetings (`tblAo6SfTPTOJrnbX`)
@@ -391,7 +391,7 @@ Weekly client reports. One row per client per run, written by the PlusVibe Weekl
 | Prospects Contacted All-Time | `fldKE5wqfugIBaB0k` | number |  |
 | Replies All-Time | `fldDYh2Iz0gQOsfEC` | number |  |
 | Calls Booked All-Time | `fldLTpbSsmnVjSNDE` | number |  |
-| Type | `fldYxP0H5d13ZaZFu` | singleSelect | Choices: Weekly, Custom, Infrastructure |
+| Type | `fldYxP0H5d13ZaZFu` | singleSelect | Choices: Weekly, Custom, Infrastructure, Daily |
 | Creation Date | `fldLjNA15VB4dYBPu` | createdTime |  |
 | DriveLink | `fldVnK4xu7unDGVTs` | url |  |
 
@@ -550,7 +550,7 @@ The task list. One row per thing to do. Due is the date it was meant to happen a
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Name | `fldSxLq0GqMKRsAD8` | singleLineText |  |
-| Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring |
+| Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring, trustpilot_reviews |
 | Roles | `fldWNyb4tVR7K4e1l` | multilineText |  |
 | Target Table | `fldPmV7Fi6JRrPjVk` | singleLineText |  |
 | Country | `fldpzI1Fe3VmBgnK9` | singleLineText |  |
@@ -558,3 +558,4 @@ The task list. One row per thing to do. Due is the date it was meant to happen a
 | ICP | `fldrZ7I8ai7caze5b` | multilineText |  |
 | Client | `fldW6Binf0wnpLxZs` | multipleRecordLinks |  |
 | Campaigns | `fldNSaJ1fsF4QGGlT` | multipleRecordLinks |  |
+| Signal View (from Campaigns) | `fldXegjg9bni7x8Yr` | multipleLookupValues |  |

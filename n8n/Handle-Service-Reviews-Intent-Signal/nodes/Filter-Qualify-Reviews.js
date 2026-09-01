@@ -13,9 +13,11 @@
 //
 // Drops, in order: not negative (belt) · no domain · hosted platform · wrong country ·
 // already in table. Notes against the hiring handler's hard lines:
-//   - Country: company country comes only from a company-metadata row (countryCode).
-//     reviewerCountry is the REVIEWER's country, never the company's, and never gates.
-//     Unknown company country passes on purpose, mirroring the hiring rule.
+//   - Country: the COMPANY's country, against the Signals row's comma list ("US, GB"), read
+//     only from a company-metadata row (countryCode). reviewerCountry is the REVIEWER's
+//     country and never gates: who wrote the review is irrelevant (Operator 2026-09-01).
+//     Unknown company country passes on purpose, mirroring the hiring rule; the watchlist
+//     and the ICP sentence carry the geography where Trustpilot stays silent.
 //   - Max Employees / headcount: Trustpilot carries no headcount. No gate here; BizData lands
 //     Employees on the row and the Signals row's ICP sentence carries the size qualification.
 //   - Staffing words / body-shop test: job-post pathologies, no review analog. Not rewritten.
@@ -56,17 +58,25 @@ for(const r of reviews){
   byDomain[d].reviews.push(r);
 }
 
+// Reviewers paste their own phone numbers and street addresses into rants; those quotes become
+// table columns and copy variables, so PII is stripped before anything is written.
+const stripPII=(s)=>String(s||'')
+  .replace(/\+?\d[\d\s().-]{7,}\d/g,'[...]')
+  .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,'[...]')
+  .replace(/\b\d{1,5}\s+[A-Za-z][A-Za-z' ]*\s(?:street|st|avenue|ave|road|rd|lane|ln|drive|dr|boulevard|blvd|court|ct|way|place|pl)\b\.?/gi,'[...]');
+
+const countries=(Array.isArray(cfg.countries)&&cfg.countries.length)?cfg.countries:String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
 const out=[];
 for(const d of Object.keys(byDomain)){
   const c=byDomain[d];
   const meta=companyMeta[d]||{};
   const country=String(meta.countryCode||meta.country||'').trim().toUpperCase();
-  if(country&&country!==String(cfg.country||'').toUpperCase()){ drops.country++; continue; }
+  if(country&&countries.length&&!countries.includes(country)){ drops.country++; continue; }
   if(worked.has(d)){ drops.worked++; continue; }
   c.reviews.sort((a,b)=>String(b.publishedDate||'').localeCompare(String(a.publishedDate||'')));
   const latest=c.reviews[0]||{};
   const replied=c.reviews.filter(r=>r.hasCompanyReply===true).length;
-  const clip=(s,n)=>String(s||'').replace(/\s+/g,' ').trim().slice(0,n);
+  const clip=(s,n)=>stripPII(String(s||'').replace(/\s+/g,' ').trim()).slice(0,n);
   const quotes=c.reviews.slice(0,3).map(r=>'"'+clip(r.title,80)+'" - '+clip(r.text,220)).join('\n');
   const titles=c.reviews.slice(0,5).map(r=>clip(r.title,80)).filter(Boolean).join(' · ');
   const trust=c.reviews.map(r=>r.companyTrustScore).find(v=>v!==undefined&&v!==null);
@@ -75,7 +85,7 @@ for(const d of Object.keys(byDomain)){
     domain: d,
     company: c.name||String(meta.companyName||'').trim(),
     headcount: 0,
-    country: country||cfg.country,
+    country: country,
     company_website: 'https://'+d,
     signal: {
       count: c.reviews.length,

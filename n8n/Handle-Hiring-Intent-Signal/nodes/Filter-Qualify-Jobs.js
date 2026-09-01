@@ -36,11 +36,14 @@ const HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com',
 const isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));
 
 const drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0,worked:0};
+// The Signals row's Country may be a comma list ("US, GB"); a single value still works
+// unchanged (Operator 2026-09-01, Adelante US+UK row). Unknown country passes, as before.
+const allowedCountries=String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
 const seen=new Set();
 const out=[];
 for(const j of items){
   const country=(j.companyAddress&&j.companyAddress.addressCountry)||'';
-  if(country&&country!==cfg.country){ drops.country++; continue; }
+  if(country&&allowedCountries.length&&!allowedCountries.includes(String(country).toUpperCase())){ drops.country++; continue; }
   if(has(j.companyName,badName)||has(j.jobPosterTitle,badName)){ drops.staffing_name++; continue; }
   if(has(j.industries,badIndustry)){ drops.staffing_industry++; continue; }
   if(looksLikeBodyShop(j)){ drops.body_shop++; continue; }
@@ -56,7 +59,7 @@ for(const j of items){
     domain,
     company: j.companyName||'',
     headcount: emp,
-    country: country||cfg.country,
+    country: country||(allowedCountries.length===1?allowedCountries[0]:''),
     company_linkedin: j.companyLinkedinUrl||'',
     company_website: j.companyWebsite||'',
     job: {

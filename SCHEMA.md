@@ -148,7 +148,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Waterfall Contacts |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -192,6 +192,9 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Technologies | `fldQLWkqMbSFbJVfs` | singleLineText | Storeleads Domains -> Clayroots launch filter: comma-separated exact Storeleads technology names (e.g. Klaviyo). Store must have ALL listed (f:tech, AND). Blank = no tech filter. |
 | Domains Table ID | `fldWbRURgHGNpyzHL` | singleLineText | AI-Ark Export -> Clayroots only. The client's Domains table id (tblXXX) - company data source of truth for this run. Must contain 'domains' in the table name or the run refuses. |
 | Contact | `fldnJWucAHpx2PgV6` | multipleRecordLinks | Waterfall Phones launch parameter. Set it to run the waterfall on ONE contact instead of sweeping a table: the launch leg fires just this row and ignores Table ID / View / Max Rows. Leave empty for a normal sweep. |
+| Query ID | `fldrfqxnv48dOGz6X` | singleLineText | A saved DiscoLike query id (uuid). Read by Land Companies from DiscoLike: the query's domains land in the client's Companies table. |
+| Sources | `fldNHjtxyFbWPVCD5` | multipleSelects | Waterfall Contacts: which contact sources this run may call. Blank means all three. - Choices: ContaGen, Supersoniq, AI-Ark |
+| Fire Waterfall | `fldGnFF8bwe1DB5Y6` | checkbox | Waterfall Contacts: when checked, the run hands the People view Relevant & Not Waterfalled to Waterfall Emails at the end. Off until watched on real runs. |
 
 ## Sessions (`tbl3c80o7QlZ4VByU`)
 
@@ -366,6 +369,23 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Signal | `fld0fqwBbRfLIThPz` | multipleRecordLinks |  |
 | Signal View | `fldNrTQTlrGEpRPd6` | singleLineText |  |
 | Pull-in URL | `fldleh9GZLj3V83EN` | url |  |
+| Record ID | `fldiHNzJbMga4onFi` | formula | This row's Hub record id, synced into every client base's Campaigns mirror so machines link by id, never by name. |
+
+## Signals (`tblDtJeqkUB2JFga1`)
+
+| Field | ID | Type | Notes |
+|---|---|---|---|
+| Name | `fldSxLq0GqMKRsAD8` | singleLineText |  |
+| Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring, trustpilot_reviews |
+| Roles | `fldWNyb4tVR7K4e1l` | multilineText |  |
+| Target Table | `fldPmV7Fi6JRrPjVk` | singleLineText |  |
+| Country | `fldpzI1Fe3VmBgnK9` | singleLineText |  |
+| Max Employees | `fldXd78J9ZdrXOxV7` | number |  |
+| ICP | `fldrZ7I8ai7caze5b` | multilineText |  |
+| Client | `fldW6Binf0wnpLxZs` | multipleRecordLinks |  |
+| Campaigns | `fldNSaJ1fsF4QGGlT` | multipleRecordLinks |  |
+| Signal View (from Campaigns) | `fldXegjg9bni7x8Yr` | multipleLookupValues |  |
+| Record ID | `fldnHIgKG5CRzz9PM` | formula | This row's Hub record id, synced into every client base's Signals mirror so machines link by id, never by name. |
 
 ## Reports (`tblUFzAV4sysSJktK`)
 
@@ -544,18 +564,3 @@ The task list. One row per thing to do. Due is the date it was meant to happen a
 | Summary (Notes) | `fldVl9ghXZfXPqDSE` | aiText |  |
 | Headline (Notes) | `fldPWEqMFEgzIMTx5` | aiText |  |
 | Progress | `fldFDhquOrBqaVzBX` | formula |  |
-
-## Signals (`tblDtJeqkUB2JFga1`)
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Name | `fldSxLq0GqMKRsAD8` | singleLineText |  |
-| Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring, trustpilot_reviews |
-| Roles | `fldWNyb4tVR7K4e1l` | multilineText |  |
-| Target Table | `fldPmV7Fi6JRrPjVk` | singleLineText |  |
-| Country | `fldpzI1Fe3VmBgnK9` | singleLineText |  |
-| Max Employees | `fldXd78J9ZdrXOxV7` | number |  |
-| ICP | `fldrZ7I8ai7caze5b` | multilineText |  |
-| Client | `fldW6Binf0wnpLxZs` | multipleRecordLinks |  |
-| Campaigns | `fldNSaJ1fsF4QGGlT` | multipleRecordLinks |  |
-| Signal View (from Campaigns) | `fldXegjg9bni7x8Yr` | multipleLookupValues |  |

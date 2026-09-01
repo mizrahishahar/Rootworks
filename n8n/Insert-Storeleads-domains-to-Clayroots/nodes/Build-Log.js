@@ -1,47 +1,55 @@
-const form=$('Storeleads Launch').first().json;
-const started=form.submittedAt || $('Config').first().json.startedAt;
+// Build Log: one row per run on the launch row, status computed from failed[], skips
+// separated from errors, Client attached (a launched run serves exactly one client).
+// Records Out is what the upserts returned record ids for, never the pre-write count.
+const p=$('Launch Params').first().json;
+let cfg={}; try{ cfg=$('Verify Extras').first().json||{}; }catch(e){}
 const sd=$getWorkflowStaticData('global');
-const t=(sd.slBatchState&&sd.slBatchState.totals)||{pulled:0,inserted:0,withEmails:0,skipped:0};
-const stores=t.pulled;
-const total=t.inserted;
-const hasPublic=t.withEmails;
-const skipped=Number(t.skipped)||0;
-const noPublic=Math.max(0,total-hasPublic);
-let clientRec=[];
-try{ const rc=$('Resolve Client').first().json; if(rc&&rc.id) clientRec=[rc.id]; }catch(e){}
-const g=$('Companies Table Guard').first().json||{};
-const tableName=g.tableName||'';
-const tableId=g.tableId||'';
-const modeTxt=(g.mode==='append')?'appended to an existing table':'created a new table';
-const fc=(g.fieldsCreated&&g.fieldsCreated.length)?g.fieldsCreated.join(', '):'none';
-const tag=((form['Tag']||'')+'').trim();
-let dur=0; try{ if(started) dur=Math.max(0,Math.round(($now.toMillis()-new Date(started).getTime())/1000)); }catch(e){}
-const trig='form';
-const errors=g.createdFieldError?1:0;
+const st=(sd.slBatchState)||{};
+const t=Object.assign({ pulled:0, kept:0, upserted:0, withEmails:0, failed:0, skipped:0, inactive:0, duplicate:0 }, st.totals||{});
+const failed=[];
+for(const r of (st.failReasons||[])) failed.push({ name:'upsert', reason:String(r).slice(0,120) });
+const errors=Number(t.failed)||0;
+if(errors>failed.length) failed.push({ name:'upsert', reason:(errors-failed.length)+' more rows returned no record id' });
+let queries=[]; try{ queries=$('Build SL Query').all().map(i=>i.json||{}); }catch(e){}
+const providers=Array.from(new Set(queries.map(q=>q._provider).filter(Boolean)));
+const countries=Array.from(new Set(queries.map(q=>q._country).filter(Boolean)));
+const SKIP=new Set(['page_size','sort','fields','f:cc']);
+const filters=Object.entries((queries[0]||{}).pullQuery||{}).filter(([k])=>!SKIP.has(k)).map(([k,v])=>k+'='+v).join(', ');
+let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}
 const fmt=v=>Number(v||0).toLocaleString('en-US');
-const parts=[];
-parts.push('**'+fmt(stores)+' stores pulled, '+fmt(total)+' upserted**');
-parts.push('**Tag:** '+(tag||'none'));
-parts.push('**Results**\n- **Upserted to Domains table:** '+fmt(total)+'\n- **With public emails:** '+fmt(hasPublic)+'\n- **Without public emails:** '+fmt(noPublic)+'\n- **Skipped (empty domain):** '+fmt(skipped));
-parts.push('**Table:** '+modeTxt+', '+tableName+' ('+tableId+')\n**Fields created:** '+fc);
-const warns=[];
-if(g.createdFieldError){ warns.push('- '+g.createdFieldError); }
-if(g.buildNameIgnored){ warns.push('- Build name ignored: an Existing Table ID was supplied.'); }
-if(warns.length){ parts.push('**Warnings ('+warns.length+')**\n'+warns.join('\n')); }
-parts.push('**Source:** Storeleads ('+trig+'-launched)');
+const extras=(cfg.extrasCreated&&cfg.extrasCreated.length)?cfg.extrasCreated.join(', '):'none';
+const lines=[
+  '**'+fmt(t.pulled)+' stores pulled, '+fmt(t.upserted)+' upserted into '+(cfg.tableName||'Companies')+'**',
+  '',
+  '**Source:** Storeleads, providers '+(providers.join(', ')||'all')+', countries '+(countries.join(', ')||'ALL')+', cap '+fmt(st.cap||p.maxCompanies),
+  '**Filters:** '+(filters||'none'),
+  '**Tag:** '+(p.tag||'none'),
+  '',
+  '**Funnel**',
+  '- **Pulled:** '+fmt(t.pulled),
+  '- **Kept (active, unique domain, under the cap):** '+fmt(t.kept),
+  '- **Upserted (record id returned):** '+fmt(t.upserted),
+  '- **With public emails:** '+fmt(t.withEmails),
+  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails)),
+  '',
+  '**Extras created on Companies:** '+extras
+];
+const skips=[]; if(t.skipped) skips.push(fmt(t.skipped)+' empty domain'); if(t.inactive) skips.push(fmt(t.inactive)+' inactive store'); if(t.duplicate) skips.push(fmt(t.duplicate)+' duplicate domain in the pull');
+if(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');
+if(failed.length){ lines.push('', '**Failures**'); for(const f of failed.slice(0,10)) lines.push('- '+f.name+': '+f.reason); }
 const log={
-  'Automation':'Storeleads Domains -> Clayroots',
+  'Automation':'Insert Storeleads domains to Clayroots',
   'Status': errors?'Succeeded with errors':'Succeeded',
-  'Trigger': trig,
+  'Trigger':'form',
   'Errors': errors,
   'Run at': $now.toISO(),
-  'Target': tableName+' ('+tableId+')',
-  'Records In': stores,
-  'Records Out': total,
+  'Target': (cfg.tableName||'Companies')+' ('+(cfg.tableId||'')+')',
+  'Records In': t.pulled,
+  'Records Out': t.upserted,
   'Duration s': dur,
-  'Description': parts.join('\n\n'),
+  'Description': lines.join('\n'),
   'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
-  'Execution ID': String($execution.id)
+  'Execution ID': String($execution.id),
+  'Client': [p.clientRecId]
 };
-if(clientRec.length){ log['Client']=clientRec; }
 return [{ json: log }];

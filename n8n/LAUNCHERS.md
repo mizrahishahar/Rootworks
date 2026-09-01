@@ -12,6 +12,7 @@ Do not hand-edit; rerun the script after every pull.
 | Machine | Fire | Fields | Attachment |
 |---|---|---|---|
 | AI-Ark-Export---Clayroots | POST https://n8n.flowroots.com/webhook/launch-aiark-contacts | Clayroots Base ID, Build name, AI-Ark contacts CSV (file), Domains Table ID, Existing Table ID, Tag | **yes - launch on Waiting** |
+| AI-Ark-Export-Callback | POST https://n8n.flowroots.com/webhook/ai-ark-export-noop |  | no |
 | Add-Intent-Leads-to-Alta | POST https://n8n.flowroots.com/webhook/launch-add-intent-alta |  | no |
 | Add-Intent-Leads-to-PlusVibe | POST https://n8n.flowroots.com/webhook/launch-add-intent-pv |  | no |
 | Add-rank-in-company-to-table | POST https://n8n.flowroots.com/webhook/launch-rank-in-company | Clayroots Base ID, Table ID, View ID | no |
@@ -48,5 +49,6 @@ Do not hand-edit; rerun the script after every pull.
 | Sync-Slack-Logs-to-Vault | POST https://n8n.flowroots.com/webhook/launch-sync-slack-logs |  | no |
 | Sync-Tool-Credits-to-Hub | POST https://n8n.flowroots.com/webhook/launch-sync-tool-credits |  | no |
 | Verify-Emails | POST https://n8n.flowroots.com/webhook/launch-verify-emails | Clayroots Base ID, Table ID, Max Rows, View | no |
+| Waterfall-Contacts | POST https://n8n.flowroots.com/webhook/launch-waterfall-contacts |  | no |
 | Waterfall-Emails | POST https://n8n.flowroots.com/webhook/waterfall-record <br> POST https://n8n.flowroots.com/webhook/launch-waterfall-emails | Clayroots Base ID, Table ID, Max Rows, View | no |
 | Waterfall-Phones | POST https://n8n.flowroots.com/webhook/launch-waterfall-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |

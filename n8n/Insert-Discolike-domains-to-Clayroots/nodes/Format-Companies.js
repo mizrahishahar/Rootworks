@@ -15,7 +15,7 @@ for(const it of $input.all()){
   const c=it.json||{}; stats.pulled++;
   const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }
   if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);
-  const addr=c.address||{}; const st=c.status||{};
+  const addr=c.address||{};
   const row={
     'Domain': d,
     'Company': String(c.name||'').trim(),
@@ -25,7 +25,6 @@ for(const it of $input.all()){
     'Employees': band(c.employees),
     'Revenue Range': String(c.revenue_range||''),
     'Keywords': keys(c.keywords),
-    'Company Status': st.status?(st.status+(st.confidence!=null?' ('+st.confidence+')':'')):'',
     'Country': String(addr.country||''), 'State': String(addr.state||''), 'City': String(addr.city||''),
     'Street': String(addr.street||''), 'Zip': String(addr.zip||''),
     'Phones': join(c.phones), 'Public Emails': join(c.public_emails), 'public_emails_clean': '',

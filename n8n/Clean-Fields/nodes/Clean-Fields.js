@@ -4,7 +4,7 @@
 //
 // Fields touched (each only when the source is present on the row, nothing invented):
 //   Company, company_clean   <- cleanCompany(Company || company_clean || Name-for-domains)
-//   State Full               <- stateFull(State)
+//   State (and State Full)   <- stateFull(State), written into State itself
 //   first_name, last_name    <- cleanFirst/cleanLast(Name) when the row has no first_name
 //   public_emails_clean      <- keepPublic(parseEmails(Public Emails)) when 'Public Emails' is on the row
 //
@@ -83,8 +83,9 @@ for (const item of $input.all()) {
     if (has(r, 'company_clean')) r.company_clean = cn || r.company_clean;
     if (isDomainsRow) r.Name = cn || r.Name;
   }
-  // Only rows that carry a State Full column get it filled; a domains row has no such column and an extra key 422s the upsert.
-  if (has(r, 'State') && has(r, 'State Full')) r['State Full'] = stateFull(r.State);
+  // State holds the full name in place (CA -> California), the same rule as Company: the cleaned value goes into the
+  // human-facing column itself (Operator ruling 2026-09-02). State Full is filled too on legacy tables that still carry it.
+  if (has(r, 'State')) { const sf = stateFull(r.State); if (sf) r.State = sf; if (has(r, 'State Full')) r['State Full'] = sf; }
   // Person rows only (they carry a Contact Key); a domains row's Name is a company, never split.
   if (has(r, 'Contact Key') && has(r, 'Name') && !(r.first_name || r.last_name)) { r.first_name = cleanFirst(r.Name); r.last_name = cleanLast(r.Name); }
   if (has(r, 'Public Emails') && has(r, 'public_emails_clean')) r.public_emails_clean = keepPublic(parseEmails(r['Public Emails'])).join(', ');

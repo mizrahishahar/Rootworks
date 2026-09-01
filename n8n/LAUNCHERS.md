@@ -31,12 +31,14 @@ Do not hand-edit; rerun the script after every pull.
 | Handle-New-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |
 | Handle-New-Lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |
 | Handle-New-Lead-from-PlusVibe | POST https://n8n.flowroots.com/webhook/plusvibe-new-reply <br> POST https://n8n.flowroots.com/webhook/newlead-manual |  | no |
+| Handle-Service-Reviews-Intent-Signal | POST https://n8n.flowroots.com/webhook/service-reviews-intent-signal |  | no |
 | Handle-another-meeting-for-flowroots | POST https://n8n.flowroots.com/webhook/9851c15f-256a-425c-9771-8690be97bf8b |  | no |
 | Handle-new-discovery-for-flowroots | POST https://n8n.flowroots.com/webhook/34c8c9bb-e57d-4115-a0f8-d2c906e4dec8 |  | no |
+| Insert-Discolike-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-discolike-domains |  | no |
+| Insert-Storeleads-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-storeleads-domains |  | no |
 | Onboard-Client | GET https://n8n.flowroots.com/webhook/client/onboard |  | no |
 | Pull-campaign-opens-for-adelante | POST https://n8n.flowroots.com/webhook/addon-pvsync-adelante |  | no |
 | Stamp-Tag-on-table | GET https://n8n.flowroots.com/webhook/stamp-tag-on-table-run | Clayroots Base ID, Table ID, Tag, Build Date filter (optional) | no |
-| Storeleads-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-storeleads-domains | Clayroots Base ID, Build name, Country, Platforms (tick any; none = all platforms), Plan, Monthly revenue, Employees, Product count, Store age, Min monthly visits, Category, Technologies, Must-have app IDs (comma-separated, platform.token format, e.g. shopify.klaviyo-email-marketing), Max companies, Existing Table ID, Tag | no |
 | Storeleads-Domains---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-storeleads-contacts | Clayroots Base ID, Build name, Storeleads domains CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
 | Sync-Alta-Campaigns-to-Hub | POST https://n8n.flowroots.com/webhook/launch-sync-alta-campaigns |  | no |
 | Sync-Meeting-Summaries-to-Vault | POST https://n8n.flowroots.com/webhook/e4521a14-e7f8-4b18-844f-2e76a6573931 |  | no |

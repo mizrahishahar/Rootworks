@@ -1,1 +1,0 @@
-return [{ json: $('Created Table Guard').first().json }];

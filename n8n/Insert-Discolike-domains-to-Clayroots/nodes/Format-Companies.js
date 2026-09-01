@@ -10,11 +10,15 @@ const join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==nu
 const kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);
 const keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);
 const norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'');
-const seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0, kept:0 };
+// DNC at landing (Operator ruling 2026-09-02): a domain on the client's DNC table never gets a Companies row.
+const dnc=new Set();
+try{ for(const it of $('Get DNC Domains').all()){ const j=it.json||{}; const d=String((j.fields&&j.fields.Domain)||j.Domain||'').toLowerCase().trim(); if(d) dnc.add(d); } }catch(e){}
+const seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0, dnc:0, kept:0 };
 for(const it of $input.all()){
   const c=it.json||{}; stats.pulled++;
   const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }
   if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);
+  if(dnc.has(d)){ stats.dnc++; continue; }
   const addr=c.address||{};
   const row={
     'Domain': d,

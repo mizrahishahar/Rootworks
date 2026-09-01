@@ -10,4 +10,5 @@ const t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='companies');
 if(!t){ throw new Error('Base '+p.base+' has no Companies table. Scaffold the client base to the List Building 2.0 standard first. Nothing was pulled.'); }
 const names=new Set((t.fields||[]).map(x=>x.name));
 for(const need of ['Domain','Company','Domain Source','Tag']){ if(!names.has(need)){ throw new Error('Companies table '+t.id+' is missing the core field "'+need+'". Bring it to the register first. Nothing was pulled.'); } }
-return [{ json: Object.assign({}, p, { tableId: t.id, tableName: t.name, fieldNames: Array.from(names) }) }];
+const dnc=tables.find(x=>String(x.name||'').trim().toLowerCase()==='dnc');
+return [{ json: Object.assign({}, p, { tableId: t.id, tableName: t.name, fieldNames: Array.from(names), dncTableId: dnc?dnc.id:'' }) }];

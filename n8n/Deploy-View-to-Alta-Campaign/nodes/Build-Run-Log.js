@@ -1,7 +1,11 @@
 // Build Run Log: the run's one row plus the launch-row closeout, per the logging standard.
 // Landing counts come from the readback, never from pull-in responses.
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;
-const D=sd[dk]||{errors:['deploy state missing'],warnings:[],rows:{},skipCounts:{},launchId:''};
+// Static data does not survive the RB Wait resume; on the post-push path Collect Push carries
+// the state. Pre-push abort paths never crossed the wait and still find sd intact.
+let D=sd[dk];
+if(!D){ try{ D=$('Collect Push').first().json._state; }catch(e){} if(D) sd[dk]=D; }
+D=D||{errors:['deploy state missing'],warnings:[],rows:{},skipCounts:{},launchId:''};
 const nf=(x)=>Number(x||0).toLocaleString('en-US');
 const failed=(D.errors||[]).slice();
 const sc=D.skipCounts||{};

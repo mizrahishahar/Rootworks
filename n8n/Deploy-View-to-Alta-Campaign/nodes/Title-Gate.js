@@ -4,7 +4,10 @@
 // `relevance` formula on the intent tables; a landed prospect whose Alta-side title fails it
 // is paused by the next node before a message can go out, and named in the run log.
 // Identity too: a person whose Alta LinkedIn URL is not the URL we pushed is paused.
-const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
+const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;
+// Static data does not survive the RB Wait resume; restore from the state Collect Push carried.
+let D=sd[dk]; if(!D){ try{ D=$('Collect Push').first().json._state; }catch(e){} if(D) sd[dk]=D; }
+if(!D){ return [{json:{_lost:true, error:'run state lost and no Collect Push state to restore'}}]; }
 if(D.abort){ return [{json:{prospectIds:[], action:'pause', _none:true}}]; }
 let persons=[];
 try{ const j=($input.first()||{}).json||{}; persons=Array.isArray(j.rows)?j.rows:[]; }catch(e){}

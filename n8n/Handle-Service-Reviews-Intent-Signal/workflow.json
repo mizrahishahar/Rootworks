@@ -1,0 +1,694 @@
+{
+  "name": "Handle Service Reviews Intent Signal",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "31785609-44b2-49f4-a527-b90fd255f60e",
+      "name": "Intent Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-900, 0],
+      "parameters": { "httpMethod": "POST", "path": "service-reviews-intent-signal", "options": {} },
+      "webhookId": "8c51f0aa-2f41-4c8e-9d2a-41e07a3b6c11"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000001",
+      "name": "Parse Launch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-680, 0],
+      "parameters": { "jsCode": "@@file:nodes/Parse-Launch.js" }
+    },
+    {
+      "id": "45b59c92-e048-423e-8b10-792e07ac23ad",
+      "name": "Config OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-460, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ $json.config_ok }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000002",
+      "name": "Get Play Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [-240, -160],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": { "__rl": true, "mode": "id", "value": "appQG6dK0FIOhTxOl" },
+        "table": { "__rl": true, "mode": "id", "value": "tblDtJeqkUB2JFga1" },
+        "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'service_reviews')",
+        "options": {}
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000003",
+      "name": "Parse Play",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-20, -160],
+      "parameters": { "jsCode": "@@file:nodes/Parse-Play.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000004",
+      "name": "Play OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [200, -160],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "p1", "leftValue": "={{ $json.config_ok }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "78327094-cb47-4fe0-af2d-f6a30f4ed43c",
+      "name": "Get Client Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [-240, 0],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": { "__rl": true, "mode": "id", "value": "appQG6dK0FIOhTxOl" },
+        "table": { "__rl": true, "mode": "id", "value": "tblK0nCoNVvFf5SPa" },
+        "id": "={{ $('Parse Play').first().json.client }}",
+        "options": {}
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4da2d650-482b-4249-bf6c-77ec7732cac3",
+      "name": "Client Vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-20, 0],
+      "parameters": { "jsCode": "@@file:nodes/Client-Vars.js" }
+    },
+    {
+      "id": "e7b94bde-214f-43e6-8dcf-d41c2a5b4c57",
+      "name": "Base OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [200, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "b1", "leftValue": "={{ $json.base || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "86aaef2a-6853-4d9e-b8a5-cc7825872ef0",
+      "name": "Get Scraped Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [640, -160],
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Parse Launch').first().json.datasetId }}/items?clean=true&format=json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "credentials": { "httpBearerAuth": { "id": "aDxiCFTdpoU3NFzm", "name": "Apify" } },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ad531dfa-a07e-4855-a611-ab452f0702f7",
+      "name": "Get Worked Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [860, -160],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": { "__rl": true, "mode": "id", "value": "={{ $('Client Vars').first().json.base }}" },
+        "table": { "__rl": true, "mode": "id", "value": "={{ $('Parse Play').first().json.table }}" },
+        "options": { "fields": ["Domain"] }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "executeOnce": true
+    },
+    {
+      "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
+      "name": "Filter & Qualify Reviews",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, -160],
+      "parameters": { "jsCode": "@@file:nodes/Filter-Qualify-Reviews.js" },
+      "alwaysOutputData": false
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Any Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1300, -160],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "c1", "leftValue": "={{ $json.domain || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1520, -160],
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $json.domain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": { "batch": { "batchSize": 1, "batchInterval": 2100 } },
+          "response": { "response": { "fullResponse": true, "neverError": true } }
+        }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "jreseZ3JAhJNgkk0", "name": "Discolike API" } },
+      "notes": "One call per qualified company. fullResponse + neverError: Build Intent Leads reads the status and classifies a miss (404) vs an error."
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000006",
+      "name": "Company Facts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1740, -160],
+      "parameters": { "jsCode": "@@file:nodes/Company-Facts.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000007",
+      "name": "Any Facts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1960, -160],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ ($json.domains || []).length ? 'x' : '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000008",
+      "name": "Start ICP Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2180, -260],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/validate/icp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { icp_text: $json.icp_text, domains: $json.domains, context_mode: \"website\" } }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": false } } }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "jreseZ3JAhJNgkk0", "name": "Discolike API" } },
+      "executeOnce": true,
+      "notes": "One task for the whole list (DiscoLike rule). BYOK: the Operator's LLM key, no platform charge.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000009",
+      "name": "Prep Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, -260],
+      "parameters": { "jsCode": "@@file:nodes/Prep-Poll.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000010",
+      "name": "Wait ICP",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2620, -260],
+      "parameters": { "amount": 15, "unit": "seconds" },
+      "webhookId": "d4e00000-aaaa-4000-8000-000000000010"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000011",
+      "name": "ICP Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2840, -260],
+      "parameters": {
+        "url": "=https://api.discolike.com/v1/discogen/status/{{ $('Prep Poll').first().json.task_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": false } } }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "jreseZ3JAhJNgkk0", "name": "Discolike API" } },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000012",
+      "name": "Poll Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3060, -260],
+      "parameters": { "jsCode": "@@file:nodes/Poll-Check.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000013",
+      "name": "ICP Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3280, -260],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "i1", "leftValue": "={{ $json.done }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000014",
+      "name": "Apply ICP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3500, -260],
+      "parameters": { "jsCode": "@@file:nodes/Apply-ICP.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000015",
+      "name": "Any ICP?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3720, -260],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "y1", "leftValue": "={{ $json.domain || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000016",
+      "name": "Count Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3940, -360],
+      "parameters": { "jsCode": "@@file:nodes/Count-Calls.js" }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000018",
+      "name": "CG Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4380, -360],
+      "parameters": {
+        "url": "={{ $('Count Calls').item.json.cg_url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": { "batch": { "batchSize": 1, "batchInterval": 2100 } },
+          "response": { "response": { "fullResponse": true, "neverError": false } }
+        }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "jreseZ3JAhJNgkk0", "name": "Discolike API" } },
+      "notes": "FREE. Existing support headcount against DiscoLike.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000019",
+      "name": "Contact Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4600, -360],
+      "parameters": { "jsCode": "@@file:nodes/Contact-Calls.js" }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "ContaGen Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4820, -360],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/contacts/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.cg }}",
+        "options": {
+          "batching": { "batch": { "batchSize": 1, "batchInterval": 4100 } },
+          "response": { "response": { "fullResponse": true, "neverError": false } }
+        }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "jreseZ3JAhJNgkk0", "name": "Discolike API" } },
+      "notes": "Source 1. DiscoLike /contacts/discover in domain mode, one call per ICP-approved company, wide seniority net fixed in code.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a3000000-0000-4000-8000-000000000001",
+      "name": "Ark People",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [5040, -360],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ai-ark.com/api/developer-portal/v1/people",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Contact Calls').item.json.ark }}",
+        "options": {
+          "batching": { "batch": { "batchSize": 1, "batchInterval": 350 } },
+          "response": { "response": { "fullResponse": true, "neverError": true } },
+          "timeout": 60000
+        }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "TFaSEjm5g2RUVDCA", "name": "ai-ark" } },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput",
+      "notes": "AI-Ark leaders at the domain (source 2). 0.5 credits per returned profile. Identity authority: its URL is the person's own."
+    },
+    {
+      "id": "05afb2c0-2104-4d1b-875b-07995af78e44",
+      "name": "Build Intent Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5260, -360],
+      "parameters": { "jsCode": "@@file:nodes/Build-Intent-Leads.js" },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [5480, -360],
+      "parameters": {
+        "workflowId": { "__rl": true, "mode": "id", "value": "RIDktQyZoBnW2fql", "cachedResultName": "Clean Fields" },
+        "workflowInputs": { "mappingMode": "passThrough", "value": {}, "matchingColumns": [], "schema": [] },
+        "mode": "once",
+        "options": { "waitForSubWorkflow": true }
+      },
+      "notes": "The one copy of the cleaning rules (Company, company_clean, public_emails_clean). Rows come back in place."
+    },
+    {
+      "id": "a2c0b59f-9f6d-484c-a81f-1361e7ce299a",
+      "name": "Any Leads?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [5700, -260],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "z1", "leftValue": "={{ $json['LinkedIn URL'] || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7305a906-5d24-46e6-97bb-c10a7ac66950",
+      "name": "Get DNC Domains",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [5920, -360],
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/{{ $('Client Vars').first().json.base }}/DNC?fields%5B%5D=Domain&pageSize=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ed02821e-1d0a-4ef9-8b30-2feaa5b45fb0",
+      "name": "Apply DNC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6140, -360],
+      "parameters": { "jsCode": "@@file:nodes/Apply-DNC.js" },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000007",
+      "name": "Any After DNC?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [6360, -260],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "d1", "leftValue": "={{ $json['Domain'] || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2ee9e8b9-6f75-428e-a4a8-533e57c1e2b1",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [6580, -360],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "h1", "leftValue": "={{ $json['Email'] || '' }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "70f013c9-212a-4a25-b1cf-be06c547abf8",
+      "name": "Upsert by Email",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [6800, -440],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": { "__rl": true, "mode": "id", "value": "={{ $('Client Vars').first().json.base }}" },
+        "table": { "__rl": true, "mode": "id", "value": "={{ $('Parse Play').first().json.table }}" },
+        "columns": { "mappingMode": "autoMapInputData", "value": null, "matchingColumns": ["Email"], "schema": [] },
+        "options": { "typecast": true }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b676368e-40d3-4775-b10f-4e9b9772ad03",
+      "name": "Upsert by Name+Domain",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [6800, -280],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": { "__rl": true, "mode": "id", "value": "={{ $('Client Vars').first().json.base }}" },
+        "table": { "__rl": true, "mode": "id", "value": "={{ $('Parse Play').first().json.table }}" },
+        "columns": { "mappingMode": "autoMapInputData", "value": null, "matchingColumns": ["Name", "Domain"], "schema": [] },
+        "options": { "typecast": true }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "dac17c95-6808-429c-a442-033d3cb141e2",
+      "name": "Run Waterfall",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [6580, -120],
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/waterfall-record",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"tableId\": $('Parse Play').first().json.table, \"baseId\": $('Client Vars').first().json.base, \"clientRecordId\": $('Parse Play').first().json.client } }}",
+        "options": { "response": { "response": { "neverError": true } }, "timeout": 600000 }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "01083aac-28b3-4bc5-83b4-002dc4310328",
+      "name": "Build Guard Fail Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "parameters": { "jsCode": "@@file:nodes/Build-Guard-Fail-Log.js" },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "dcfd7053-2759-43fa-90e1-db6198e9ce47",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [7020, 100],
+      "parameters": { "jsCode": "@@file:nodes/Build-Run-Log.js" },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c236c040-a8fc-4d34-8a3d-0ad623c9e57f",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [7240, 100],
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "base": { "__rl": true, "mode": "id", "value": "appQG6dK0FIOhTxOl" },
+        "table": { "__rl": true, "mode": "id", "value": "tbli7rV6Qf3sLpV6R" },
+        "columns": { "mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [], "schema": [] },
+        "options": { "typecast": true }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Intent Webhook": { "main": [[ { "node": "Parse Launch", "type": "main", "index": 0 } ]] },
+    "Parse Launch": { "main": [[ { "node": "Config OK?", "type": "main", "index": 0 } ]] },
+    "Config OK?": { "main": [
+      [ { "node": "Get Play Row", "type": "main", "index": 0 } ],
+      [ { "node": "Build Guard Fail Log", "type": "main", "index": 0 } ]
+    ] },
+    "Get Play Row": { "main": [[ { "node": "Parse Play", "type": "main", "index": 0 } ]] },
+    "Parse Play": { "main": [[ { "node": "Play OK?", "type": "main", "index": 0 } ]] },
+    "Play OK?": { "main": [
+      [ { "node": "Get Client Row", "type": "main", "index": 0 } ],
+      [ { "node": "Build Guard Fail Log", "type": "main", "index": 0 } ]
+    ] },
+    "Get Client Row": { "main": [[ { "node": "Client Vars", "type": "main", "index": 0 } ]] },
+    "Client Vars": { "main": [[ { "node": "Base OK?", "type": "main", "index": 0 } ]] },
+    "Base OK?": { "main": [
+      [ { "node": "Get Scraped Reviews", "type": "main", "index": 0 } ],
+      [ { "node": "Build Guard Fail Log", "type": "main", "index": 0 } ]
+    ] },
+    "Get Scraped Reviews": { "main": [[ { "node": "Get Worked Domains", "type": "main", "index": 0 } ]] },
+    "Get Worked Domains": { "main": [[ { "node": "Filter & Qualify Reviews", "type": "main", "index": 0 } ]] },
+    "Filter & Qualify Reviews": { "main": [[ { "node": "Any Companies?", "type": "main", "index": 0 } ]] },
+    "Any Companies?": { "main": [
+      [ { "node": "DiscoLike BizData", "type": "main", "index": 0 } ],
+      [ { "node": "Build Run Log", "type": "main", "index": 0 } ]
+    ] },
+    "DiscoLike BizData": { "main": [[ { "node": "Company Facts", "type": "main", "index": 0 } ]] },
+    "Company Facts": { "main": [[ { "node": "Any Facts?", "type": "main", "index": 0 } ]] },
+    "Any Facts?": { "main": [
+      [ { "node": "Start ICP Check", "type": "main", "index": 0 } ],
+      [ { "node": "Build Run Log", "type": "main", "index": 0 } ]
+    ] },
+    "Start ICP Check": { "main": [[ { "node": "Prep Poll", "type": "main", "index": 0 } ]] },
+    "Prep Poll": { "main": [[ { "node": "ICP Done?", "type": "main", "index": 0 } ]] },
+    "Wait ICP": { "main": [[ { "node": "ICP Status", "type": "main", "index": 0 } ]] },
+    "ICP Status": { "main": [[ { "node": "Poll Check", "type": "main", "index": 0 } ]] },
+    "Poll Check": { "main": [[ { "node": "ICP Done?", "type": "main", "index": 0 } ]] },
+    "ICP Done?": { "main": [
+      [ { "node": "Apply ICP", "type": "main", "index": 0 } ],
+      [ { "node": "Wait ICP", "type": "main", "index": 0 } ]
+    ] },
+    "Apply ICP": { "main": [[ { "node": "Any ICP?", "type": "main", "index": 0 } ]] },
+    "Any ICP?": { "main": [
+      [ { "node": "Count Calls", "type": "main", "index": 0 } ],
+      [ { "node": "Build Run Log", "type": "main", "index": 0 } ]
+    ] },
+    "Count Calls": { "main": [[ { "node": "CG Count", "type": "main", "index": 0 } ]] },
+    "CG Count": { "main": [[ { "node": "Contact Calls", "type": "main", "index": 0 } ]] },
+    "Contact Calls": { "main": [[ { "node": "ContaGen Contacts", "type": "main", "index": 0 } ]] },
+    "ContaGen Contacts": { "main": [[ { "node": "Ark People", "type": "main", "index": 0 } ]] },
+    "Ark People": { "main": [[ { "node": "Build Intent Leads", "type": "main", "index": 0 } ]] },
+    "Build Intent Leads": { "main": [[ { "node": "Clean Fields", "type": "main", "index": 0 } ]] },
+    "Clean Fields": { "main": [[ { "node": "Any Leads?", "type": "main", "index": 0 } ]] },
+    "Any Leads?": { "main": [
+      [ { "node": "Get DNC Domains", "type": "main", "index": 0 } ],
+      [ { "node": "Build Run Log", "type": "main", "index": 0 } ]
+    ] },
+    "Get DNC Domains": { "main": [[ { "node": "Apply DNC", "type": "main", "index": 0 } ]] },
+    "Apply DNC": { "main": [[ { "node": "Any After DNC?", "type": "main", "index": 0 } ]] },
+    "Any After DNC?": { "main": [
+      [
+        { "node": "Has Email?", "type": "main", "index": 0 },
+        { "node": "Run Waterfall", "type": "main", "index": 0 }
+      ],
+      [ { "node": "Build Run Log", "type": "main", "index": 0 } ]
+    ] },
+    "Has Email?": { "main": [
+      [ { "node": "Upsert by Email", "type": "main", "index": 0 } ],
+      [ { "node": "Upsert by Name+Domain", "type": "main", "index": 0 } ]
+    ] },
+    "Run Waterfall": { "main": [[ { "node": "Build Run Log", "type": "main", "index": 0 } ]] },
+    "Build Run Log": { "main": [[ { "node": "Log Run", "type": "main", "index": 0 } ]] },
+    "Build Guard Fail Log": { "main": [[ { "node": "Log Run", "type": "main", "index": 0 } ]] },
+    "Log Run": { "main": [[]] }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}

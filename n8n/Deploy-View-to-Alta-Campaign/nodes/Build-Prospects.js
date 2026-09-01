@@ -41,9 +41,16 @@ for(const r of rows){
   // var key must exist as a defined prospect field (create_prospect_field, once per account);
   // that is part of campaign setup, and a missing one fails loud in the push responses.
   const SYSKEY={title:'jobTitle',seniority:'seniority',city:'city',state:'state',country:'country',description:'description'};
+  // Only DEFINED prospect-field keys may enter customFields; one unknown key 400s the whole
+  // prospect (proven 2026-09-01: the Job payload rides 400ed all 260). Until the door
+  // self-provisions fields from Alta (queued), the defined set is listed here.
+  const DEFINED=['job_needs','mechanical_work','workload','real_company_name','open_infrastructure_positions'];
   const body={ company:comp, linkedinUrl:li, extraInfoData:extra };
   const custom={};
-  for(const k of Object.keys(extra)){ if(SYSKEY[k]) body[SYSKEY[k]]=extra[k]; else custom[k]=extra[k]; }
+  for(const k of Object.keys(extra)){
+    if(SYSKEY[k]){ body[SYSKEY[k]]=extra[k]; continue; }
+    if(DEFINED.indexOf(k)>=0) custom[k]=extra[k];
+  }
   if(Object.keys(custom).length) body.customFields=custom;
   if(fn) body.firstName=fn;
   const ln=val(f['last_name']); if(ln) body.lastName=ln;

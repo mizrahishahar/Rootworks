@@ -1,8 +1,10 @@
 // Make Batches: held people per company (tier zero: count, Contact Keys, LinkedIn URLs) plus
-// 250 companies per batch item. The batch item carries everything the batch door needs, and the
-// key of the Hub row that batch will write: parentExecId (this execution) and batchNum, dealt
-// once here, 1..N, so "<parentExecId>-<batchNum>" is unique by construction. Domain comes back
-// from People as a lookup (an array of one), read array-safe.
+// 250 companies per batch item, mode "writer" (ContaGen and Supersoniq, the People writer, the
+// stamps; AI-Ark is a second pass over the whole run after the last batch, see Ark Pass Item).
+// The batch item carries everything the batch needs and the key of the Hub row it will write:
+// parentExecId (this execution) and batchNum, dealt once here, 1..N, so "<parentExecId>-<batchNum>"
+// is unique by construction. Domain comes back from People as a lookup (an array of one), read
+// array-safe.
 const p=$('Launch Params').first().json;
 const cfg=$('Find Tables').first().json;
 const pick=$('Pick Companies').first().json;
@@ -26,6 +28,7 @@ const BATCH=250;
 const out=[];
 for(let i=0;i<companies.length;i+=BATCH){
   out.push({ json: {
+    mode: 'writer',
     parentExecId: String($execution.id),
     batchNum: out.length+1, batchCount: Math.ceil(companies.length/BATCH),
     base: p.base, clientRecId: p.clientRecId,

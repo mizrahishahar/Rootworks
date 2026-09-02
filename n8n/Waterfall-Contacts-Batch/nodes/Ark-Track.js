@@ -1,13 +1,13 @@
 // Ark Track: export submissions (fullResponse items aligned to Ark Requests) -> one poll
-// state item: pending track ids, exports already DONE, submit errors, the attempt counter, and
-// submittedAt, the clock Ark Check's settle rule and 4-minute cap run on (this node runs the
-// moment the last export lands).
+// state item: pending track ids, exports already DONE at submission, submit errors, the attempt
+// counter, and submittedAt, the clock the 4-minute safety net runs on (this node runs the moment
+// the last export lands). toPoll holds the exports whose statistics one read will settle later.
 // Response shape verified in docs 2026-09-02: { trackId, state (PENDING | DONE), statistics
 // { total, found }, webhook { state, retry }, description }.
 let reqs=[]; try{ reqs=$('Ark Requests').all().map(i=>i.json); }catch(e){}
 const parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };
 const why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message||b.description):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,200); };
-const st={ pending:[], done:[], errors:[], submitted:0, submittedAt:Date.now(), attempts:0 };
+const st={ pending:[], done:[], toPoll:[], errors:[], submitted:0, submittedAt:Date.now(), attempts:0, callbacks:0 };
 $input.all().forEach((it,i)=>{
   const req=reqs[i]; if(!req) return;
   st.submitted++;

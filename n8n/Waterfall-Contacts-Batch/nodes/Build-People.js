@@ -2,10 +2,12 @@
 // register's People shape. The fill-blanks rule: a person the base already holds (Contact Key
 // or LinkedIn URL, tier zero) is never written at all, and a later tier never overwrites an
 // earlier one. The cap is per source here (each tier already returned at most the band cap),
-// absolute only at AI-Ark. Only keys the People table carries are emitted (an extra key 422s
-// the upsert). Names go out raw; Clean Fields splits them into first_name / last_name next.
-// The Seniority and Department vocabularies come from the field register, inlined by the push
-// as REGISTER at the @@register line; the maps below translate each source into them.
+// absolute only at AI-Ark. People stores no Domain, Company or Tag (lookups through the Companies
+// link, ruled 2026-09-02): the row carries the link and the Contact Key built from the company's
+// domain, and the domain itself rides on the _domain carrier for the DNC pass and the coverage
+// count, stripped before the write. Names go out raw; Clean Fields splits them into first_name /
+// last_name next. The Seniority and Department vocabularies come from the field register, inlined
+// by the push as REGISTER at the @@register line; the maps below translate each source into them.
 // @@register
 const inp=$('Batch Input').first().json;
 const plan=$('Plan Batch').first().json;
@@ -51,16 +53,14 @@ for(const c of plan.plan){
         'Email': String(p.email||'').trim(),
         'LinkedIn URL': li,
         'Phone': String(p.phone||''),
-        'Domain': c.domain,
-        'Company': c.company,
+        'Companies': [c.recordId],
         'Contact Key': key,
         'Contact Source': p.source,
         'Source ID': String(p.sourceId||''),
-        'Tag': c.tag,
-        'Companies': [c.recordId]
+        '_domain': c.domain
       };
       if(!row['Department']) delete row['Department'];
-      for(const k of Object.keys(row)){ if(!have.has(k)) delete row[k]; }
+      for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }
       out.push({ json: row }); stats.built++;
     }
   }

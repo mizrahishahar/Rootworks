@@ -16,12 +16,94 @@
         0,
         0
       ],
-      "notes": "AI-Ark's Export People with Email endpoint refuses a request without an HTTPS webhook. This door exists only to answer 200. Waterfall Contacts Batch polls the free statistics endpoint for completion and never reads this call."
+      "notes": "AI-Ark's Export People with Email endpoint refuses a request without an HTTPS webhook; Waterfall Contacts Batch submits every export with this door (plus ?run=<parent execution id>). Answers 200 on receipt, then records the call: the ark pass reads the data table for its track ids instead of polling statistics per export (ruled 2026-09-02)."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-Callback.js"
+      },
+      "id": "b7c1d2e3-0002-4000-8000-000000000002",
+      "name": "Record Callback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PYw0JjF0o7FLmaPw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "trackId",
+              "condition": "eq",
+              "keyValue": "={{ $json.trackId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "trackId": "={{ $json.trackId }}",
+            "state": "={{ $json.state }}",
+            "found": "={{ $json.found }}",
+            "total": "={{ $json.total }}",
+            "run": "={{ $json.run }}",
+            "receivedAt": "={{ $json.receivedAt }}",
+            "payload": "={{ $json.payload }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "b7c1d2e3-0003-4000-8000-000000000003",
+      "name": "Store Callback",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "notes": "Upsert on trackId, never update-only: a DONE webhook can land before the submitter recorded anything, and the row must exist either way. Data table ai_ark_callbacks (id PYw0JjF0o7FLmaPw; columns trackId string, state string, found number, total number, run string, receivedAt string, payload string), created by the Operator 2026-09-02."
     }
   ],
-  "connections": {},
+  "connections": {
+    "Export Callback": {
+      "main": [
+        [
+          {
+            "node": "Record Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Callback": {
+      "main": [
+        [
+          {
+            "node": "Store Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
   },
   "id": "X2mZAQgCihH9MNpf"
 }

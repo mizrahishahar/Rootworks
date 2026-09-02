@@ -1,8 +1,9 @@
 // Build Ark People: the AI-Ark people into the register's People shape, capped absolutely at
-// the gap the recount showed. Anyone the base already holds at the domain (Contact Key or
-// LinkedIn URL, per the recount) is never written. Same maps and shape as Build People; the
-// Seniority and Department vocabularies come from the field register, inlined by the push as
-// REGISTER at the @@register line.
+// the gap the run's recount showed. Anyone the base already holds at the domain (Contact Key or
+// LinkedIn URL, per the recount) is never written. Same shape as Build People: no Domain, Company
+// or Tag (lookups through the Companies link, ruled 2026-09-02), the domain on the _domain carrier
+// for the DNC pass and the coverage count, stripped before the write. The Seniority and Department
+// vocabularies come from the field register, inlined by the push as REGISTER at the @@register line.
 // @@register
 const inp=$('Batch Input').first().json;
 const plan=$('Plan Batch').first().json;
@@ -49,16 +50,14 @@ for(const c of plan.plan){
       'Email': String(p.email||'').trim(),
       'LinkedIn URL': li,
       'Phone': String(p.phone||''),
-      'Domain': c.domain,
-      'Company': c.company,
+      'Companies': [c.recordId],
       'Contact Key': key,
       'Contact Source': 'AI-Ark',
       'Source ID': String(p.sourceId||''),
-      'Tag': c.tag,
-      'Companies': [c.recordId]
+      '_domain': c.domain
     };
     if(!row['Department']) delete row['Department'];
-    for(const k of Object.keys(row)){ if(!have.has(k)) delete row[k]; }
+    for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }
     out.push({ json: row }); written++; stats.built++;
   }
 }

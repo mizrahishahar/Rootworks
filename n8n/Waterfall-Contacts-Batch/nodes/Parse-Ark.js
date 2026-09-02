@@ -5,12 +5,13 @@
 // { state, output [ { address, status } ] } }. Email: the first VALID address delivered, else
 // the first address; emails land as delivered. Credits: 0.5 per person plus 0.5 per email
 // found, from the statistics each export reported (the results door carries no credit figure).
-let st={ pending:[], done:[], errors:[], submitted:0, attempts:0 };
-try{ st=$('Ark Check').first().json||st; }catch(e){ try{ st=$('Ark Track').first().json||st; }catch(e2){} }
+// The state comes from Ark Found (every export settled: callbacks, then the one-shot polls).
+let st={ pending:[], done:[], errors:[], submitted:0, attempts:0, callbacks:0, polled:0 };
+try{ st=$('Ark Found').first().json||st; }catch(e){}
 let items=[]; try{ items=$('Ark Results').all(); }catch(e){}
 const doneByTrack={}; for(const d of (st.done||[])) doneByTrack[d.trackId]=d;
 const people={};
-const stats={ called:Number(st.submitted)||0, returned:0, kept:0, credits:0, errors:(st.errors||[]).length, firstError:((st.errors||[])[0]||{}).reason||'', failReasons:(st.errors||[]).slice(0,5).map(e=>'AI-Ark '+e.domain+': '+e.reason), polls:Number(st.attempts)||0 };
+const stats={ called:Number(st.submitted)||0, returned:0, kept:0, credits:0, errors:(st.errors||[]).length, firstError:((st.errors||[])[0]||{}).reason||'', failReasons:(st.errors||[]).slice(0,5).map(e=>'AI-Ark '+e.domain+': '+e.reason), polls:Number(st.attempts)||0, callbacks:Number(st.callbacks)||0, polled:Number(st.polled)||0, done:(st.done||[]).length, withPeople:(st.done||[]).filter(d=>Number(d.found)>0).length };
 for(const d of (st.done||[])) stats.credits+=0.5*(Number(d.total)||0)+0.5*(Number(d.found)||0);
 const pickEmail=(e)=>{ const out=e&&Array.isArray(e.output)?e.output:[]; const valid=out.find(o=>String((o||{}).status||'').toUpperCase()==='VALID'); const o=valid||out[0]; return o?String(o.address||'').trim():''; };
 for(const it of items){

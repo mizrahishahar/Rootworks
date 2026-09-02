@@ -1,13 +1,15 @@
-// Plan Batch: one batch of companies in, the tier plan out. People per company follows size,
-// a rule in code (ruled 2026-09-02): 1-10 employees 4, 11-50 6, 51-200 10, 201 and up 12,
-// unknown 6. The cap is a per-source cap at ContaGen and Supersoniq (every company in the
-// view, grouped by band so results_by_company and per_company_limit are the band cap) and
-// absolute at AI-Ark (gap-sized, planned after the first two tiers are upserted and recounted).
-// Pull WIDE, cut in the base: the nets here are fixed; who gets messaged is the relevance
-// formula and the views on People.
+// Plan Batch: the companies in, the plan out. People per company follows size, a rule in code
+// (ruled 2026-09-02): 1-10 employees 4, 11-50 6, 51-200 10, 201 and up 12, unknown 6. The cap is
+// a per-source cap at ContaGen and Supersoniq (every company in the batch, grouped by band so
+// results_by_company and per_company_limit are the band cap) and absolute at AI-Ark (gap-sized,
+// planned by the ark pass after one recount over the whole run). In mode "writer" the tier-1 and
+// tier-2 requests are built here; in mode "ark" only the band caps are needed and no request is
+// built. Pull WIDE, cut in the base: the nets here are fixed; who gets messaged is the relevance
+// formula and the views on People. No Tag: People stores none (a lookup through Companies).
 const inp=$input.first().json||{};
 const companies=Array.isArray(inp.companies)?inp.companies:[];
-if(!companies.length) throw new Error('Waterfall Contacts Batch received an empty company batch. The parent must never send one.');
+if(!companies.length) throw new Error('Waterfall Contacts Batch received an empty company list. The parent must never send one.');
+const mode=inp.mode==='ark'?'ark':'writer';
 const sources=Array.isArray(inp.sources)?inp.sources:[];
 const on=(s)=>sources.indexOf(s)>-1;
 const BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];
@@ -18,8 +20,7 @@ const plan=companies.map(c=>{ const b=band(c.employees); return {
   band:b||'unknown', small:b==='1-10', cap:capOf(b),
   held:Number(c.heldCount)||0,
   heldKeys:(Array.isArray(c.heldKeys)?c.heldKeys:[]).map(k=>String(k).toLowerCase()),
-  heldLinkedin:(Array.isArray(c.heldLinkedin)?c.heldLinkedin:[]).map(l=>String(l).trim()).filter(Boolean),
-  tag:String(c.tag||'').trim()||String(inp.tag||'').trim()
+  heldLinkedin:(Array.isArray(c.heldLinkedin)?c.heldLinkedin:[]).map(l=>String(l).trim()).filter(Boolean)
 }; }).filter(c=>c.domain);
 // One group per (net, cap): 1-10 is the wider net at cap 4; an unknown band shares cap 6 with 11-50.
 const groups={};
@@ -35,23 +36,25 @@ const cgDep=Array.isArray(inp.cgDepartments)?inp.cgDepartments:[];
 const STANDARD_SEN=['Manager','Senior Manager','Director','Head','VP','EVP / SVP','President','C-Suite','Owner','Founder','Partner','Board / Chair','Unclassified'];
 const SMALL_SEN=STANDARD_SEN.concat(['Senior']);
 const cgRequests=[], sqRequests=[];
-for(const k of Object.keys(groups).sort()){
-  const g=groups[k];
-  if(on('ContaGen')){
-    for(const part of chunk(g.list,250)){
-      const body={ domain:part.map(c=>c.domain), seniority:(g.small?CG_SEN.concat(['senior_ic']):CG_SEN), max_companies:part.length, results_by_company:g.cap };
-      if(cgDep.length) body.department=cgDep;
-      cgRequests.push({ body:body, domains:part.map(c=>c.domain), cap:g.cap });
+if(mode==='writer'){
+  for(const k of Object.keys(groups).sort()){
+    const g=groups[k];
+    if(on('ContaGen')){
+      for(const part of chunk(g.list,250)){
+        const body={ domain:part.map(c=>c.domain), seniority:(g.small?CG_SEN.concat(['senior_ic']):CG_SEN), max_companies:part.length, results_by_company:g.cap };
+        if(cgDep.length) body.department=cgDep;
+        cgRequests.push({ body:body, domains:part.map(c=>c.domain), cap:g.cap });
+      }
     }
-  }
-  if(on('Supersoniq')){
-    for(const part of chunk(g.list,1000)){
-      sqRequests.push({ body:{ companies:part.map(c=>({ domain:c.domain })), filters:{ seniority:(g.small?SMALL_SEN:STANDARD_SEN) }, per_company_limit:g.cap, tier:'full' }, domains:part.map(c=>c.domain), cap:g.cap });
+    if(on('Supersoniq')){
+      for(const part of chunk(g.list,1000)){
+        sqRequests.push({ body:{ companies:part.map(c=>({ domain:c.domain })), filters:{ seniority:(g.small?SMALL_SEN:STANDARD_SEN) }, per_company_limit:g.cap, tier:'full' }, domains:part.map(c=>c.domain), cap:g.cap });
+      }
     }
   }
 }
 return [{ json: {
-  batchNum:Number(inp.batchNum)||0, batchCount:Number(inp.batchCount)||0,
+  mode:mode, batchNum:Number(inp.batchNum)||0, batchCount:Number(inp.batchCount)||0,
   sources:sources, plan:plan, cgRequests:cgRequests, sqRequests:sqRequests,
-  arkOn:on('AI-Ark'), arkFunctions:(Array.isArray(inp.arkFunctions)?inp.arkFunctions:[])
+  arkOn:mode==='ark'&&on('AI-Ark'), arkFunctions:(Array.isArray(inp.arkFunctions)?inp.arkFunctions:[])
 } }];

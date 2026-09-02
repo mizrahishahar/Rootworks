@@ -1,6 +1,9 @@
-// Recount Filters: after the first two tiers are upserted, read People again for the batch
-// domains (ids only: Contact Key, LinkedIn URL, Domain) so AI-Ark is sized to what the base
-// holds now and its exclude list is exact. One OR formula per 100 domains.
+// Recount Filters: after the writer's stamps, read People again for the batch's domains, ids
+// only (Contact Key, LinkedIn URL, Domain), one OR formula per 100 domains: the batch's coverage
+// is what the base holds now, and the same held state goes back to the parent, which hands it to
+// this batch's AI-Ark pass so AI-Ark is sized to the gap and its exclude list is exact. Domain on
+// People is a lookup through the Companies link; filterByFormula {Domain}='x' matches the lookup's
+// text, so the read works unchanged.
 const plan=$('Plan Batch').first().json;
 const d=plan.plan.map(c=>c.domain);
 const esc=(s)=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");

@@ -6,15 +6,28 @@
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "b7a20001-0001-4000-8000-000000000001",
-      "name": "Batch Input",
+      "id": "b7a20001-0046-4000-8000-000000000046",
+      "name": "Batch Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
+        -220,
         0
       ],
-      "notes": "One item: { batchNum, batchCount, base, clientRecId, peopleTableId, companiesTableId, dncTableId, peopleFields[], sources[], cgDepartments[], arkFunctions[], tag, companies[{ recordId, domain, company, employees, tag, heldCount, heldKeys[], heldLinkedin[] }] }. Returns counters only, no run log of its own."
+      "notes": "One item from Waterfall Contacts: { mode: writer | ark, parentExecId, batchNum, batchCount, base, clientRecId, peopleTableId, peopleTableName, companiesTableId, dncTableId, peopleFields[], sources[], cgDepartments[], arkFunctions[], companies[{ recordId, domain, company, employees, heldCount, heldKeys[], heldLinkedin[] }] }. Writer: one 250-company batch, awaited, held state from its recount returned. Ark: the same batch, fired not awaited the moment the writer closed, held state from that recount on the companies. Both write their own Hub row before answering."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Input.js"
+      },
+      "id": "b7a20001-0001-4000-8000-000000000001",
+      "name": "Batch Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -93,6 +106,40 @@
           },
           "conditions": [
             {
+              "id": "m1",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "ark",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0047-4000-8000-000000000047",
+      "name": "Ark Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "notes": "Mode ark: this batch's AI-Ark pass (held state from the writer's recount comes with the item, no read here), exports, the People writer. Mode writer: ContaGen and Supersoniq for the batch, the People writer, the stamps, a recount whose held state goes back to the parent."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
               "id": "cg1",
               "leftValue": "={{ ($json.cgRequests || []).length }}",
               "rightValue": 0,
@@ -111,8 +158,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        880,
-        0
+        1100,
+        120
       ]
     },
     {
@@ -124,8 +171,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
-        -120
+        1320,
+        0
       ]
     },
     {
@@ -141,7 +188,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 5000
+              "batchInterval": 4500
             }
           },
           "response": {
@@ -158,8 +205,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1320,
-        -120
+        1540,
+        0
       ],
       "retryOnFail": true,
       "maxTries": 5,
@@ -171,7 +218,7 @@
           "name": "Discolike API"
         }
       },
-      "notes": "Tier 1. DiscoLike /contacts/discover in domain mode, one call per band group per 250 domains, results_by_company = the band cap. Paced 5 s apart (documented limit 15 req/min on the Team plan); a 429 retries up to 5 times 5 s apart instead of dying. Bills net-new only inside its 90-day cache."
+      "notes": "Tier 1. DiscoLike /contacts/discover in domain mode, one call per band group per 250 domains, results_by_company = the band cap. Paced 4.5 s apart (documented limit 15 req/min on the Team plan; left as is 2026-09-02, its 429s are documented and the saving would be a minute); a 429 retries up to 5 times 5 s apart instead of dying. Bills net-new only inside its 90-day cache."
     },
     {
       "parameters": {
@@ -183,8 +230,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1540,
-        0
+        1760,
+        120
       ]
     },
     {
@@ -216,8 +263,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1760,
-        0
+        1980,
+        120
       ]
     },
     {
@@ -229,8 +276,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
-        -120
+        2200,
+        0
       ]
     },
     {
@@ -256,8 +303,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2200,
-        -120
+        2420,
+        0
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -281,8 +328,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
-        0
+        2640,
+        120
       ]
     },
     {
@@ -295,8 +342,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
-        0
+        2860,
+        120
       ],
       "alwaysOutputData": true
     },
@@ -330,9 +377,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2860,
-        0
-      ]
+        3080,
+        300
+      ],
+      "notes": "Fed by Build People (writer) or Build Ark People (ark): one People pipeline for both modes from here to the writer."
     },
     {
       "parameters": {
@@ -358,8 +406,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3080,
-        -120
+        3300,
+        180
       ]
     },
     {
@@ -372,8 +420,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
-        -120
+        3520,
+        180
       ],
       "alwaysOutputData": true
     },
@@ -389,7 +437,7 @@
           "conditions": [
             {
               "id": "d1",
-              "leftValue": "={{ $json['Domain'] || '' }}",
+              "leftValue": "={{ $json['Contact Key'] || '' }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -407,43 +455,56 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3520,
-        -120
+        3740,
+        180
       ]
     },
     {
       "parameters": {
-        "resource": "record",
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.peopleTableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "Contact Key"
-          ],
-          "schema": []
-        },
+        "jsCode": "@@file:nodes/Chunk-People.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0048-4000-8000-000000000048",
+      "name": "Chunk People",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.peopleTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {
-          "typecast": true
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
         }
       },
       "id": "b7a20001-0018-4000-8000-000000000018",
-      "name": "Upsert People",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
+      "name": "Write People",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
       "position": [
-        3740,
-        -240
+        4180,
+        60
       ],
       "onError": "continueRegularOutput",
       "credentials": {
@@ -451,7 +512,8 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "notes": "The one People writer, both modes (ruled 2026-09-02): PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason and the pass continues. Written rows are counted from the answer's records[], never from item ids."
     },
     {
       "parameters": {
@@ -464,13 +526,12 @@
           },
           "conditions": [
             {
-              "id": "ao1",
-              "leftValue": "={{ $('Plan Batch').first().json.arkOn }}",
-              "rightValue": "",
+              "id": "w1",
+              "leftValue": "={{ $('Batch Input').first().json.mode }}",
+              "rightValue": "writer",
               "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
+                "type": "string",
+                "operation": "equals"
               }
             }
           ],
@@ -478,14 +539,71 @@
         },
         "options": {}
       },
-      "id": "b7a20001-0019-4000-8000-000000000019",
-      "name": "Ark On?",
+      "id": "b7a20001-0049-4000-8000-000000000049",
+      "name": "Writer Pass?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3960,
-        0
+        4400,
+        180
+      ],
+      "notes": "After the writer (or with nothing to write): the writer batch goes on to stamp its companies and recount; the ark pass stamps nothing new and closes."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Stamp-Rows.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0043-4000-8000-000000000043",
+      "name": "Stamp Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        60
       ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.companiesTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "b7a20001-0044-4000-8000-000000000044",
+      "name": "Stamp Companies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        60
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The one Companies writer: Contacts Pulled At = now on every company in the batch, PATCH by record id, ten per request, 200 ms apart, no retry; a request that is not 2xx counts its ten as stamp errors. Stamped rows are counted from the answer's records[]."
     },
     {
       "parameters": {
@@ -497,8 +615,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4180,
-        -120
+        5060,
+        60
       ]
     },
     {
@@ -530,8 +648,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        4400,
-        -120
+        5280,
+        60
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
@@ -541,7 +659,7 @@
           "name": "Airtable"
         }
       },
-      "notes": "What the base holds now at the batch domains, after tiers 1 and 2 landed. AI-Ark is sized to this gap and excludes these LinkedIn URLs."
+      "notes": "What the base holds now at the batch's domains, after the writer and the stamps: the batch's coverage. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text, the field comes back as an array of one."
     },
     {
       "parameters": {
@@ -553,8 +671,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4620,
-        -120
+        1320,
+        -360
       ]
     },
     {
@@ -586,8 +704,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4840,
-        -120
+        1760,
+        -360
       ]
     },
     {
@@ -599,8 +717,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5060,
-        -240
+        1980,
+        -480
       ]
     },
     {
@@ -616,7 +734,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 250
+              "batchInterval": 1000
             }
           },
           "response": {
@@ -633,8 +751,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        5280,
-        -240
+        2200,
+        -480
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -646,7 +764,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "Tier 3. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap, size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found; the export requires a webhook URL (the noop door), completion is read by polling. Paced 4 per second (AI-Ark allows 5 per second, 300 per minute)."
+      "notes": "Tier 3, per writer batch, fired by the parent the moment that batch closed and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from the writer's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 1 per second: AI-Ark's ceiling (5 per second, 300 per minute) is global and up to four sibling ark passes run together."
     },
     {
       "parameters": {
@@ -658,8 +776,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5500,
-        -240
+        2420,
+        -480
       ]
     },
     {
@@ -691,8 +809,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5720,
-        -240
+        2640,
+        -480
       ]
     },
     {
@@ -705,8 +823,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5940,
-        -360
+        2860,
+        -600
       ],
       "webhookId": "b7a20001-aaaa-4000-8000-000000000028"
     },
@@ -720,47 +838,42 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6160,
-        -360
+        3080,
+        -600
       ]
     },
     {
       "parameters": {
-        "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/statistics",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 250
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PYw0JjF0o7FLmaPw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "trackId",
+              "condition": "eq",
+              "keyValue": "={{ $json.trackId }}"
             }
-          },
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": true
-            }
-          },
-          "timeout": 30000
-        }
+          ]
+        },
+        "options": {}
       },
-      "id": "b7a20001-0030-4000-8000-000000000030",
-      "name": "Ark Statistics",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "id": "b7a20001-0052-4000-8000-000000000052",
+      "name": "Read Callbacks",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        6380,
-        -360
+        3300,
+        -600
       ],
+      "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "TFaSEjm5g2RUVDCA",
-          "name": "ai-ark"
-        }
-      },
-      "notes": "FREE. GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE. Paced 4 per second, only the ids still pending. Polled every 15 s for at most 4 minutes; once more than 90 percent are DONE and 60 s have passed since submission the rest are timed out."
+      "notes": "The completion webhooks AI-Ark Export Callback recorded, one local query per pending track id (a local read, no API, no credits). Data table ai_ark_callbacks (id PYw0JjF0o7FLmaPw; columns trackId string, state string, found number, total number, run string, receivedAt string, payload string), created by the Operator 2026-09-02."
     },
     {
       "parameters": {
@@ -772,8 +885,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6600,
-        -360
+        3520,
+        -600
       ]
     },
     {
@@ -805,8 +918,122 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        6820,
-        -360
+        3740,
+        -600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Fill-Found.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0053-4000-8000-000000000053",
+      "name": "Fill Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tp1",
+              "leftValue": "={{ $json.trackId || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0054-4000-8000-000000000054",
+      "name": "Any To Poll?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4180,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/statistics",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "b7a20001-0030-4000-8000-000000000030",
+      "name": "Ark Statistics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4400,
+        -600
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TFaSEjm5g2RUVDCA",
+          "name": "ai-ark"
+        }
+      },
+      "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 1 per second (global ceiling shared with sibling ark passes)."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Found.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0055-4000-8000-000000000055",
+      "name": "Ark Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Result-Items.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0034-4000-8000-000000000034",
+      "name": "Ark Result Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4840,
+        -480
       ]
     },
     {
@@ -821,11 +1048,12 @@
           "conditions": [
             {
               "id": "an1",
-              "leftValue": "={{ ($json.done || []).length }}",
-              "rightValue": 0,
+              "leftValue": "={{ $json.trackId || '' }}",
+              "rightValue": "",
               "operator": {
-                "type": "number",
-                "operation": "gt"
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
               }
             }
           ],
@@ -834,26 +1062,12 @@
         "options": {}
       },
       "id": "b7a20001-0033-4000-8000-000000000033",
-      "name": "Any Ark Done?",
+      "name": "Any Ark Results?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        7040,
-        -240
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Ark-Result-Items.js",
-        "mode": "runOnceForAllItems"
-      },
-      "id": "b7a20001-0034-4000-8000-000000000034",
-      "name": "Ark Result Items",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        7260,
-        -360
+        5060,
+        -480
       ]
     },
     {
@@ -878,7 +1092,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 250
+              "batchInterval": 1000
             }
           },
           "pagination": {
@@ -897,7 +1111,7 @@
               "completeExpression": "={{ !$response.body || $response.body.last === true || !Array.isArray($response.body.content) || $response.body.content.length === 0 }}",
               "limitPagesFetched": true,
               "maxRequests": 100,
-              "requestInterval": 250
+              "requestInterval": 1000
             }
           },
           "response": {
@@ -913,8 +1127,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        7480,
-        -360
+        5280,
+        -600
       ],
       "onError": "continueRegularOutput",
       "credentials": {
@@ -923,7 +1137,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last. Already paid at submission. One page carries the whole export at these sizes (gap is at most 12). Paced 4 per second."
+      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 1 per second (global ceiling shared with sibling ark passes)."
     },
     {
       "parameters": {
@@ -935,8 +1149,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7700,
-        -120
+        5500,
+        -480
       ]
     },
     {
@@ -949,220 +1163,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7920,
-        -120
+        5720,
+        -480
       ],
       "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "ap1",
-              "leftValue": "={{ $json['Contact Key'] || '' }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "b7a20001-0038-4000-8000-000000000038",
-      "name": "Any Ark People?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        8140,
-        -120
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "RIDktQyZoBnW2fql",
-          "cachedResultName": "Clean Fields"
-        },
-        "workflowInputs": {
-          "mappingMode": "passThrough",
-          "value": {},
-          "matchingColumns": [],
-          "schema": []
-        },
-        "mode": "once",
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "id": "b7a20001-0039-4000-8000-000000000039",
-      "name": "Clean Ark Fields",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        8360,
-        -240
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Apply-Ark-DNC.js",
-        "mode": "runOnceForAllItems"
-      },
-      "id": "b7a20001-0040-4000-8000-000000000040",
-      "name": "Apply Ark DNC",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        8580,
-        -240
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "ad2",
-              "leftValue": "={{ $json['Domain'] || '' }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "b7a20001-0041-4000-8000-000000000041",
-      "name": "Any After Ark DNC?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        8800,
-        -240
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "record",
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.peopleTableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "Contact Key"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "id": "b7a20001-0042-4000-8000-000000000042",
-      "name": "Upsert Ark People",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        9020,
-        -360
-      ],
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Stamp-Rows.js",
-        "mode": "runOnceForAllItems"
-      },
-      "id": "b7a20001-0043-4000-8000-000000000043",
-      "name": "Stamp Rows",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        9240,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "record",
-        "operation": "update",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.companiesTableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "id"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "id": "b7a20001-0044-4000-8000-000000000044",
-      "name": "Stamp Companies",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        9460,
-        0
-      ],
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "notes": "Contacts Pulled At = now on every company in the batch; the node writes in batches of 10."
     },
     {
       "parameters": {
@@ -1174,12 +1178,94 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9680,
-        0
+        5500,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Batch-Log.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0056-4000-8000-000000000056",
+      "name": "Build Batch Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "b7a20001-0057-4000-8000-000000000057",
+      "name": "Log Batch",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5940,
+        180
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "This pass's own Hub row (ruled 2026-09-02), upsert on Execution ID \"<parentExecId>-<batchNum>\" or \"<parentExecId>-ark\", Client attached, Tally = the counters JSON the parent sums. Loud: a failed write crashes into the Error Logger instead of vanishing."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Response.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0058-4000-8000-000000000058",
+      "name": "Batch Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6160,
+        180
       ]
     }
   ],
   "connections": {
+    "Batch Trigger": {
+      "main": [
+        [
+          {
+            "node": "Batch Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Batch Input": {
       "main": [
         [
@@ -1215,6 +1301,24 @@
     },
     "Plan Ready": {
       "main": [
+        [
+          {
+            "node": "Ark Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Pass?": {
+      "main": [
+        [
+          {
+            "node": "Ark Plan",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Run ContaGen?",
@@ -1348,7 +1452,7 @@
         ],
         [
           {
-            "node": "Ark On?",
+            "node": "Writer Pass?",
             "type": "main",
             "index": 0
           }
@@ -1381,43 +1485,76 @@
       "main": [
         [
           {
-            "node": "Upsert People",
+            "node": "Chunk People",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Ark On?",
+            "node": "Writer Pass?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upsert People": {
+    "Chunk People": {
       "main": [
         [
           {
-            "node": "Ark On?",
+            "node": "Write People",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ark On?": {
+    "Write People": {
+      "main": [
+        [
+          {
+            "node": "Writer Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Pass?": {
+      "main": [
+        [
+          {
+            "node": "Stamp Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Batch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Rows": {
+      "main": [
+        [
+          {
+            "node": "Stamp Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Companies": {
       "main": [
         [
           {
             "node": "Recount Filters",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stamp Rows",
             "type": "main",
             "index": 0
           }
@@ -1439,7 +1576,7 @@
       "main": [
         [
           {
-            "node": "Ark Plan",
+            "node": "Batch Summary",
             "type": "main",
             "index": 0
           }
@@ -1468,7 +1605,7 @@
         ],
         [
           {
-            "node": "Parse Ark",
+            "node": "Fill Found",
             "type": "main",
             "index": 0
           }
@@ -1519,7 +1656,7 @@
         ],
         [
           {
-            "node": "Any Ark Done?",
+            "node": "Fill Found",
             "type": "main",
             "index": 0
           }
@@ -1541,14 +1678,14 @@
       "main": [
         [
           {
-            "node": "Ark Statistics",
+            "node": "Read Callbacks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ark Statistics": {
+    "Read Callbacks": {
       "main": [
         [
           {
@@ -1574,7 +1711,7 @@
       "main": [
         [
           {
-            "node": "Any Ark Done?",
+            "node": "Fill Found",
             "type": "main",
             "index": 0
           }
@@ -1588,18 +1725,51 @@
         ]
       ]
     },
-    "Any Ark Done?": {
+    "Fill Found": {
       "main": [
         [
           {
-            "node": "Ark Result Items",
+            "node": "Any To Poll?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any To Poll?": {
+      "main": [
+        [
+          {
+            "node": "Ark Statistics",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Parse Ark",
+            "node": "Ark Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Statistics": {
+      "main": [
+        [
+          {
+            "node": "Ark Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Found": {
+      "main": [
+        [
+          {
+            "node": "Ark Result Items",
             "type": "main",
             "index": 0
           }
@@ -1610,7 +1780,25 @@
       "main": [
         [
           {
+            "node": "Any Ark Results?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Ark Results?": {
+      "main": [
+        [
+          {
             "node": "Ark Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Ark",
             "type": "main",
             "index": 0
           }
@@ -1643,98 +1831,40 @@
       "main": [
         [
           {
-            "node": "Any Ark People?",
+            "node": "Any People?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Any Ark People?": {
+    "Batch Summary": {
       "main": [
         [
           {
-            "node": "Clean Ark Fields",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stamp Rows",
+            "node": "Build Batch Log",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Clean Ark Fields": {
+    "Build Batch Log": {
       "main": [
         [
           {
-            "node": "Apply Ark DNC",
+            "node": "Log Batch",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Apply Ark DNC": {
+    "Log Batch": {
       "main": [
         [
           {
-            "node": "Any After Ark DNC?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Any After Ark DNC?": {
-      "main": [
-        [
-          {
-            "node": "Upsert Ark People",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stamp Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Upsert Ark People": {
-      "main": [
-        [
-          {
-            "node": "Stamp Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Stamp Rows": {
-      "main": [
-        [
-          {
-            "node": "Stamp Companies",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Stamp Companies": {
-      "main": [
-        [
-          {
-            "node": "Batch Summary",
+            "node": "Batch Response",
             "type": "main",
             "index": 0
           }
@@ -1743,7 +1873,8 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
   },
   "id": "61QayoPOnxClmE54"
 }

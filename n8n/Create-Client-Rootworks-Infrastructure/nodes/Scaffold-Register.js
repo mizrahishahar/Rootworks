@@ -120,6 +120,7 @@ const RELEVANT='{relevance} = 1';
 const NOT_WATERFALLED='AND({relevance} = 1, NOT({Status}))';
 const NOT_FOUND='AND({relevance} = 1, OR({Status} = "no_email_found", {Status} = "error"))';
 const FOUND='AND({relevance} = 1, {Status} = "done")';
+const SIGNALS='AND({relevance} = 1, {Signals} != BLANK())';
 
 const COMPANY_COVERAGE=['Domain','Company','Description','Employees','Tag','Contacts Count','Contact Sources','Contacts Pulled At','Build Date'];
 const COMPANY_EMAILS=['Domain','Company','Description','Tag','public_emails_clean','Email','MV P0','BB','Final Email','Status','Build Date'];
@@ -156,6 +157,18 @@ const COMPANIES={ name:'Companies', primary:'Domain', fields:[
 const COMPANY_LOOKUPS=()=>COMPANIES.fields.filter(f=>f.company).map(f=>lookup(f.name));
 const PEOPLE_EMAILS=['Name','Title','Company','Tag','Email','MV P0','P1 (Trykitt)','MV P1','P2 (LeadMagic)','MV P2','P3 (Prospeo)','MV P3','BB','Final Email','Email Source','Status','Build Date'];
 const PEOPLE_CAMPAIGNS=['first_name','last_name','Title','Company','Description','Domain','Final Email','LinkedIn URL','Tag','Campaigns','Campaign Status','Messages Sent','Last Contacted','Build Date'];
+// Signals, the signal queue (ruled 2026-09-03): the people whose company carries a signal, freshest
+// signal on top. It reads the Relevant set plus the two signal fields, and it is the view a signal
+// play is worked from.
+// It CANNOT exist until the client's synced Signals mirror is in the base. The filter tests
+// {Signals}, a lookup through the Companies link to Companies.Signals, and that is a mirrorLink: no
+// mirror in the base, no field, so no view. Same rule as Sequencers and the Campaigns link. A
+// freshly duplicated template base cannot carry this view; it belongs on the post-duplication
+// checklist, beside the mirrors themselves, never in the template.
+// Signal-play extras stay out of the list below. A client running the Hiring play also shows that
+// group's Job Title, Job Posted and Existing In Role, which exist only when the group is picked; a
+// client's own per-contact columns are the Operator's. Both are added on top, per client.
+const PEOPLE_SIGNALS=['Name','Title','Seniority','Department','Company','Description','Employees','Email','LinkedIn URL','Contact Source','Tag','Signals','Signal At','Build Date'];
 const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], fields:[
   txt('Name'), txt('first_name'), txt('last_name'), txt('Title'),
   sel('Seniority',SENIORITY), sel('Department',DEPARTMENT),
@@ -177,7 +190,8 @@ const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], field
   view('Not Found','relevance = 1 and Status is no_email_found or error',NOT_FOUND,PEOPLE_EMAILS),
   view('Found','relevance = 1 and Status = done',FOUND,PEOPLE_EMAILS),
   view('Found : Campaigns','relevance = 1 and Status = done',FOUND,PEOPLE_CAMPAIGNS),
-  view('Found : Never Contacted','relevance = 1 and Status = done and Messages Sent = 0','AND({relevance} = 1, {Status} = "done", {Messages Sent} = 0)',PEOPLE_CAMPAIGNS)
+  view('Found : Never Contacted','relevance = 1 and Status = done and Messages Sent = 0','AND({relevance} = 1, {Status} = "done", {Messages Sent} = 0)',PEOPLE_CAMPAIGNS),
+  view('Signals','relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view',SIGNALS,PEOPLE_SIGNALS,'Signal At')
 ]};
 
 const DNC={ name:'DNC', primary:'Domain', after:[{table:'People', field:'Companies'}], fields:[

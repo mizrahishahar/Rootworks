@@ -1,15 +1,15 @@
 // Filter & Qualify Jobs: 100 scraped job posts in, one row per qualified company out, every
 // drop counted by reason. The full job record rides on the company row so the writer can
-// stamp it on every contact. _stats on the first row feeds Build Run Log.
+// stamp it on the Companies row. _stats on the first row feeds Build Run Log.
 //
 // Drops, in order: country, staffing (name / poster title / industry), body shop, headcount,
-// no domain, duplicate domain, already worked. An unknown headcount passes on purpose: a blank
-// LinkedIn count is not a large company, and the downstream contact calls are capped anyway.
+// no domain, hosted platform, duplicate domain. An unknown headcount passes on purpose: a blank
+// LinkedIn count is not a large company. The "already worked" line is gone (Operator ruling
+// 2026-09-02): a company that signals again is updated in place and re-enters the queue.
 const cfg=$('Parse Play').first().json;
 let items=$('Get Scraped Jobs').all().map(i=>i.json);
 if(items.length===1&&Array.isArray(items[0])) items=items[0];
 items=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));
-const worked=new Set($('Get Worked Domains').all().map(i=>{ const j=i.json||{}; const d=(j.fields&&j.fields.Domain)||j.Domain||''; return String(d).toLowerCase().trim(); }).filter(Boolean));
 
 const badName=['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];
 const badIndustry=['staffing','recruiting','executive search','venture capital','private equity','venture'];
@@ -35,7 +35,7 @@ function looksLikeBodyShop(j){
 const HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com','carrd.co','notion.site','framer.website','framer.app','glitch.me','herokuapp.com','pages.dev','web.app','firebaseapp.com','squarespace.com','weebly.com','wordpress.com','godaddysites.com','mystrikingly.com','super.site'];
 const isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));
 
-const drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0,worked:0};
+const drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0};
 // The Signals row's Country may be a comma list ("US, GB"); a single value still works
 // unchanged (Operator 2026-09-01, Adelante US+UK row). Unknown country passes, as before.
 const allowedCountries=String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
@@ -53,7 +53,6 @@ for(const j of items){
   if(!domain){ drops.no_domain++; continue; }
   if(isHosted(domain)){ drops.hosted_platform++; continue; }
   if(seen.has(domain)){ drops.duplicate++; continue; }
-  if(worked.has(domain)){ drops.worked++; continue; }
   seen.add(domain);
   out.push({ json: {
     domain,

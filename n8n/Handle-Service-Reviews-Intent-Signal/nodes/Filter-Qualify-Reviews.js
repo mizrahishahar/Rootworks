@@ -1,7 +1,7 @@
 // Filter & Qualify Reviews: N scraped Trustpilot rows in, ONE row per qualified company out,
 // every drop counted by reason. The signal payload (negative-review count, freshest date, the
 // quotes, the reply share, the trust score) rides on the company row so the writer can stamp
-// it on every contact. _stats on the first row feeds Build Run Log.
+// it on the Companies row. _stats on the first row feeds Build Run Log.
 //
 // THE FRESH PIECE of this handler; everything downstream is the hiring handler reused.
 //
@@ -11,8 +11,9 @@
 // (totalReviews, countryCode, contactEmail) to the same dataset; both row kinds are read,
 // neither is required. Proven live 2026-08-27 on 10 big + 10 small DTC brands.
 //
-// Drops, in order: not negative (belt) · no domain · hosted platform · wrong country ·
-// already in table. Notes against the hiring handler's hard lines:
+// Drops, in order: not negative (belt) · no domain · hosted platform · wrong country.
+// The "already in table" line is gone (Operator ruling 2026-09-02): a company that signals
+// again is updated in place and re-enters the queue. Notes against the hiring hard lines:
 //   - Country: the COMPANY's country, against the Signals row's comma list ("US, GB"), read
 //     only from a company-metadata row (countryCode). reviewerCountry is the REVIEWER's
 //     country and never gates: who wrote the review is irrelevant (Operator 2026-09-01).
@@ -27,8 +28,6 @@ const cfg=$('Parse Play').first().json;
 let items=$('Get Scraped Reviews').all().map(i=>i.json);
 if(items.length===1&&Array.isArray(items[0])) items=items[0];
 items=items.filter(r=>r&&typeof r==='object');
-
-const worked=new Set($('Get Worked Domains').all().map(i=>{ const j=i.json||{}; const d=(j.fields&&j.fields.Domain)||j.Domain||''; return String(d).toLowerCase().trim(); }).filter(Boolean));
 
 // A company whose "website" lives on a free-hosting subdomain is not a company (hiring
 // handler's fence, reused verbatim).
@@ -47,7 +46,7 @@ for(const r of items){
   if(r.rating!==undefined) reviews.push(r);
 }
 
-const drops={not_negative:0,no_domain:0,hosted_platform:0,country:0,duplicate:0,worked:0};
+const drops={not_negative:0,no_domain:0,hosted_platform:0,country:0,duplicate:0};
 const byDomain={};
 for(const r of reviews){
   if(Number(r.rating)>2){ drops.not_negative++; continue; }
@@ -72,7 +71,6 @@ for(const d of Object.keys(byDomain)){
   const meta=companyMeta[d]||{};
   const country=String(meta.countryCode||meta.country||'').trim().toUpperCase();
   if(country&&countries.length&&!countries.includes(country)){ drops.country++; continue; }
-  if(worked.has(d)){ drops.worked++; continue; }
   c.reviews.sort((a,b)=>String(b.publishedDate||'').localeCompare(String(a.publishedDate||'')));
   const latest=c.reviews[0]||{};
   const replied=c.reviews.filter(r=>r.hasCompanyReply===true).length;

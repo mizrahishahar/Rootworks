@@ -456,14 +456,34 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Scaffold-Register.js"
+      },
+      "id": "6d1f0b2e-4c7a-4e0b-9a3d-1f2e3c4b5a60",
+      "name": "Scaffold Register",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4480,
+        -16
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://api.airtable.com/v0/meta/bases",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ name: $('Build Client Vars').item.json.clientName + ' Clayroots', workspaceId: 'wspkOdRfc7UNSoQyO', tables: [{ name: 'DNC Domains', fields: [{name:'Domain', type:'singleLineText'},{name:'Source', type:'singleLineText'},{name:'Notes', type:'multilineText'}] }] }) }}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify({ name: $('Build Client Vars').first().json.clientName + ' Clayroots', workspaceId: 'wspkOdRfc7UNSoQyO', tables: [ $('Scaffold Register').first().json.seed ] }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
       },
       "id": "942bf133-e14e-40b8-83bb-dda2e3bb1980",
       "name": "Create ClayRoots Base",
@@ -483,6 +503,180 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ /^app[A-Za-z0-9]{14}$/.test(String($json.id || '')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7e2a9c41-5b8d-4f13-8c6e-2a1b3c4d5e71",
+      "name": "Base Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4928,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Scaffold-Init.js"
+      },
+      "id": "8f3b0d52-6c9e-4a24-9d7f-3b2c4d5e6f82",
+      "name": "Scaffold Init",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5152,
+        -160
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Scaffold Init').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "9a4c1e63-7dab-4b35-ae80-4c3d5e6f7a93",
+      "name": "AT Read Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5376,
+        -160
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Scaffold-Pass.js"
+      },
+      "id": "ab5d2f74-8ebc-4c46-bf91-5d4e6f7a8ba4",
+      "name": "Plan Scaffold Pass",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5600,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ !!$json._done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bc6e3a85-9fcd-4d57-8aa2-6e5f7a8b9cb5",
+      "name": "Scaffold Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5824,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "cd7f4b96-a0de-4e68-9bb3-7f6a8b9cadc6",
+      "name": "AT Meta Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        6048,
+        -320
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect-Scaffold-Results.js"
+      },
+      "id": "de805ca7-b1ef-4f79-acc4-8a7b9cadbed7",
+      "name": "Collect Scaffold Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6272,
+        -320
+      ]
+    },
+    {
+      "parameters": {
         "operation": "create",
         "base": {
           "__rl": true,
@@ -497,10 +691,10 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Client": "={{ $('Build Client Vars').item.json.clientName }}",
-            "driveMainFolderID": "={{ $('Create Client Folder').item.json.id }}",
-            "Slack Channel ID": "={{ $('Create Slack Channel').item.json.id }}",
-            "Clayroots Base ID": "={{ $('Create ClayRoots Base').item.json.id || '' }}"
+            "Client": "={{ $('Build Client Vars').first().json.clientName }}",
+            "driveMainFolderID": "={{ $('Create Client Folder').first().json.id }}",
+            "Slack Channel ID": "={{ $('Create Slack Channel').first().json.id }}",
+            "Clayroots Base ID": "={{ $('Create ClayRoots Base').first().json.id || '' }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -592,7 +786,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        4928,
+        6272,
         -16
       ],
       "credentials": {
@@ -600,7 +794,8 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "executeOnce": true
     },
     {
       "id": "9825f59e-096b-448f-b09d-2cfd7638ffb7",
@@ -640,7 +835,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4520,
+        6496,
         360
       ],
       "parameters": {
@@ -655,7 +850,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        4740,
+        6720,
         360
       ],
       "parameters": {
@@ -911,6 +1106,17 @@
             "index": 0
           },
           {
+            "node": "Scaffold Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scaffold Register": {
+      "main": [
+        [
+          {
             "node": "Create ClayRoots Base",
             "type": "main",
             "index": 0
@@ -922,7 +1128,98 @@
       "main": [
         [
           {
+            "node": "Base Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base Ready?": {
+      "main": [
+        [
+          {
+            "node": "Scaffold Init",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Create Clients Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scaffold Init": {
+      "main": [
+        [
+          {
+            "node": "AT Read Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Read Schema": {
+      "main": [
+        [
+          {
+            "node": "Plan Scaffold Pass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Scaffold Pass": {
+      "main": [
+        [
+          {
+            "node": "Scaffold Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scaffold Done?": {
+      "main": [
+        [
+          {
+            "node": "Create Clients Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AT Meta Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Meta Call": {
+      "main": [
+        [
+          {
+            "node": "Collect Scaffold Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Scaffold Results": {
+      "main": [
+        [
+          {
+            "node": "AT Read Schema",
             "type": "main",
             "index": 0
           }
@@ -1044,1029 +1341,5 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": {
-    "updatedAt": "2026-08-08T20:30:23.345Z",
-    "createdAt": "2026-08-08T20:30:23.345Z",
-    "versionId": "8b0a367e-018b-419c-aa58-2960d6673bc4",
-    "workflowId": "ZJzzgxrERrOM3Z5e",
-    "nodes": [
-      {
-        "parameters": {
-          "path": "client/onboard",
-          "options": {}
-        },
-        "id": "20ea4dc1-4403-468a-8d0c-e89bb1f66006",
-        "name": "Onboard Webhook",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2.1,
-        "position": [
-          0,
-          -112
-        ],
-        "webhookId": "22159b81-e2da-415e-9088-230abce6e78b"
-      },
-      {
-        "parameters": {
-          "jsCode": "const q=$('Build Contact Query').first().json;\nconst clientName=q.clientName||'Unknown Client';\nconst slug=clientName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');\nconst channelName=slug + '-private';\nconst emails=[];\nfor(const item of $input.all()){\n  const j=item.json||{};\n  const e=j.email||(j.fields&&j.fields.email)||'';\n  if(e)emails.push(e);\n}\nconst sections=['Offer & info source','Infrastructure','List building','Outreach','Sequencer','Copy','Scheduler','Inbox management','Automations','Communication'];\nconst overrides='# Overrides - ' + clientName + '\\n\\n' + sections.map(s => '## ' + s).join('\\n\\n') + '\\n';\nreturn [{ json: { clientName, slug, channelName, emails, overrides, prospectId: q.prospectId } }];"
-        },
-        "id": "333fe181-64f8-4ae7-a18a-fd03d108769f",
-        "name": "Build Client Vars",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          448,
-          -112
-        ]
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "={{ $(\"Build Client Vars\").item.json.clientName }}",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "1u_oBrSVP96Rcla3m_qCPu0ofwdvV9VGt"
-          },
-          "options": {}
-        },
-        "id": "c9a3ec26-8f8f-4c42-8b9e-07f4f07ddad7",
-        "name": "Create Client Folder",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          672,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Reports",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "9f104c06-9223-4b10-a866-11bffb376278",
-        "name": "Create Reports",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          896,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Content",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "5d2974ce-1834-4290-aa4b-a76f27979693",
-        "name": "Create Content",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          1120,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Campaigns",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "386d670b-1908-4c60-b48b-9ffe740e6e70",
-        "name": "Create Campaigns",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          1344,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Email",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Campaigns\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "c5c3ea22-8649-4013-9052-6cd4c22a16d4",
-        "name": "Create Campaigns Email",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          1568,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "LinkedIn",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Campaigns\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "d949278f-e4e3-4e9a-9add-35d12852cfa2",
-        "name": "Create Campaigns LinkedIn",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          1792,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Logs",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "8fcdbf8a-ee2a-4066-a69a-21238226a5a4",
-        "name": "Create Logs",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          2016,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Assets",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "cea06e0d-89c7-47a1-b31b-37a4bc7b4ee8",
-        "name": "Create Assets",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          2240,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "name": "Shared",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "05bdf4d7-069a-4ee0-94a7-54d3bf4ab90f",
-        "name": "Create Shared",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          2464,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "operation": "createFromText",
-          "content": "={{ $(\"Build Client Vars\").item.json.overrides }}",
-          "name": "Overrides.md",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Client Folder\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "id": "031b181b-f430-4b18-93b7-82b316523b58",
-        "name": "Create Overrides",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          2688,
-          -112
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "channel",
-          "channelId": "={{ $(\"Build Client Vars\").item.json.channelName }}",
-          "channelVisibility": "private"
-        },
-        "id": "9ff82069-ba08-4216-9ec4-fd7204c6fc1a",
-        "name": "Create Slack Channel",
-        "type": "n8n-nodes-base.slack",
-        "typeVersion": 2.5,
-        "position": [
-          2912,
-          -112
-        ],
-        "webhookId": "6fdaa536-54ae-436f-bab1-c72d2a01757e",
-        "credentials": {
-          "slackApi": {
-            "id": "wKyNA7ehabgRwkIc",
-            "name": "Marvin"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "jsCode": "const emails = $('Build Client Vars').first().json.emails || [];\nconst sharedId = $('Create Shared').first().json.id;\nreturn emails.map(email => ({ json: { email, sharedId } }));"
-        },
-        "id": "9885dd43-ed2f-4a11-83d0-ba2bce99d132",
-        "name": "Expand Emails",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          3360,
-          -208
-        ]
-      },
-      {
-        "parameters": {
-          "resource": "folder",
-          "operation": "share",
-          "folderNoRootId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $json.sharedId }}"
-          },
-          "permissionsUi": {
-            "permissionsValues": {
-              "role": "writer",
-              "type": "user",
-              "emailAddress": "={{ $json.email }}"
-            }
-          },
-          "options": {
-            "sendNotificationEmail": false
-          }
-        },
-        "id": "2b376e3c-daf4-47f4-8aa1-ce32b1cb4f5e",
-        "name": "Share Shared Folder",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          3584,
-          -208
-        ],
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "resource": "channel",
-          "operation": "invite",
-          "channelId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Slack Channel\").item.json.id }}"
-          },
-          "userIds": [
-            "U0ARCSPRH1U"
-          ]
-        },
-        "id": "ce109fae-b75d-47fa-a434-d99f2c17127b",
-        "name": "Invite Owner to Channel",
-        "type": "n8n-nodes-base.slack",
-        "typeVersion": 2.5,
-        "position": [
-          3136,
-          -112
-        ],
-        "webhookId": "b28f64b1-2889-4961-b3d3-695577af97e4",
-        "credentials": {
-          "slackApi": {
-            "id": "wKyNA7ehabgRwkIc",
-            "name": "Marvin"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://api.airtable.com/v0/meta/bases",
-          "authentication": "predefinedCredentialType",
-          "nodeCredentialType": "airtableTokenApi",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({ name: $('Build Client Vars').item.json.clientName + ' Clayroots', workspaceId: 'wspkOdRfc7UNSoQyO', tables: [{ name: 'DNC Domains', fields: [{name:'Domain', type:'singleLineText'},{name:'Source', type:'singleLineText'},{name:'Notes', type:'multilineText'}] }] }) }}",
-          "options": {}
-        },
-        "id": "942bf133-e14e-40b8-83bb-dda2e3bb1980",
-        "name": "Create ClayRoots Base",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          4704,
-          -16
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "operation": "create",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblK0nCoNVvFf5SPa"
-          },
-          "columns": {
-            "mappingMode": "defineBelow",
-            "value": {
-              "Client": "={{ $('Build Client Vars').item.json.clientName }}",
-              "driveMainFolderID": "={{ $('Create Client Folder').item.json.id }}",
-              "Slack Channel ID": "={{ $('Create Slack Channel').item.json.id }}",
-              "Clayroots Base ID": "={{ $('Create ClayRoots Base').item.json.id || '' }}"
-            },
-            "matchingColumns": [],
-            "schema": [
-              {
-                "id": "Client",
-                "displayName": "Client",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              },
-              {
-                "id": "driveMainFolderID",
-                "displayName": "driveMainFolderID",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              },
-              {
-                "id": "Drive Folder",
-                "displayName": "Drive Folder",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": true,
-                "removed": false
-              },
-              {
-                "id": "PlusVibe Workspace ID",
-                "displayName": "PlusVibe Workspace ID",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              },
-              {
-                "id": "Slack Channel ID",
-                "displayName": "Slack Channel ID",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              },
-              {
-                "id": "Clayroots Base ID",
-                "displayName": "Clayroots Base ID",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              },
-              {
-                "id": "Qualification Prompt",
-                "displayName": "Qualification Prompt",
-                "required": false,
-                "defaultMatch": false,
-                "canBeUsedToMatch": true,
-                "display": true,
-                "type": "string",
-                "readOnly": false,
-                "removed": false
-              }
-            ],
-            "attemptToConvertTypes": false,
-            "convertFieldsToString": false
-          },
-          "options": {}
-        },
-        "id": "569bd03a-d0ab-41b8-b6b0-5fc546d48dab",
-        "name": "Create Clients Record",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          4928,
-          -16
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "id": "9825f59e-096b-448f-b09d-2cfd7638ffb7",
-        "name": "Create Leads Overflow",
-        "type": "n8n-nodes-base.googleDrive",
-        "typeVersion": 3,
-        "position": [
-          1008,
-          -112
-        ],
-        "parameters": {
-          "resource": "folder",
-          "name": "Leads Overflow",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive",
-            "cachedResultName": "My Drive"
-          },
-          "folderId": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $(\"Create Reports\").item.json.id }}"
-          },
-          "options": {}
-        },
-        "credentials": {
-          "googleDriveOAuth2Api": {
-            "id": "5BMl4AGSvtAP9QbV",
-            "name": "Flowroots Drive"
-          }
-        }
-      },
-      {
-        "id": "b15c4d45-2b10-439a-8c1d-8130db84f979",
-        "name": "Build Run Log",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          4520,
-          360
-        ],
-        "parameters": {
-          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nlet v={};\ntry{v=$('Build Client Vars').first().json||{};}catch(e){}\nlet folderId='';\ntry{folderId=$('Create Client Folder').first().json.id||'';}catch(e){}\nlet channelId='';\ntry{channelId=$('Create Slack Channel').first().json.id||'';}catch(e){}\nlet baseId='';\ntry{baseId=$('Create ClayRoots Base').first().json.id||'';}catch(e){}\nlet regRec='';\ntry{regRec=$('Create Clients Record').first().json.id||'';}catch(e){}\nlet prospectId='';\ntry{prospectId=$('Onboard Webhook').first().json.query.recordId||$('Onboard Webhook').first().json.query.leadId||'';}catch(e){}\nconst desc=[\n'**'+(v.clientName||'(unknown)')+' onboarded'+(baseId?'':', ClayRoots base missing')+'**',\n'',\n'**Prospect:** '+(prospectId||'?'),\n'',\n'**Created**',\n'- **Drive:** client folder '+(folderId||'(none)')+' with full anatomy + Overrides stub, Shared shared to contacts',\n'- **Slack:** '+(v.channelName||'')+' created ('+(channelId||'none')+'), Operator invited',\n'- **ClayRoots:** base '+(baseId||'NOT CREATED - flag for hand-creation'),\n'- **Registry:** Clients row '+(regRec||'(none)')+' written with all IDs'\n].join('\\n');\nreturn [{json:{\n 'Automation':'Onboard Client',\n 'Client': regRec?[regRec]:[],\n 'Status':'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Errors': (baseId?0:1),\n 'Target': prospectId||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n}}];"
-        },
-        "onError": "continueRegularOutput",
-        "executeOnce": true
-      },
-      {
-        "id": "de81828f-2b88-4325-9487-edb493be0bfc",
-        "name": "Log Run",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          4740,
-          360
-        ],
-        "parameters": {
-          "resource": "record",
-          "operation": "create",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tbli7rV6Qf3sLpV6R"
-          },
-          "columns": {
-            "mappingMode": "autoMapInputData",
-            "value": {},
-            "matchingColumns": [],
-            "schema": []
-          },
-          "options": {
-            "typecast": true
-          }
-        },
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        },
-        "onError": "stopWorkflow",
-        "executeOnce": true
-      },
-      {
-        "id": "6c46954c-85a8-453a-a9a7-0baf3289ef6f",
-        "name": "Get Prospect Row",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          176,
-          -112
-        ],
-        "parameters": {
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblEPFCO0kJn2tMyK"
-          },
-          "id": "={{ $json.query.recordId || $json.query.leadId }}",
-          "options": {}
-        },
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "id": "c7a39343-8ea2-4ace-8dae-7b48e2ac69d2",
-        "name": "Build Contact Query",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          320,
-          -112
-        ],
-        "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst r=$input.first().json||{};\nconst f=r.fields||r;\nconst clientName=f['Name']||'Unknown Client';\nconst raw=f['Contacts']||[];\nconst ids=raw.map(c=>typeof c==='string'?c:(c&&c.id)||'').filter(Boolean);\nconst formula=ids.length?('OR('+ids.map(id=>\"RECORD_ID()='\"+id+\"'\").join(',')+')'):'FALSE()';\nreturn [{ json: { clientName, formula, prospectId: r.id||'' } }];"
-        }
-      },
-      {
-        "id": "2760347f-ffd9-41e4-94f1-bff8ae0fa6b0",
-        "name": "Find Prospect Contacts",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          464,
-          -112
-        ],
-        "parameters": {
-          "resource": "record",
-          "operation": "search",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblzexq9qzO9IRiYV"
-          },
-          "filterByFormula": "={{ $json.formula }}",
-          "returnAll": true,
-          "options": {}
-        },
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        },
-        "onError": "continueRegularOutput",
-        "alwaysOutputData": true
-      }
-    ],
-    "connections": {
-      "Build Client Vars": {
-        "main": [
-          [
-            {
-              "node": "Create Client Folder",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Client Folder": {
-        "main": [
-          [
-            {
-              "node": "Create Reports",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Content": {
-        "main": [
-          [
-            {
-              "node": "Create Campaigns",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Campaigns": {
-        "main": [
-          [
-            {
-              "node": "Create Campaigns Email",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Campaigns Email": {
-        "main": [
-          [
-            {
-              "node": "Create Campaigns LinkedIn",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Campaigns LinkedIn": {
-        "main": [
-          [
-            {
-              "node": "Create Logs",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Logs": {
-        "main": [
-          [
-            {
-              "node": "Create Assets",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Assets": {
-        "main": [
-          [
-            {
-              "node": "Create Shared",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Shared": {
-        "main": [
-          [
-            {
-              "node": "Create Overrides",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Overrides": {
-        "main": [
-          [
-            {
-              "node": "Create Slack Channel",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Expand Emails": {
-        "main": [
-          [
-            {
-              "node": "Share Shared Folder",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Slack Channel": {
-        "main": [
-          [
-            {
-              "node": "Invite Owner to Channel",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Invite Owner to Channel": {
-        "main": [
-          [
-            {
-              "node": "Expand Emails",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "Create ClayRoots Base",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create ClayRoots Base": {
-        "main": [
-          [
-            {
-              "node": "Create Clients Record",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Reports": {
-        "main": [
-          [
-            {
-              "node": "Create Leads Overflow",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Leads Overflow": {
-        "main": [
-          [
-            {
-              "node": "Create Content",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Clients Record": {
-        "main": [
-          [
-            {
-              "node": "Build Run Log",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Build Run Log": {
-        "main": [
-          [
-            {
-              "node": "Log Run",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Onboard Webhook": {
-        "main": [
-          [
-            {
-              "node": "Get Prospect Row",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Get Prospect Row": {
-        "main": [
-          [
-            {
-              "node": "Build Contact Query",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Build Contact Query": {
-        "main": [
-          [
-            {
-              "node": "Find Prospect Contacts",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Find Prospect Contacts": {
-        "main": [
-          [
-            {
-              "node": "Build Client Vars",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      }
-    },
-    "nodeGroups": [],
-    "authors": "Shahar Mizrahi",
-    "name": null,
-    "description": null,
-    "autosaved": false
-  },
   "tags": []
 }

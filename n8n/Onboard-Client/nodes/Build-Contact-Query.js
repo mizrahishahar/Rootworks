@@ -1,5 +1,6 @@
 const sd=$getWorkflowStaticData('global');
 sd.runStartedAt=$now.toMillis();
+sd.scaffold=null;
 const r=$input.first().json||{};
 const f=r.fields||r;
 const clientName=f['Name']||'Unknown Client';

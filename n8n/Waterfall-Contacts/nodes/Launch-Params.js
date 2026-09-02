@@ -1,12 +1,46 @@
 // Launch Params: the launch row (or the caller's passthrough item, same keys) is the whole
 // contract. Read: Client (resolves the base), Table (by name, required, no default, and it must be
 // "Companies": this machine sources people for companies and refuses any other table), View (a
-// Companies view, by name, required, no default; the insert doors call with "Not Sourced" after
-// landing), Sources (ContaGen, Supersoniq, AI-Ark; blank means all three), Departments (mapped into
-// each provider's own vocabulary; blank or ALL means no department filter), Max companies (the
-// spend cap, required). Seniority is fixed in code per tier (ruled 2026-09-02); the row's Seniority
-// field is not read. Tag is not read either: People stores no Tag, it is a lookup through the
-// Companies link (ruled 2026-09-02). Any missing piece stops the run here, before a single paid call.
+// Companies view, by name, required, no default; the insert doors call with "Not Sourced"), Tiers
+// (the named mode, see below), Departments (mapped into each provider's own vocabulary; blank or
+// ALL means no department filter), Roles (the seniority lever, see below), Max companies (the
+// spend cap, required). Tag is not read: People stores no Tag, it is a lookup through the
+// Companies link (ruled 2026-09-02). Any missing piece stops the run here, before a paid call.
+//
+// TIERS (Hub Automations fldMg1W5uqWocEPSe, single select, ruled 2026-09-02). One named mode
+// instead of an arbitrary source set:
+//   "ContaGen -> Supersoniq -> AI-Ark"  the full waterfall
+//   "AI-Ark"                            the intent path: AI-Ark only, a flat cap of five people
+//                                       per company and the buyer seniorities only
+//   "ContaGen -> Supersoniq"            the waterfall without AI-Ark
+// Blank falls back to the older Sources multi-select so launch rows in flight keep working; blank
+// on both is the full waterfall. Sources is superseded and can be deleted once nothing carries it.
+//
+// ROLES (Hub Automations fld0NcoXexQgV4iiw, multi select, ruled 2026-09-02). The provider-neutral
+// seniority vocabulary, the same one People.Seniority carries, mapped into each provider's own
+// filter vocabulary. A pick OVERRIDES that provider's in-code seniority net; blank leaves every
+// provider on its default, byte for byte as before. A role with no home at a provider is dropped
+// there and named in the run log, exactly as Departments already behaves. The mapping:
+//
+//   Roles          ContaGen (DiscoLike)  Supersoniq                  AI-Ark
+//   Founder        executive             Founder                     founder
+//   Owner          executive             Owner                       owner
+//   Partner        executive             Partner                     partner
+//   Board / Chair  executive             Board / Chair               (none)
+//   C-Suite        executive             C-Suite                     c_suite
+//   President      executive             President                   c_suite
+//   Executive      executive             C-Suite                     c_suite
+//   VP             vp                    VP                          vp
+//   EVP / SVP      vp                    EVP / SVP                   vp
+//   Head           director              Head                        head
+//   Director       director              Director                    director
+//   Manager        manager               Manager, Senior Manager     manager
+//   Senior         senior_ic             Senior                      (none)
+//   Unclassified   (none)                Unclassified                (none)
+//
+// Every provider value in the three vocabularies has a home above and nothing outside them is
+// ever sent. When a pick maps to nothing at a provider that provider keeps its in-code default,
+// so an override never narrows a net to empty.
 let rec=null, trigger='form';
 try{ rec=$('Fetch Launch Record').first().json; }catch(e){}
 if(!rec||!rec.fields){ rec=$('Event Row').first().json; trigger='event'; }
@@ -27,8 +61,27 @@ const maxCompanies=Math.floor(Number(f['Max companies'])||0);
 if(!(maxCompanies>0)){ throw new Error(where+' has no Max companies. It is the spend cap and it is required. Nothing was pulled.'); }
 const ALL_SOURCES=['ContaGen','Supersoniq','AI-Ark'];
 const slug=(s)=>String(s).toLowerCase().replace(/[^a-z]/g,'');
-const srcRaw=arr(f['Sources']).map(s=>String(s).trim()).filter(Boolean);
-const sources=ALL_SOURCES.filter(s=>srcRaw.some(x=>slug(x)===slug(s)));
+const MODES=[
+  { label:'ContaGen -> Supersoniq -> AI-Ark', sources:['ContaGen','Supersoniq','AI-Ark'] },
+  { label:'AI-Ark', sources:['AI-Ark'] },
+  { label:'ContaGen -> Supersoniq', sources:['ContaGen','Supersoniq'] }
+];
+const modeKey=(s)=>String(s||'').toLowerCase().replace(/[^a-z]/g,'');
+const tiersRaw=((f['Tiers']||'')+'').trim();
+let sources=null, tiers='';
+if(tiersRaw){
+  const hit=MODES.find(m=>modeKey(m.label)===modeKey(tiersRaw));
+  if(!hit){ throw new Error(where+' names Tiers "'+tiersRaw+'", which is not one of the three modes ('+MODES.map(m=>m.label).join(', ')+'). Nothing was pulled.'); }
+  sources=hit.sources.slice(); tiers=hit.label;
+}
+if(!sources){
+  const srcRaw=arr(f['Sources']).map(s=>String(s).trim()).filter(Boolean);
+  const picked=ALL_SOURCES.filter(s=>srcRaw.some(x=>slug(x)===slug(s)));
+  sources=picked.length?picked:ALL_SOURCES.slice();
+  const hit=MODES.find(m=>m.sources.length===sources.length&&m.sources.every(s=>sources.indexOf(s)>-1));
+  tiers=(hit?hit.label:sources.join(' + '))+' (from Sources, no Tiers on the row)';
+}
+const arkOnly=sources.length===1&&sources[0]==='AI-Ark';
 // Departments: the Hub multi-select (ALL, Executive, Engineering, Technology, Product, Data, R&D,
 // Security, Design, Operations, Sales, Marketing, Finance, Human Resources, Customer Success,
 // Project Management, Strategy, Legal, Supply Chain, Communications) mapped per provider.
@@ -53,16 +106,43 @@ if(!wide){
     const ark=ARK_DEP[k]; if(ark){ for(const v of [].concat(ark)){ if(arkFunctions.indexOf(v)<0) arkFunctions.push(v); } }
   }
 }
+// Roles, mapped per provider by the table in this file's header. Values are verbatim from each
+// provider's own vocabulary: DiscoLike seniority (executive, vp, director, manager, senior_ic),
+// Supersoniq seniority, AI-Ark seniority (founder, owner, partner, c_suite, vp, head, director,
+// manager). Nothing outside those lists is ever sent.
+const CG_ROLE={ 'founder':'executive', 'owner':'executive', 'partner':'executive', 'board / chair':'executive', 'c-suite':'executive', 'president':'executive', 'executive':'executive', 'vp':'vp', 'evp / svp':'vp', 'head':'director', 'director':'director', 'manager':'manager', 'senior':'senior_ic' };
+const SQ_ROLE={ 'founder':['Founder'], 'owner':['Owner'], 'partner':['Partner'], 'board / chair':['Board / Chair'], 'c-suite':['C-Suite'], 'president':['President'], 'executive':['C-Suite'], 'vp':['VP'], 'evp / svp':['EVP / SVP'], 'head':['Head'], 'director':['Director'], 'manager':['Manager','Senior Manager'], 'senior':['Senior'], 'unclassified':['Unclassified'] };
+const ARK_ROLE={ 'founder':['founder'], 'owner':['owner'], 'partner':['partner'], 'c-suite':['c_suite'], 'president':['c_suite'], 'executive':['c_suite'], 'vp':['vp'], 'evp / svp':['vp'], 'head':['head'], 'director':['director'], 'manager':['manager'] };
+const roleRaw=arr(f['Roles']).map(s=>String(s).trim()).filter(Boolean);
+const cgSeniority=[], sqSeniority=[], arkSeniority=[];
+const noCg=[], noSq=[], noArk=[];
+for(const r of roleRaw){
+  const k=r.toLowerCase();
+  const cg=CG_ROLE[k]; if(cg){ if(cgSeniority.indexOf(cg)<0) cgSeniority.push(cg); } else noCg.push(r);
+  const sq=SQ_ROLE[k]; if(sq){ for(const v of sq){ if(sqSeniority.indexOf(v)<0) sqSeniority.push(v); } } else noSq.push(r);
+  const ark=ARK_ROLE[k]; if(ark){ for(const v of ark){ if(arkSeniority.indexOf(v)<0) arkSeniority.push(v); } } else noArk.push(r);
+}
+const rolesUnmapped=[];
+if(noCg.length) rolesUnmapped.push('no ContaGen seniority for '+noCg.join(', '));
+if(noSq.length) rolesUnmapped.push('no Supersoniq seniority for '+noSq.join(', '));
+if(noArk.length) rolesUnmapped.push('no AI-Ark seniority for '+noArk.join(', '));
 return [{ json: {
   base: base,
   clientRecId: clientRecId,
   table: 'Companies',
   view: view,
-  sources: sources.length?sources:ALL_SOURCES.slice(),
+  tiers: tiers,
+  sources: sources,
+  arkOnly: arkOnly,
   departments: depRaw,
   cgDepartments: cgDepartments,
   arkFunctions: arkFunctions,
   departmentsUnmapped: unmapped,
+  roles: roleRaw,
+  cgSeniority: cgSeniority,
+  sqSeniority: sqSeniority,
+  arkSeniority: arkSeniority,
+  rolesUnmapped: rolesUnmapped,
   maxCompanies: maxCompanies,
   trigger: trigger,
   _launchRecordId: rec.id||'',

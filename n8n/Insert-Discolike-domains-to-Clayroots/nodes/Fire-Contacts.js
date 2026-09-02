@@ -1,6 +1,13 @@
 // Fire Contacts: one item in Waterfall Contacts' event shape (Event Row reads the launch-row
-// keys), so the companies just landed get their people at once. The view "Not Sourced" on
-// Companies, all three sources, no department filter and a 5000-company cap, as ruled
-// 2026-09-02. Waterfall Contacts writes its own run-log row.
+// keys), so the companies just landed get their people at once. Table Companies and View
+// "Not Sourced" are structural, this door always sources what it just landed. Everything else
+// comes off THIS door's own launch row (Launch Params read it): Tiers, Departments, Roles and
+// Max companies pass straight through, so the Operator's row is what the contacts pull obeys.
+// Blank on the row means the full waterfall, no department filter, no role filter and a
+// 5,000-company cap, which is what this door always did before 2026-09-02.
+// Waterfall Contacts writes its own run-log row.
 const p=$('Launch Params').first().json;
-return [{ json: { Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', Sources: ['ContaGen','Supersoniq','AI-Ark'], Departments: [], 'Max companies': 5000, Tag: p.tag||'' } }];
+const out={ Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', 'Max companies': p.contactsMaxCompanies, Departments: p.contactsDepartments||[], Roles: p.contactsRoles||[], Tag: p.tag||'' };
+if(p.contactsTiers) out.Tiers=p.contactsTiers;
+if((p.contactsSources||[]).length) out.Sources=p.contactsSources;
+return [{ json: out }];

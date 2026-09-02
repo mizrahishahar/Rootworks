@@ -1,5 +1,6 @@
 // Build Log: the one launch-row log, written once after the writer loop ended and the AI-Ark
-// lane's row landed (or the 25-minute wait ran out). The counters come from the pass rows:
+// lane's row landed (or the 60-minute wait ran out, which is a skip on this row and never a
+// failure: the lane is allowed to outlive it and writes its own row). The counters come from the pass rows:
 // Waterfall Contacts Batch writes one Hub row per writer batch keyed "<this execution>-<n>" and
 // one for the AI-Ark lane keyed "<this execution>-ark", each with its counters JSON in Tally;
 // Read Batch Rows pulled them by that prefix, and they are summed here (no read-add-write Tally
@@ -75,7 +76,7 @@ const fireFailed=fires.length-fired;
 const views=runs('Find Waterfall View').map(r=>r[0].json||{});
 const viewSkips=views.filter(v=>v.hasView===false&&v.metaOk).length;
 const metaFails=views.filter(v=>!v.metaOk).length;
-const failed=[];
+const failed=[]; const skipsEarly=[];
 const tierName={ contagen:'ContaGen', supersoniq:'Supersoniq', aiark:'AI-Ark' };
 for(const k of ['contagen','supersoniq','aiark']){ const s=t[k]; for(let i=0;i<num(s.errors);i++) failed.push({ tier:tierName[k], reason:s.firstError||'call failed' }); }
 for(let i=0;i<num(t.writeErrors);i++) failed.push({ tier:'People writer', reason:'row not in the answer (see the pass rows for the HTTP reason)' });
@@ -87,7 +88,9 @@ for(const x of batches){
   else if(x.status==='crashed') failed.push({ tier:'Batch '+x.batchNum, reason:'crashed ('+x.reason+'); no counters from it'+(has?', though its row landed and is counted':'') });
   else failed.push({ tier:'Batch '+x.batchNum, reason:x.reason||x.status });
 }
-if(arkMissing) failed.push({ tier:'AI-Ark lane', reason:'no "'+prefix+'ark" row within the '+(wait?wait.elapsedS+' s':'')+' wait (timed out; it may still be running and will write its row, uncounted here)' });
+// A lane still running when the wait runs out is NOT a failure: it keeps going and writes its own
+// row "<exec>-ark" when it finishes. It is a skip on this row, never an error (ruled 2026-09-02).
+if(arkMissing) skipsEarly.push('the AI-Ark lane had not written "'+prefix+'ark" when the '+(wait?wait.elapsedS+' s':'60 minute')+' wait ran out; it is still running, it is not a failure, and its own row carries what it finds (the counts below do not include it)');
 if(arkRow&&arkRow.status==='Failed') failed.push({ tier:'AI-Ark lane', reason:'every export failed' });
 for(let i=0;i<num(laneC.arkUnserved);i++) failed.push({ tier:'AI-Ark lane', reason:'company never submitted; the lane stopped after eight rate-limit answers in a row' });
 for(let i=0;i<metaFails;i++) failed.push({ tier:'Waterfall hand-over', reason:'the base meta could not be read, the view check did not run' });
@@ -103,9 +106,10 @@ const lines=[
   '**'+companiesIn+' companies in, '+num(t.written)+' people written into '+(cfg.peopleTableName||'People')+', '+covered+' of '+companiesIn+' covered ('+pct+'%)**',
   '',
   '**Scope:** one client, Companies view "'+p.view+'", Max companies '+num(p.maxCompanies),
-  '**Sources:** '+(p.sources||[]).join(', '),
+  '**Tiers:** '+(p.tiers||(p.sources||[]).join(', '))+' (called: '+(p.sources||[]).join(', ')+')',
   '**Departments:** '+((p.departments||[]).length?(p.departments||[]).join(', '):'blank (no department filter)')+((p.cgDepartments||[]).length?'; DiscoLike gets '+(p.cgDepartments||[]).join(', '):'')+((p.departmentsUnmapped||[]).length?'; no DiscoLike home for '+(p.departmentsUnmapped||[]).join(', '):''),
-  '**Cap per company:** by band, 1-10 four, 11-50 six, 51-200 ten, 201 and up twelve (per source at ContaGen and Supersoniq, absolute at AI-Ark)',
+  '**Roles:** '+((p.roles||[]).length?(p.roles||[]).join(', ')+' (overrides the in-code seniority net at every source that has a home for them)':'blank (each source on its in-code seniority net)')+((p.rolesUnmapped||[]).length?'; '+(p.rolesUnmapped||[]).join('; '):''),
+  '**Cap per company:** '+(p.arkOnly?'flat five, every company size (the AI-Ark only mode)':'by band, 1-10 four, 11-50 six, 51-200 ten, 201 and up twelve (per source at ContaGen and Supersoniq, absolute at AI-Ark)'),
   '',
   '**Funnel**',
   '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows, '+num(mk.batches)+' writer batches of 250'+(on('AI-Ark')?', then one AI-Ark lane over every company they covered':'')+')',
@@ -122,13 +126,13 @@ lines.push('- **Contacts Pulled At stamped:** '+num(t.stamped));
 lines.push('');
 if(companiesIn){
   const bits=[launched+' writer batch'+(launched===1?'':'es')+' launched one at a time, '+closed+' closed'];
-  if(on('AI-Ark')) bits.push(arkFired?('one AI-Ark lane fired over '+num(lane.companiesIn)+' companies from '+laneNums.size+' closed batch'+(laneNums.size===1?'':'es')+', '+(arkRow?'its row landed':'its row did not land')+(wait?(' after a '+wait.elapsedS+' s wait'+(wait.timedOut?' (timed out)':'')):'')):'no AI-Ark lane fired');
+  if(on('AI-Ark')) bits.push(arkFired?('one AI-Ark lane fired over '+num(lane.companiesIn)+' companies from '+laneNums.size+' closed batch'+(laneNums.size===1?'':'es')+', '+(arkRow?'its row landed':'still running when this row closed')+(wait?(' after a '+wait.elapsedS+' s wait'+(wait.timedOut?' (the 60 minute cap; the lane is allowed to outlive this row)':'')):'')):'no AI-Ark lane fired');
   bits.push(rowsRead+' pass row'+(rowsRead===1?'':'s')+' read back under "'+prefix+'*" (each pass writes its own Hub row, summed here)');
   if(stopped) bits.push('stopped after batch '+stopped.batchNum+', every paid call in it failed'+(notLaunched?', '+notLaunched+' not launched':''));
   lines.push('**Passes:** '+bits.join('; '));
 }
 if(num(laneC.arkRateLimited)) lines.push('**AI-Ark rate limiting:** '+num(laneC.arkRateLimited)+' export'+(num(laneC.arkRateLimited)===1?'':'s')+' answered HTTP 429'+(laneC.arkStopped?'; the lane stopped submitting after eight in a row and left '+num(laneC.arkUnserved)+' companies unserved':''));
-const skips=[];
+const skips=skipsEarly.slice();
 if(!companiesIn) lines.push('**Waterfall:** not fired, nothing was pulled');
 else if(fires.length||viewSkips){
   const bits=[];
@@ -145,6 +149,7 @@ if(pick.capped) skips.push(num(pick.capped)+' view rows beyond Max companies');
 if(!companiesIn) skips.push('view "'+p.view+'" had no rows to work');
 if(notLaunched&&stopped) skips.push(notLaunched+' batches not launched after batch '+stopped.batchNum+' failed every paid call');
 if((p.departmentsUnmapped||[]).length) skips.push('departments with no DiscoLike value: '+(p.departmentsUnmapped||[]).join(', '));
+for(const r of (p.rolesUnmapped||[])) skips.push(r+' (that source kept its in-code seniority net)');
 if(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');
 if(failed.length){
   const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; }

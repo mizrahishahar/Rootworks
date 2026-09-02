@@ -1,6 +1,13 @@
 // Launch Params: the launch row is the whole contract. Client link resolves the base, the
 // Storeleads filter fields on the row shape the pull, Max companies is the spend cap, Tag is
 // stamped on every row landed. Any missing piece stops the run here, before a single paid call.
+//
+// The contacts pull this door fires afterwards is NOT hardcoded (ruled 2026-09-02). Tiers,
+// Departments and Roles are read off this same launch row and handed to Waterfall Contacts by
+// Fire Contacts, and Max companies serves as its cap too: the row's own spend cap bounds both
+// what this door lands and what the contacts pull then works. Blank means today's behaviour,
+// the full waterfall with no department or role filter. Tiers falls back to the older Sources
+// multi-select while launch rows still carry it.
 const rec=$('Fetch Launch Record').first().json;
 const f=rec.fields||{};
 const cf=($('Resolve Base').first().json.fields)||{};
@@ -30,6 +37,11 @@ return [{ json: {
   technologies: text(f['Technologies']),
   mustHaveAppIds: text(f['Must-have app IDs']),
   maxCompanies: maxCompanies,
+  contactsTiers: text(f['Tiers'])||(list(f['Sources']).length?'':'ContaGen -> Supersoniq -> AI-Ark'),
+  contactsSources: list(f['Sources']),
+  contactsDepartments: list(f['Departments']),
+  contactsRoles: list(f['Roles']),
+  contactsMaxCompanies: maxCompanies,
   _launchRecordId: rec.id,
   startedAt: new Date().toISOString()
 } }];

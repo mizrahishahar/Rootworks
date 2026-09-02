@@ -48,6 +48,8 @@ return [{ json: {
   base: p.base, clientRecId: p.clientRecId,
   peopleTableId: cfg.peopleTableId, peopleTableName: cfg.peopleTableName, companiesTableId: cfg.companiesTableId, dncTableId: cfg.dncTableId,
   peopleFields: cfg.peopleFields,
-  sources: p.sources, cgDepartments: p.cgDepartments, arkFunctions: p.arkFunctions,
+  tiers: p.tiers, sources: p.sources, arkOnly: p.arkOnly, roles: p.roles,
+  cgDepartments: p.cgDepartments, arkFunctions: p.arkFunctions,
+  cgSeniority: p.cgSeniority, sqSeniority: p.sqSeniority, arkSeniority: p.arkSeniority,
   companies: companies
 } }];

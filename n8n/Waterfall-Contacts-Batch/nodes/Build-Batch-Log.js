@@ -26,7 +26,12 @@ const tier=(label,x)=>'- **'+label+':** called '+num(x.called)+', returned '+num
 const zd=Array.isArray(s.zeroDomains)?s.zeroDomains:[];
 const isArk=s.mode==='ark';
 const head=isArk?('AI-Ark lane: '+companiesIn+' companies from '+num(s.batchCount)+' closed writer batch'+(num(s.batchCount)===1?'':'es')+', '+num(s.underCap)+' still under cap, '+num(s.written)+' people written, '+covered+' of '+companiesIn+' covered after it ('+pct+'%)'):('Batch '+num(s.batchNum)+' of '+num(s.batchCount)+': '+companiesIn+' companies in, '+num(s.written)+' people written, '+covered+' of '+companiesIn+' covered ('+pct+'%)');
-const lines=[ '**'+head+'**', '', '**Parent run:** '+inp.parentExecId+' (this row is one pass of it; the parent sums the passes)', '' ];
+const roles=Array.isArray(inp.roles)?inp.roles:[];
+const capLine=inp.arkOnly===true?'flat 5 per company, every size (AI-Ark only)':'by band, 1-10 four, 11-50 six, 51-200 ten, 201 and up twelve';
+const lines=[ '**'+head+'**', '',
+  '**Parent run:** '+inp.parentExecId+' (this row is one pass of it; the parent sums the passes)',
+  '**Tiers:** '+(inp.tiers||(inp.sources||[]).join(', '))+' | **Cap per company:** '+capLine+' | **Roles:** '+(roles.length?roles.join(', '):'blank (each source on its in-code seniority net)'),
+  '' ];
 if(isArk){
   lines.push(tier('AI-Ark', s.aiark||{}));
   lines.push('- **Exports:** '+num(s.arkPlanned)+' planned, '+num((s.aiark||{}).called)+' submitted 250 ms apart in windows of fifty, '+num(s.arkDone)+' settled ('+num(s.arkCallbacks)+' by webhook, '+num(s.arkPolled)+' by a statistics read), '+num(s.arkWithPeople)+' with people (results fetched only for those)');

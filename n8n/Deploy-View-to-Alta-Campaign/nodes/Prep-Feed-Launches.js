@@ -1,29 +1,30 @@
-// The daily feed: every Campaigns row whose Signal link is set drinks from its Signal's View (the
-// queue view id on the client's ClayRoots base, held on the Signals row since the Hub field
-// deletions of 2026-09-02), on the table the campaign's Table select names (People or Companies,
-// blank = People). One launch row per feed, entering the door exactly like a manual launch,
-// dedupe Strict plus the Campaigns-stamp gate. Refused with a named error, deploying nothing: a
-// Signals row without a View, an unresolvable Signal link, a missing Campaign ID or Client, and
-// any view feeding two campaigns at once.
+// The daily feed. The feed is a property of the CAMPAIGN (Operator ruling 2026-09-02): a
+// Campaigns row that carries a Live View ID drinks from that view, on the table its Table select
+// names (People or Companies, blank = People), in its Client's ClayRoots base. Signals describe a
+// signal and nothing else now; the retired Signal link -> Signals.View hop is gone, because one
+// signal linked to two campaigns pushed the identical view into both of them.
+// Get Fed Campaigns owns two of the gates: a non-empty Live View ID, and Status = ACTIVE. The
+// Status gate matters most here: an enrolment into a paused Alta campaign answers 200 OK and
+// creates nothing, so a daily feed into a dead campaign loses leads silently and stamps them sent.
+// One launch row per fed campaign, entering the door exactly like a manual launch, dedupe being
+// the Campaigns-stamp gate plus the readback, capped at MAX_ROWS enrolments.
+// Refused with a named error, deploying nothing: a missing Campaign ID, a missing Client link,
+// and any view feeding two campaigns of the same client on the same table, because two campaigns
+// drinking one view enrol the same person twice.
+const MAX_ROWS=150; // rows enrolled per campaign per run. Alta takes one prospect per request,
+// paced at one every 8 seconds: 150 rows is about 20 minutes, 1,000 would be over two hours.
 const camps=$('Get Fed Campaigns').all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));
-const sigs={};
-try{ for(const it of $('Get Signals Rows').all()){ const j=it.json||{}; const f=j.fields||j; if(j.id) sigs[j.id]={ name:String(f['Name']||''), view:String(f['View']||'').trim() }; } }catch(e){}
 const out=[]; const seenView={};
 for(const c of camps){
   const f=c.fields||c;
-  if(!f['Campaign ID']&&!f['Signal']) continue;
-  const link=Array.isArray(f['Signal'])?f['Signal'][0]:null;
-  const sigId=link&&typeof link==='object'?String(link.id||''):String(link||'');
-  const sig=sigs[sigId];
+  const view=String(f['Live View ID']||'').trim();
+  if(!view) continue; // the search filter already excludes these; this also drops the empty placeholder item.
   const table=String((f['Table']&&f['Table'].name)||f['Table']||'').trim()||'People';
-  const view=sig?sig.view:'';
   const target=String(f['Campaign ID']||'').trim();
   const clientLink=Array.isArray(f['Client'])?f['Client'][0]:null;
   const clientId=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');
   const name=String(f['Campaign']||target||'?');
   const err=(why)=>out.push({json:{ok:false, campaign:name, why}});
-  if(!sig){ err('Signal link does not resolve to a Signals row'); continue; }
-  if(!view){ err('Signals row "'+(sig.name||sigId)+'" has no View (the queue view id); fill it or remove the Signal link'); continue; }
   if(!target){ err('Campaign ID is empty'); continue; }
   if(!clientId){ err('no Client link on the campaign row'); continue; }
   // Table is a name, unique only inside one client's base: the key carries the client.
@@ -34,7 +35,7 @@ for(const c of camps){
     continue;
   }
   seenView[vk]=name;
-  out.push({json:{ok:true, clientId, table, view, target, campaign:name, signal:sig.name}});
+  out.push({json:{ok:true, clientId, table, view, target, campaign:name, maxRows:MAX_ROWS}});
 }
 if(!out.length) return [{json:{_none:true, ok:false}}];
 return out;

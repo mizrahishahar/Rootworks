@@ -1,15 +1,28 @@
-// Build Prospects: the view's rows into pull-in bodies, one item per prospect to push.
+// Build Prospects: the view's rows into pull-in bodies, one item per prospect to push. Collect
+// View put the rows on the run state, so the DNC read can sit between the view and this node.
 // Identity, hard: LinkedIn URL (this door's key) and Company (or company_clean); the name
 // rides when present, Alta resolves the person from the URL.
 // The stamp-gate: a row whose Campaigns links already carry this campaign's mirror row is
-// skipped, the door's ONLY dedupe and the whole of it (Operator 2026-08-28: Alta relies
-// solely on the stamp). Every required variable missing skips the row with its name.
+// skipped, the door's ONLY sequencer-side dedupe and the whole of it (Operator 2026-08-28: Alta
+// relies solely on the stamp, and its pull-in answers 200 "Prospect uploaded successfully"
+// whether the person was new or already a member). DNC domains are dropped here too, from the
+// client base's DNC table, the PlusVibe door's rule brought over 2026-09-02: this door used to
+// gate DNC only at landing. Every required variable missing skips the row with its name.
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 if(D.abort){ return [{json:{_none:true}}]; }
-let rows=[];
-try{ for(const it of $input.all()){ const j=it.json||{}; const recs=Array.isArray(j.records)?j.records:(j.id?[j]:[]); rows.push(...recs); } }catch(e){}
+const rows=D.viewRows||[];
 D.rowsTotal=rows.length;
 if(!rows.length){ D.abort='view empty'; D.errors.push('view "'+D.view+'" returned no rows; nothing was sent'); return [{json:{_none:true}}]; }
+const dnc={};
+if(D.dncTableId){
+  try{
+    for(const it of $('Read DNC').all()){
+      const j=it.json||{};
+      const recs=Array.isArray(j.records)?j.records:[];
+      for(const r of recs){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) dnc[d]=1; }
+    }
+  }catch(e){}
+}
 // The one reader for every field. A register-shaped People table carries the company facts
 // (Domain, Company, Tag, Employees, Country and the rest) as lookups through the Companies link,
 // so Airtable returns arrays; an array yields its first value, an object its value or name,
@@ -27,6 +40,10 @@ for(const r of rows){
   const li=val(f['LinkedIn URL']);
   if(!/^https?:\/\//i.test(li)){ rec.skip='missing LinkedIn URL'; continue; }
   rec.url=normUrl(li);
+  // Domain is a lookup through the Companies link on a register-shaped People table; val() takes
+  // the first value. No email fallback here, this door has no email in its identity.
+  const dncDom=String(val(f['Domain'])||'').toLowerCase().trim();
+  if(dncDom&&dnc[dncDom]){ rec.skip='DNC: '+dncDom; continue; }
   if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }
   if(D.urlToRow[rec.url]){ rec.skip='duplicate LinkedIn URL in view (row '+D.urlToRow[rec.url]+' already queued)'; continue; }
   // first_name is NOT identity here (Operator 2026-08-31): Alta resolves the person from the
@@ -60,9 +77,15 @@ for(const r of rows){
   const ln=val(f['last_name']); if(ln) body.lastName=ln;
   const dom=val(f['Domain']); if(dom) body.companyWebsite=/^https?:\/\//i.test(dom)?dom:'https://'+dom;
   const email=val(f['Final Email']); if(email) body.email=email;
+  // Max Rows: the launch row's cap on what this run may enrol, blank on the launch row = no cap.
+  // Applied last, so the cap counts only rows that would really have been pushed; the surplus is
+  // a named skip, never a silent drop, and the view offers it again on the next run. Alta pushes
+  // one prospect per request at one every 8 seconds, so the cap is also the run's wall clock.
+  if(D.maxRows&&out.length>=D.maxRows){ rec.skip='over the run cap of '+D.maxRows+' rows'; continue; }
   D.urlToRow[rec.url]=r.id;
   out.push({json:{recordId:r.id, enroll_body:body, campaign_url:D.pullInUrl}});
 }
+D.viewRows=null;
 const skipCounts={};
 for(const id of Object.keys(D.rows)){ const s=D.rows[id].skip; if(s){ const key=s.indexOf('missing ')===0?s:(s.indexOf('DNC')===0?'DNC':s); skipCounts[key]=(skipCounts[key]||0)+1; } }
 D.skipCounts=skipCounts;

@@ -24,6 +24,17 @@ if(D.missing) md.push('- **Pushed but not in the campaign:** '+nf(D.missing));
 const pz=(D.pausedTitle||0)+(D.pausedUrl||0)+(D.pausedNoData||0);
 if(pz){ md.push('- **Auto-paused after landing:** '+nf(pz)+' (title rule '+nf(D.pausedTitle)+' · URL mismatch '+nf(D.pausedUrl)+' · no person data '+nf(D.pausedNoData)+')'); for(const n of (D.pausedNames||[])) md.push('   - '+n); }
 md.push('- **Campaigns links stamped:** '+nf(D.campsStamped));
+// The duplicate mirror, never a gate: the view owns dedupe (Operator ruling 2026-09-02), and this
+// line is how a view that stopped excluding what it already sent shows up on day one instead of
+// quietly spending the whole daily allowance re-offering the same people.
+// Alta's pull-in NEVER reports a duplicate: it answers 200 {"message":"Prospect uploaded
+// successfully"} whether the person is new or already a member (827 push responses across runs
+// 5642, 5667 and 6239 carry that one message and nothing else). So the count is what we can see
+// by values: rows the Campaigns stamp caught before pushing, plus rows the readback found
+// already in the campaign from before this run started, which is Alta silently absorbing a push.
+const stampDupes=sc['already in campaign (Campaigns stamp)']||0;
+let healed=0; for(const id of Object.keys(D.rows||{})) if(D.rows[id]&&D.rows[id].healed) healed++;
+md.push('- **Already present:** '+nf(stampDupes+healed)+' (Campaigns stamp, caught before pushing '+nf(stampDupes)+' · pushed but already a member before this run '+nf(healed)+'). Alta never reports a duplicate itself.');
 if((D.warnings||[]).length){ md.push(''); md.push('**Warnings ('+D.warnings.length+')**'); for(const w of D.warnings) md.push('- '+w); }
 if(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }
 const desc=md.join('\n');

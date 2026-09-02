@@ -47,7 +47,7 @@ if(S){
 if(failed.length){ lines.push('', '**Failed ('+failed.length+')**'); for(const f of failed) lines.push('- '+f); }
 lines.push('', '**Operator, by hand:** sync the two mirrors from the Hub (the Campaigns and Signals views filtered to this client, Hub Record ID synced) as "'+name+' Campaigns" and "'+name+' Signals", then add the Signals link on Companies, the Campaigns link on Companies and People, and the Signals lookup on People. Build the standard views (Companies: Uncovered, Tried empty, Public & Found, Public & Found : Campaigns; People: Relevant, Cut review, Relevant & Not Waterfalled, Relevant & Found, Relevant & Found : Campaigns). Replace the relevance placeholder with the client\'s rule. Paste the share link into each table description.');
 const row={
-  'Automation': 'Onboard Client',
+  'Automation': 'Create Client Rootworks Infrastructure',
   'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',
   'Run at': $now.toISO(),
   'Records In': 1,

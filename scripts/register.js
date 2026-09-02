@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Rootworks field register compiler.
 // Compiles REGISTER.md at the repo root from the one field register,
-// n8n/Onboard-Client/nodes/Scaffold-Register.js: per table, every field with its type, options
+// n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js: per table, every field
+// with its type, options
 // (select choices with their colors), and kind, the declared extras groups, the views (filter,
 // fields, sort), then the On People rule and the palettes.
 // Generated from the register; never hand-edited. The way SCHEMA.md is compiled from the Hub.
@@ -18,7 +19,7 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');
-const REGISTER_PATH = path.join(ROOT, 'n8n', 'Onboard-Client', 'nodes', 'Scaffold-Register.js');
+const REGISTER_PATH = path.join(ROOT, 'n8n', 'Create-Client-Rootworks-Infrastructure', 'nodes', 'Scaffold-Register.js');
 
 function loadRegister() {
   const src = fs.readFileSync(REGISTER_PATH, 'utf8');

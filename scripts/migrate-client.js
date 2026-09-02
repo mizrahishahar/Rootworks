@@ -267,7 +267,8 @@ const JOB_COLS = ['Job ID', 'Job Title', 'Job Link', 'Job Posted', 'Job Descript
 const STORELEADS_COLS = ['Plan', 'Revenue Est Monthly', 'Store Age Years', 'Product Count', 'App Spend Mo', 'Key Apps', 'Tech Stack', 'Trustpilot Rating', 'Trustpilot Reviews', 'Migrated From', 'Social Followers', 'Growth 90d', 'Features'];
 const REVIEWS_COLS = ['Review Count', 'Review Latest', 'Review Link', 'Review Titles', 'Review Quotes', 'Review Replied', 'Trustpilot Reviews Total', 'Trustpilot URL'];
 const SYNC_COLS = ['Messages Sent', 'Last Contacted', 'Campaign Status', 'Bounce Reason', 'Synced At'];
-// The register's short lane on Companies, exactly as n8n/Onboard-Client/nodes/Scaffold-Register.js
+// The register's short lane on Companies, exactly as
+// n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js
 // declares it (COMPANY_LANE) and Flowroots/Operations/Field Standard.md rules it:
 // Email, MV P0, BB, Final Email, Status. Email Source is People's alone.
 const COMPANY_LANE = ['Email', 'MV P0', 'BB', 'Final Email', 'Status'];
@@ -335,7 +336,8 @@ const PEOPLE_MAP = [
 ];
 
 // Register core, for the "what does the scaffold still lack" line of the report.
-// Companies exactly as n8n/Onboard-Client/nodes/Scaffold-Register.js declares it: no State Full,
+// Companies exactly as n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js
+// declares it: no State Full,
 // no Email Pattern, no Email Source (the lane source is People's alone), and the count field is
 // Contacts Count. Its lane is COMPANY_LANE whole, Email included.
 const REGISTER_CORE = {

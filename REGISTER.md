@@ -1,6 +1,6 @@
 # Field register
 
-Compiled from `n8n/Onboard-Client/nodes/Scaffold-Register.js` by `scripts/register.js`. Do not hand-edit.
+Compiled from `n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js` by `scripts/register.js`. Do not hand-edit.
 This file is what every client base's tables ARE; why they exist lives in Flowroots/Operations/Field Standard.md and List Building 2.0.md.
 Core fields are born at the scaffold. Declared extras are created only by their owner machine. Anything else on a base is the Operator's.
 Views are declared per table as data (filter, fields, sort); the Operator makes them in the base from this spec.

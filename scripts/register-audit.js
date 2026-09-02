@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Rootworks field register audit.
 // Reads one client base's meta through the Airtable API and measures it against the field
-// register (n8n/Onboard-Client/nodes/Scaffold-Register.js). Per table (Companies, People, DNC):
+// register (n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js).
+// Per table (Companies, People, DNC):
 //   missing   columns on the register the base lacks
 //   drift     columns on the base that are neither on the register nor in a declared extras group
 //   type      columns whose Airtable type differs from the register's

@@ -11,8 +11,9 @@
 //   @@file:nodes/X.js   (in workflow.json) the node's code is that file
 //   // @@register       (a line in a code file) the field register is inlined at that line as
 //                       `const REGISTER = <JSON>;`, evaluated from
-//                       n8n/Onboard-Client/nodes/Scaffold-Register.js at push time. n8n-pull.js
-//                       strips the constant and restores the directive on the way back.
+//                       n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js at
+//                       push time. n8n-pull.js strips the constant and restores the directive on
+//                       the way back.
 //
 // Auth: N8N_API_KEY env var, or ~/.config/rootworks/n8n-api-key (one line).
 // The key never lives in this repo.

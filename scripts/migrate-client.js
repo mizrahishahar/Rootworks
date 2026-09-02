@@ -309,6 +309,12 @@ const PEOPLE_MAP = [
   ...same(['Title', 'Seniority', 'Department', 'Email']),
   { to: 'LinkedIn URL', from: ['LinkedIn URL', 'Social'] },
   { to: 'Phone', from: ['Phone'] },
+  // Not a register field: an Operator column on People that Hebrew-market clients carry (the
+  // Hebrew-script first name a Hebrew greeting needs, on Adelante's Israeli contacts). Mapped by
+  // name, so a legacy table that has no first_name_he column contributes nothing here, and a
+  // target People that lacks the column makes every non-empty legacy value a counted drop that
+  // blocks --apply. Create the column on People before migrating an Israeli table.
+  { to: 'first_name_he', from: ['first_name_he'] },
   { to: 'Company', from: ['Company', 'company_clean'] },
   { to: 'Contact Source', from: ['Contact Source'], alias: SOURCE_ALIAS },
   { to: 'manually_approved', from: ['manually_approved'] },

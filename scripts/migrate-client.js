@@ -283,6 +283,12 @@ const same = (names, extra = {}) => names.map((n) => ({ to: n, from: [n], ...ext
 // Companies: legacy column candidates per target field, first non-empty (first valid, for selects).
 // shape:'domains' entries are read from Domains-shaped tables only; on a contact row those columns belong to the person.
 const COMPANY_MAP = [
+  // company_clean is the machine's cleaned Latin company name (Clean Company Names writes it
+  // beside Company), so it is a safe fallback here. Check the column before every migration all
+  // the same: Adelante's Israeli contacts table had reused the name for the Hebrew-script company
+  // name, which would have overwritten every Latin Company with Hebrew. It was renamed to
+  // "company he" on 2026-09-03 rather than folded in. A column named company_clean that does not
+  // hold a cleaned Latin name gets renamed before the run, never migrated through this entry.
   { to: 'Company', from: ['Company', 'company_clean', 'Name'], nameOnDomainsOnly: true },
   ...same(['Description', 'Industry Groups', 'Business Model']),
   { to: 'Employees', from: ['Employees'], band: true },
@@ -290,6 +296,10 @@ const COMPANY_MAP = [
   { to: 'State', from: ['Company State', 'State'], companyPrefixed: 'Company State' },
   { to: 'City', from: ['Company City', 'City'], companyPrefixed: 'Company City' },
   ...same(['Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'State Full']),
+  // Client custom column, not a register field: the company name in Hebrew script, for
+  // Hebrew-language outreach. A company attribute, so it lands on Companies and People reads it
+  // through the lookup mechanism. It is not a cleaned Latin name and never feeds Company.
+  { to: 'company he', from: ['company he'] },
   ...same(COMPANY_LANE_FROM_LEGACY, { shape: 'domains', group: 'lane' }),
   // Read so the drop is counted and named, never written: Companies has no Email Source in the register.
   { to: 'Email Source', from: ['Email Source', 'Source'], accept: { Source: isLaneSource }, shape: 'domains', group: 'lane' },
@@ -309,12 +319,11 @@ const PEOPLE_MAP = [
   ...same(['Title', 'Seniority', 'Department', 'Email']),
   { to: 'LinkedIn URL', from: ['LinkedIn URL', 'Social'] },
   { to: 'Phone', from: ['Phone'] },
-  // Not a register field: an Operator column on People that Hebrew-market clients carry (the
-  // Hebrew-script first name a Hebrew greeting needs, on Adelante's Israeli contacts). Mapped by
-  // name, so a legacy table that has no first_name_he column contributes nothing here, and a
-  // target People that lacks the column makes every non-empty legacy value a counted drop that
-  // blocks --apply. Create the column on People before migrating an Israeli table.
-  { to: 'first_name_he', from: ['first_name_he'] },
+  // Client custom column, not a register field: the person's first name in Hebrew script, for
+  // Hebrew-language outreach. Mapped by name, so a legacy table without the column contributes
+  // nothing here, and a target People that lacks the column makes every non-empty legacy value a
+  // counted drop that blocks --apply. Create the column on People before migrating an Israeli table.
+  { to: 'first name he', from: ['first name he'] },
   { to: 'Company', from: ['Company', 'company_clean'] },
   { to: 'Contact Source', from: ['Contact Source'], alias: SOURCE_ALIAS },
   { to: 'manually_approved', from: ['manually_approved'] },

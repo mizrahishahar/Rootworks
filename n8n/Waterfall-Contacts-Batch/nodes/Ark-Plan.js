@@ -1,6 +1,7 @@
-// Ark Plan: tier 3 is absolute, sized to the gap the base still showed when this batch's writer
-// closed: the parent passes the writer's recount as held state on every company (heldCount,
-// heldKeys, heldLinkedin, carried into the plan by Plan Batch), so no read happens here. Only
+// Ark Plan: tier 3 is absolute, sized to the gap the base still showed when the writer batch that
+// covered each company closed: the parent's Ark Lane passes that batch's recount as held state on
+// every company (heldCount, heldKeys, heldLinkedin, carried into the plan by Plan Batch), so no
+// read happens here. One lane per run since 2026-09-02, never one pass per batch. Only
 // companies under their band cap, size = cap minus held, the LinkedIn URLs held at that domain
 // excluded (contact.linkedin.any.exclude, verified in their docs 2026-09-02). One export per
 // company. Export People with Email: 0.5 credits per person plus 0.5 per email found. Completion

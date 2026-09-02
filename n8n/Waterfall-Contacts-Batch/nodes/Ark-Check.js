@@ -4,14 +4,15 @@
 // into toPoll for one statistics read later; no row keeps it pending. Polled every 15 s, clocked
 // from submittedAt. The 4-minute cap is the safety net for exports whose webhook never arrives:
 // past it, whatever is still pending moves to toPoll, where one statistics read each decides DONE
-// or still PENDING. Never a hang, never a poll per export while the webhook works.
+// or still PENDING. Never a hang, never a poll per export while the webhook works. The breaker's
+// counters (planned, rateLimited, unserved, stoppedEarly) ride through untouched.
 const WAIT_MS=15000, MAX_POLL_MS=240000;
 let pend=[]; try{ pend=$('Ark Pending').all().map(i=>i.json); }catch(e){}
-const prev=(pend[0]&&pend[0].state)||{ pending:[], done:[], toPoll:[], errors:[], submitted:0, attempts:0 };
+const prev=(pend[0]&&pend[0].state)||{ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, attempts:0 };
 const now=Date.now(); const submittedAt=Number(prev.submittedAt)||now; const elapsed=now-submittedAt;
 const rows={};
 try{ for(const it of $('Read Callbacks').all()){ const j=it.json||{}; const id=String(j.trackId||'').trim(); if(id) rows[id]=j; } }catch(e){}
-const st={ pending:[], done:(prev.done||[]).slice(), toPoll:(prev.toPoll||[]).slice(), errors:(prev.errors||[]).slice(), submitted:prev.submitted||0, submittedAt:submittedAt, attempts:(prev.attempts||0)+1, callbacks:(prev.callbacks||0)+Object.keys(rows).length };
+const st={ pending:[], done:(prev.done||[]).slice(), toPoll:(prev.toPoll||[]).slice(), errors:(prev.errors||[]).slice(), submitted:prev.submitted||0, planned:prev.planned||0, rateLimited:prev.rateLimited||0, unserved:prev.unserved||0, stoppedEarly:!!prev.stoppedEarly, submittedAt:submittedAt, attempts:(prev.attempts||0)+1, callbacks:(prev.callbacks||0)+Object.keys(rows).length };
 const known=(v)=>v!==null&&v!==undefined&&v!==''&&isFinite(Number(v))&&Number(v)>=0;
 for(const p of pend){
   const entry={ domain:p.domain, trackId:p.trackId, gap:Number(p.gap)||0 };

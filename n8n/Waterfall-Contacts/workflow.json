@@ -1,6 +1,6 @@
 {
   "name": "Waterfall Contacts",
-  "active": false,
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -421,7 +421,7 @@
         3080,
         -120
       ],
-      "notes": "The writer lane: one 250-company batch per sub-execution, one after another (Airtable's 5 requests per second per base is a global ceiling, so parallel identical lanes buy nothing; measured 2026-09-02). Each closed batch fires its own AI-Ark pass, not awaited; the done output ends the writer lane and starts the wait for the ark rows."
+      "notes": "The writer lane: one 250-company batch per sub-execution, one after another (Airtable's 5 requests per second per base is a global ceiling, so parallel identical lanes buy nothing; measured 2026-09-02). Its done output ends the writer lane and hands every closed batch to the AI-Ark lane."
     },
     {
       "parameters": {
@@ -495,7 +495,7 @@
           "name": "Airtable"
         }
       },
-      "notes": "After every writer batch and after the last ark row (ruled 2026-09-02): read the base meta again; the email door fires only if People carries a view named exactly \"Not Waterfalled\"."
+      "notes": "After every writer batch and after the AI-Ark lane's row (ruled 2026-09-02): read the base meta again; the email door fires only if People carries a view named exactly \"Not Waterfalled\"."
     },
     {
       "parameters": {
@@ -767,55 +767,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "fa1",
-              "leftValue": "={{ $('Pass Result').first().json.fireArk }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "c4d50001-0040-4000-8000-000000000040",
-      "name": "Fire Ark?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3740,
-        120
-      ],
-      "notes": "The batch closed and AI-Ark is on: fire its AI-Ark pass now, not awaited (no barrier, ruled 2026-09-02). A crashed or all-failed batch gets none."
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Ark-Batch-Item.js",
-        "mode": "runOnceForAllItems"
-      },
-      "id": "c4d50001-0041-4000-8000-000000000041",
-      "name": "Ark Batch Item",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3960,
-        240
-      ]
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
           "mode": "id",
@@ -838,11 +789,11 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        4180,
-        240
+        3520,
+        -560
       ],
       "onError": "continueRegularOutput",
-      "notes": "Mode ark for this batch, waitForSubWorkflow false: the ark execution runs on its own (one export per company still under cap at 1 per second, completion through the callback door's data table, the People writer, its own Hub row keyed <this execution>-<batchNum>-ark) while the next writer batch starts. Up to four run together under AI-Ark's global ceiling. The close waits for the -ark rows."
+      "notes": "Mode ark, once per run, waitForSubWorkflow false: one pass over every company from every closed writer batch. One export per company still under cap, submitted 250 ms apart (four per second) in windows of fifty behind a 429 circuit breaker, completion through the callback door's data table, the People writer, no new stamps, its own Hub row keyed \"<this execution>-ark\". Nothing else in the run talks to AI-Ark while it works, so the global ceiling belongs to it alone. The close waits for that row."
     },
     {
       "parameters": {
@@ -877,7 +828,7 @@
         5060,
         0
       ],
-      "notes": "True only on the hand-off that runs after the ark rows landed (Ark Rows Check done): the run closes. Otherwise this was a writer batch's hand-off: Stop? decides between the next batch and the wait for the ark rows."
+      "notes": "True only on the hand-off that runs after the AI-Ark lane settled (Ark Rows Check done): the run closes. Otherwise this was a writer batch's hand-off: Stop? decides between the next batch and the lane."
     },
     {
       "parameters": {
@@ -889,10 +840,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
-        -320
+        3080,
+        -140
       ],
-      "notes": "Entered from the loop's done output (every batch closed) or from Stop? (the writer stopped early): the writer loop is over, the ark passes already fired keep running; start the clock and look for their rows."
+      "notes": "The writer loop is over and the AI-Ark lane has been fired (or was not needed): start the clock and look for the lane's \"<this execution>-ark\" row."
     },
     {
       "parameters": {
@@ -932,7 +883,7 @@
           "name": "Airtable"
         }
       },
-      "notes": "Every 20 s until every fired ark pass has its \"<this execution>-<batchNum>-ark\" row, or 25 minutes pass. Ids and Status only; the counters are read once, by Read Batch Rows, at the close."
+      "notes": "Every 20 s until the AI-Ark lane's \"<this execution>-ark\" row lands, or 25 minutes pass. Ids and Status only; the counters are read once, by Read Batch Rows, at the close."
     },
     {
       "parameters": {
@@ -981,7 +932,7 @@
         3960,
         -320
       ],
-      "notes": "Done: the last ark row landed (or the wait timed out): one more hand-off to the email waterfall, then the close. Not done: sleep 20 s and read again."
+      "notes": "Done: the lane's row landed, the lane never fired, or the wait timed out: one more hand-off to the email waterfall, then the close. Not done: sleep 20 s and read again."
     },
     {
       "parameters": {
@@ -997,6 +948,56 @@
         -440
       ],
       "webhookId": "c4d50001-aaaa-4000-8000-000000000048"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Lane.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0049-4000-8000-000000000049",
+      "name": "Ark Lane",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -320
+      ],
+      "notes": "The whole AI-Ark tier, planned once after the writer lane drained (rebuilt 2026-09-02 after execution 7954: eight per-batch passes overlapped, crossed AI-Ark's global 5-per-second / 300-per-minute ceiling and answered 429 on about 1,679 of 1,699 calls for twenty people). Every company from every writer batch that closed, each with that batch's recount as held state; Ark Plan drops the ones already at cap."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "al1",
+              "leftValue": "={{ $json.fire }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0050-4000-8000-000000000050",
+      "name": "Ark Lane?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        -560
+      ],
+      "notes": "AI-Ark is on and at least one writer batch closed: fire the lane, not awaited, and wait for its \"<this execution>-ark\" row. Otherwise skip straight to the close."
     }
   ],
   "connections": {
@@ -1194,7 +1195,7 @@
       "main": [
         [
           {
-            "node": "Ark Wait Start",
+            "node": "Ark Lane",
             "type": "main",
             "index": 0
           }
@@ -1223,7 +1224,7 @@
       "main": [
         [
           {
-            "node": "Fire Ark?",
+            "node": "AT List Views",
             "type": "main",
             "index": 0
           }
@@ -1307,7 +1308,7 @@
       "main": [
         [
           {
-            "node": "Ark Wait Start",
+            "node": "Ark Lane",
             "type": "main",
             "index": 0
           }
@@ -1343,40 +1344,11 @@
         ]
       ]
     },
-    "Fire Ark?": {
-      "main": [
-        [
-          {
-            "node": "Ark Batch Item",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "AT List Views",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ark Batch Item": {
-      "main": [
-        [
-          {
-            "node": "Fire Ark Pass",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Fire Ark Pass": {
       "main": [
         [
           {
-            "node": "AT List Views",
+            "node": "Ark Wait Start",
             "type": "main",
             "index": 0
           }
@@ -1457,6 +1429,35 @@
         [
           {
             "node": "Read Ark Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Lane": {
+      "main": [
+        [
+          {
+            "node": "Ark Lane?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Lane?": {
+      "main": [
+        [
+          {
+            "node": "Fire Ark Pass",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ark Wait Start",
             "type": "main",
             "index": 0
           }

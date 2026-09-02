@@ -1,6 +1,6 @@
 {
   "name": "Waterfall Contacts Batch",
-  "active": false,
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -127,7 +127,7 @@
         880,
         0
       ],
-      "notes": "Mode ark: this batch's AI-Ark pass (held state from the writer's recount comes with the item, no read here), exports, the People writer. Mode writer: ContaGen and Supersoniq for the batch, the People writer, the stamps, a recount whose held state goes back to the parent."
+      "notes": "Mode ark: the run's single AI-Ark lane over every company from every closed writer batch (held state from those batches' recounts comes with the item, no read here), exports, the People writer. Mode writer: ContaGen and Supersoniq for one 250-company batch, the People writer, the stamps, a recount whose held state goes back to the parent."
     },
     {
       "parameters": {
@@ -734,7 +734,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 1000
+              "batchInterval": 250
             }
           },
           "response": {
@@ -764,7 +764,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "Tier 3, per writer batch, fired by the parent the moment that batch closed and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from the writer's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 1 per second: AI-Ark's ceiling (5 per second, 300 per minute) is global and up to four sibling ark passes run together."
+      "notes": "Tier 3, one lane per run, fired by the parent once the writer lane drained and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from that batch's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 250 ms apart, four per second: AI-Ark's ceiling (5 per second, 300 per minute) is global, and since 2026-09-02 nothing else in the run is talking to it. Fed fifty at a time by Ark Windows so the 429 breaker can stop the submission."
     },
     {
       "parameters": {
@@ -979,7 +979,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 1000
+              "batchInterval": 250
             }
           },
           "response": {
@@ -1006,7 +1006,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 1 per second (global ceiling shared with sibling ark passes)."
+      "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
     },
     {
       "parameters": {
@@ -1092,7 +1092,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 1000
+              "batchInterval": 250
             }
           },
           "pagination": {
@@ -1111,7 +1111,7 @@
               "completeExpression": "={{ !$response.body || $response.body.last === true || !Array.isArray($response.body.content) || $response.body.content.length === 0 }}",
               "limitPagesFetched": true,
               "maxRequests": 100,
-              "requestInterval": 1000
+              "requestInterval": 250
             }
           },
           "response": {
@@ -1137,7 +1137,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 1 per second (global ceiling shared with sibling ark passes)."
+      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
     },
     {
       "parameters": {
@@ -1252,6 +1252,86 @@
         6160,
         180
       ]
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "b7a20001-0055-4000-8000-000000000055",
+      "name": "Ark Windows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        -480
+      ],
+      "notes": "Fifty exports per window (about 13 s at 250 ms apart). The window is the granularity the 429 circuit breaker works at: without it the node fires every planned export before anything can look at an answer, which is how execution 7954 burned about 1,679 rate-limited calls. Its done output means every planned export was submitted."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Window.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0056-4000-8000-000000000056",
+      "name": "Ark Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -360
+      ],
+      "notes": "The window's requests, re-emitted so Ark Track and Ark Window Check can pair answers to requests run by run without touching a loop branch index."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Ark-Window-Check.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0057-4000-8000-000000000057",
+      "name": "Ark Window Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -360
+      ],
+      "notes": "The circuit breaker: the trailing run of HTTP 429 answers across every window so far. Eight in a row and the lane stops submitting."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ks1",
+              "leftValue": "={{ $json.stop }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0058-4000-8000-000000000058",
+      "name": "Keep Submitting?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        -360
+      ],
+      "notes": "True means stop: eight AI-Ark answers in a row were HTTP 429, so no further export is submitted and Ark Track records the rest as unserved. False takes the next window."
     }
   ],
   "connections": {
@@ -1616,7 +1696,7 @@
       "main": [
         [
           {
-            "node": "Ark Export",
+            "node": "Ark Windows",
             "type": "main",
             "index": 0
           }
@@ -1627,7 +1707,7 @@
       "main": [
         [
           {
-            "node": "Ark Track",
+            "node": "Ark Window Check",
             "type": "main",
             "index": 0
           }
@@ -1865,6 +1945,64 @@
         [
           {
             "node": "Batch Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Windows": {
+      "main": [
+        [
+          {
+            "node": "Ark Track",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ark Window",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Window": {
+      "main": [
+        [
+          {
+            "node": "Ark Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Window Check": {
+      "main": [
+        [
+          {
+            "node": "Keep Submitting?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Submitting?": {
+      "main": [
+        [
+          {
+            "node": "Ark Track",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ark Windows",
             "type": "main",
             "index": 0
           }

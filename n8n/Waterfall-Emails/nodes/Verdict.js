@@ -1,5 +1,6 @@
 const row=$('Read Records').item.json; const f=row.fields||{};
-const existing=((f.Email||(f.public_emails_clean||'').split(',')[0])||'').trim();
+// public_emails_clean is a lookup on a register-shaped People table (an array); the first clean address is the fallback either way.
+const existing=((f.Email||[].concat(f.public_emails_clean||'').join(',').split(',')[0])||'').trim();
 const G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };
 const mv0=G('MV P0'),tk=G('Trykitt Find'),mv1=G('MV P1'),lm=G('LeadMagic Find'),mv2=G('MV P2'),pr=G('Prospeo Find'),mv3=G('MV P3');
 const SK='skipped';

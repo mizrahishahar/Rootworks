@@ -1,5 +1,16 @@
+// Plan Variables: THE RULE. The view's visible columns are the merge contract: every visible
+// column is a custom variable and a row with an empty one is skipped. Three exceptions, in order:
+// MACHINE columns are never read and never sent (the register's machine fields: the email lane,
+// the Campaigns link and the sync's fields, the relevance and identity formulas, the contact
+// provenance, the contact-pull stamps; taken from the field register the push inlines as
+// REGISTER at the @@register line, every name checked against it so the list cannot drift);
+// IDENTITY columns become the lead itself (email, first name, company), never a variable;
+// IGNORE columns ride along when filled and never block. CORE_LEAD columns are standard lead
+// fields, required when visible. A column on the table that is not on the register is the
+// Operator's and deploys as a variable like any other visible column.
+// @@register
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
-const shape=(extra)=>Object.assign({view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId||'', mirrorTableId:D.mirrorTableId||'', fieldNames:[]}, extra||{});
+const shape=(extra)=>Object.assign({view:D.viewId||D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId||'', mirrorTableId:D.mirrorTableId||'', fieldNames:[]}, extra||{});
 if(D.abort){ return [{json:shape()}]; }
 const tables=D.schemaTables||[];
 const t=tables.find(x=>x.id===D.tableId);
@@ -13,24 +24,29 @@ D.mirrorTableId=mirT?mirT.id:'';
 if(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');
 const fields=t.fields||[];
 const have=new Set(fields.map(f=>f.name));
-// The lead's LinkedIn URL column (ruling 2026-09-02): `LinkedIn URL` on a register-shaped table;
-// `Social` only on a legacy table that has no `LinkedIn URL`. Never both, never guessed.
+// The lead's LinkedIn URL column: `LinkedIn URL` on a register-shaped table; `Social` only on a
+// legacy table that has no `LinkedIn URL`. Never both, never guessed.
 D.linkedinCol=have.has('LinkedIn URL')?'LinkedIn URL':(have.has('Social')?'Social':'');
 // The columns this door writes (Deploy Error, Campaigns) are Check Columns' business, next:
 // nothing is ever created on a client table by this door (Operator ruling 2026-09-02).
 const vm=D.viewMeta||{};
 const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
-// THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.
-// IGNORE never blocks. IDENTITY is checked separately as a hard requirement,
-// except the first name: it blocks only when the view actually shows first_name
-// or first_name_he, so company-inbox lists deploy without a person name.
-// CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.
-// MACHINE is the skip list: columns the door never reads and never sends (the email lane, the
-// sync's fields, retired legacy columns, and State Full: State itself carries the full name).
+// The machine fields, by group as the register declares them (ruling 2026-09-02): the email lane,
+// the campaign fields the deploy doors and the leads sync write, the formulas, the contact
+// provenance, the contact-pull stamps. Each name must exist on the register, or the push is wrong.
+const MACHINE_GROUPS={
+  lane:['MV P0','P1 (Trykitt)','MV P1','P2 (LeadMagic)','MV P2','P3 (Prospeo)','MV P3','BB','Final Email','Email Source','Status'],
+  campaign:['Campaigns','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error'],
+  formulas:['manually_approved','relevance','linkedin_name_match','Build Date'],
+  provenance:['Contact Key','Contact Source','Source ID'],
+  pull:['Contacts Pulled At','Contacts Count','Contact Sources']
+};
+const regNames=new Set(); for(const T of (REGISTER.tables||[])) for(const f of (T.fields||[])) regNames.add(f.name);
+const MACHINE=new Set();
+for(const g of Object.keys(MACHINE_GROUPS)) for(const n of MACHINE_GROUPS[g]){ if(!regNames.has(n)) throw new Error('Plan Variables: the field register has no machine field "'+n+'" ('+g+'); fix the register or this list'); MACHINE.add(n); }
 const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','Seniority','Department','Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Keywords','Company Status','Company City','Company State','Phones','Public Emails','Social URLs','Email Pattern','Signal Detail','detected_at','LinkedIn URL']);
 const IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);
 const CORE_LEAD=new Set(['State','City','Country']);
-const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','relevance','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','First Hire','linkedin_name_match','Tag','State Full']);
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
 const varCols=[]; const rideCols=[]; const requiredCore=[]; let needFirstName=true;
 const consider=(name)=>{
@@ -46,8 +62,7 @@ if(visible){
   for(const fid of visible){ const f=byId[fid]; if(!f) continue; if(f.name==='first_name'||f.name==='first_name_he') needFirstName=true; consider(f.name); }
 } else {
   let why='view metadata unavailable';
-  if(!D.viewId) why='view "'+D.view+'" not found in table views list';
-  else if(D.viewType&&D.viewType!=='grid') why='view "'+D.view+'" is type '+D.viewType+', not grid';
+  if(D.viewType&&D.viewType!=='grid') why='view "'+D.view+'" is type '+D.viewType+', not grid';
   else if(vm&&vm.error) why='view metadata call failed: '+JSON.stringify(vm.error).slice(0,150);
   D.warnings.push(why+'; visibility unknown, so only identity fields are enforced and no custom variables are sent');
 }

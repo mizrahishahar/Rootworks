@@ -2,7 +2,8 @@
 // Rootworks field register compiler.
 // Compiles REGISTER.md at the repo root from the one field register,
 // n8n/Onboard-Client/nodes/Scaffold-Register.js: per table, every field with its type, options
-// (select choices with their colors), and kind, then the declared extras groups and the palettes.
+// (select choices with their colors), and kind, the declared extras groups, the views (filter,
+// fields, sort), then the On People rule and the palettes.
 // Generated from the register; never hand-edited. The way SCHEMA.md is compiled from the Hub.
 //
 // Also the loader the other scripts share: loadRegister() evaluates the register file in a
@@ -72,6 +73,19 @@ function options(f) {
   }
 }
 
+// The On People rule: the Companies fields flagged `company` (on People as lookups of the same
+// name), the extras groups (the same, when picked), and the Companies fields that stay off People.
+function onPeople(reg) {
+  const companies = reg.tables.find((t) => t.name === 'Companies');
+  const people = reg.tables.find((t) => t.name === 'People');
+  if (!companies || !people) return null;
+  const on = companies.fields.filter((f) => f.company).map((f) => f.name);
+  const off = companies.fields.filter((f) => !f.company).map((f) => f.name);
+  const lookups = people.fields.filter((f) => f.kind === 'lookup' && f.via === 'Companies');
+  const groups = (reg.extras || []).filter((g) => g.table === 'Companies').map((g) => g.group);
+  return { on, off, lookups, groups };
+}
+
 function compile(reg) {
   const rel = path.relative(ROOT, REGISTER_PATH);
   const lines = [
@@ -80,6 +94,7 @@ function compile(reg) {
     `Compiled from \`${rel}\` by \`scripts/register.js\`. Do not hand-edit.`,
     'This file is what every client base\'s tables ARE; why they exist lives in Flowroots/Operations/Field Standard.md and List Building 2.0.md.',
     'Core fields are born at the scaffold. Declared extras are created only by their owner machine. Anything else on a base is the Operator\'s.',
+    'Views are declared per table as data (filter, fields, sort); the Operator makes them in the base from this spec.',
     '',
   ];
   for (const t of reg.tables) {
@@ -93,6 +108,20 @@ function compile(reg) {
       for (const g of groups) for (const f of g.fields) lines.push(`| ${clean(g.group)} | ${clean(g.owner)} | ${clean(f.name)} | ${airtableType(f)} | ${clean(options(f))} |`);
       lines.push('');
     }
+    if (t.views && t.views.length) {
+      lines.push(`### Views on ${t.name}`, '', '| View | Filter | Formula | Fields | Sort |', '|---|---|---|---|---|');
+      for (const v of t.views) lines.push(`| ${clean(v.name)} | ${clean(v.filter.words)} | \`${clean(v.filter.formula)}\` | ${v.fields.map(clean).join(', ')} | ${clean(v.sort.field)} ${v.sort.direction} |`);
+      lines.push('');
+    }
+  }
+  const rule = onPeople(reg);
+  if (rule) {
+    lines.push('## On People', '',
+      'Every Companies field that describes the company is on People as a lookup with the identical name (the `company` flag on the Companies definition; the People lookups are generated from it, never typed).',
+      'Every extras field of a picked group follows the same rule: the group brings its lookups to People when it is picked.', '',
+      `On People (${rule.on.length} core fields, ${rule.lookups.length} lookups on People): ${rule.on.map(clean).join(', ')}.`, '',
+      `Extras groups on People when picked: ${rule.groups.map(clean).join(', ')}.`, '',
+      `Not on People (${rule.off.length}): ${rule.off.map(clean).join(', ')}.`, '');
   }
   if (reg.palettes) {
     lines.push('## Palettes', '', 'A select carries a color only when the value is a verdict, a scale, or a source; a plain category is gray.', '');
@@ -114,6 +143,8 @@ if (require.main === module) {
     const reg = loadRegister();
     fs.writeFileSync(path.join(ROOT, 'REGISTER.md'), compile(reg));
     const fields = reg.tables.reduce((n, t) => n + t.fields.length, 0);
-    console.log(`${reg.tables.length} tables, ${fields} fields, ${(reg.extras || []).length} extras groups -> REGISTER.md`);
+    const views = reg.tables.reduce((n, t) => n + (t.views || []).length, 0);
+    const per = reg.tables.map((t) => `${t.name} ${t.fields.length}`).join(', ');
+    console.log(`${reg.tables.length} tables, ${fields} fields (${per}), ${views} views, ${(reg.extras || []).length} extras groups -> REGISTER.md`);
   } catch (e) { console.error(e.message); process.exit(1); }
 }

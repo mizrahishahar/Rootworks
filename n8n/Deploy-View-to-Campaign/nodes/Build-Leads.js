@@ -18,10 +18,10 @@ const requiredCore=D.requiredCore||[];
 const needFirstName=D.needFirstName!==false;
 const emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 // The one reader for every lead field. A register-shaped People table carries the company
-// facts (Country, State, City, Employees, Industry Groups, MX Provider, Tag, Signals, Signal At)
-// as lookups through the Companies link, so Airtable returns arrays (["California"]); legacy
-// tables carry plain text. An array yields its first element, an object its value or name,
-// never "[object Object]" and never a joined list (ruling 2026-09-02).
+// facts (Domain, Company, Country, State, City, Employees, Industry Groups, MX Provider, Tag,
+// Signals, Signal At) as lookups through the Companies link, so Airtable returns arrays
+// (["California"]); legacy tables carry plain text. An array yields its first element, an
+// object its value or name, never "[object Object]" and never a joined list (ruling 2026-09-02).
 const val=v=>{ if(v===null||v===undefined) return ''; if(Array.isArray(v)) return v.length?val(v[0]):''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(typeof v==='object'){ if(typeof v.value==='string') return v.value.trim(); if(typeof v.name==='string') return v.name.trim(); } return ''; };
 // A usable first name starts with a letter and has at least two letters, in any language.
 const NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\p{L}/u.test(v)) return false; return (v.match(/\p{L}/gu)||[]).length>=2; };
@@ -34,7 +34,9 @@ for(const r of rowsArr){
   D.rows[r.id]=rec;
   if(!email){ rec.skip='missing Final Email'; continue; }
   if(!emailRe.test(email)){ rec.skip='invalid email syntax'; continue; }
-  const dom=String(f['Domain']||email.split('@')[1]||'').toLowerCase().trim();
+  // Domain and Company are lookups through the Companies link on a register-shaped People table;
+  // val() takes the first value (ruling 2026-09-02). The email's domain is the fallback.
+  const dom=(val(f['Domain'])||email.split('@')[1]||'').toLowerCase().trim();
   if(dom&&dnc[dom]){ rec.skip='DNC: '+dom; continue; }
   // The first name blocks only when the view shows it (D.needFirstName). On a
   // company-inbox list it is absent by design: send the row, just without a name.

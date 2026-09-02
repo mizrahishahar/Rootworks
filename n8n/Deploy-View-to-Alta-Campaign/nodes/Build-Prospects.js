@@ -10,7 +10,11 @@ let rows=[];
 try{ for(const it of $input.all()){ const j=it.json||{}; const recs=Array.isArray(j.records)?j.records:(j.id?[j]:[]); rows.push(...recs); } }catch(e){}
 D.rowsTotal=rows.length;
 if(!rows.length){ D.abort='view empty'; D.errors.push('view "'+D.view+'" returned no rows; nothing was sent'); return [{json:{_none:true}}]; }
-const val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); if(typeof v==='object'&&typeof v.name==='string') return v.name; return ''; };
+// The one reader for every field. A register-shaped People table carries the company facts
+// (Domain, Company, Tag, Employees, Country and the rest) as lookups through the Companies link,
+// so Airtable returns arrays; an array yields its first value, an object its value or name,
+// never a joined list (ruling 2026-09-02). Company and Domain for the identity come from those.
+const val=v=>{ if(v===null||v===undefined) return ''; if(Array.isArray(v)) return v.length?val(v[0]):''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(typeof v==='object'){ if(typeof v.value==='string') return v.value.trim(); if(typeof v.name==='string') return v.name.trim(); } return ''; };
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
 const normUrl=u=>String(u||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/+$/,'').split('?')[0];
 const plan=D.plan||{varCols:[],rideCols:[]};

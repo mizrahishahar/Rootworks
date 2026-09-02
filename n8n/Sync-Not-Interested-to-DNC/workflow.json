@@ -1,0 +1,1326 @@
+{
+  "name": "Sync Not Interested to DNC",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "id": "191d9d04-e06d-4f48-8d51-1c8e1bb68fe2",
+      "name": "Nightly 02:00 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1904,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-not-interested",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a905df5b-53c4-42ec-b518-f6779f96596c",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2352,
+        640
+      ],
+      "webhookId": "bfa827a1-3fe0-49e6-ab74-7dbb68b8c0df"
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "b9ce2d22-6430-422a-bd20-2dc4da65752f",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -2128,
+        640
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "222df85c-40e6-4329-9044-ab9a2a34f1bc",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1904,
+        640
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      },
+      "id": "8b9f95d6-c352-4c9d-a984-9db927104686",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Run.js"
+      },
+      "id": "4ba400c0-f054-461e-9e7e-7ce3b1c7c619",
+      "name": "Init Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "=AND({Automation} = 'Sync Not Interested to DNC', {Status} = 'Succeeded', {Client} = BLANK())",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "sort": {
+          "property": [
+            {
+              "field": "Run at",
+              "direction": "desc"
+            }
+          ]
+        }
+      },
+      "id": "be20c0cd-c49b-43a6-9759-d26397850acf",
+      "name": "Get Watermark",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1232,
+        520
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Set-Watermark.js"
+      },
+      "id": "3a0c80f8-0d35-495d-9879-73c4009e6181",
+      "name": "Set Watermark",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "AND({PlusVibe Workspace ID} != '', {Clayroots Base ID} != '')",
+        "options": {}
+      },
+      "id": "ab3b4d68-4dd7-497f-83cc-74271517e04b",
+      "name": "Get Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -784,
+        520
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Map-Clients.js"
+      },
+      "id": "74dddb48-320e-4be8-9cca-9272a1457e2c",
+      "name": "Map Clients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "18b2cea7-1102-4dd6-bd02-161ac8841c28",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -336,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1a065e81-75e2-4470-bb16-c9288dba4ef7",
+      "name": "Loop Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -112,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Client-Context.js"
+      },
+      "id": "1e070376-2c03-432b-aa6c-c5fb4cd0c080",
+      "name": "Client Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "610d198a-3c1b-43ee-8603-3d6ddcd1e0d0",
+      "name": "Get CR Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        640
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "d99b8788-7246-4f59-9ff8-4cec2b874e12",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ck1",
+              "leftValue": "={{ $json._skip ? 'skip' : 'ok' }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0e9bfb45-9ece-45b8-8a8b-dea18c6de57a",
+      "name": "Client OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Lead-Pull.js"
+      },
+      "id": "930de67b-f8ef-4605-bee9-861a6c4a004a",
+      "name": "Init Lead Pull",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "id": "19ceddf7-1dbc-4a96-8744-ccf47e830db8",
+      "name": "Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        560
+      ],
+      "webhookId": "df6fab57-7888-47a3-80e0-dbab7585ecdc"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.pvUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "4d2f4e1c-aa57-43a3-a277-d7f35f7f4249",
+      "name": "Pull Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        560
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Leads.js"
+      },
+      "id": "aafe553f-820a-4a4f-b933-7d6ea48c4966",
+      "name": "Collect Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "07253228-b8df-45aa-bdfc-7afed531b503",
+      "name": "Pull Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1904,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Compute-Domains.js"
+      },
+      "id": "20452c4c-2f81-4c06-90fb-a9603905ea75",
+      "name": "Compute Domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ad1",
+              "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "52567800-5851-440f-abd4-60ade3aef894",
+      "name": "Any Domains?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2352,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Next-Block-Chunk.js"
+      },
+      "id": "32b5ba35-a8af-4ed0-b37a-c5329f163cfd",
+      "name": "Next Block Chunk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2576,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bc1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "more",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1dab6e0a-fc5e-4628-8ba4-4f00a5ab563d",
+      "name": "Block Chunks Left?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2800,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.plusvibe.ai/api/v1/blocklist/add/entries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 600
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "8b93060a-c400-4ad9-861b-bfd4ec7cfb4e",
+      "name": "PV Block Domains",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3024,
+        400
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Block.js"
+      },
+      "id": "022dac87-3941-444c-8884-ded88116d342",
+      "name": "Collect Block",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3248,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.dncTableId }}/listRecords",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"pageSize\":100,\"fields\":[\"Domain\"]}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "offset",
+                    "value": "={{ $response?.body?.offset ?? '' }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "id": "4245863e-54e3-4ad9-844d-f71b25fe4b4f",
+      "name": "Read DNC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3024,
+        720
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-DNC-Creates.js"
+      },
+      "id": "be45ab8f-c907-4bbb-b9e2-9194025b3682",
+      "name": "Build DNC Creates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3248,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac1",
+              "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+              "rightValue": "has",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cfa766d7-a4ce-471d-adac-bd11b33c3430",
+      "name": "Any Creates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3472,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.dncTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "421bf872-18b2-4a33-b0dc-9698dd4d361c",
+      "name": "Create DNC Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3696,
+        640
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Record-DNC-Writes.js"
+      },
+      "id": "0aa69e64-64a8-48ae-ad16-48f9b7dd9063",
+      "name": "Record DNC Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Close-Client.js"
+      },
+      "id": "019347e0-861c-46a3-8367-54e0241ad8bd",
+      "name": "Close Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "id": "a18ddbfb-1b23-45d7-8b96-d3c4089decfe",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "b76910bb-d5be-4533-9fc0-a98b09b61bc0",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Nightly 02:00 IL": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Init Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Run": {
+      "main": [
+        [
+          {
+            "node": "Get Watermark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Watermark": {
+      "main": [
+        [
+          {
+            "node": "Set Watermark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Watermark": {
+      "main": [
+        [
+          {
+            "node": "Get Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clients": {
+      "main": [
+        [
+          {
+            "node": "Map Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Clients": {
+      "main": [
+        [
+          {
+            "node": "Any Clients?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Clients": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Client Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Context": {
+      "main": [
+        [
+          {
+            "node": "Get CR Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get CR Schema": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Client OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client OK?": {
+      "main": [
+        [
+          {
+            "node": "Init Lead Pull",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Lead Pull": {
+      "main": [
+        [
+          {
+            "node": "Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pace": {
+      "main": [
+        [
+          {
+            "node": "Pull Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Leads": {
+      "main": [
+        [
+          {
+            "node": "Pull Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Done?": {
+      "main": [
+        [
+          {
+            "node": "Compute Domains",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Domains": {
+      "main": [
+        [
+          {
+            "node": "Any Domains?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Domains?": {
+      "main": [
+        [
+          {
+            "node": "Next Block Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next Block Chunk": {
+      "main": [
+        [
+          {
+            "node": "Block Chunks Left?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Block Chunks Left?": {
+      "main": [
+        [
+          {
+            "node": "PV Block Domains",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read DNC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Block Domains": {
+      "main": [
+        [
+          {
+            "node": "Collect Block",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Block": {
+      "main": [
+        [
+          {
+            "node": "Next Block Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read DNC": {
+      "main": [
+        [
+          {
+            "node": "Build DNC Creates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build DNC Creates": {
+      "main": [
+        [
+          {
+            "node": "Any Creates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Creates?": {
+      "main": [
+        [
+          {
+            "node": "Create DNC Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create DNC Rows": {
+      "main": [
+        [
+          {
+            "node": "Record DNC Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record DNC Writes": {
+      "main": [
+        [
+          {
+            "node": "Close Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Client": {
+      "main": [
+        [
+          {
+            "node": "Loop Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {},
+  "pinData": {}
+}

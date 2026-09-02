@@ -1,3 +1,9 @@
+// Meta Router: the two-phase meta read. Phase one (schema) takes the table Resolve Table found,
+// the launch's view on it (by id or exact name; a view not on the table aborts, nothing sent), and
+// the client-facing share link from the table description (the receipt's List URL; absent = a
+// warning, never a gate). Phase two fetches the view's visible field ids, the merge contract.
+// Any view the launch row names deploys (Operator ruling 2026-09-02): the old gate that accepted
+// only "... : Campaigns" views is gone.
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
 const j=($input.first()||{}).json||{};
 if(!D.metaPhase||D.metaPhase==='schema'){
@@ -6,27 +12,20 @@ if(!D.metaPhase||D.metaPhase==='schema'){
   let viewUrl='';
   if(!tables.length){
     if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }
-  } else {
+  } else if(!D.abort){
     // Resolve Table already turned the launch's table name into D.tableId; a miss aborted there.
     const t=tables.find(x=>x.id===D.tableId);
-    if(!t){
-      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+(D.tableName||D.table)+' not found in base '+D.crBase); }
-    } else {
+    if(!t){ D.abort='table not found'; D.errors.push('table '+(D.tableName||D.table)+' not found in base '+D.crBase); }
+    else {
       D.tableId=t.id; D.tableName=t.name;
-      // The standing receipt view is a hard gate: no deploy without it. It is the
-      // one durable window (filter: Relevant AND Status=done, campaign fields)
-      // that every Lead Lists receipt links to, per the clayroots-tables standard.
-      const rv=(t.views||[]).find(x=>['relevant & found : campaigns','relevant : campaigns'].includes(String(x.name||'').trim().toLowerCase()));
-      if(rv){ D.receiptViewId=rv.id; }
-      else if(!D.abort){ D.abort='missing standing view'; D.errors.push('table "'+t.name+'" has no "Relevant & Found : Campaigns" (or intent "Relevant : Campaigns") view; build the standing chain (clayroots-tables table-setup) before deploying; nothing was sent'); }
-      // The client-facing share link for that view lives in the table description
-      // ("Campaigns view: https://airtable.com/shr..."), pasted at setup; the API
-      // cannot mint share links, so its absence is the second hard gate.
+      // The client-facing share link lives in the table description ("Campaigns view:
+      // https://airtable.com/shr..."), pasted at setup; the API cannot mint share links.
       const shrM=String(t.description||'').match(/https:\/\/airtable\.com\/(?:app[A-Za-z0-9]{14}\/)?shr[A-Za-z0-9]+/);
       if(shrM){ D.shareViewLink=shrM[0]; }
-      else if(!D.abort){ D.abort='missing share link'; D.errors.push('table "'+t.name+'" description carries no share link for the Relevant & Found : Campaigns view; in Chrome: Share view -> create link, password {Client}01, then paste "Campaigns view: https://airtable.com/shr..." into the table description (clayroots-tables table-setup); nothing was sent'); }
-      const v=(t.views||[]).find(x=>x.id===D.view||x.name===D.view);
-      if(v){
+      else { D.warnings.push('table "'+t.name+'" description carries no share link; receipt written without a client link'); }
+      const v=(t.views||[]).find(x=>x.id===D.view||String(x.name||'').trim()===D.view);
+      if(!v){ D.abort='view not found'; D.errors.push('view "'+D.view+'" is not on table "'+t.name+'" in base '+D.crBase+'; nothing was sent'); }
+      else {
         D.viewId=v.id; D.viewType=v.type||'';
         if((v.type||'grid')==='grid'){ viewUrl='https://api.airtable.com/v0/meta/bases/'+D.crBase+'/views/'+v.id+'?include=visibleFieldIds'; }
       }

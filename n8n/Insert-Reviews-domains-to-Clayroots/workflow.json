@@ -1,6 +1,6 @@
 {
   "id": "AaUCNxL8xMef92pq",
-  "name": "Handle Service Reviews Intent Signal",
+  "name": "Insert Reviews domains to Clayroots",
   "active": false,
   "nodes": [
     {
@@ -257,7 +257,7 @@
         }
       },
       "executeOnce": true,
-      "notes": "The client base's schema, once, BEFORE any paid call. Companies, the Signals mirror and DNC are resolved from it; nothing is ever created but declared extra columns."
+      "notes": "The client base's schema, once, BEFORE any paid call. Companies and the Signals mirror are resolved from it; nothing is created here, the columns are checked by the helper Insert domains to Clayroots."
     },
     {
       "id": "b2000000-0000-4000-8000-000000000002",
@@ -271,46 +271,6 @@
       "parameters": {
         "jsCode": "@@file:nodes/Find-Companies-Table.js"
       }
-    },
-    {
-      "id": "b2000000-0000-4000-8000-000000000008",
-      "name": "Get DNC Domains",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        1960,
-        -160
-      ],
-      "parameters": {
-        "resource": "record",
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Client Vars').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Find Companies Table').first().json.dncTableId }}"
-        },
-        "returnAll": true,
-        "options": {
-          "fields": [
-            "Domain"
-          ]
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "executeOnce": true,
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "notes": "DNC at landing: a protected domain never gets a Companies row. No DNC table means nothing to suppress."
     },
     {
       "id": "b2000000-0000-4000-8000-000000000009",
@@ -715,188 +675,13 @@
       }
     },
     {
-      "id": "b2000000-0000-4000-8000-000000000010",
-      "name": "Get Existing Companies",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        5700,
-        -360
-      ],
-      "parameters": {
-        "resource": "record",
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Client Vars').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Find Companies Table').first().json.tableId }}"
-        },
-        "filterByFormula": "=OR({{ $('Apply ICP').all().filter(i => i.json && i.json.domain).map(i => \"{Domain}='\" + String(i.json.domain).trim().toLowerCase() + \"'\").join(',') }})",
-        "returnAll": true,
-        "options": {
-          "fields": [
-            "Domain",
-            "Domain Source",
-            "Signals"
-          ]
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "executeOnce": true,
-      "alwaysOutputData": true,
-      "notes": "Read before write: the Companies rows already holding the signalled domains. An existing row keeps its Domain Source and its Signals links (unioned); only a new row gets Domain Source = Signal."
-    },
-    {
-      "id": "b2000000-0000-4000-8000-000000000011",
-      "name": "Build Companies",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5920,
-        -360
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Build-Companies.js"
-      }
-    },
-    {
-      "id": "b2000000-0000-4000-8000-000000000012",
-      "name": "Any Rows?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        6140,
-        -360
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "r1",
-              "leftValue": "={{ $json['Domain'] || '' }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "a1000000-0000-4000-8000-000000000006",
-      "name": "Clean Fields",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        6360,
-        -460
-      ],
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "RIDktQyZoBnW2fql",
-          "cachedResultName": "Clean Fields"
-        },
-        "workflowInputs": {
-          "mappingMode": "passThrough",
-          "value": {},
-          "matchingColumns": [],
-          "schema": []
-        },
-        "mode": "once",
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "notes": "The one copy of the cleaning rules (Company, State full name, public_emails_clean). Rows come back in place."
-    },
-    {
-      "id": "b2000000-0000-4000-8000-000000000013",
-      "name": "Strip Stats",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        6580,
-        -460
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Strip-Stats.js",
-        "mode": "runOnceForAllItems"
-      }
-    },
-    {
-      "id": "b2000000-0000-4000-8000-000000000014",
-      "name": "Upsert Companies",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        6800,
-        -460
-      ],
-      "parameters": {
-        "resource": "record",
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Client Vars').first().json.base }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Find Companies Table').first().json.tableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "Domain"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "notes": "Upsert on Domain with typecast. A company that signals again is updated in place: latest event wins on the payload columns."
-    },
-    {
       "id": "dcfd7053-2759-43fa-90e1-db6198e9ce47",
       "name": "Build Run Log",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7020,
-        100
+        7680,
+        -60
       ],
       "parameters": {
         "jsCode": "@@file:nodes/Build-Run-Log.js"
@@ -910,8 +695,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        7240,
-        100
+        7900,
+        -60
       ],
       "parameters": {
         "resource": "record",
@@ -961,17 +746,225 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "d4000000-0000-4000-8000-000000000001",
+      "name": "Read Existing Signals",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5700,
+        -360
+      ],
       "parameters": {
-        "jsCode": "@@file:nodes/Check-Columns.js"
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Client Vars').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Companies Table').first().json.tableId }}"
+        },
+        "filterByFormula": "=OR({{ $('Apply ICP').all().filter(i => i.json && i.json.domain).map(i => \"{Domain}='\" + String(i.json.domain).trim().toLowerCase() + \"'\").join(',') }})",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain",
+            "Signals"
+          ]
+        }
       },
-      "id": "b2000000-0000-4000-8000-000000000003",
-      "name": "Check Columns",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "notes": "One small read before formatting: the Signals links the signalled domains already hold, so the upsert unions them instead of replacing them. Kept because the helper returns counters, not rows."
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000002",
+      "name": "Format Companies",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        860,
-        -160
-      ]
+        5920,
+        -360
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Companies.js"
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000003",
+      "name": "Any Rows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6140,
+        -360
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "r1",
+              "leftValue": "={{ $json['Domain'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000004",
+      "name": "Attach Meta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6360,
+        -460
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Attach-Meta.js",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000005",
+      "name": "Insert domains to Clayroots",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6580,
+        -460
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NEW_INSERT_DOMAINS_ID",
+          "cachedResultName": "Insert domains to Clayroots"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "The one landing helper (Check Columns, DNC, Clean Fields, upsert on Domain). Rows in the register shape, _meta on the first item; one counters item back. NEW_INSERT_DOMAINS_ID is a placeholder: replace with the helper workflow id after its first push."
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000006",
+      "name": "Read Counters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6800,
+        -460
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Read-Counters.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000007",
+      "name": "Any Landed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7020,
+        -460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.landed || 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000008",
+      "name": "Waterfall Call",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7240,
+        -560
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Waterfall-Call.js"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000009",
+      "name": "Waterfall Contacts",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        7460,
+        -560
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PLTNYqqoYfrt9ypd",
+          "cachedResultName": "Waterfall Contacts"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "notes": "Fire and continue: Waterfall Contacts runs on its own execution (Companies, Not Sourced, all three sources, cap 5000) and writes its own run-log row. Only after at least one company landed."
     }
   ],
   "connections": {
@@ -1100,17 +1093,6 @@
         [
           {
             "node": "Find Companies Table",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get DNC Domains": {
-      "main": [
-        [
-          {
-            "node": "Get Signal Mirror Row",
             "type": "main",
             "index": 0
           }
@@ -1307,84 +1289,11 @@
       "main": [
         [
           {
-            "node": "Get Existing Companies",
+            "node": "Read Existing Signals",
             "type": "main",
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Build Run Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Existing Companies": {
-      "main": [
-        [
-          {
-            "node": "Build Companies",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Companies": {
-      "main": [
-        [
-          {
-            "node": "Any Rows?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Any Rows?": {
-      "main": [
-        [
-          {
-            "node": "Clean Fields",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Build Run Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Clean Fields": {
-      "main": [
-        [
-          {
-            "node": "Strip Stats",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Strip Stats": {
-      "main": [
-        [
-          {
-            "node": "Upsert Companies",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Upsert Companies": {
-      "main": [
         [
           {
             "node": "Build Run Log",
@@ -1425,18 +1334,120 @@
       "main": [
         [
           {
-            "node": "Check Columns",
+            "node": "Get Signal Mirror Row",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Columns": {
+    "Read Existing Signals": {
       "main": [
         [
           {
-            "node": "Get DNC Domains",
+            "node": "Format Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Companies": {
+      "main": [
+        [
+          {
+            "node": "Any Rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Rows?": {
+      "main": [
+        [
+          {
+            "node": "Attach Meta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Meta": {
+      "main": [
+        [
+          {
+            "node": "Insert domains to Clayroots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert domains to Clayroots": {
+      "main": [
+        [
+          {
+            "node": "Read Counters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Counters": {
+      "main": [
+        [
+          {
+            "node": "Any Landed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Landed?": {
+      "main": [
+        [
+          {
+            "node": "Waterfall Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waterfall Call": {
+      "main": [
+        [
+          {
+            "node": "Waterfall Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waterfall Contacts": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
             "type": "main",
             "index": 0
           }

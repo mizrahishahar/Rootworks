@@ -1,12 +1,21 @@
-// Resolve Table: the launch names the table (People or Companies, blank = People); its id comes
-// from the base meta Check Table just read, never from the Hub (ClayRoots Standard, law 3).
-// Nothing here creates a table or a field.
+// Resolve Table: the launch names the table (People or Companies) and the view, both by name,
+// both required, no defaults (Operator ruling 2026-09-02); the ids come from the base meta Check
+// Table just read, never from the Hub (ClayRoots Standard, law 3). A blank Table or View, a table
+// the base lacks, or a view the table lacks refuses the run here, before any paid call. The lane
+// this machine writes follows the table: Companies takes the short lane (Email, MV P0, BB, Final
+// Email, Status), People today's full lane. Nothing here creates a table or a field.
 const p=$('Params In').first().json;
 const baseId=p['Clayroots Base ID'];
 const resp=$('Check Table').first().json||{};
 const tables=Array.isArray(resp.tables)?resp.tables:null;
 if(!tables){ throw new Error('Could not read the table list for base '+baseId+': '+JSON.stringify(resp).slice(0,200)+'. Nothing was spent or written.'); }
-const want=String(p['Table']||'').trim()||'People';
+const want=String(p['Table']||'').trim();
+const view=String(p['View']||'').trim();
+if(!want){ throw new Error('The launch row names no Table (People or Companies). Fill it and relaunch. Nothing was spent or written.'); }
+if(!view){ throw new Error('The launch row names no View. Fill it and relaunch. Nothing was spent or written.'); }
 const t=tables.find(x=>String(x.name||'').trim().toLowerCase()===want.toLowerCase());
 if(!t){ throw new Error('Base '+baseId+' has no '+want+' table. Scaffold the base first. Nothing was spent or written.'); }
-return [{ json:{ tableId:t.id, tableName:t.name, fieldNames:(t.fields||[]).map(f=>f.name) } }];
+const v=(t.views||[]).find(x=>x.id===view||String(x.name||'').trim()===view);
+if(!v){ throw new Error('Table "'+t.name+'" in base '+baseId+' has no view "'+view+'". Nothing was spent or written.'); }
+const lane=String(t.name).toLowerCase()==='companies'?'companies':'people';
+return [{ json:{ tableId:t.id, tableName:t.name, viewId:v.id, viewName:v.name, lane, isCompanies:lane==='companies', fieldNames:(t.fields||[]).map(f=>f.name) } }];

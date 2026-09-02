@@ -2,7 +2,8 @@
 // the register (Scaffold Register) in order and emits one meta-API call per thing that is missing
 // and creatable now: a table with its plain fields (primary first), or a single field. The
 // dependencies set the order: People after Companies; the People link before the People lookups;
-// the inverse link before the Companies count and rollup; a formula after the fields it names;
+// the inverse link before the Companies count and rollup; the mirror link before the mirror
+// lookup that reads through it; a formula after the fields it names;
 // DNC after the People link. What exists is left alone and counted as a skip. A column of
 // another type, or a case variant of the name, is a clash: reported, never retyped or renamed.
 // A mirror link whose "<Client> Signals" / "<Client> Campaigns" table is absent is a counted
@@ -34,7 +35,7 @@ const mirrorTable=(kind)=>{
 };
 const gone=(st)=>st==='failed'||st==='clash'||st==='skipped';
 // Types a register field may already carry and still count as present. Never retyped.
-const OK={ singleLineText:['singleLineText','multilineText','richText','email','url','phoneNumber'], multilineText:['multilineText','richText','singleLineText'], singleSelect:['singleSelect'], dateTime:['dateTime','date'], date:['date','dateTime'], number:['number','currency','percent'], checkbox:['checkbox'], url:['url','singleLineText'], formula:['formula'], link:['multipleRecordLinks'], mirrorLink:['multipleRecordLinks'], lookup:['multipleLookupValues'], count:['count'], rollup:['rollup'] };
+const OK={ singleLineText:['singleLineText','multilineText','richText','email','url','phoneNumber'], multilineText:['multilineText','richText','singleLineText'], singleSelect:['singleSelect'], dateTime:['dateTime','date'], date:['date','dateTime'], number:['number','currency','percent'], checkbox:['checkbox'], url:['url','singleLineText'], formula:['formula'], link:['multipleRecordLinks'], mirrorLink:['multipleRecordLinks'], lookup:['multipleLookupValues'], mirrorLookup:['multipleLookupValues'], count:['count'], rollup:['rollup'] };
 const mark=(key,state,line)=>{ if(S.seen[key]) return; S.seen[key]=state; if(state==='existed') S.existed.push(key); else if(state==='skipped') S.skipped.push(line); else S.failed.push(line); };
 const plainBody=(f)=>{ const o={ name:f.name, type:f.type }; if(f.options) o.options=f.options; return o; };
 // The picked extras groups' fields for a table, after its own register fields, one field per name.
@@ -61,6 +62,20 @@ function resolve(f,T,t){
     const m=mirrorTable(f.mirror);
     if(!m) return { skip:'no "'+S.clientName+' '+f.mirror+'" table in the base yet; the Operator syncs the mirror from the Hub, then adds this link by hand' };
     return { body:{ name:f.name, type:'multipleRecordLinks', options:{ linkedTableId: m.id } } };
+  }
+  if(f.kind==='mirrorLookup'){
+    // Like a lookup, but through the mirror link on this table, not through the Companies link:
+    // the mirror is found by its own name, the link to it by that table's id, the source column
+    // inside the mirror by name. The mirror is the Operator's synced table, so a missing mirror
+    // and a mirror without the column are both counted skips, never a wait that can never resolve.
+    const m=mirrorTable(f.mirror);
+    if(!m) return { skip:'no "'+S.clientName+' '+f.mirror+'" table in the base yet; the Operator syncs the mirror from the Hub, then adds this lookup by hand' };
+    const govKey=T.name+'.'+f.mirror;
+    const link=linkTo(t,m.id);
+    if(!link){ const st=S.seen[govKey]; return gone(st)?{ skip:'needs the link '+govKey+', which '+st }:{ defer:'waits for the link '+govKey }; }
+    const src=fieldExact(m,f.field);
+    if(!src) return { skip:'looks up '+f.field+' on "'+m.name+'", which the synced mirror does not carry; the Operator adds the column to the sync, then adds this lookup by hand' };
+    return { body:{ name:f.name, type:'multipleLookupValues', options:{ recordLinkFieldId: link.id, fieldIdInLinkedTable: src.id } } };
   }
   // lookup, count, rollup: through the link between this table and f.via, found by table id.
   const target=tableByName(f.via);

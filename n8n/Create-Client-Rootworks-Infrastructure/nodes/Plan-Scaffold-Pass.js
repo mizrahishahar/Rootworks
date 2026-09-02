@@ -48,7 +48,16 @@ const OK={ singleLineText:['singleLineText','multilineText','richText','email','
 const KINDS=['plain','formula','link','mirrorLink','mirrorLookup','lookup','count','rollup'];
 const unknownKind=(k,where)=>'unknown field kind "'+String(k)+'" on register field '+where+'. This planner knows '+KINDS.join(', ')+'. Add a branch to resolve() and an accepted-types entry to OK (here and in the Onboard Client twin of this file) before the register uses it.';
 const mark=(key,state,line)=>{ if(S.seen[key]) return; S.seen[key]=state; if(state==='existed') S.existed.push(key); else if(state==='skipped') S.skipped.push(line); else S.failed.push(line); };
-const plainBody=(f)=>{ const o={ name:f.name, type:f.type }; if(f.options) o.options=f.options; return o; };
+// A register field's `description` travels to Airtable. It is the only place the register's own
+// warnings reach a person who never opens this repo: Airtable renders a field description in the
+// field editor and returns it from the meta API, and REGISTER.md was previously the end of the
+// road for it (added 2026-09-03; the relevance placeholder warning was invisible in every base
+// scaffolded before). Both create endpoints take the key, on a field body and on a table's field
+// bodies, and the key is omitted entirely when the register declares none, so a field without a
+// description is byte-for-byte the body it was before. Applied at the one resolve() call site
+// below as well as here, so every kind travels, including a kind added later.
+const describe=(o,f)=>{ if(f.description) o.description=f.description; return o; };
+const plainBody=(f)=>{ const o={ name:f.name, type:f.type }; if(f.options) o.options=f.options; return describe(o,f); };
 // The picked extras groups' fields for a table, after its own register fields, one field per name.
 const picked=new Set(S.extras||[]);
 const fieldsOf=(T)=>{ const seen=new Set(T.fields.map(f=>f.name)); const out=T.fields.slice(); for(const g of (REG.extras||[])){ if(g.table!==T.name||!picked.has(g.group)) continue; for(const f of g.fields){ if(seen.has(f.name)) continue; seen.add(f.name); out.push(f); } } return out; };
@@ -133,6 +142,13 @@ for(const T of REG.tables){
     if(KINDS.indexOf(f.kind)<0){ mark(key,'failed', key+': '+unknownKind(f.kind, key)); continue; }
     const expect=(f.kind==='plain')?f.type:f.kind;
     const ex=fieldExact(t,f.name);
+    // An existing field is left alone, its description included: the planner creates and never
+    // patches, and the description is exactly the column an Operator edits per client. The
+    // relevance placeholder is the case that decides it. The register's description says "replace
+    // this with your own buyer rule"; the client whose rule already replaced it has written what
+    // their rule actually does, and the planner cannot retype the formula either, so pushing the
+    // register's text back would overwrite a true note with a stale warning on every rerun. A
+    // register description reaches a base that already carries the field by the Operator's hand.
     if(ex){
       if((OK[expect]||[expect]).indexOf(ex.type)>=0) mark(key,'existed');
       else mark(key,'clash', key+': exists as '+ex.type+', the register wants '+expect+' (left alone, never retyped)');
@@ -145,7 +161,7 @@ for(const T of REG.tables){
     if(spec.fail){ mark(key,'failed', key+': '+spec.fail); continue; }
     if(spec.skip){ mark(key,'skipped', key+': '+spec.skip); continue; }
     if(spec.defer){ deferred.push({ key:key, why:spec.defer }); continue; }
-    calls.push({ key:key, table:T.name, name:f.name, kind:f.kind, method:'POST', url:urlTables+'/'+t.id+'/fields', body:spec.body });
+    calls.push({ key:key, table:T.name, name:f.name, kind:f.kind, method:'POST', url:urlTables+'/'+t.id+'/fields', body:describe(spec.body,f) });
   }
 }
 if(!calls.length){

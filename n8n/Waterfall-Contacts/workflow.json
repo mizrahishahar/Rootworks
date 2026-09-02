@@ -92,7 +92,7 @@
           "mode": "id",
           "value": "tblK0nCoNVvFf5SPa"
         },
-        "id": "={{ $json.fields.Client[0] }}",
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
         "options": {}
       },
       "id": "c4d50001-0005-4000-8000-000000000005",
@@ -100,9 +100,12 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        440,
+        660,
         0
       ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "A launch row with no Client link used to kill the run right here: $json.fields.Client[0] threw inside the node before Launch Params could name the refusal, so the row got nothing back. It now asks for \"recMISSING\" and keeps going; Launch Params reads the answer defensively and refuses with the reason.",
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
@@ -135,11 +138,11 @@
           "conditions": [
             {
               "id": "l1",
-              "leftValue": "={{ $json._launchRecordId || '' }}",
+              "leftValue": "={{ $json.refused || '' }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEmpty",
+                "operation": "empty",
                 "singleValue": true
               }
             }
@@ -149,13 +152,14 @@
         "options": {}
       },
       "id": "c4d50001-0007-4000-8000-000000000007",
-      "name": "Launched?",
+      "name": "Launch OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        880,
+        1100,
         0
-      ]
+      ],
+      "notes": "The refusal gate. Launch Params names a bad launch row instead of throwing; false here means refused, and Build Refusal closes the row as Failed with the reason before anything is read or paid for."
     },
     {
       "parameters": {
@@ -174,7 +178,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "id": "={{ $json._launchRecordId }}",
+            "id": "={{ $json.id }}",
             "Status": "Running",
             "Tally": "",
             "Run at": "={{ $now.toISO() }}",
@@ -195,9 +199,10 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        1100,
-        -120
+        440,
+        0
       ],
+      "notes": "First thing the launch door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. It passes the record through, so Resolve Base still reads fields.Client off it.",
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
@@ -725,6 +730,20 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "c4d50001-0045-4000-8000-000000000045",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        -560
+      ],
+      "notes": "A badly filled launch row closes here as Failed with the named reason and the execution link, on the same row Stamp Running opened. Refusals are expected outcomes and are logged as such; the Error Logger still owns real crashes."
+    },
+    {
+      "parameters": {
         "resource": "record",
         "operation": "upsert",
         "base": {
@@ -1016,7 +1035,7 @@
       "main": [
         [
           {
-            "node": "Resolve Base",
+            "node": "Stamp Running",
             "type": "main",
             "index": 0
           }
@@ -1060,25 +1079,36 @@
       "main": [
         [
           {
-            "node": "Launched?",
+            "node": "Launch OK?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Launched?": {
+    "Launch OK?": {
       "main": [
         [
           {
-            "node": "Stamp Running",
+            "node": "AT List Tables",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "AT List Tables",
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
             "type": "main",
             "index": 0
           }
@@ -1089,7 +1119,7 @@
       "main": [
         [
           {
-            "node": "AT List Tables",
+            "node": "Resolve Base",
             "type": "main",
             "index": 0
           }

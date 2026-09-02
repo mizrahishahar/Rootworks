@@ -7,6 +7,15 @@
 // spend cap, required). Tag is not read: People stores no Tag, it is a lookup through the
 // Companies link (ruled 2026-09-02). Any missing piece stops the run here, before a paid call.
 //
+// REFUSALS (2026-09-03). A launch row that was not properly filled is an EXPECTED outcome, not a
+// crash, and it must be visible on the row the Operator launched. So every guard below RETURNS a
+// refusal item (`refused` carries the named reason) instead of throwing. `Launch OK?` routes that
+// item to Build Refusal, which closes the launch row as Failed with the reason and the execution
+// link, and the run ends there: no table read, no paid call, nothing written. Only genuinely
+// unexpected errors still throw, so the Error Logger keeps catching real crashes and nothing else.
+// The row is already stamped Running with the Execution ID before this node runs, so the close is
+// an upsert onto that same row.
+//
 // TIERS (Hub Automations fldMg1W5uqWocEPSe, single select, ruled 2026-09-02). One named mode
 // instead of an arbitrary source set:
 //   "ContaGen -> Supersoniq -> AI-Ark"  the full waterfall
@@ -45,20 +54,39 @@ let rec=null, trigger='form';
 try{ rec=$('Fetch Launch Record').first().json; }catch(e){}
 if(!rec||!rec.fields){ rec=$('Event Row').first().json; trigger='event'; }
 const f=rec.fields||{};
-const cf=($('Resolve Base').first().json.fields)||{};
+// Resolve Base is allowed to answer with an error item (a launch row with no Client link is asked
+// for record "recMISSING"), so read it defensively: no Clayroots Base ID means the base guard
+// below refuses, it never crashes here.
+const cf=(($('Resolve Base').first().json||{}).fields)||{};
 const base=((cf['Clayroots Base ID']||'')+'').trim();
 const arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);
 const where='Launch record '+(rec.id||'(event)');
 const clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';
-if(!clientRecId){ throw new Error(where+' has no Client link. Nothing was pulled.'); }
-if(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }
 const table=((f['Table']||'')+'').trim();
-if(!table){ throw new Error(where+' has no Table. This machine takes Table "Companies" by name, no default. Nothing was pulled.'); }
-if(table.toLowerCase()!=='companies'){ throw new Error(where+' names Table "'+table+'". This machine sources people for companies and takes only Table "Companies". Nothing was pulled.'); }
 const view=((f['View']||'')+'').trim();
-if(!view){ throw new Error(where+' has no View. A Companies view is required by name, no default (the insert doors pass "Not Sourced"). Nothing was pulled.'); }
 const maxCompanies=Math.floor(Number(f['Max companies'])||0);
-if(!(maxCompanies>0)){ throw new Error(where+' has no Max companies. It is the spend cap and it is required. Nothing was pulled.'); }
+const tiersRaw=((f['Tiers']||'')+'').trim();
+const startedAt=new Date().toISOString();
+// Every refusal carries what the row actually held, so the Failed row names the reason AND shows
+// the Operator the launch row as the machine read it.
+const refuse=(reason)=>[{ json:{
+  refused: reason,
+  trigger: trigger,
+  _launchRecordId: rec.id||'',
+  clientRecId: clientRecId,
+  base: base,
+  table: table,
+  view: view,
+  maxCompanies: maxCompanies,
+  tiers: tiersRaw,
+  startedAt: startedAt
+} }];
+if(!clientRecId){ return refuse(where+' has no Client link. Nothing was pulled.'); }
+if(!/^app[A-Za-z0-9]{14}$/.test(base)){ return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }
+if(!table){ return refuse(where+' has no Table. This machine takes Table "Companies" by name, no default. Nothing was pulled.'); }
+if(table.toLowerCase()!=='companies'){ return refuse(where+' names Table "'+table+'". This machine sources people for companies and takes only Table "Companies". Nothing was pulled.'); }
+if(!view){ return refuse(where+' has no View. A Companies view is required by name, no default (the insert doors pass "Not Sourced"). Nothing was pulled.'); }
+if(!(maxCompanies>0)){ return refuse(where+' has no Max companies. It is the spend cap and it is required. Nothing was pulled.'); }
 const ALL_SOURCES=['ContaGen','Supersoniq','AI-Ark'];
 const slug=(s)=>String(s).toLowerCase().replace(/[^a-z]/g,'');
 const MODES=[
@@ -67,11 +95,10 @@ const MODES=[
   { label:'ContaGen -> Supersoniq', sources:['ContaGen','Supersoniq'] }
 ];
 const modeKey=(s)=>String(s||'').toLowerCase().replace(/[^a-z]/g,'');
-const tiersRaw=((f['Tiers']||'')+'').trim();
 let sources=null, tiers='';
 if(tiersRaw){
   const hit=MODES.find(m=>modeKey(m.label)===modeKey(tiersRaw));
-  if(!hit){ throw new Error(where+' names Tiers "'+tiersRaw+'", which is not one of the three modes ('+MODES.map(m=>m.label).join(', ')+'). Nothing was pulled.'); }
+  if(!hit){ return refuse(where+' names Tiers "'+tiersRaw+'", which is not one of the three modes ('+MODES.map(m=>m.label).join(', ')+'). Nothing was pulled.'); }
   sources=hit.sources.slice(); tiers=hit.label;
 }
 if(!sources){
@@ -127,6 +154,7 @@ if(noCg.length) rolesUnmapped.push('no ContaGen seniority for '+noCg.join(', '))
 if(noSq.length) rolesUnmapped.push('no Supersoniq seniority for '+noSq.join(', '));
 if(noArk.length) rolesUnmapped.push('no AI-Ark seniority for '+noArk.join(', '));
 return [{ json: {
+  refused: '',
   base: base,
   clientRecId: clientRecId,
   table: 'Companies',
@@ -146,5 +174,5 @@ return [{ json: {
   maxCompanies: maxCompanies,
   trigger: trigger,
   _launchRecordId: rec.id||'',
-  startedAt: new Date().toISOString()
+  startedAt: startedAt
 } }];

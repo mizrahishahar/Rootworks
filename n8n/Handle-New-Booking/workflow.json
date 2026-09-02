@@ -913,6 +913,133 @@
         }
       },
       "onError": "stopWorkflow"
+    },
+    {
+      "id": "b00c1e5d-0000-4000-8000-000000000101",
+      "name": "Find Hub Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5376,
+        224
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "filterByFormula": "=AND(\"{{ ($('Normalize Booking').first().json.email || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Normalize Booking').first().json.email || '').toLowerCase() }}\")",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b00c1e5d-0000-4000-8000-000000000102",
+      "name": "Contact Fill",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5600,
+        224
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Contact-Fill.js"
+      }
+    },
+    {
+      "id": "b00c1e5d-0000-4000-8000-000000000103",
+      "name": "Fill Contact?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5824,
+        224
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.fill }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b00c1e5d-0000-4000-8000-000000000104",
+      "name": "Fill Hub Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6048,
+        224
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Contact Fill').first().json.contactId }}",
+            "position": "={{ $('Contact Fill').first().json.position }}",
+            "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
+            "phone": "={{ $('Contact Fill').first().json.phone }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1186,7 +1313,7 @@
       "main": [
         [
           {
-            "node": "Stamp Booked",
+            "node": "Find Hub Contact",
             "type": "main",
             "index": 0
           }
@@ -1311,6 +1438,57 @@
         [
           {
             "node": "Flatten Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hub Contact": {
+      "main": [
+        [
+          {
+            "node": "Contact Fill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Fill": {
+      "main": [
+        [
+          {
+            "node": "Fill Contact?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fill Contact?": {
+      "main": [
+        [
+          {
+            "node": "Fill Hub Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stamp Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fill Hub Contact": {
+      "main": [
+        [
+          {
+            "node": "Stamp Booked",
             "type": "main",
             "index": 0
           }

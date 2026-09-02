@@ -12,6 +12,7 @@ const context = [
 ].join('\n\n');
 return [{ json: {
   client_name: cv.clientName || '',
+  clayroots_base: cv.clayrootsBase || '',
   system_prompt_fallback: fallback,
   first_name: n.first_name || '', last_name: n.last_name || '', job_title: n.job_title || '',
   company_name: n.company_name || '', lead_email: n.lead_email || '', linkedin_url: n.linkedin_url || '',

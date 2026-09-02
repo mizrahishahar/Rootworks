@@ -445,12 +445,13 @@
           ],
           "schema": [],
           "value": {
-            "firstName": "={{ $('Normalize').item.json.first_name || $('Normalize').item.json.lead_email }}",
-            "lastName": "={{ $('Normalize').item.json.last_name || null }}",
-            "position": "={{ $('Normalize').item.json.job_title || null }}",
-            "email": "={{ $('Normalize').item.json.lead_email }}",
-            "linkedin": "={{ $('Normalize').item.json.linkedin_url || null }}",
-            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+            "firstName": "={{ $('Normalize').first().json.first_name || $('Normalize').first().json.lead_email }}",
+            "lastName": "={{ $('Normalize').first().json.last_name || null }}",
+            "position": "={{ $('Contact Fill').first().json.position }}",
+            "email": "={{ $('Normalize').first().json.lead_email }}",
+            "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
+            "Company": "={{ [ $('Create CRM Prospect').first().json.id ] }}",
+            "phone": "={{ $('Contact Fill').first().json.phone }}"
           }
         },
         "options": {
@@ -1292,6 +1293,54 @@
         -160
       ],
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c0f1a11e-0000-4000-8000-000000000101",
+      "name": "Find Hub Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4832,
+        -16
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "filterByFormula": "=AND(\"{{ ($('Normalize').first().json.lead_email || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Normalize').first().json.lead_email || '').toLowerCase() }}\")",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c0f1a11e-0000-4000-8000-000000000102",
+      "name": "Contact Fill",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5056,
+        -16
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Contact-Fill.js"
+      }
     }
   ],
   "connections": {
@@ -1387,7 +1436,7 @@
       "main": [
         [
           {
-            "node": "Create CRM Contact",
+            "node": "Find Hub Contact",
             "type": "main",
             "index": 0
           }
@@ -1836,6 +1885,28 @@
         [
           {
             "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hub Contact": {
+      "main": [
+        [
+          {
+            "node": "Contact Fill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Fill": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
             "type": "main",
             "index": 0
           }

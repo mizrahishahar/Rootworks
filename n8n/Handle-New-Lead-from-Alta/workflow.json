@@ -344,12 +344,13 @@
           ],
           "schema": [],
           "value": {
-            "firstName": "={{ $('Alta Normalize').item.json.first_name || $('Alta Normalize').item.json.lead_email }}",
-            "lastName": "={{ $('Alta Normalize').item.json.last_name || null }}",
-            "position": "={{ $('Alta Normalize').item.json.job_title || $('Merge Person').first().json.title || null }}",
-            "email": "={{ $('Alta Normalize').item.json.lead_email || $('Merge Person').first().json.personEmail || null }}",
-            "linkedin": "={{ $('Alta Normalize').item.json.linkedin_url || null }}",
-            "Company": "={{ [ $('Create CRM Prospect').item.json.id ] }}"
+            "firstName": "={{ $('Alta Normalize').first().json.first_name || $('Alta Normalize').first().json.lead_email }}",
+            "lastName": "={{ $('Alta Normalize').first().json.last_name || null }}",
+            "position": "={{ $('Contact Fill').first().json.position }}",
+            "email": "={{ $('Alta Normalize').first().json.lead_email || $('Merge Person').first().json.personEmail || null }}",
+            "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
+            "Company": "={{ [ $('Create CRM Prospect').first().json.id ] }}",
+            "phone": "={{ $('Contact Fill').first().json.phone }}"
           }
         },
         "options": {
@@ -1786,6 +1787,54 @@
         "options": {}
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c0f1a17a-0000-4000-8000-000000000101",
+      "name": "Find Hub Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5632,
+        -16
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "filterByFormula": "=AND(\"{{ ($('Alta Normalize').first().json.lead_email || $('Merge Person').first().json.personEmail || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Alta Normalize').first().json.lead_email || $('Merge Person').first().json.personEmail || '').toLowerCase() }}\")",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c0f1a17a-0000-4000-8000-000000000102",
+      "name": "Contact Fill",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5856,
+        -16
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Contact-Fill.js"
+      }
     }
   ],
   "connections": {
@@ -1910,7 +1959,7 @@
       "main": [
         [
           {
-            "node": "Create CRM Contact",
+            "node": "Find Hub Contact",
             "type": "main",
             "index": 0
           }
@@ -2285,6 +2334,28 @@
         [
           {
             "node": "Flatten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hub Contact": {
+      "main": [
+        [
+          {
+            "node": "Contact Fill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Fill": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
             "type": "main",
             "index": 0
           }

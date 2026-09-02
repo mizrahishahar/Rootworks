@@ -15,6 +15,7 @@ const context=[
 ].join('\n\n');
 return [{ json:{
   client_name:c.clientName||'',
+  clayroots_base:c.clayrootsBase||'',
   first_name:n.firstName||'', last_name:n.lastName||'', job_title:title, company_name:companyName,
   lead_email:n.email||'', linkedin_url:'',
   domain:n.domain||'', enrich_domain:n.domain||'', is_freemail:!n.domain,

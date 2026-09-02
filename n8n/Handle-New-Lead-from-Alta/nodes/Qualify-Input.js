@@ -3,8 +3,8 @@
 // the client name that resolves the rubric. The rubric lookup, DiscoLike and the judge live in the helper.
 const n = $('Alta Normalize').first().json || {};
 const cv = $('Client Vars').first().json || {};
-let fallback = '';
-try { fallback = String(((($('Get Client Row').first().json || {}).fields) || {})['Qualification Prompt'] || ''); } catch (e) { fallback = ''; }
+let fallback = '', clayrootsBase = '';
+try { const cf = ((($('Get Client Row').first().json || {}).fields) || {}); fallback = String(cf['Qualification Prompt'] || ''); clayrootsBase = String(cf['Clayroots Base ID'] || '').trim(); } catch (e) { fallback = ''; clayrootsBase = ''; }
 const companyContext = [
   'COMPANY DATA (from Alta enrichment; fields may be missing, verify with web search):',
   'industry: ' + (n.company_industry || '') + ' | size: ' + (n.company_size || '') + ' | revenue: ' + (n.company_revenue || '') + ' | founded: ' + (n.company_founded || '') + ' | HQ: ' + (n.company_hq || ''),
@@ -17,6 +17,7 @@ const context = [
 ].join('\n\n');
 return [{ json: {
   client_name: cv.clientName || '',
+  clayroots_base: clayrootsBase,
   system_prompt_fallback: fallback,
   first_name: n.first_name || '', last_name: n.last_name || '', job_title: n.job_title || '',
   company_name: n.company_name || '', lead_email: n.lead_email || '', linkedin_url: n.linkedin_url || '',

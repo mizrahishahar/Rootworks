@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T19:07:16.692Z",
+  "updatedAt": "2026-09-02T19:30:29.289Z",
   "createdAt": "2026-06-11T13:32:36.773Z",
   "id": "iNzuePWU2UoByJ7U",
   "name": "Waterfall Emails",
@@ -312,43 +312,106 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Read Records').first().json._baseId }}"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Read Records').first().json._tableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "id"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "aw1",
+              "leftValue": "={{ $json.id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
           ],
-          "schema": []
+          "combinator": "and"
         },
-        "options": {
-          "typecast": true
-        }
+        "options": {}
       },
       "id": "081f5f23-ca4c-4b11-b401-2a584ab9ea26",
-      "name": "Update Record",
-      "type": "n8n-nodes-base.airtable",
+      "name": "Any Writes?",
+      "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
         5344,
         -64
       ],
+      "notes": "Nothing to write still has to reach the log leg: a batch whose rows carry no record id skips the writer and lands straight on Write Check, so the run row is never left Running."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Rows.js"
+      },
+      "id": "0a3d1c52-6d41-4f0e-9a71-5b0c1d2e3f40",
+      "name": "Chunk Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Read Records').first().json._baseId }}/{{ $('Read Records').first().json._tableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "1b4e2d63-7f52-4a1b-8c62-6d1e2f3a4b51",
+      "name": "Write Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5792,
+        -176
+      ],
+      "onError": "continueRegularOutput",
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "notes": "The one row writer (replaced the Update Record Airtable node 2026-09-02): PATCH /v0/{base}/{table} with {records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. The node it replaced timed out at 24.9 s writing 90 rows and killed executions 9812 and 9813. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every row in it as a write error, names its record ids, and the batch carries on to the log."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Write-Check.js"
+      },
+      "id": "2c5f3e74-8063-4b2c-9d73-7e2f3a4b5c62",
+      "name": "Write Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6016,
+        -64
+      ]
     },
     {
       "parameters": {
@@ -1643,7 +1706,47 @@
       "main": [
         [
           {
-            "node": "Update Record",
+            "node": "Any Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Writes?": {
+      "main": [
+        [
+          {
+            "node": "Chunk Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Check",
             "type": "main",
             "index": 0
           }
@@ -2117,7 +2220,7 @@
         ]
       ]
     },
-    "Update Record": {
+    "Write Check": {
       "main": [
         [
           {
@@ -2206,17 +2309,11 @@
         "p3": 239
       },
       "_wfFinderFails": {
-        "execId": "8076",
-        "p1": 430,
-        "p2": 430,
-        "p3": 205,
-        "causes": {
-          "P1:no-credits": 430,
-          "P2:no-credits": 427,
-          "P2:validation_error": 3,
-          "P3:INVALID_DATAPOINTS": 2,
-          "P3:Rate limit exceeded": 203
-        }
+        "execId": "9812",
+        "p1": 0,
+        "p2": 0,
+        "p3": 0,
+        "causes": {}
       }
     }
   },
@@ -2242,9 +2339,9 @@
       }
     ]
   },
-  "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
-  "activeVersionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
-  "versionCounter": 74,
+  "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
+  "activeVersionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
+  "versionCounter": 75,
   "triggerCount": 3,
   "sourceWorkflowId": null,
   "shared": [
@@ -2269,9 +2366,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-09-02T19:07:16.695Z",
-    "createdAt": "2026-09-02T19:07:16.695Z",
-    "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
+    "updatedAt": "2026-09-02T19:30:29.294Z",
+    "createdAt": "2026-09-02T19:30:29.294Z",
+    "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
     "workflowId": "iNzuePWU2UoByJ7U",
     "nodes": [
       {
@@ -2579,47 +2676,110 @@
       },
       {
         "parameters": {
-          "operation": "update",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('Read Records').first().json._baseId }}"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "={{ $('Read Records').first().json._tableId }}"
-          },
-          "columns": {
-            "mappingMode": "autoMapInputData",
-            "value": {},
-            "matchingColumns": [
-              "id"
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "aw1",
+                "leftValue": "={{ $json.id || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
             ],
-            "schema": []
+            "combinator": "and"
           },
-          "options": {
-            "typecast": true
-          }
+          "options": {}
         },
         "id": "081f5f23-ca4c-4b11-b401-2a584ab9ea26",
-        "name": "Update Record",
-        "type": "n8n-nodes-base.airtable",
+        "name": "Any Writes?",
+        "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
           5344,
           -64
         ],
+        "notes": "Nothing to write still has to reach the log leg: a batch whose rows carry no record id skips the writer and lands straight on Write Check, so the run row is never left Running."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk Rows: the verdict rows in tens, one item per Airtable request. Write Rows PATCHes each as\n// {records: [{id, fields}], typecast: true}, 200 ms apart. The Airtable node this replaced sent ONE\n// record per request (measured 4.5 rows per second) and blew its own 25 s ceiling on a 90-row batch,\n// killing executions 9812/9813 on 2026-09-02; ten per request at five requests per second is 50 rows\n// per second and nine requests where there were ninety. The record ids and the size ride on the item,\n// never in the body, for the count-back: written rows are counted from the answer's records[], and a\n// request that is not 2xx names every id it carried in failed[].\nconst rows = $input.all().map(i => i.json).filter(j => j && j.id);\nconst out = [];\nfor (let i = 0; i < rows.length; i += 10) {\n  const part = rows.slice(i, i + 10);\n  out.push({ json: {\n    body: { records: part.map(r => {\n      const f = {};\n      for (const k of Object.keys(r)) { if (k !== 'id' && k.charAt(0) !== '_') f[k] = r[k]; }\n      return { id: String(r.id), fields: f };\n    }), typecast: true },\n    ids: part.map(r => String(r.id)),\n    size: part.length\n  } });\n}\nreturn out;\n"
+        },
+        "id": "0a3d1c52-6d41-4f0e-9a71-5b0c1d2e3f40",
+        "name": "Chunk Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5568,
+          -176
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Read Records').first().json._baseId }}/{{ $('Read Records').first().json._tableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "1b4e2d63-7f52-4a1b-8c62-6d1e2f3a4b51",
+        "name": "Write Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5792,
+          -176
+        ],
+        "onError": "continueRegularOutput",
         "credentials": {
           "airtableTokenApi": {
             "id": "RZ2SX89iUyF4aEWJ",
             "name": "Airtable"
           }
-        }
+        },
+        "notes": "The one row writer (replaced the Update Record Airtable node 2026-09-02): PATCH /v0/{base}/{table} with {records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. The node it replaced timed out at 24.9 s writing 90 rows and killed executions 9812 and 9813. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every row in it as a write error, names its record ids, and the batch carries on to the log."
       },
       {
         "parameters": {
-          "jsCode": "const wfid='iNzuePWU2UoByJ7U';\nlet r=null;\ntry{ r=$('Read Records').first().json; }catch(e){ r=null; }\nif(!r||!r._execId){ let p={}; try{ p=$('Params').first().json||{}; }catch(e){}\n  let t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}\n  let st=''; try{ st=$('Email Guard').first().json.startedAt||''; }catch(e){}\n  r={ _execId:String($execution.id), _tableId:t.tableId||'', _tableName:t.tableName||p['Table']||'', _view:p['View']||'', _startedAt:st||new Date().toISOString(), _trigger:'form', _total:0, _clientId:'' }; }\nconst eid=String(r._execId);\nconst start=r._startedAt||new Date().toISOString();\nconst recIn=Number(r._total)||0;\n\n// Prior totals come from the run's own Hub row, not from static data.\n// Static data written inside a sub-execution is not persisted back; the row is.\nconst BLANK={resolved:0,verifying:0,noEmail:0,errored:0,p0:0,p1:0,p2:0,p3:0,ffP2:0,ffP3:0,causes:{}};\nlet a=Object.assign({},BLANK);\ntry{\n  const prior=$('Read Log Row').first().json;\n  const raw=prior&&prior.fields?prior.fields.Tally:null;\n  if(raw){ const parsed=JSON.parse(String(raw)); if(parsed&&String(parsed.execId)===eid){ a=Object.assign({},BLANK,parsed); a.causes=parsed.causes||{}; } }\n}catch(e){ a=Object.assign({},BLANK); }\n\nlet rows=[]; try{ rows=$('To Airtable').all().map(i=>i.json); }catch(e){}\nconst c=(f)=>rows.filter(f).length;\na.resolved+=c(x=>x.Status==='done');\na.verifying+=c(x=>x.Status==='verifying');\na.noEmail+=c(x=>x.Status==='no_email_found');\na.errored+=c(x=>x.Status==='error');\na.p0+=c(x=>x.Status==='done'&&x.Source==='P0');\na.p1+=c(x=>x.Status==='done'&&x.Source==='P1');\na.p2+=c(x=>x.Status==='done'&&x.Source==='P2');\na.p3+=c(x=>x.Status==='done'&&x.Source==='P3');\n\n// This batch's finder refusals, taken from the in-memory counter which IS reliable within one execution.\ntry{\n  const sd=$getWorkflowStaticData('global');\n  const ff=sd._wfFinderFails;\n  if(ff&&String(ff.execId)===String($execution.id)){\n    a.ffP2+=(ff.p2||0); a.ffP3+=(ff.p3||0);\n    for(const k of Object.keys(ff.causes||{})){ a.causes[k]=(a.causes[k]||0)+ff.causes[k]; }\n    ff.p1=0; ff.p2=0; ff.p3=0; ff.causes={};\n  }\n}catch(e){}\n\na.execId=eid;\nconst ffTotal=a.ffP2+a.ffP3;\nconst topCause=(tier)=>{ const m=a.causes||{}; let best='',n=0; for(const k of Object.keys(m)){ if(k.indexOf(tier+':')===0&&m[k]>n){ n=m[k]; best=k.slice(tier.length+1); } } return best; };\nconst ffLine=(tier,label,n)=>{ const tc=n?topCause(tier):''; return '- **'+tier+' '+label+':** '+n+' call'+(n===1?'':'s')+' failed'+(tc?' ('+tc+')':''); };\nconst recordsOut=a.resolved+a.verifying;\nconst accounted=a.resolved+a.verifying+a.noEmail+a.errored;\nconst isFinal=recIn===0 || accounted>=recIn;\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=r._trigger||'form';\nconst viewTxt=r._view?(' · view: '+r._view):'';\nconst target=(r._tableName||'')+' ('+(r._tableId||'')+')';\nconst desc=[\n'**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':''),\n'',\n'**Table:** '+target,\n'**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan)',\n'',\n'**Progress:** '+accounted+' of '+recIn+' accounted',\n'',\n'**Results**',\n'- **Resolved (Status=done):** '+a.resolved+' · P0 existing '+a.p0+' · P1 Trykitt '+a.p1+' · P2 LeadMagic '+a.p2+' · P3 Prospeo '+a.p3,\n'- **Handed to BounceBan (pending async verdicts):** '+a.verifying,\n'- **No email found (finder answered, nothing there):** '+a.noEmail,\n'- **Errored (never actually looked up, retryable):** '+a.errored,\n'- **Rows written (resolved+verifying):** '+recordsOut\n].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[]).concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\\n');\nreturn [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': target, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];"
+          "jsCode": "// Write Check: the writer's count-back, and the only thing downstream reads about the write.\n// Written rows are counted from every 2xx answer's records[], never from item ids. A request that\n// was not 2xx counts every row it carried as a write error and NAMES those record ids in failed[],\n// so a row Airtable refused is visible in the run row instead of silently dropped; the writer never\n// retries (a 429 locks the base for 30 s). Exactly one item out, always, so the log leg runs once.\nconst n = (v) => Number(v) || 0;\nconst parse = (b) => { if (typeof b !== 'string') return b; try { return JSON.parse(b); } catch (e) { return null; } };\nlet chunks = [], resps = [];\ntry { chunks = $('Chunk Rows').all().map(i => i.json); } catch (e) {}\ntry { resps = $('Write Rows').all(); } catch (e) {}\nlet written = 0, writeErrors = 0;\nconst failed = [], reasons = [];\nconst note = (ids, why) => {\n  for (const id of (ids || [])) { if (failed.length < 200) failed.push(id); }\n  const w = String(why || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 180);\n  if (w && reasons.length < 10) reasons.push(w);\n};\nresps.forEach((it, i) => {\n  const c = chunks[i] || { size: 0, ids: [] };\n  const j = it.json || {};\n  if (j.error && j.statusCode === undefined) {\n    writeErrors += n(c.size);\n    note(c.ids, 'row writer: ' + String((j.error && j.error.message) || 'call failed'));\n    return;\n  }\n  const status = n(j.statusCode);\n  const b = parse(j.body === undefined ? null : j.body);\n  if (status >= 200 && status < 300 && b && Array.isArray(b.records)) {\n    written += b.records.length;\n    if (b.records.length < n(c.size)) {\n      const back = {};\n      for (const r of b.records) back[String((r || {}).id || '')] = 1;\n      writeErrors += n(c.size) - b.records.length;\n      note((c.ids || []).filter(id => !back[id]), (n(c.size) - b.records.length) + ' of ' + c.size + ' records missing from a 2xx answer');\n    }\n    return;\n  }\n  const e = b && b.error;\n  const why = e ? (typeof e === 'object' ? (e.message || e.type || JSON.stringify(e)) : String(e))\n                : ((j.error && j.error.message) || (typeof j.body === 'string' ? j.body : ''));\n  writeErrors += n(c.size);\n  note(c.ids, 'HTTP ' + status + ' ' + String(why || '') + (status === 429 ? ' (rate limited; never retried)' : ''));\n});\nreturn [{ json: { written: written, writeErrors: writeErrors, writeRequests: resps.length, failed: failed, writeReasons: reasons } }];\n"
+        },
+        "id": "2c5f3e74-8063-4b2c-9d73-7e2f3a4b5c62",
+        "name": "Write Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6016,
+          -64
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const wfid='iNzuePWU2UoByJ7U';\nlet r=null;\ntry{ r=$('Read Records').first().json; }catch(e){ r=null; }\nif(!r||!r._execId){ let p={}; try{ p=$('Params').first().json||{}; }catch(e){}\n  let t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}\n  let st=''; try{ st=$('Email Guard').first().json.startedAt||''; }catch(e){}\n  r={ _execId:String($execution.id), _tableId:t.tableId||'', _tableName:t.tableName||p['Table']||'', _view:p['View']||'', _startedAt:st||new Date().toISOString(), _trigger:'form', _total:0, _clientId:'' }; }\nconst eid=String(r._execId);\nconst start=r._startedAt||new Date().toISOString();\nconst recIn=Number(r._total)||0;\n\n// Prior totals come from the run's own Hub row, not from static data.\n// Static data written inside a sub-execution is not persisted back; the row is.\nconst BLANK={resolved:0,verifying:0,noEmail:0,errored:0,p0:0,p1:0,p2:0,p3:0,ffP2:0,ffP3:0,causes:{},written:0,writeErrors:0,writeFails:[],writeWhy:[]};\nlet a=Object.assign({},BLANK);\ntry{\n  const prior=$('Read Log Row').first().json;\n  const raw=prior&&prior.fields?prior.fields.Tally:null;\n  if(raw){ const parsed=JSON.parse(String(raw)); if(parsed&&String(parsed.execId)===eid){ a=Object.assign({},BLANK,parsed); a.causes=parsed.causes||{}; } }\n}catch(e){ a=Object.assign({},BLANK); }\n\nlet rows=[]; try{ rows=$('To Airtable').all().map(i=>i.json); }catch(e){}\nconst c=(f)=>rows.filter(f).length;\na.resolved+=c(x=>x.Status==='done');\na.verifying+=c(x=>x.Status==='verifying');\na.noEmail+=c(x=>x.Status==='no_email_found');\na.errored+=c(x=>x.Status==='error');\na.p0+=c(x=>x.Status==='done'&&x.Source==='P0');\na.p1+=c(x=>x.Status==='done'&&x.Source==='P1');\na.p2+=c(x=>x.Status==='done'&&x.Source==='P2');\na.p3+=c(x=>x.Status==='done'&&x.Source==='P3');\n\n// The writer's count-back. Rows Out is what Airtable confirmed, never what the verdicts produced,\n// so a partial write reads as a partial run instead of a clean one. Refused rows are named.\na.writeFails=Array.isArray(a.writeFails)?a.writeFails:[];\na.writeWhy=Array.isArray(a.writeWhy)?a.writeWhy:[];\ntry{\n  const wc=$('Write Check').first().json||{};\n  a.written+=Number(wc.written)||0;\n  a.writeErrors+=Number(wc.writeErrors)||0;\n  for(const id of (wc.failed||[])){ if(a.writeFails.length<50) a.writeFails.push(String(id)); }\n  for(const w of (wc.writeReasons||[])){ if(a.writeWhy.length<10&&a.writeWhy.indexOf(String(w))<0) a.writeWhy.push(String(w)); }\n}catch(e){}\n\n// This batch's finder refusals, taken from the in-memory counter which IS reliable within one execution.\ntry{\n  const sd=$getWorkflowStaticData('global');\n  const ff=sd._wfFinderFails;\n  if(ff&&String(ff.execId)===String($execution.id)){\n    a.ffP2+=(ff.p2||0); a.ffP3+=(ff.p3||0);\n    for(const k of Object.keys(ff.causes||{})){ a.causes[k]=(a.causes[k]||0)+ff.causes[k]; }\n    ff.p1=0; ff.p2=0; ff.p3=0; ff.causes={};\n  }\n}catch(e){}\n\na.execId=eid;\nconst ffTotal=a.ffP2+a.ffP3;\nconst topCause=(tier)=>{ const m=a.causes||{}; let best='',n=0; for(const k of Object.keys(m)){ if(k.indexOf(tier+':')===0&&m[k]>n){ n=m[k]; best=k.slice(tier.length+1); } } return best; };\nconst ffLine=(tier,label,n)=>{ const tc=n?topCause(tier):''; return '- **'+tier+' '+label+':** '+n+' call'+(n===1?'':'s')+' failed'+(tc?' ('+tc+')':''); };\nconst produced=a.resolved+a.verifying;\nconst recordsOut=a.written;\nconst accounted=a.resolved+a.verifying+a.noEmail+a.errored;\nconst isFinal=recIn===0 || accounted>=recIn;\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=r._trigger||'form';\nconst viewTxt=r._view?(' · view: '+r._view):'';\nconst target=(r._tableName||'')+' ('+(r._tableId||'')+')';\nconst desc=[\n'**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':'')+(a.writeErrors?' · '+a.writeErrors+' rows Airtable refused':''),\n'',\n'**Table:** '+target,\n'**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan) · rows written 10 per Airtable request',\n'',\n'**Progress:** '+accounted+' of '+recIn+' accounted',\n'',\n'**Results**',\n'- **Resolved (Status=done):** '+a.resolved+' · P0 existing '+a.p0+' · P1 Trykitt '+a.p1+' · P2 LeadMagic '+a.p2+' · P3 Prospeo '+a.p3,\n'- **Handed to BounceBan (pending async verdicts):** '+a.verifying,\n'- **No email found (finder answered, nothing there):** '+a.noEmail,\n'- **Errored (never actually looked up, retryable):** '+a.errored,\n'- **Rows written (confirmed by Airtable):** '+recordsOut+' of '+produced+' produced (resolved+verifying)'\n].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[])\n .concat(a.writeErrors?['','**Write failures (Airtable refused the row; it was NOT updated and is still retryable)**',\n   '- **Rows refused:** '+a.writeErrors,\n   '- **Record ids:** '+(a.writeFails.length?a.writeFails.slice(0,25).join(', ')+(a.writeFails.length>25?' … (+'+(a.writeFails.length-25)+' more)':''):'none captured')]\n   .concat(a.writeWhy.map(w=>'- '+w)):[])\n .concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\\n');\nreturn [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': target, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal||a.writeErrors)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored+a.writeErrors, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];"
         },
         "id": "401e7696-7df5-49d9-abfa-c372875fce78",
         "name": "Build Log",
@@ -3910,7 +4070,47 @@
         "main": [
           [
             {
-              "node": "Update Record",
+              "node": "Any Writes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Writes?": {
+        "main": [
+          [
+            {
+              "node": "Chunk Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Write Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk Rows": {
+        "main": [
+          [
+            {
+              "node": "Write Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Rows": {
+        "main": [
+          [
+            {
+              "node": "Write Check",
               "type": "main",
               "index": 0
             }
@@ -4384,7 +4584,7 @@
           ]
         ]
       },
-      "Update Record": {
+      "Write Check": {
         "main": [
           [
             {
@@ -4458,34 +4658,34 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-09-02T19:07:16.911Z",
-        "id": 2230,
+        "createdAt": "2026-09-02T19:30:29.536Z",
+        "id": 2240,
         "workflowId": "iNzuePWU2UoByJ7U",
-        "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
+        "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-02T19:07:36.109Z",
-        "id": 2232,
+        "createdAt": "2026-09-02T19:30:40.019Z",
+        "id": 2242,
         "workflowId": "iNzuePWU2UoByJ7U",
-        "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
+        "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-02T19:07:16.848Z",
-        "id": 2229,
+        "createdAt": "2026-09-02T19:30:29.464Z",
+        "id": 2239,
         "workflowId": "iNzuePWU2UoByJ7U",
-        "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
+        "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-02T19:07:22.382Z",
-        "id": 2231,
+        "createdAt": "2026-09-02T19:30:34.648Z",
+        "id": 2241,
         "workflowId": "iNzuePWU2UoByJ7U",
-        "versionId": "2a4ff4b1-c982-402d-9aac-b3bf5faa356c",
+        "versionId": "b69d11b3-7311-4905-8e9d-b16ff7938441",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       }

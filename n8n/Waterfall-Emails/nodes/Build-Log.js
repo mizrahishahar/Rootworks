@@ -11,7 +11,7 @@ const recIn=Number(r._total)||0;
 
 // Prior totals come from the run's own Hub row, not from static data.
 // Static data written inside a sub-execution is not persisted back; the row is.
-const BLANK={resolved:0,verifying:0,noEmail:0,errored:0,p0:0,p1:0,p2:0,p3:0,ffP2:0,ffP3:0,causes:{}};
+const BLANK={resolved:0,verifying:0,noEmail:0,errored:0,p0:0,p1:0,p2:0,p3:0,ffP2:0,ffP3:0,causes:{},written:0,writeErrors:0,writeFails:[],writeWhy:[]};
 let a=Object.assign({},BLANK);
 try{
   const prior=$('Read Log Row').first().json;
@@ -30,6 +30,18 @@ a.p1+=c(x=>x.Status==='done'&&x.Source==='P1');
 a.p2+=c(x=>x.Status==='done'&&x.Source==='P2');
 a.p3+=c(x=>x.Status==='done'&&x.Source==='P3');
 
+// The writer's count-back. Rows Out is what Airtable confirmed, never what the verdicts produced,
+// so a partial write reads as a partial run instead of a clean one. Refused rows are named.
+a.writeFails=Array.isArray(a.writeFails)?a.writeFails:[];
+a.writeWhy=Array.isArray(a.writeWhy)?a.writeWhy:[];
+try{
+  const wc=$('Write Check').first().json||{};
+  a.written+=Number(wc.written)||0;
+  a.writeErrors+=Number(wc.writeErrors)||0;
+  for(const id of (wc.failed||[])){ if(a.writeFails.length<50) a.writeFails.push(String(id)); }
+  for(const w of (wc.writeReasons||[])){ if(a.writeWhy.length<10&&a.writeWhy.indexOf(String(w))<0) a.writeWhy.push(String(w)); }
+}catch(e){}
+
 // This batch's finder refusals, taken from the in-memory counter which IS reliable within one execution.
 try{
   const sd=$getWorkflowStaticData('global');
@@ -45,7 +57,8 @@ a.execId=eid;
 const ffTotal=a.ffP2+a.ffP3;
 const topCause=(tier)=>{ const m=a.causes||{}; let best='',n=0; for(const k of Object.keys(m)){ if(k.indexOf(tier+':')===0&&m[k]>n){ n=m[k]; best=k.slice(tier.length+1); } } return best; };
 const ffLine=(tier,label,n)=>{ const tc=n?topCause(tier):''; return '- **'+tier+' '+label+':** '+n+' call'+(n===1?'':'s')+' failed'+(tc?' ('+tc+')':''); };
-const recordsOut=a.resolved+a.verifying;
+const produced=a.resolved+a.verifying;
+const recordsOut=a.written;
 const accounted=a.resolved+a.verifying+a.noEmail+a.errored;
 const isFinal=recIn===0 || accounted>=recIn;
 const ms=Date.parse(start);
@@ -54,10 +67,10 @@ const trig=r._trigger||'form';
 const viewTxt=r._view?(' · view: '+r._view):'';
 const target=(r._tableName||'')+' ('+(r._tableId||'')+')';
 const desc=[
-'**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':''),
+'**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':'')+(a.writeErrors?' · '+a.writeErrors+' rows Airtable refused':''),
 '',
 '**Table:** '+target,
-'**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan)',
+'**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan) · rows written 10 per Airtable request',
 '',
 '**Progress:** '+accounted+' of '+recIn+' accounted',
 '',
@@ -66,6 +79,11 @@ const desc=[
 '- **Handed to BounceBan (pending async verdicts):** '+a.verifying,
 '- **No email found (finder answered, nothing there):** '+a.noEmail,
 '- **Errored (never actually looked up, retryable):** '+a.errored,
-'- **Rows written (resolved+verifying):** '+recordsOut
-].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[]).concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\n');
-return [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': target, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];
+'- **Rows written (confirmed by Airtable):** '+recordsOut+' of '+produced+' produced (resolved+verifying)'
+].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[])
+ .concat(a.writeErrors?['','**Write failures (Airtable refused the row; it was NOT updated and is still retryable)**',
+   '- **Rows refused:** '+a.writeErrors,
+   '- **Record ids:** '+(a.writeFails.length?a.writeFails.slice(0,25).join(', ')+(a.writeFails.length>25?' … (+'+(a.writeFails.length-25)+' more)':''):'none captured')]
+   .concat(a.writeWhy.map(w=>'- '+w)):[])
+ .concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\n');
+return [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': target, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal||a.writeErrors)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored+a.writeErrors, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];

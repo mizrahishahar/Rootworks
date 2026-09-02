@@ -23,14 +23,14 @@ Do not hand-edit; rerun the script after every pull.
 | Backfill-Intent-Fields-one-off | POST https://n8n.flowroots.com/webhook/backfill-intent-fields |  | no |
 | Clean-Company-Names-on-table | GET https://n8n.flowroots.com/webhook/clean-company-names-run | Clayroots Base ID, Table | no |
 | Contagen---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-contagen-supersoniq | Clayroots Base ID, Build name, ContaGen contacts CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
-| Create-PlusVibe-Weekly-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |
+| Create-PlusVibe-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |
 | Deploy-View-to-Alta-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-alta |  | no |
 | Deploy-View-to-PlusVibe-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
 | Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
+| Enrich-Qualify-new-lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |
+| Enrich-Qualify-new-lead-from-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |
+| Enrich-Qualify-new-lead-from-PlusVibe | POST https://n8n.flowroots.com/webhook/plusvibe-new-reply <br> POST https://n8n.flowroots.com/webhook/newlead-manual |  | no |
 | Get-Availability | GET https://n8n.flowroots.com/webhook/availability |  | no |
-| Handle-New-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |
-| Handle-New-Lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |
-| Handle-New-Lead-from-PlusVibe | POST https://n8n.flowroots.com/webhook/plusvibe-new-reply <br> POST https://n8n.flowroots.com/webhook/newlead-manual |  | no |
 | Handle-another-meeting-for-flowroots | POST https://n8n.flowroots.com/webhook/9851c15f-256a-425c-9771-8690be97bf8b |  | no |
 | Handle-new-discovery-for-flowroots | POST https://n8n.flowroots.com/webhook/34c8c9bb-e57d-4115-a0f8-d2c906e4dec8 |  | no |
 | Insert-Discolike-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-discolike-domains |  | no |

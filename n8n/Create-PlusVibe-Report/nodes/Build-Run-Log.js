@@ -11,7 +11,7 @@ if(errs.length) parts.push('**PV errors ('+errs.length+')**\n'+errs.map(r=>'- '+
 if(launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no PlusVibe client)**');
 const desc=parts.join('\n\n');
 const row={
- 'Automation':'Create PlusVibe Weekly Report',
+ 'Automation':'Create PlusVibe Report',
  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',
  'Run at': $now.toISO(),
  'Records In': results.length,

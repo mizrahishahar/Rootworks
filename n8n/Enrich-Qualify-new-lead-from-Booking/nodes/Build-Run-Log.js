@@ -36,6 +36,6 @@ else {
 let desc='**'+head+': '+(n.fullName||n.email||'?')+'**\n\n'+lines.join('\n');
 if(skipped.length) desc+='\n\n**Skipped ('+skipped.length+')**\n'+skipped.map(x=>'- '+x).join('\n');
 if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');
-const row={ 'Automation':'Handle New Booking', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Run at':$now.toISO(), 'Records In':1, 'Records Out':(p&&p.prospectId?1:0)+(meetingId?1:0), 'Errors':failed.length, 'Target':n.email||'', 'Trigger':'event', 'Execution ID':String($execution.id), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Duration s':Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000), 'Description':desc };
+const row={ 'Automation':'Enrich & Qualify new lead from Booking', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Run at':$now.toISO(), 'Records In':1, 'Records Out':(p&&p.prospectId?1:0)+(meetingId?1:0), 'Errors':failed.length, 'Target':n.email||'', 'Trigger':'event', 'Execution ID':String($execution.id), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Duration s':Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000), 'Description':desc };
 if(c.clientRecId) row['Client']=[c.clientRecId];
 return [{ json: row }];

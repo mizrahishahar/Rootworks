@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-23T08:15:36.270Z",
+  "updatedAt": "2026-09-02T22:02:34.459Z",
   "createdAt": "2026-08-22T16:35:04.393Z",
   "id": "I67PRoVIZeMhiJso",
-  "name": "Handle New Booking",
+  "name": "Enrich & Qualify new lead from Booking",
+  "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1506,23 +1507,38 @@
     }
   },
   "meta": null,
+  "nodeGroups": [],
   "pinData": null,
-  "versionId": "8cf19be3-79f0-47ea-89bb-25d0e896dbdc",
-  "activeVersionId": "8cf19be3-79f0-47ea-89bb-25d0e896dbdc",
+  "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+  "activeVersionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+  "versionCounter": 7,
   "triggerCount": 2,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-08-22T16:35:04.402Z",
       "createdAt": "2026-08-22T16:35:04.402Z",
       "role": "workflow:owner",
       "workflowId": "I67PRoVIZeMhiJso",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-22T21:18:03.308Z",
-    "createdAt": "2026-08-22T21:18:03.308Z",
-    "versionId": "8cf19be3-79f0-47ea-89bb-25d0e896dbdc",
+    "updatedAt": "2026-09-02T22:02:34.461Z",
+    "createdAt": "2026-09-02T22:02:34.461Z",
+    "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
     "workflowId": "I67PRoVIZeMhiJso",
     "nodes": [
       {
@@ -1647,7 +1663,7 @@
           0
         ],
         "parameters": {
-          "jsCode": "// Which client does this booking belong to? Nothing hardcoded: the registry decides.\n// 1. The manual door may name the client outright.\n// 2. The booking's host keys (organizer email / username / event title) against each client's Booking Keys lines.\n// 3. The attendee's domain against each client's own Email Domains: that is a client meeting, not a lead.\nconst n=$('Normalize Booking').first().json;\nconst clients=$input.all().map(it=>it.json).filter(r=>r&&r.id).map(r=>{ const f=r.fields||r; return { id:r.id, f }; });\nconst lines=(v)=>String(v||'').split('\\n').map(s=>s.toLowerCase().trim()).filter(Boolean);\nconst pick=(c)=>{ const f=c.f; const name=String(f['Client']||''); return { clientRecId:c.id, clientName:name, clientSlug:name.toLowerCase().replace(/[^a-z0-9]/g,''), slackChannel:String(f['Slack Channel ID']||'').trim(), pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), clayrootsBase:String(f['Clayroots Base ID']||'').trim(), dashboardPage:String(f['Dashboard Page ID']||'').trim(), isFlowroots:name.toLowerCase()==='flowroots' }; };\nlet hit=null, resolution='';\nif(n.clientRecId){ hit=clients.find(c=>c.id===n.clientRecId)||null; resolution=hit?'named by the caller':''; }\nif(!hit && n.hostKeys && n.hostKeys.length){ hit=clients.find(c=>lines(c.f['Booking Keys']).some(k=>n.hostKeys.includes(k)))||null; if(hit) resolution='host key matched Booking Keys'; }\nlet clientMeeting=false;\nif(!hit && n.domain){ const own=clients.find(c=>lines(c.f['Email Domains']).includes(n.domain))||null; if(own){ hit=own; clientMeeting=true; resolution='attendee domain is the client\\'s own domain'; } }\nif(!hit) return [{ json:{ clientRecId:'', clientName:'', clientMeeting:false, resolution:'no client matched host keys '+JSON.stringify(n.hostKeys||[]) } }];\nreturn [{ json: Object.assign(pick(hit), { clientMeeting, resolution }) }];\n"
+          "jsCode": "// Which client does this booking belong to? Nothing hardcoded: the registry decides.\n// 1. The manual door may name the client outright.\n// 2. The booking's host keys (organizer email / username / event title) against each client's Booking Keys lines.\n// 3. The attendee's domain against each client's own Email Domains: that is a client meeting, not a lead.\nconst n=$('Normalize Booking').first().json;\nconst clients=$input.all().map(it=>it.json).filter(r=>r&&r.id).map(r=>{ const f=r.fields||r; return { id:r.id, f }; });\nconst lines=(v)=>String(v||'').split('\\n').map(s=>s.toLowerCase().trim()).filter(Boolean);\nconst pick=(c)=>{ const f=c.f; const name=String(f['Client']||''); return { clientRecId:c.id, clientName:name, clientSlug:name.toLowerCase().replace(/[^a-z0-9]/g,''), slackChannel:String(f['Slack Channel ID']||'').trim(), pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), clayrootsBase:String(f['Clayroots Base ID']||'').trim(), clayrootsPeopleTable:String(f['ClayrootsPeopleTableID']||'').trim(), clayrootsCompaniesTable:String(f['ClayrootsCompaniesTableID']||'').trim(), dashboardPage:String(f['Dashboard Page ID']||'').trim(), isFlowroots:name.toLowerCase()==='flowroots' }; };\nlet hit=null, resolution='';\nif(n.clientRecId){ hit=clients.find(c=>c.id===n.clientRecId)||null; resolution=hit?'named by the caller':''; }\nif(!hit && n.hostKeys && n.hostKeys.length){ hit=clients.find(c=>lines(c.f['Booking Keys']).some(k=>n.hostKeys.includes(k)))||null; if(hit) resolution='host key matched Booking Keys'; }\nlet clientMeeting=false;\nif(!hit && n.domain){ const own=clients.find(c=>lines(c.f['Email Domains']).includes(n.domain))||null; if(own){ hit=own; clientMeeting=true; resolution='attendee domain is the client\\'s own domain'; } }\nif(!hit) return [{ json:{ clientRecId:'', clientName:'', clientMeeting:false, resolution:'no client matched host keys '+JSON.stringify(n.hostKeys||[]) } }];\nreturn [{ json: Object.assign(pick(hit), { clientMeeting, resolution }) }];\n"
         }
       },
       {
@@ -2078,146 +2094,45 @@
         }
       },
       {
-        "id": "f5f5ead8-0435-4ad9-ae0e-fe61abde1a9d",
-        "name": "Find Qual Prompt",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          4480,
-          0
-        ],
         "parameters": {
-          "resource": "record",
-          "operation": "search",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblJAWVcCaW6TmfbC"
-          },
-          "returnAll": false,
-          "limit": 1,
-          "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $('Resolve Client').first().json.clientName }}\", ARRAYJOIN({Client})))",
-          "options": {}
+          "jsCode": "// Builds the passthrough item for Enrich and Qualify Lead (the contract is documented at the top of that\n// helper's Build Prompt node). The booking's own context, the attribution line and the history the prospect\n// row already carries, is composed here; the rubric lookup, DiscoLike and the judge live in the helper.\nconst n=$('Normalize Booking').first().json||{};\nconst c=$('Resolve Client').first().json||{};\nconst p=$('Resolve Prospect').first().json||{};\nlet title='', companyName='';\ntry{ const a=$('Attribution').first().json||{}; title=a.title||''; companyName=a.companyName||''; }catch(e){}\nconst attributionLine=(p.tier==='Replied')?'They replied to our cold email earlier and are already in the CRM; now they booked.':(p.tier==='Sequenced')?('They never replied; they were in our cold email sequence ('+p.why+') and booked straight from it.'):(p.tier==='Sourced')?('They never replied and are not in the sequencer by this address; their company is on one of our lists for this client ('+p.why+'), so a colleague was emailed.'):'Attribution unknown.';\nconst history=[p.priorBrief?('Previous qualification: '+p.priorBrief):'', p.priorThread?('Conversation thread:\\n'+p.priorThread):'', p.priorNotes?('Notes:\\n'+String(p.priorNotes).slice(0,3000)):''].filter(Boolean).join('\\n\\n')||'(none)';\nconst context=[\n  'WHAT HAPPENED: this person BOOKED A CALL on the client\\'s scheduler ('+(n.source||'')+'): \"'+(n.title||'')+'\" at '+(n.startTime||'')+'.\\nHOW WE GOT HERE: '+attributionLine,\n  'PRIOR HISTORY WITH THIS PROSPECT (thread and notes, may be empty for a cold booker):\\n'+history,\n  'BOOKING NOTES THEY LEFT:\\n'+(n.notes||'(none)')\n].join('\\n\\n');\nreturn [{ json:{\n  client_name:c.clientName||'',\n  clayroots_base:c.clayrootsBase||'',\n  clayroots_people_table:c.clayrootsPeopleTable||'',\n  clayroots_companies_table:c.clayrootsCompaniesTable||'',\n  first_name:n.firstName||'', last_name:n.lastName||'', job_title:title, company_name:companyName,\n  lead_email:n.email||'', linkedin_url:'',\n  domain:n.domain||'', enrich_domain:n.domain||'', is_freemail:!n.domain,\n  city:'', state:'', country_code:'',\n  situation_ask:'what the booking signals and what they want from the call',\n  context\n} }];\n"
         },
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        },
-        "alwaysOutputData": true,
-        "onError": "continueRegularOutput"
-      },
-      {
-        "id": "188dadc7-3146-4a3d-9066-c07da0c89d56",
-        "name": "Qual Context",
+        "id": "e1a2b3c4-0003-4000-8000-000000000001",
+        "name": "Qualify Input",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
+          4480,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "37SAEENLGXb3MFku",
+            "cachedResultName": "Enrich and Qualify Lead"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "e1a2b3c4-0003-4000-8000-000000000002",
+        "name": "Enrich and Qualify Lead",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
           4704,
           0
-        ],
-        "parameters": {
-          "jsCode": "// The system prompt is the client's qualification-prompt KB row; the history is whatever the prospect already carries.\nconst c=$('Resolve Client').first().json;\nconst p=$('Resolve Prospect').first().json;\nconst n=$('Normalize Booking').first().json;\nlet kb='';\ntry{ const r=$input.first().json||{}; const f=r.fields||r; kb=String(f['Content']||'').replace(/\\\\([_*[\\]`#|>~-])/g,'$1').trim(); }catch(e){}\nconst systemPrompt=kb||('You qualify inbound leads for '+c.clientName+', a B2B company. Decide whether the lead is a fit and return the structured JSON asked for.');\nlet title='', companyName='';\ntry{ const a=$('Attribution').first().json; title=a.title||''; companyName=a.companyName||''; }catch(e){}\nconst attributionLine=(p.tier==='Replied')?'They replied to our cold email earlier and are already in the CRM; now they booked.':(p.tier==='Sequenced')?('They never replied; they were in our cold email sequence ('+p.why+') and booked straight from it.'):(p.tier==='Sourced')?('They never replied and are not in the sequencer by this address; their company is on one of our lists for this client ('+p.why+'), so a colleague was emailed.'):'Attribution unknown.';\nconst history=[p.priorBrief?('Previous qualification: '+p.priorBrief):'', p.priorThread?('Conversation thread:\\n'+p.priorThread):'', p.priorNotes?('Notes:\\n'+p.priorNotes.slice(0,3000)):''].filter(Boolean).join('\\n\\n')||'(none)';\nreturn [{ json:{ systemPrompt, kbFound:!!kb, title, companyName, attributionLine, history } }];\n"
-        }
-      },
-      {
-        "id": "a554cbf6-9e25-43c3-a222-b98f3d3ac0f8",
-        "name": "DiscoLike BizData",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          4928,
-          0
-        ],
-        "parameters": {
-          "url": "={{ 'https://api.discolike.com/v1/bizdata?domain=' + encodeURIComponent($('Normalize Booking').first().json.domain || '') }}",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "options": {
-            "response": {
-              "response": {
-                "neverError": true
-              }
-            },
-            "timeout": 30000
-          }
-        },
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "jreseZ3JAhJNgkk0",
-            "name": "Discolike API"
-          }
-        },
-        "onError": "continueRegularOutput",
-        "alwaysOutputData": true
-      },
-      {
-        "id": "f7fe3fe7-0f25-4fc0-b505-01bea8c6ed1d",
-        "name": "Qualify Booking",
-        "type": "@n8n/n8n-nodes-langchain.agent",
-        "typeVersion": 3.1,
-        "position": [
-          5152,
-          0
-        ],
-        "parameters": {
-          "promptType": "define",
-          "hasOutputParser": true,
-          "text": "=LEAD: {{ $('Normalize Booking').first().json.fullName }} | {{ $('Qual Context').first().json.title || 'title unknown' }} | {{ $('Qual Context').first().json.companyName || $('Normalize Booking').first().json.domain || 'company unknown' }} | {{ $('Normalize Booking').first().json.email }}\nEMAIL TYPE: {{ $('Normalize Booking').first().json.domain ? 'business domain' : 'PERSONAL/FREEMAIL, the domain is the email provider, NOT the company; web-search the real company' }}\nDOMAIN: {{ $('Normalize Booking').first().json.domain }}\n\nWHAT HAPPENED: this person BOOKED A CALL on the client's scheduler ({{ $('Normalize Booking').first().json.source }}): \"{{ $('Normalize Booking').first().json.title }}\" at {{ $('Normalize Booking').first().json.startTime }}.\nHOW WE GOT HERE: {{ $('Qual Context').first().json.attributionLine }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPRIOR HISTORY WITH THIS PROSPECT (thread and notes, may be empty for a cold booker):\n{{ $('Qual Context').first().json.history }}\n\nBOOKING NOTES THEY LEFT:\n{{ $('Normalize Booking').first().json.notes || '(none)' }}\n\nRun the qualification. Output structured JSON. \"situation_summary\": ONE plain-English line (max 140 chars) stating what the booking signals and what they want from the call. \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor. Never paste raw notes verbatim; no names, signatures, or URLs.",
-          "options": {
-            "systemMessage": "={{ $('Qual Context').first().json.systemPrompt }}"
-          }
-        }
-      },
-      {
-        "id": "c98e37cd-4a63-4f8b-bbae-c589a4f6ad1a",
-        "name": "GPT 5.1 Qualifier",
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-        "typeVersion": 1.3,
-        "position": [
-          5168,
-          224
-        ],
-        "parameters": {
-          "model": {
-            "__rl": true,
-            "mode": "list",
-            "value": "gpt-5.1"
-          },
-          "builtInTools": {
-            "webSearch": {
-              "searchContextSize": "medium"
-            }
-          },
-          "options": {
-            "reasoningEffort": "medium"
-          }
-        },
-        "credentials": {
-          "openAiApi": {
-            "id": "9P7fOmZxpETeDhu8",
-            "name": "OpenAI"
-          }
-        }
-      },
-      {
-        "id": "30514a10-3a66-4028-8a0a-38b026475c24",
-        "name": "Parse Qualification",
-        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-        "typeVersion": 1.3,
-        "position": [
-          5296,
-          224
-        ],
-        "parameters": {
-          "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Booked a call to see the agent on their own helpdesk\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Prepare the demo on their site\"}"
-        }
+        ]
       },
       {
         "id": "82f8a882-e41c-492c-89eb-22b34164a4e1",
@@ -2229,7 +2144,7 @@
           0
         ],
         "parameters": {
-          "jsCode": "const stripCite=(t)=>String(t||'').replace(/[-]/g,'').replace(/cite(turn\\d+\\w+?\\d+)+/gi,'').replace(/turn\\d+(?:view|search|news|image|video|product|ref)\\d+/gi,'').replace(/cite/gi,'').replace(/ {2,}/g,' ').trim();\nconst stripEmoji=(t)=>String(t||'').replace(/:[a-z0-9_+-]+:/gi,'').replace(/[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{2190}-\\u{21FF}\\u{2300}-\\u{23FF}\\u{FE0F}\\u{200D}]/gu,'').replace(/ {2,}/g,' ').trim();\nconst q=($input.first().json||{}).output||{};\nconst n=$('Normalize Booking').first().json;\nconst p=$('Resolve Prospect').first().json;\nconst status=String(q.qualification_status||'');\nconst qualificationStatus=({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[status]||'Needs Review';\nconst vlabel=({strong:'Qualified',medium:'Qualified (medium confidence)',weak:'Qualified (weak fit)',out_of_icp:'Not qualified'})[status]||'Needs review';\nconst vreason=stripEmoji(stripCite(q.verdict_reason||'')).slice(0,200);\nconst brief=stripCite(q.slack_brief_markdown||'').slice(0,2800);\nconst briefLines=(vlabel+(vreason?': '+vreason:'')+'\\n\\n'+stripEmoji(brief)).split('\\n').map(s=>s.trim()).filter(Boolean);\nconst briefMd=briefLines.length?(['**'+briefLines[0]+'**',''].concat(briefLines.slice(1).map(l=>'- '+l))).join('\\n'):'';\nconst when=(n.startTime||'').slice(0,16).replace('T',' ');\nconst line='Booked via '+n.source+' on '+$now.toFormat('yyyy-MM-dd')+': '+(n.title||'(untitled)')+' at '+(when||'?')+(n.meetingUrl?' | '+n.meetingUrl:'')+'. Attribution: '+(p.tier||'Unattributed')+(p.why?' ('+p.why+')':'')+'. Verdict: '+qualificationStatus+(vreason?' ('+vreason+')':'')+'.';\nconst contextNotes=((p.priorNotes||'').trim()?(p.priorNotes.trim()+'\\n\\n'):'')+line;\nreturn [{ json:{ qualificationStatus, verdict:status, verdictReason:vreason, briefMd, brief, situation:stripCite(q.situation_summary||'').slice(0,200), recommended:stripCite(q.recommended_action||'').slice(0,300), timezone:String(q.timezone||''), companyName:String(q.company_name||''), contextNotes, attributionLine:line } }];\n"
+          "jsCode": "// Adapter: the helper's verdict in the shape Stamp Booked, Build Booking Card and Build Run Log read through\n// $('Flatten Verdict'). The judging lives in Enrich and Qualify Lead; the booking's own lines (the contextNotes\n// entry, the attribution line) are composed here.\nconst q=$input.first().json||{};\nconst n=$('Normalize Booking').first().json;\nconst p=$('Resolve Prospect').first().json;\nconst status=String(q.qualification_status||'');\nconst qualificationStatus=q.qualification_label||'Needs Review';\nconst vreason=String(q.verdict_reason||'');\nconst when=(n.startTime||'').slice(0,16).replace('T',' ');\nconst line='Booked via '+n.source+' on '+$now.toFormat('yyyy-MM-dd')+': '+(n.title||'(untitled)')+' at '+(when||'?')+(n.meetingUrl?' | '+n.meetingUrl:'')+'. Attribution: '+(p.tier||'Unattributed')+(p.why?' ('+p.why+')':'')+'. Verdict: '+qualificationStatus+(vreason?' ('+vreason+')':'')+'.';\nconst contextNotes=((p.priorNotes||'').trim()?(p.priorNotes.trim()+'\\n\\n'):'')+line;\nreturn [{ json:{ qualificationStatus, verdict:status, verdictReason:vreason, briefMd:q.brief_md||'', brief:q.brief||'', situation:q.situation_summary||'', recommended:q.recommended_action||'', timezone:String(q.timezone||''), companyName:String(q.company_name||''), contextNotes, attributionLine:line, kbFound:q.kb_found!==false, baseSource:q.base_source||'', baseMatch:q.base_match||'', baseReason:q.base_reason||'' } }];\n"
         }
       },
       {
@@ -2490,7 +2405,7 @@
           224
         ],
         "parameters": {
-          "jsCode": "const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet n={}; try{ n=$('Normalize Booking').first().json||{}; }catch(e){}\nlet c={}; try{ c=$('Resolve Client').first().json||{}; }catch(e){}\nlet p=null; try{ p=$('Resolve Prospect').first().json; }catch(e){}\nlet lists=null; try{ lists=$('Assess Lists').first().json; }catch(e){}\nlet seq=null; try{ seq=$('Assess Lead').first().json; }catch(e){}\nlet v=null; try{ v=$('Flatten Verdict').first().json; }catch(e){}\nlet qc=null; try{ qc=$('Qual Context').first().json; }catch(e){}\nlet meetingId=''; try{ meetingId=$('Create Meeting').first().json.id||''; }catch(e){}\nlet stamped=false; try{ stamped=!!($('Stamp Booked').first().json||{}).id; }catch(e){}\nlet posted=false; try{ const s=$('Post Booking Card').first().json||{}; posted=!!(s.ts||(s.message&&s.message.ts)||s.ok===true); }catch(e){}\nconst failed=[]; const skipped=[];\nconst who=(n.fullName||'')+' <'+(n.email||'')+'>'+(n.domain?' ('+n.domain+')':'');\nconst lines=['- **Source:** '+(n.source||'?')+(n.bookingUid?' ('+n.bookingUid+')':''), '- **Attendee:** '+who, '- **When:** '+(n.startTime||'?')+(n.title?' · '+n.title:'')];\nlet head='';\nif(n._ignore){ head='Ignored'; skipped.push(n.reason||'not a booking'); }\nelse if(!c.clientRecId){ head='Unresolved client'; skipped.push(c.resolution||'no client matched'); }\nelse if(c.clientMeeting){ head='Client meeting, not a lead'; skipped.push(c.resolution); lines.push('- **Client:** '+c.clientName); }\nelse {\n  lines.push('- **Client:** '+c.clientName+' ('+(c.resolution||'')+')');\n  if(p&&p.prospectId){\n    head=(p.tier==='Replied'?'Inbox lead booked':p.tier==='Sequenced'?'Sequenced lead booked (never replied)':p.tier==='Sourced'?'Sourced lead booked (company on our list)':'Lead booked');\n    lines.push('- **Attribution:** '+(p.tier||'?')+' · '+(p.why||''));\n    lines.push('- **Prospect:** '+(p.existed?'matched existing row':'created')+' ('+p.prospectId+')');\n    lines.push('- **Qualification:** '+(v?(v.qualificationStatus+(v.verdictReason?' · '+v.verdictReason:'')+(qc&&!qc.kbFound?' (no qualification-prompt KB row for this client, generic rubric used)':'')):'NOT run'));\n    if(!v) failed.push('qualification did not produce a verdict');\n    lines.push('- **Stamped:** '+(stamped?'OutreachStatus = Scheduled Call, Call Booked At, QualificationStatus, Qualification Brief, contextNotes'+(c.isFlowroots?', PipelineStatus = Scheduled Call':''):'NOT stamped')); if(!stamped) failed.push('prospect not stamped');\n    lines.push('- **Meeting:** '+(meetingId?'Meetings row created ('+meetingId+')':'NOT created')); if(!meetingId) failed.push('meeting row not created');\n    if(c.slackChannel){ lines.push('- **Slack:** '+(posted?'card posted to '+c.slackChannel:'card NOT posted')); if(!posted) failed.push('slack card not posted'); }\n  } else {\n    head='Booking not attributed';\n    skipped.push('not ours: '+(seq&&seq.why?seq.why:'')+(lists&&lists.why?'; '+lists.why:''));\n    lines.push('- **Outcome:** no prospect, no meeting row; this booker was not generated by us');\n  }\n}\nlet desc='**'+head+': '+(n.fullName||n.email||'?')+'**\\n\\n'+lines.join('\\n');\nif(skipped.length) desc+='\\n\\n**Skipped ('+skipped.length+')**\\n'+skipped.map(x=>'- '+x).join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nconst row={ 'Automation':'Handle New Booking', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Run at':$now.toISO(), 'Records In':1, 'Records Out':(p&&p.prospectId?1:0)+(meetingId?1:0), 'Errors':failed.length, 'Target':n.email||'', 'Trigger':'event', 'Execution ID':String($execution.id), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Duration s':Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000), 'Description':desc };\nif(c.clientRecId) row['Client']=[c.clientRecId];\nreturn [{ json: row }];\n"
+          "jsCode": "const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet n={}; try{ n=$('Normalize Booking').first().json||{}; }catch(e){}\nlet c={}; try{ c=$('Resolve Client').first().json||{}; }catch(e){}\nlet p=null; try{ p=$('Resolve Prospect').first().json; }catch(e){}\nlet lists=null; try{ lists=$('Assess Lists').first().json; }catch(e){}\nlet seq=null; try{ seq=$('Assess Lead').first().json; }catch(e){}\nlet v=null; try{ v=$('Flatten Verdict').first().json; }catch(e){}\nlet meetingId=''; try{ meetingId=$('Create Meeting').first().json.id||''; }catch(e){}\nlet stamped=false; try{ stamped=!!($('Stamp Booked').first().json||{}).id; }catch(e){}\nlet posted=false; try{ const s=$('Post Booking Card').first().json||{}; posted=!!(s.ts||(s.message&&s.message.ts)||s.ok===true); }catch(e){}\nconst failed=[]; const skipped=[];\nconst who=(n.fullName||'')+' <'+(n.email||'')+'>'+(n.domain?' ('+n.domain+')':'');\nconst lines=['- **Source:** '+(n.source||'?')+(n.bookingUid?' ('+n.bookingUid+')':''), '- **Attendee:** '+who, '- **When:** '+(n.startTime||'?')+(n.title?' · '+n.title:'')];\nlet head='';\nif(n._ignore){ head='Ignored'; skipped.push(n.reason||'not a booking'); }\nelse if(!c.clientRecId){ head='Unresolved client'; skipped.push(c.resolution||'no client matched'); }\nelse if(c.clientMeeting){ head='Client meeting, not a lead'; skipped.push(c.resolution); lines.push('- **Client:** '+c.clientName); }\nelse {\n  lines.push('- **Client:** '+c.clientName+' ('+(c.resolution||'')+')');\n  if(p&&p.prospectId){\n    head=(p.tier==='Replied'?'Inbox lead booked':p.tier==='Sequenced'?'Sequenced lead booked (never replied)':p.tier==='Sourced'?'Sourced lead booked (company on our list)':'Lead booked');\n    lines.push('- **Attribution:** '+(p.tier||'?')+' · '+(p.why||''));\n    lines.push('- **Prospect:** '+(p.existed?'matched existing row':'created')+' ('+p.prospectId+')');\n    lines.push('- **Qualification:** '+(v?(v.qualificationStatus+(v.verdictReason?' · '+v.verdictReason:'')+(v.kbFound===false?' (no qualification-prompt KB row for this client, generic rubric used)':'')):'NOT run'));\n    if(!v) failed.push('qualification did not produce a verdict');\n    if(v) lines.push('- **Base:** '+(v.baseSource||'unknown')+(v.baseMatch?' (matched on '+v.baseMatch+')':'')+(v.baseReason?' ('+v.baseReason+')':''));\n    lines.push('- **Stamped:** '+(stamped?'OutreachStatus = Scheduled Call, Call Booked At, QualificationStatus, Qualification Brief, contextNotes'+(c.isFlowroots?', PipelineStatus = Scheduled Call':''):'NOT stamped')); if(!stamped) failed.push('prospect not stamped');\n    lines.push('- **Meeting:** '+(meetingId?'Meetings row created ('+meetingId+')':'NOT created')); if(!meetingId) failed.push('meeting row not created');\n    if(c.slackChannel){ lines.push('- **Slack:** '+(posted?'card posted to '+c.slackChannel:'card NOT posted')); if(!posted) failed.push('slack card not posted'); }\n  } else {\n    head='Booking not attributed';\n    skipped.push('not ours: '+(seq&&seq.why?seq.why:'')+(lists&&lists.why?'; '+lists.why:''));\n    lines.push('- **Outcome:** no prospect, no meeting row; this booker was not generated by us');\n  }\n}\nlet desc='**'+head+': '+(n.fullName||n.email||'?')+'**\\n\\n'+lines.join('\\n');\nif(skipped.length) desc+='\\n\\n**Skipped ('+skipped.length+')**\\n'+skipped.map(x=>'- '+x).join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nconst row={ 'Automation':'Enrich & Qualify new lead from Booking', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Run at':$now.toISO(), 'Records In':1, 'Records Out':(p&&p.prospectId?1:0)+(meetingId?1:0), 'Errors':failed.length, 'Target':n.email||'', 'Trigger':'event', 'Execution ID':String($execution.id), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Duration s':Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000), 'Description':desc };\nif(c.clientRecId) row['Client']=[c.clientRecId];\nreturn [{ json: row }];\n"
         }
       },
       {
@@ -2533,6 +2448,133 @@
           }
         },
         "onError": "stopWorkflow"
+      },
+      {
+        "id": "b00c1e5d-0000-4000-8000-000000000101",
+        "name": "Find Hub Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5376,
+          224
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "returnAll": false,
+          "limit": 1,
+          "filterByFormula": "=AND(\"{{ ($('Normalize Booking').first().json.email || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Normalize Booking').first().json.email || '').toLowerCase() }}\")",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b00c1e5d-0000-4000-8000-000000000102",
+        "name": "Contact Fill",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5600,
+          224
+        ],
+        "parameters": {
+          "jsCode": "// Contact Fill: the three person columns on the booker's Hub contact row, empty-only (ruling 2026-09-02).\n// The booking creates its Contact before the verdict, so this runs after Enrich and Qualify Lead and\n// plans one update: a value already on the Hub Contacts row (Find Hub Contact, by the booking email) is\n// kept as is, never overwritten; an empty column takes the caller's own value (Attribution title), else\n// what the client's People table held (base_person), else stays empty. `fill` gates the update node:\n// no contact row, or nothing new to write, and Fill Hub Contact is skipped.\nlet title = ''; try { title = String(($('Attribution').first().json || {}).title || ''); } catch (e) { title = ''; }\nlet bp = {}; try { bp = $('Enrich and Qualify Lead').first().json.base_person || {}; } catch (e) { bp = {}; }\nlet ex = null; try { const r = $input.first().json || {}; if (r && r.id) ex = { id: r.id, f: r.fields || r }; } catch (e) { ex = null; }\nconst s = (v) => String(v == null ? '' : (Array.isArray(v) ? v[0] : v)).trim();\nconst held = (k) => (ex ? s(ex.f[k]) : '');\nconst pick = (k, own, base) => { const h = held(k); if (h) return { value: h, source: 'kept' }; const v = s(own) || s(base); return { value: v || null, source: v ? (s(own) ? 'caller' : 'base') : 'none' }; };\nconst position = pick('position', title, bp.title);\nconst linkedin = pick('linkedin', '', bp.linkedin_url);\nconst phone = pick('phone', '', bp.phone);\nconst sources = { position: position.source, linkedin: linkedin.source, phone: phone.source };\nconst fill = !!ex && Object.values(sources).some((x) => x === 'caller' || x === 'base');\nreturn [{ json: { contactExists: !!ex, contactId: ex ? ex.id : '', position: position.value, linkedin: linkedin.value, phone: phone.value, sources, fill }, pairedItem: { item: 0 } }];\n"
+        }
+      },
+      {
+        "id": "b00c1e5d-0000-4000-8000-000000000103",
+        "name": "Fill Contact?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5824,
+          224
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ !!$json.fill }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b00c1e5d-0000-4000-8000-000000000104",
+        "name": "Fill Hub Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6048,
+          224
+        ],
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $('Contact Fill').first().json.contactId }}",
+              "position": "={{ $('Contact Fill').first().json.position }}",
+              "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
+              "phone": "={{ $('Contact Fill').first().json.phone }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -2795,73 +2837,7 @@
         "main": [
           [
             {
-              "node": "Find Qual Prompt",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Find Qual Prompt": {
-        "main": [
-          [
-            {
-              "node": "Qual Context",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Qual Context": {
-        "main": [
-          [
-            {
-              "node": "DiscoLike BizData",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "DiscoLike BizData": {
-        "main": [
-          [
-            {
-              "node": "Qualify Booking",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "GPT 5.1 Qualifier": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Qualify Booking",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Parse Qualification": {
-        "ai_outputParser": [
-          [
-            {
-              "node": "Qualify Booking",
-              "type": "ai_outputParser",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Qualify Booking": {
-        "main": [
-          [
-            {
-              "node": "Flatten Verdict",
+              "node": "Qualify Input",
               "type": "main",
               "index": 0
             }
@@ -2872,7 +2848,7 @@
         "main": [
           [
             {
-              "node": "Stamp Booked",
+              "node": "Find Hub Contact",
               "type": "main",
               "index": 0
             }
@@ -2980,13 +2956,119 @@
             }
           ]
         ]
+      },
+      "Qualify Input": {
+        "main": [
+          [
+            {
+              "node": "Enrich and Qualify Lead",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enrich and Qualify Lead": {
+        "main": [
+          [
+            {
+              "node": "Flatten Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Hub Contact": {
+        "main": [
+          [
+            {
+              "node": "Contact Fill",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contact Fill": {
+        "main": [
+          [
+            {
+              "node": "Fill Contact?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fill Contact?": {
+        "main": [
+          [
+            {
+              "node": "Fill Hub Contact",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Stamp Booked",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fill Hub Contact": {
+        "main": [
+          [
+            {
+              "node": "Stamp Booked",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-02T22:02:34.599Z",
+        "id": 2304,
+        "workflowId": "I67PRoVIZeMhiJso",
+        "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T22:02:46.654Z",
+        "id": 2306,
+        "workflowId": "I67PRoVIZeMhiJso",
+        "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T22:02:34.558Z",
+        "id": 2303,
+        "workflowId": "I67PRoVIZeMhiJso",
+        "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T22:02:40.119Z",
+        "id": 2305,
+        "workflowId": "I67PRoVIZeMhiJso",
+        "versionId": "442d6414-7196-42fd-8dbd-e4973d062393",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

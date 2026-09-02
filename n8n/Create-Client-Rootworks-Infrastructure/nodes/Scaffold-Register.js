@@ -34,7 +34,7 @@ const day=(name)=>({ name, kind:'plain', type:'date', options:{ dateFormat:{name
 const num=(name,precision)=>({ name, kind:'plain', type:'number', options:{ precision:precision||0 } });
 const chk=(name)=>({ name, kind:'plain', type:'checkbox', options:{ color:'greenBright', icon:'check' } });
 const url=(name)=>({ name, kind:'plain', type:'url' });
-const formula=(name,f,refs)=>({ name, kind:'formula', formula:f, refs:refs||[] });
+const formula=(name,f,refs,description)=>({ name, kind:'formula', formula:f, refs:refs||[], description });
 const lookup=(name)=>({ name, kind:'lookup', via:'Companies', field:name });
 const mirrorLookup=(name,mirror,field,description)=>({ name, kind:'mirrorLookup', mirror, field, description });
 // Sequencers, the one mirror-derived lookup, on both Companies and People through their own
@@ -94,9 +94,14 @@ const CONTACT_SOURCE=paint(['ContaGen','Supersoniq','AI-Ark'],SOURCE);
 const DNC_REASON=paint(['Customer','Not interested','Client request','Active deal'],DNC_COLOR);
 
 // relevance: the placeholder the Operator replaces per client with the client's buyer rule.
-// manually_approved always passes; the rule is the rest of the OR.
+// manually_approved always passes; the rule is the rest of the OR. The description below is the
+// one place this reaches a reader who never opens this file: it renders into REGISTER.md and,
+// once a base is scaffolded, into the field itself in Airtable, so it has to say the same thing
+// there that this comment says here.
 const COMPANY_RELEVANCE='IF(OR({manually_approved}, {public_emails_clean} != ""), 1, 0)';
+const COMPANY_RELEVANCE_DESCRIPTION='Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client\'s rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule.';
 const PEOPLE_RELEVANCE='IF(OR({manually_approved}, FALSE()), 1, 0)';
+const PEOPLE_RELEVANCE_DESCRIPTION='Placeholder: every client must replace this with their own buyer rule. As shipped the OR\'s second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client\'s rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty.';
 // linkedin_name_match: 1 when the LinkedIn URL slug (after /in/, letters only) contains the
 // cleaned first or last name (letters only), else 0. Blank name or blank URL is 0.
 const SLUG='REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), "^.*/in/", ""), "[/?#].*$", ""), "[^a-z]", "")';
@@ -140,7 +145,7 @@ const COMPANIES={ name:'Companies', primary:'Domain', fields:[
   ...COMPANY_LANE(),
   { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' }, SEQUENCERS(),
   ...MACHINE(), chk('manually_approved'),
-  formula('relevance',COMPANY_RELEVANCE,['manually_approved','public_emails_clean'])
+  formula('relevance',COMPANY_RELEVANCE,['manually_approved','public_emails_clean'],COMPANY_RELEVANCE_DESCRIPTION)
 ], views:[
   view('Not Sourced','Contacts Pulled At is empty','NOT({Contacts Pulled At})',COMPANY_COVERAGE),
   view('Not Covered','Contacts Pulled At is set and Contacts Count = 0','AND({Contacts Pulled At}, {Contacts Count} = 0)',COMPANY_COVERAGE),
@@ -178,7 +183,7 @@ const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], field
   formula('Build Date','CREATED_TIME()'),
   ...LANE(),
   chk('manually_approved'),
-  formula('relevance',PEOPLE_RELEVANCE,['manually_approved']),
+  formula('relevance',PEOPLE_RELEVANCE,['manually_approved'],PEOPLE_RELEVANCE_DESCRIPTION),
   formula('linkedin_name_match',LINKEDIN_NAME_MATCH,['LinkedIn URL','first_name','last_name']),
   ...COMPANY_LOOKUPS(),
   { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' }, SEQUENCERS(),

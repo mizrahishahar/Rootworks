@@ -53,7 +53,7 @@ Primary field: Domain. 43 fields.
 | Synced At | dateTime | iso, 24hour, utc | plain |
 | Deploy Error | singleLineText |  | plain |
 | manually_approved | checkbox | greenBright check | plain |
-| relevance | formula | `IF(OR({manually_approved}, {public_emails_clean} != ""), 1, 0)` | formula |
+| relevance | formula | `IF(OR({manually_approved}, {public_emails_clean} != ""), 1, 0)`. Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client's rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule. | formula |
 
 ### Declared extras on Companies
 
@@ -142,7 +142,7 @@ Primary field: Name. 60 fields.
 | Email Source | singleSelect | P0 (blueBright), P1 (cyanBright), P2 (tealBright), P3 (purpleBright), none (grayBright) | plain |
 | Status | singleSelect | done (greenBright), verifying (blueBright), no_email_found (redBright), error (orangeBright) | plain |
 | manually_approved | checkbox | greenBright check | plain |
-| relevance | formula | `IF(OR({manually_approved}, FALSE()), 1, 0)` | formula |
+| relevance | formula | `IF(OR({manually_approved}, FALSE()), 1, 0)`. Placeholder: every client must replace this with their own buyer rule. As shipped the OR's second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client's rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty. | formula |
 | linkedin_name_match | formula | `IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), "[^a-z]", "")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), "[^a-z]", ""), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), "^.*/in/", ""), "[/?#].*$", ""), "[^a-z]", "")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), "[^a-z]", "")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), "[^a-z]", ""), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), "^.*/in/", ""), "[/?#].*$", ""), "[^a-z]", "")) > 0)), 1, 0), 0)` | formula |
 | Domain | multipleLookupValues | Companies.Domain | lookup |
 | Company | multipleLookupValues | Companies.Company | lookup |

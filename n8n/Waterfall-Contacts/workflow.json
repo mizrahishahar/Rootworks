@@ -48,7 +48,8 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "notes": "Launch row contract (ruled 2026-09-02): Client, Table (must be \"Companies\", by name, no default), View (by name, required, no default), Sources, Departments, Max companies. Launch Params refuses anything else before a paid call."
     },
     {
       "parameters": {
@@ -62,7 +63,7 @@
         0,
         200
       ],
-      "notes": "Event entry: one item carrying the same keys as a launch row (Client, View, Tag, Sources, Departments, Max companies). No launch row, no Running stamp; the Tally upsert on Execution ID creates the run row on the first batch."
+      "notes": "Event entry: one item carrying the same keys as a launch row (Client, Table, View, Sources, Departments, Max companies). This is how an insert door calls this machine after landing: Table \"Companies\", View \"Not Sourced\". No launch row, no Running stamp; Stamp Progress creates the run row on Execution ID after the first lane group."
     },
     {
       "parameters": {
@@ -269,8 +270,7 @@
           "fields": [
             "Domain",
             "Company",
-            "Employees",
-            "Tag"
+            "Employees"
           ]
         }
       },
@@ -289,7 +289,7 @@
           "name": "Airtable"
         }
       },
-      "notes": "The Companies view is the selector; Max companies (required on the launch row) is the read limit and the spend cap. A view that does not exist crashes here, before any paid call, into the Error Logger."
+      "notes": "The Companies view (by name, required on the launch row) is the selector; Max companies (required) is the read limit and the spend cap. A view that does not exist crashes here, before any paid call, into the Error Logger. Tag is not read: People stores none."
     },
     {
       "parameters": {
@@ -392,7 +392,7 @@
           "name": "Airtable"
         }
       },
-      "notes": "Tier zero: what the base already holds at these domains, ids only, one call per 100 domains."
+      "notes": "Tier zero: what the base already holds at these domains, ids only, one call per 100 domains. Domain on People is a lookup through the Companies link; the {Domain} filter matches the lookup's text and the field comes back as an array of one."
     },
     {
       "parameters": {
@@ -410,166 +410,65 @@
     },
     {
       "parameters": {
-        "batchSize": 1,
+        "batchSize": 3,
         "options": {}
       },
       "id": "c4d50001-0017-4000-8000-000000000017",
-      "name": "Loop Batches",
+      "name": "Loop Lanes",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
         3080,
         -120
       ],
-      "notes": "One batch item (250 companies) per sub-execution. The sub does the paid work and returns counters only; the tick that advances this loop never depends on what it returned."
+      "notes": "Deals the batch items three at a time into Fire Lanes. Each item goes to exactly one lane call, once; the loop only advances after all three lanes answered, so at most three batches are ever in flight. The done output fires when the items drain; Stop? ends the loop early after a batch whose paid tiers all died."
     },
     {
       "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "61QayoPOnxClmE54",
-          "cachedResultName": "Waterfall Contacts Batch"
-        },
-        "workflowInputs": {
-          "mappingMode": "passThrough",
-          "value": {},
-          "matchingColumns": [],
-          "schema": []
-        },
-        "mode": "once",
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/waterfall-contacts-batch",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {
-          "waitForSubWorkflow": true
+          "batching": {
+            "batch": {
+              "batchSize": 3,
+              "batchInterval": 500
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 1800000
         }
       },
       "id": "c4d50001-0018-4000-8000-000000000018",
-      "name": "Run Batch",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
+      "name": "Fire Lanes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
       "position": [
         3300,
         0
       ],
-      "notes": "TODO: push n8n/Waterfall-Contacts-Batch first, then paste its assigned id into workflowId.value here before pushing this workflow."
+      "onError": "continueRegularOutput",
+      "notes": "The three lanes. n8n runs a workflow's nodes one at a time, so parallel branches of Execute Workflow would still run batches one after another; the HTTP Request node is the one place n8n fires its items' requests together and awaits them all. Each item POSTs its batch to Waterfall Contacts Batch's door (POST /webhook/waterfall-contacts-batch, responds at its Respond Batch node after writing its own Hub row keyed <this execution>-<batchNum>). One answer per item, in order: 2xx with the counters, 5xx on a crash, an error item on a transport timeout (30 min). Never retried: a retry would run the paid tiers twice."
     },
     {
       "parameters": {
-        "resource": "record",
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tbli7rV6Qf3sLpV6R"
-        },
-        "filterByFormula": "={Execution ID} = '{{ $execution.id }}'",
-        "returnAll": false,
-        "limit": 1,
-        "options": {}
+        "jsCode": "@@file:nodes/Lane-Results.js",
+        "mode": "runOnceForAllItems"
       },
       "id": "c4d50001-0019-4000-8000-000000000019",
-      "name": "Read Tally",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
+      "name": "Lane Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         3520,
         0
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "notes": "Durable accumulator: the run row's Tally holds the running totals as JSON. Each batch reads it, adds its slice, writes it back. Static data is never used."
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Loop-Control.js"
-      },
-      "id": "c4d50001-0020-4000-8000-000000000020",
-      "name": "Loop Control",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3740,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "record",
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tbli7rV6Qf3sLpV6R"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "Execution ID"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "id": "c4d50001-0021-4000-8000-000000000021",
-      "name": "Write Tally",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        3960,
-        0
-      ],
-      "onError": "stopWorkflow",
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Batch-Tick.js"
-      },
-      "id": "c4d50001-0022-4000-8000-000000000022",
-      "name": "Batch Tick",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4180,
-        0
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Loop-Done.js",
-        "mode": "runOnceForAllItems"
-      },
-      "id": "c4d50001-0023-4000-8000-000000000023",
-      "name": "Loop Done",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3300,
-        -280
       ]
     },
     {
@@ -590,16 +489,17 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        3520,
-        -280
+        3740,
+        0
       ],
+      "executeOnce": true,
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
       },
-      "notes": "Read the base meta again after the People upsert (ruled 2026-09-02): the email door fires only if People carries a view named exactly \"Relevant & Not Waterfalled\"."
+      "notes": "After every lane group (ruled 2026-09-02): read the base meta again; the email door fires only if People carries a view named exactly \"Not Waterfalled\"."
     },
     {
       "parameters": {
@@ -610,8 +510,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3740,
-        -280
+        3960,
+        0
       ]
     },
     {
@@ -644,8 +544,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3960,
-        -280
+        4180,
+        0
       ]
     },
     {
@@ -654,7 +554,7 @@
         "url": "https://n8n.flowroots.com/webhook/waterfall-record",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"table\": $('Find Tables').first().json.peopleTableName, \"baseId\": $('Launch Params').first().json.base, \"clientRecordId\": $('Launch Params').first().json.clientRecId, \"view\": $('Find Waterfall View').first().json.viewName } }}",
+        "jsonBody": "={{ { \"table\": \"People\", \"baseId\": $('Launch Params').first().json.base, \"clientRecordId\": $('Launch Params').first().json.clientRecId, \"view\": $('Find Waterfall View').first().json.viewName } }}",
         "options": {
           "response": {
             "response": {
@@ -662,7 +562,7 @@
               "neverError": true
             }
           },
-          "timeout": 600000
+          "timeout": 5000
         }
       },
       "id": "c4d50001-0027-4000-8000-000000000027",
@@ -670,12 +570,162 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        4180,
-        -400
+        4400,
+        -120
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput",
-      "notes": "Waterfall Emails' record door (Record Webhook -> Params reads body.table, body.baseId, body.clientRecordId, body.view; the door resolves the People table by name, never by id). The door responds at its last node, so a large view times out here at 10 minutes; the job is already running and writes its own row."
+      "notes": "The hand-off, once per lane group (ruled 2026-09-02): Waterfall Emails' record door (Record Webhook -> Params reads body.table, body.baseId, body.clientRecordId, body.view; the door resolves the People table by name). Body {table: \"People\", baseId, clientRecordId, view: \"Not Waterfalled\"}. Fired without waiting for its answer: the door responds at its last node, so the 5 s timeout here is expected and counts as fired; the email waterfall keeps running and writes its own log row. A 4xx/5xx or a refused connection counts as a failed hand-off."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Handoff-Tick.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0030-4000-8000-000000000030",
+      "name": "Handoff Tick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c4d50001-0031-4000-8000-000000000031",
+      "name": "Stamp Progress",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Live Running row after every lane group, on the launch row's Execution ID (created here on an event run). Write-only progress from this execution's own memory; no Tally, no read-add-write. The counters live in the batch rows and are summed at the close."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "s1",
+              "leftValue": "={{ $('Lane Results').first().json.stop }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0032-4000-8000-000000000032",
+      "name": "Stop?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5060,
+        0
+      ],
+      "notes": "True when a batch in this group had every paid call fail after retry: the paid tiers are dead, launching more batches would only burn time. The lanes already in flight closed; the close reads their rows."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Lanes-Done.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0033-4000-8000-000000000033",
+      "name": "Lanes Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "=AND({Automation} = 'Waterfall Contacts Batch', FIND('{{ $execution.id }}-', {Execution ID} & '') = 1)",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Execution ID",
+            "Status",
+            "Errors",
+            "Records In",
+            "Records Out",
+            "Tally"
+          ]
+        }
+      },
+      "id": "c4d50001-0034-4000-8000-000000000034",
+      "name": "Read Batch Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3520,
+        -300
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "After every lane closed: the batch rows of this run, by prefix (Execution ID \"<this execution>-<batchNum>\", Automation \"Waterfall Contacts Batch\"). Each row's Tally is that batch's counters; Build Log sums them. A failed read crashes loudly rather than logging zeros."
     },
     {
       "parameters": {
@@ -686,8 +736,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4400,
-        -280
+        3740,
+        -300
       ],
       "onError": "continueRegularOutput"
     },
@@ -722,8 +772,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        4620,
-        -280
+        3960,
+        -300
       ],
       "onError": "stopWorkflow",
       "credentials": {
@@ -918,87 +968,43 @@
       "main": [
         [
           {
-            "node": "Loop Batches",
+            "node": "Loop Lanes",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Loop Batches": {
+    "Loop Lanes": {
       "main": [
         [
           {
-            "node": "Loop Done",
+            "node": "Lanes Done",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Run Batch",
+            "node": "Fire Lanes",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Run Batch": {
+    "Fire Lanes": {
       "main": [
         [
           {
-            "node": "Read Tally",
+            "node": "Lane Results",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Read Tally": {
-      "main": [
-        [
-          {
-            "node": "Loop Control",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Control": {
-      "main": [
-        [
-          {
-            "node": "Write Tally",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Write Tally": {
-      "main": [
-        [
-          {
-            "node": "Batch Tick",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Batch Tick": {
-      "main": [
-        [
-          {
-            "node": "Loop Batches",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Done": {
+    "Lane Results": {
       "main": [
         [
           {
@@ -1042,7 +1048,7 @@
         ],
         [
           {
-            "node": "Build Log",
+            "node": "Handoff Tick",
             "type": "main",
             "index": 0
           }
@@ -1050,6 +1056,68 @@
       ]
     },
     "Fire Waterfall": {
+      "main": [
+        [
+          {
+            "node": "Handoff Tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff Tick": {
+      "main": [
+        [
+          {
+            "node": "Stamp Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Progress": {
+      "main": [
+        [
+          {
+            "node": "Stop?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop?": {
+      "main": [
+        [
+          {
+            "node": "Lanes Done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Lanes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lanes Done": {
+      "main": [
+        [
+          {
+            "node": "Read Batch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch Rows": {
       "main": [
         [
           {

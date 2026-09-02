@@ -1,17 +1,14 @@
 // Process Batch: Storeleads pages in, Companies rows out in the register's shape (List
-// Building 2.0) plus the Storeleads declared extras. Only keys the target table carries are
-// written: the parent passes the Companies field-name list and every other key is dropped
-// (an unknown key 422s the upsert). Employees is banded and accepts a number or a band
-// string. public_emails_clean is left empty for Clean Fields to fill from Public Emails.
+// Building 2.0) plus the Storeleads declared extras. Nothing here reads the base: the column
+// check, DNC, Clean Fields, Domain Source and Tag belong to the helper (Insert domains to
+// Clayroots), which Split Rows hands the rows to. Employees is banded and accepts a number or a
+// band string. public_emails_clean is left empty for Clean Fields to fill from Public Emails.
 // The public-email waterfall lane is never written here: the waterfall creates and owns it.
 // Growth 90d is declared on the table but not written: the pull carries no growth field.
 // Inactive stores, empty domains and duplicate domains within the batch are counted and
-// dropped as skips, never errors.
+// dropped as skips, never errors. The key list here is the one Preflight (the parent) names.
 const inp = $('Batch Input').first().json;
 const remaining = Math.max(0, Number(inp.remaining) || 0);
-const tag = String(inp.tag || '').trim();
-const have = new Set(Array.isArray(inp.fieldNames) ? inp.fieldNames.map(String) : []);
-if (!have.size) throw new Error('Batch received no Companies field-name list from the parent. Nothing was written.');
 const pages = $input.all().map(i => i.json);
 let errorPages = 0; let pulled = 0; let nextCursor = ''; let hasNext = false;
 const raw = [];
@@ -49,7 +46,7 @@ for (const d of raw) {
   for (const c of ci) { if (c && typeof c.followers==='number') { const lab=SOC[String(c.type||'').toLowerCase()]||String(c.type||'').toUpperCase().slice(0,3); if(lab) socParts.push(lab+' '+compact(c.followers)); } }
   const companyName = String((/^(www\.)?[a-z0-9.-]+\.[a-z]{2,}$/i.test(String(d.merchant_name||''))?d.title:d.merchant_name)||d.title||'').trim();
   const emails = Array.from(new Set(emailsFrom(ci).map(e=>e.toLowerCase().trim())));
-  const row = {
+  out.push({
     'Domain': dom,
     'Company': companyName,
     'Description': String(d.description||'').trim(),
@@ -61,8 +58,6 @@ for (const d of raw) {
     'Public Emails': emails.join(', '),
     'public_emails_clean': '',
     'MX Provider': mxFrom(techs),
-    'Domain Source': 'Storeleads',
-    'Tag': tag,
     'Plan': String(d.plan||'').trim(),
     'Revenue Est Monthly': (d.estimated_sales==null)?null:Math.round(Number(d.estimated_sales)/100),
     'Store Age Years': ageY,
@@ -75,8 +70,6 @@ for (const d of raw) {
     'Migrated From': migrated,
     'Social Followers': socParts.slice(0,5).join(' / '),
     'Features': Array.isArray(d.features)?d.features.filter(Boolean).map(String).slice(0,5).join(', '):''
-  };
-  for (const k of Object.keys(row)) { if (!have.has(k)) delete row[k]; }
-  out.push(row);
+  });
 }
 return [{ json: { next_cursor: hasNext ? nextCursor : '', has_next_page: hasNext, pulled, kept: out.length, errorPages, skipped, inactive, duplicate, rows: out } }];

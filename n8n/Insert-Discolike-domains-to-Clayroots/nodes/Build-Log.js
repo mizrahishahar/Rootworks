@@ -1,26 +1,34 @@
-// Build Log: one row per run on the launch row, status computed from failed[], skips
-// separated from errors, Client attached (a launched run serves exactly one client).
+// Build Log: one row per run on the launch row, status computed from the helper's failed[],
+// skips separated from errors, Client attached (a launched run serves exactly one client).
+// The funnel is the pull's own counts plus the helper's counters (Insert domains to Clayroots).
 const p=$('Launch Params').first().json;
-let cfg={}; try{ cfg=$('Find Companies Table').first().json||{}; }catch(e){}
-let stats={ pulled:0, no_domain:0, duplicate:0, dnc:0, kept:0 };
+let stats={ pulled:0, no_domain:0, duplicate:0 };
 try{ const f=$('Format Companies').first().json||{}; if(f._stats) stats=f._stats; }catch(e){}
-const failed=[];
-let upserted=0;
-try{ for(const it of $('Upsert Companies').all()){ const j=it.json||{}; if(j.id) upserted++; else { const e=j.error||{}; const why=(e.description&&String(e.description).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim())||e.message||j.message||'no record id came back'; failed.push({ name: (j.fields&&j.fields.Domain)||('item '+((e.context&&e.context.itemIndex)!=null?e.context.itemIndex:'?')), reason: String(why).slice(0,140) }); } } }catch(e){}
-if(stats.kept&&upserted<stats.kept&&!failed.length){ failed.push({ name:'upsert', reason:(stats.kept-upserted)+' rows returned no record id' }); }
+let h=null; try{ h=$('Insert Domains').first().json||null; }catch(e){}
+let fired=false; try{ fired=$('Fire Contacts').all().length>0; }catch(e){}
+const n=(v)=>Number(v)||0;
+const failed=(h&&Array.isArray(h.failed))?h.failed.slice():[];
 let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}
+const tableName=(h&&h.tableName)||'Companies';
 const lines=[
-  '**'+stats.pulled+' companies pulled, '+upserted+' upserted into '+(cfg.tableName||'Companies')+'**',
+  '**'+stats.pulled+' companies pulled, '+n(h&&h.upserted)+' landed on '+tableName+'**',
   '',
   '**Source:** DiscoLike saved query '+p.queryId,
   '**Tag:** '+(p.tag||'none'),
   '',
   '**Funnel**',
   '- **Pulled:** '+stats.pulled,
-  '- **Kept:** '+stats.kept,
-  '- **Upserted (record id returned):** '+upserted
+  '- **Handed to the helper:** '+n(h&&h.in),
+  '- **Landed (record id returned):** '+n(h&&h.upserted)+' ('+n(h&&h.newDomains)+' new, '+n(h&&h.existingDomains)+' already held)',
+  '- **With public emails:** '+n(h&&h.withEmails)
 ];
-const skips=[]; if(stats.no_domain) skips.push(stats.no_domain+' no domain'); if(stats.duplicate) skips.push(stats.duplicate+' duplicate domain in the pull'); if(stats.dnc) skips.push(stats.dnc+' on the DNC table');
+if(h&&Array.isArray(h.createdColumns)&&h.createdColumns.length) lines.push('- **Columns created (open fields):** '+h.createdColumns.join(', '));
+if(h&&Array.isArray(h.droppedKeys)&&h.droppedKeys.length) lines.push('- **Keys dropped:** '+h.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));
+lines.push('', '**Contacts:** '+(fired?'Waterfall Contacts fired on view "Not Sourced" (all three sources, Max companies 5000); it writes its own row':'not fired, nothing landed'));
+const skips=[];
+if(stats.no_domain) skips.push(stats.no_domain+' no domain');
+if(stats.duplicate) skips.push(stats.duplicate+' duplicate domain in the pull');
+if(h&&n(h.dnc)) skips.push(n(h.dnc)+' on the DNC table');
 if(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');
 if(failed.length){ const byReason={}; for(const f of failed){ byReason[f.reason]=(byReason[f.reason]||0)+1; } lines.push('', '**Failures ('+failed.length+')**'); for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r); }
 const log={
@@ -29,9 +37,9 @@ const log={
   'Trigger':'form',
   'Errors': failed.length,
   'Run at': $now.toISO(),
-  'Target': (cfg.tableName||'Companies')+' ('+(cfg.tableId||'')+')',
+  'Target': tableName+' ('+((h&&h.tableId)||'')+')',
   'Records In': stats.pulled,
-  'Records Out': upserted,
+  'Records Out': n(h&&h.upserted),
   'Duration s': dur,
   'Description': lines.join('\n'),
   'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,

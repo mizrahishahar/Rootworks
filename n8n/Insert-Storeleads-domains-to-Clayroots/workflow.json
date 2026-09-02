@@ -145,38 +145,24 @@
     },
     {
       "parameters": {
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
+        "jsCode": "@@file:nodes/Build-SL-Query.js"
       },
-      "id": "4a8ad707-029e-4884-9922-5aa4674a7e2d",
-      "name": "AT List Tables",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "id": "d8fc2cb9-773c-4db3-9228-f508aceefe57",
+      "name": "Build SL Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1100,
         0
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/Find-Companies-Table.js"
+        "jsCode": "@@file:nodes/Preflight.js",
+        "mode": "runOnceForAllItems"
       },
-      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c11",
-      "name": "Find Companies Table",
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c13",
+      "name": "Preflight",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -186,16 +172,32 @@
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/Build-SL-Query.js"
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NEW-Insert-domains-to-Clayroots",
+          "cachedResultName": "Insert domains to Clayroots"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
       },
-      "id": "d8fc2cb9-773c-4db3-9228-f508aceefe57",
-      "name": "Build SL Query",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c14",
+      "name": "Check Base",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
       "position": [
-        2640,
+        1540,
         0
-      ]
+      ],
+      "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. The batches call the same helper with rows. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
     },
     {
       "parameters": {
@@ -206,7 +208,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
+        1760,
         0
       ]
     },
@@ -224,12 +226,11 @@
             "pullQuery": "={{ $('Init Loop State').first().json.queries[$json.qIndex].pullQuery }}",
             "provider": "={{ $('Init Loop State').first().json.queries[$json.qIndex].provider }}",
             "cursor": "={{ $json.cursor }}",
-            "tableId": "={{ $('Check Columns').first().json.tableId }}",
             "baseId": "={{ $('Launch Params').first().json.base }}",
+            "clientRecId": "={{ $('Launch Params').first().json.clientRecId }}",
             "batchPages": 10,
             "remaining": "={{ $json.remaining }}",
-            "tag": "={{ $('Launch Params').first().json.tag || '' }}",
-            "fieldNames": "={{ $('Check Columns').first().json.fieldNames }}"
+            "tag": "={{ $('Launch Params').first().json.tag || '' }}"
           },
           "matchingColumns": [],
           "schema": []
@@ -243,7 +244,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3080,
+        1980,
         0
       ]
     },
@@ -256,7 +257,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
+        2200,
         0
       ]
     },
@@ -288,7 +289,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        3520,
+        2420,
         -200
       ]
     },
@@ -320,7 +321,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        3520,
+        2420,
         0
       ]
     },
@@ -333,7 +334,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        3740,
+        2640,
         0
       ],
       "webhookId": "4b45af9f-7433-4825-b9ea-49973532c662"
@@ -366,9 +367,84 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        3520,
+        2420,
         200
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.upserted || 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c15",
+      "name": "Landed Any?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Fire-Contacts.js"
+      },
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c16",
+      "name": "Fire Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PLTNYqqoYfrt9ypd",
+          "cachedResultName": "Waterfall Contacts"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c17",
+      "name": "Waterfall Contacts",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3080,
+        320
+      ],
+      "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
     },
     {
       "parameters": {
@@ -379,7 +455,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3740,
+        3300,
         200
       ]
     },
@@ -414,7 +490,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        3960,
+        3520,
         200
       ],
       "onError": "stopWorkflow",
@@ -424,19 +500,6 @@
           "name": "Airtable"
         }
       }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Check-Columns.js"
-      },
-      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c12",
-      "name": "Check Columns",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1540,
-        0
-      ]
     }
   ],
   "connections": {
@@ -488,18 +551,7 @@
       "main": [
         [
           {
-            "node": "AT List Tables",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AT List Tables": {
-      "main": [
-        [
-          {
-            "node": "Find Companies Table",
+            "node": "Build SL Query",
             "type": "main",
             "index": 0
           }
@@ -507,6 +559,28 @@
       ]
     },
     "Build SL Query": {
+      "main": [
+        [
+          {
+            "node": "Preflight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preflight": {
+      "main": [
+        [
+          {
+            "node": "Check Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Base": {
       "main": [
         [
           {
@@ -597,6 +671,46 @@
       "main": [
         [
           {
+            "node": "Landed Any?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Landed Any?": {
+      "main": [
+        [
+          {
+            "node": "Fire Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Contacts": {
+      "main": [
+        [
+          {
+            "node": "Waterfall Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waterfall Contacts": {
+      "main": [
+        [
+          {
             "node": "Build Log",
             "type": "main",
             "index": 0
@@ -609,28 +723,6 @@
         [
           {
             "node": "Log Run",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Companies Table": {
-      "main": [
-        [
-          {
-            "node": "Check Columns",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Columns": {
-      "main": [
-        [
-          {
-            "node": "Build SL Query",
             "type": "main",
             "index": 0
           }

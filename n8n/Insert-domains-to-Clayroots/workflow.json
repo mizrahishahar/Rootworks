@@ -1,0 +1,720 @@
+{
+  "name": "Insert domains to Clayroots",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "1d0e0001-0001-4000-8000-000000000001",
+      "name": "Rows In",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "Helper (Execute Workflow, passthrough, mode once). Items are Companies rows in the register's shape; the first item also carries _meta {base, clientRecId, tag, domainSource, allowNew, keys}. Counters only go back; no run-log row."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Read-Meta.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "1d0e0001-0002-4000-8000-000000000002",
+      "name": "Read Meta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Read Meta').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1d0e0001-0003-4000-8000-000000000003",
+      "name": "AT List Tables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "1d0e0001-0004-4000-8000-000000000004",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "t1",
+              "leftValue": "={{ ($json.toCreate || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1d0e0001-0005-4000-8000-000000000005",
+      "name": "Any To Create?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Columns.js"
+      },
+      "id": "1d0e0001-0006-4000-8000-000000000006",
+      "name": "Plan Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1d0e0001-0007-4000-8000-000000000007",
+      "name": "AT Create Columns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The open-field rule: an open key becomes a singleLineText column on Companies, once per run. The Storeleads, Hiring and Reviews groups are register extras and are never created here; the scaffold owns them."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Lookups.js"
+      },
+      "id": "1d0e0001-0008-4000-8000-000000000008",
+      "name": "Plan Lookups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1d0e0001-0009-4000-8000-000000000009",
+      "name": "AT Create Lookups",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The same-named lookup on People through the Companies link, so every open field reads on both tables."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Read Meta').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1d0e0001-0010-4000-8000-000000000010",
+      "name": "AT Verify Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1980,
+        -200
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Verify-Columns.js"
+      },
+      "id": "1d0e0001-0011-4000-8000-000000000011",
+      "name": "Verify Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.dncTableId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain"
+          ]
+        }
+      },
+      "id": "1d0e0001-0012-4000-8000-000000000012",
+      "name": "Get DNC Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "DNC at landing (ruled 2026-09-02): a domain on the client's DNC table never gets a Companies row. The read is loud; a base without a DNC table was already refused by Check Columns."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prepare-Rows.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "1d0e0001-0013-4000-8000-000000000013",
+      "name": "Prepare Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "r1",
+              "leftValue": "={{ $json.Domain || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1d0e0001-0014-4000-8000-000000000014",
+      "name": "Any Rows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1d0e0001-0015-4000-8000-000000000015",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3080,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Existing-Filters.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "1d0e0001-0016-4000-8000-000000000016",
+      "name": "Existing Filters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.tableId }}"
+        },
+        "filterByFormula": "={{ $json.formula }}",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain"
+          ]
+        }
+      },
+      "id": "1d0e0001-0017-4000-8000-000000000017",
+      "name": "Read Existing",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3520,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Which of these domains Companies already holds, ids only, one call per 100 domains. Loud: a failed read would re-stamp Domain Source on existing rows."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Mark-Source.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "1d0e0001-0018-4000-8000-000000000018",
+      "name": "Mark Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Columns').first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Domain"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "1d0e0001-0019-4000-8000-000000000019",
+      "name": "Upsert Companies",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3960,
+        -120
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Counters.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "1d0e0001-0020-4000-8000-000000000020",
+      "name": "Counters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Rows In": {
+      "main": [
+        [
+          {
+            "node": "Read Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Meta": {
+      "main": [
+        [
+          {
+            "node": "AT List Tables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT List Tables": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Any To Create?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any To Create?": {
+      "main": [
+        [
+          {
+            "node": "Plan Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get DNC Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Columns": {
+      "main": [
+        [
+          {
+            "node": "AT Create Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Create Columns": {
+      "main": [
+        [
+          {
+            "node": "Plan Lookups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Lookups": {
+      "main": [
+        [
+          {
+            "node": "AT Create Lookups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Create Lookups": {
+      "main": [
+        [
+          {
+            "node": "AT Verify Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT Verify Schema": {
+      "main": [
+        [
+          {
+            "node": "Verify Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Columns": {
+      "main": [
+        [
+          {
+            "node": "Get DNC Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DNC Domains": {
+      "main": [
+        [
+          {
+            "node": "Prepare Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rows": {
+      "main": [
+        [
+          {
+            "node": "Any Rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Rows?": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Counters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Existing Filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Filters": {
+      "main": [
+        [
+          {
+            "node": "Read Existing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing": {
+      "main": [
+        [
+          {
+            "node": "Mark Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Source": {
+      "main": [
+        [
+          {
+            "node": "Upsert Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Companies": {
+      "main": [
+        [
+          {
+            "node": "Counters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

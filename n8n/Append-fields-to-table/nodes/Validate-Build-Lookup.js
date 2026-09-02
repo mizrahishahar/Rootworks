@@ -36,4 +36,4 @@ let dupKeys=0;
 for(const r of rows){ const k=flat(r[keyHeader]).trim().toLowerCase(); if(!k) continue; if(lookup[k]) dupKeys++; const attrs={}; for(const c of attrCols){ attrs[c]=flat(r[c]).trim(); } lookup[k]=attrs; }
 const distinctKeys=Object.keys(lookup).length;
 if(distinctKeys===0){ throw new Error('Head guard: every CSV row has an empty '+keyName+' value. Nothing was written.'); }
-return [{ json: { baseId, table, keyName, fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];
+return [{ json: { baseId, table, keyName, tag: String(p['Tag']||'').trim(), clientRecId: String(p._clientRecId||'').trim(), fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];

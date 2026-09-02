@@ -1,16 +1,19 @@
 // Make Batches: held people per company (tier zero: count, Contact Keys, LinkedIn URLs) plus
-// 250 companies per batch item. The batch item carries everything the sub needs; the sub
-// does the paid work and returns counters only.
+// 250 companies per batch item. The batch item carries everything the batch door needs, and the
+// key of the Hub row that batch will write: parentExecId (this execution) and batchNum, dealt
+// once here, 1..N, so "<parentExecId>-<batchNum>" is unique by construction. Domain comes back
+// from People as a lookup (an array of one), read array-safe.
 const p=$('Launch Params').first().json;
 const cfg=$('Find Tables').first().json;
 const pick=$('Pick Companies').first().json;
 const held={};
 let heldRows=0;
+const domainOf=(f)=>{ const v=f.Domain; return String(Array.isArray(v)?(v[0]||''):(v||'')).trim().toLowerCase(); };
 try{
   for(const it of $('Read People').all()){
     const j=it.json||{}; if(!j.id) continue;
     const f=j.fields||{};
-    const d=String(f.Domain||'').trim().toLowerCase(); if(!d) continue;
+    const d=domainOf(f); if(!d) continue;
     heldRows++;
     const h=held[d]||(held[d]={ count:0, keys:[], linkedin:[] });
     h.count++;
@@ -23,11 +26,12 @@ const BATCH=250;
 const out=[];
 for(let i=0;i<companies.length;i+=BATCH){
   out.push({ json: {
+    parentExecId: String($execution.id),
     batchNum: out.length+1, batchCount: Math.ceil(companies.length/BATCH),
     base: p.base, clientRecId: p.clientRecId,
-    peopleTableId: cfg.peopleTableId, companiesTableId: cfg.companiesTableId, dncTableId: cfg.dncTableId,
+    peopleTableId: cfg.peopleTableId, peopleTableName: cfg.peopleTableName, companiesTableId: cfg.companiesTableId, dncTableId: cfg.dncTableId,
     peopleFields: cfg.peopleFields,
-    sources: p.sources, cgDepartments: p.cgDepartments, arkFunctions: p.arkFunctions, tag: p.tag,
+    sources: p.sources, cgDepartments: p.cgDepartments, arkFunctions: p.arkFunctions,
     companies: companies.slice(i,i+BATCH)
   } });
 }

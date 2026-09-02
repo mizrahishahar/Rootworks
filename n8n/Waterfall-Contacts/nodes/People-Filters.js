@@ -1,6 +1,8 @@
 // People Filters: tier zero reads what the base already holds at these domains, ids only
-// (Contact Key, LinkedIn URL, Domain). One OR formula per 100 domains keeps every request
-// under Airtable's URL limit; Read People runs once per item and returns all pages.
+// (Contact Key, LinkedIn URL, Domain). Domain on People is a lookup through the Companies link
+// (People stores none of its own, ruled 2026-09-02); filterByFormula {Domain}='x' matches the
+// lookup's text, so these reads keep working unchanged. One OR formula per 100 domains keeps
+// every request under Airtable's URL limit; Read People runs once per item and returns all pages.
 const d=$input.first().json.domains||[];
 const esc=(s)=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 const out=[];

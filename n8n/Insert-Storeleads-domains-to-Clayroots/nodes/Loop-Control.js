@@ -25,6 +25,7 @@ st.totals.failed += n('failed');
 st.totals.skipped += n('skipped');
 st.totals.inactive += n('inactive');
 st.totals.duplicate += n('duplicate');
+st.totals.dnc = (st.totals.dnc || 0) + n('dnc');
 st.failReasons = Array.isArray(st.failReasons) ? st.failReasons : [];
 for (const x of (Array.isArray(res.failReasons) ? res.failReasons : [])) { if (st.failReasons.length < 5) st.failReasons.push(String(x)); }
 st.remaining = Math.max(0, st.cap - st.totals.kept);

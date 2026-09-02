@@ -1,10 +1,12 @@
 // Launch Params: the launch row (or the caller's passthrough item, same keys) is the whole
-// contract. Read: Client (resolves the base), View (a Companies view, default Uncovered),
-// Tag (fallback for People rows whose company carries none), Sources (ContaGen, Supersoniq,
-// AI-Ark; blank means all three), Departments (mapped into each provider's own vocabulary;
-// blank or ALL means no department filter), Max companies (the spend cap, required).
-// Seniority is fixed in code per tier (ruled 2026-09-02); the row's Seniority field is not read.
-// Any missing piece stops the run here, before a single paid call.
+// contract. Read: Client (resolves the base), Table (by name, required, no default, and it must be
+// "Companies": this machine sources people for companies and refuses any other table), View (a
+// Companies view, by name, required, no default; the insert doors call with "Not Sourced" after
+// landing), Sources (ContaGen, Supersoniq, AI-Ark; blank means all three), Departments (mapped into
+// each provider's own vocabulary; blank or ALL means no department filter), Max companies (the
+// spend cap, required). Seniority is fixed in code per tier (ruled 2026-09-02); the row's Seniority
+// field is not read. Tag is not read either: People stores no Tag, it is a lookup through the
+// Companies link (ruled 2026-09-02). Any missing piece stops the run here, before a single paid call.
 let rec=null, trigger='form';
 try{ rec=$('Fetch Launch Record').first().json; }catch(e){}
 if(!rec||!rec.fields){ rec=$('Event Row').first().json; trigger='event'; }
@@ -12,12 +14,17 @@ const f=rec.fields||{};
 const cf=($('Resolve Base').first().json.fields)||{};
 const base=((cf['Clayroots Base ID']||'')+'').trim();
 const arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);
+const where='Launch record '+(rec.id||'(event)');
 const clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';
-if(!clientRecId){ throw new Error('Launch record '+(rec.id||'(event)')+' has no Client link. Nothing was pulled.'); }
-if(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on launch record '+(rec.id||'(event)')+' has no valid Clayroots Base ID. Nothing was pulled.'); }
+if(!clientRecId){ throw new Error(where+' has no Client link. Nothing was pulled.'); }
+if(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }
+const table=((f['Table']||'')+'').trim();
+if(!table){ throw new Error(where+' has no Table. This machine takes Table "Companies" by name, no default. Nothing was pulled.'); }
+if(table.toLowerCase()!=='companies'){ throw new Error(where+' names Table "'+table+'". This machine sources people for companies and takes only Table "Companies". Nothing was pulled.'); }
+const view=((f['View']||'')+'').trim();
+if(!view){ throw new Error(where+' has no View. A Companies view is required by name, no default (the insert doors pass "Not Sourced"). Nothing was pulled.'); }
 const maxCompanies=Math.floor(Number(f['Max companies'])||0);
-if(!(maxCompanies>0)){ throw new Error('Launch record '+(rec.id||'(event)')+' has no Max companies. It is the spend cap and it is required. Nothing was pulled.'); }
-const view=((f['View']||'')+'').trim()||'Uncovered';
+if(!(maxCompanies>0)){ throw new Error(where+' has no Max companies. It is the spend cap and it is required. Nothing was pulled.'); }
 const ALL_SOURCES=['ContaGen','Supersoniq','AI-Ark'];
 const slug=(s)=>String(s).toLowerCase().replace(/[^a-z]/g,'');
 const srcRaw=arr(f['Sources']).map(s=>String(s).trim()).filter(Boolean);
@@ -49,8 +56,8 @@ if(!wide){
 return [{ json: {
   base: base,
   clientRecId: clientRecId,
+  table: 'Companies',
   view: view,
-  tag: ((f['Tag']||'')+'').trim(),
   sources: sources.length?sources:ALL_SOURCES.slice(),
   departments: depRaw,
   cgDepartments: cgDepartments,

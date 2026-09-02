@@ -1,6 +1,9 @@
 // Pick Companies: the Companies view rows become the run's company list. Rows without a
 // Domain are counted and dropped; duplicate domains collapse to one; Max companies caps
 // the list (the spend cap). One item out, always, so the empty-pick gate reaches the close.
+// The company's Domain is what the batch builds every Contact Key from; People stores no
+// Domain, Company or Tag of its own (lookups through the Companies link), so nothing else
+// travels for the write.
 const p=$('Launch Params').first().json;
 const norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'');
 const seen=new Set(); const companies=[];
@@ -12,7 +15,7 @@ for(const it of $input.all()){
   if(seen.has(d)){ stats.duplicate++; continue; }
   if(p.maxCompanies&&companies.length>=p.maxCompanies){ stats.capped++; continue; }
   seen.add(d);
-  companies.push({ recordId:j.id, domain:d, company:String(f.Company||'').trim(), employees:String(f.Employees==null?'':f.Employees).trim(), tag:String(f.Tag||'').trim() });
+  companies.push({ recordId:j.id, domain:d, company:String(f.Company||'').trim(), employees:String(f.Employees==null?'':f.Employees).trim() });
 }
 stats.picked=companies.length;
 return [{ json: { picked: companies.length, domains: companies.map(c=>c.domain), companies: companies, _stats: stats } }];

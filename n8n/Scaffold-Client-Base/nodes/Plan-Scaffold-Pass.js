@@ -13,7 +13,8 @@
 // (Scaffold Init, S.extras) walk with their table's own fields, deduplicated by name (Trustpilot
 // Rating sits in two groups); an unpicked group is never touched. Emits {_done:true} when nothing
 // is left, or when what is left can never resolve (those land in failed). A create that failed is
-// never retried.
+// never retried. A field kind the planner does not know is not a dependency: it fails on the first
+// pass, naming the kind and the field, so a register mistake surfaces at once instead of hanging.
 const sd=$getWorkflowStaticData('global'); const S=sd.scaffold;
 const REG=$('Scaffold Register').first().json;
 const r=$input.first().json||{}; const body=(r.body!==undefined)?r.body:r;
@@ -38,6 +39,16 @@ const mirrorTable=(kind)=>{
 const gone=(st)=>st==='failed'||st==='clash'||st==='skipped';
 // Types a register field may already carry and still count as present. Never retyped.
 const OK={ singleLineText:['singleLineText','multilineText','richText','email','url','phoneNumber'], multilineText:['multilineText','richText','singleLineText'], singleSelect:['singleSelect'], dateTime:['dateTime','date'], date:['date','dateTime'], number:['number','currency','percent'], checkbox:['checkbox'], url:['url','singleLineText'], formula:['formula'], link:['multipleRecordLinks'], mirrorLink:['multipleRecordLinks'], lookup:['multipleLookupValues'], mirrorLookup:['multipleLookupValues'], count:['count'], rollup:['rollup'] };
+// Every field kind this planner knows, in one place, so a kind it does not know is caught by name
+// instead of falling through. Two holes it closes, both paid for by the mirrorLookup kind added
+// 2026-09-03: resolve() had no default branch, so an unknown kind slid into the lookup/count/rollup
+// tail, read a missing `via`, resolved a table by undefined, deferred every pass and ended as
+// `stuck: true` with a message naming nothing; and OK carried no entry for it, so the fallback
+// compared the KIND to the Airtable TYPE and reported every already-correct field as a clash on
+// every rerun. A kind outside this list is a register mistake, never a dependency that might
+// arrive later, so it fails on the first pass with the kind and the field named.
+const KINDS=['plain','formula','link','mirrorLink','mirrorLookup','lookup','count','rollup'];
+const unknownKind=(k,where)=>'unknown field kind "'+String(k)+'" on register field '+where+'. This planner knows '+KINDS.join(', ')+'. Add a branch to resolve() and an accepted-types entry to OK (here and in the Onboard Client twin of this file) before the register uses it.';
 const mark=(key,state,line)=>{ if(S.seen[key]) return; S.seen[key]=state; if(state==='existed') S.existed.push(key); else if(state==='skipped') S.skipped.push(line); else S.failed.push(line); };
 const plainBody=(f)=>{ const o={ name:f.name, type:f.type }; if(f.options) o.options=f.options; return o; };
 // The picked extras groups' fields for a table, after its own register fields, one field per name.
@@ -79,6 +90,9 @@ function resolve(f,T,t){
     if(!src) return { skip:'looks up '+f.field+' on "'+m.name+'", which the synced mirror does not carry; the Operator adds the column to the sync, then adds this lookup by hand' };
     return { body:{ name:f.name, type:'multipleLookupValues', options:{ recordLinkFieldId: link.id, fieldIdInLinkedTable: src.id } } };
   }
+  // The default branch. Only lookup, count and rollup reach the tail below; anything else is a
+  // register mistake and fails here by name rather than resolving a table by undefined.
+  if(f.kind!=='lookup'&&f.kind!=='count'&&f.kind!=='rollup') return { fail: unknownKind(f.kind, T.name+'.'+f.name) };
   // lookup, count, rollup: through the link between this table and f.via, found by table id.
   const target=tableByName(f.via);
   const govKey=(f.kind==='lookup')?(T.name+'.'+f.via):(f.via+'.'+T.name);
@@ -116,6 +130,9 @@ for(const T of REG.tables){
   mark(tkey,'existed');
   for(const f of fields){
     const key=T.name+'.'+f.name;
+    // Ahead of the existence check, so an unknown kind fails once and clearly instead of reporting
+    // an already-correct column as a clash on every rerun.
+    if(KINDS.indexOf(f.kind)<0){ mark(key,'failed', key+': '+unknownKind(f.kind, key)); continue; }
     const expect=(f.kind==='plain')?f.type:f.kind;
     const ex=fieldExact(t,f.name);
     if(ex){
@@ -127,6 +144,7 @@ for(const T of REG.tables){
     if(cv){ mark(key,'clash', key+': the table carries "'+cv.name+'", a case variant (left alone, never renamed)'); continue; }
     if(gone(S.seen[key])) continue;
     const spec=resolve(f,T,t);
+    if(spec.fail){ mark(key,'failed', key+': '+spec.fail); continue; }
     if(spec.skip){ mark(key,'skipped', key+': '+spec.skip); continue; }
     if(spec.defer){ deferred.push({ key:key, why:spec.defer }); continue; }
     calls.push({ key:key, table:T.name, name:f.name, kind:f.kind, method:'POST', url:urlTables+'/'+t.id+'/fields', body:spec.body });

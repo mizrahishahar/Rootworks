@@ -5,6 +5,10 @@
 // Companies (upsert on Domain) and every Contacts-shaped legacy table into People
 // (upsert on Contact Key), links People to Companies by Domain, carries the email
 // lanes, the Campaigns links, the campaign sync fields and the signal payload.
+// With --link-live it also finishes an in-place conversion (a legacy Contacts table
+// renamed to People, a Domains table renamed to Companies): live People rows get
+// their Companies link by Domain, People-only domains get a Companies row, live
+// Companies rows get Domain Source where the row itself carries the evidence.
 // Never deletes or renames a legacy table. Never writes a formula, a lookup, a
 // count, a rollup, Build Date, or any key the target table lacks.
 //
@@ -12,6 +16,7 @@
 //   node scripts/migrate-client.js --base appXXX                     dry run (default): read, plan, report, write nothing
 //   node scripts/migrate-client.js --base appXXX --apply             perform the writes, record the undo log
 //   node scripts/migrate-client.js --base appXXX --tables "A,B"      only these legacy tables (names or ids)
+//   node scripts/migrate-client.js --base appXXX --link-live --tables none   the live rows only, no legacy table
 //   node scripts/migrate-client.js --base appXXX --signal "US Tech - Infra Hiring (Intent)=recXXXX"
 //   node scripts/migrate-client.js --undo scripts/out/migrate-appXXX-<ts>-undo.json          show what undo would do
 //   node scripts/migrate-client.js --undo scripts/out/migrate-appXXX-<ts>-undo.json --apply  delete created, restore updated
@@ -19,9 +24,12 @@
 // Options:
 //   --base <appId>       the client base
 //   --apply              write to Airtable (default is a dry run that writes nothing)
-//   --tables <a,b>       legacy table names or ids, comma separated (default: every eligible table)
+//   --tables <a,b>       legacy table names or ids, comma separated (default: every eligible table; "none" selects no table)
+//   --link-live          also link live People to Companies by Domain (empty links only), create a Companies row per
+//                        People-only domain (Domain, Company, Tag), backfill empty Domain Source from row evidence
+//                        (a non-empty query_name or a Source naming DiscoLike, or Storeleads columns). Dry by default, same undo log
 //   --signal <t=v>       map a legacy intent table to a Signals mirror row: "<legacy table name>=<rec id or mirror Name>" (repeatable)
-//   --limit <n>          read at most n rows per legacy table (smoke tests on a real base, then --undo)
+//   --limit <n>          read at most n rows per legacy table; with --link-live also link and backfill at most n live rows each
 //   --allow-loss         apply even when data-bearing keys would be dropped, a Campaigns id is unresolved, or a signal is unresolved
 //   --dump-plan          also write every planned create and update to -plan.jsonl
 //   --undo <file>        reverse a previous --apply run (dry by default; add --apply to execute)
@@ -58,13 +66,14 @@ const INVALID_SAMPLE_CAP = 60;
 function die(msg) { console.error(`error: ${msg}`); process.exit(1); }
 
 function parseArgs(argv) {
-  const o = { base: '', apply: false, tables: null, signal: {}, limit: 0, allowLoss: false, dumpPlan: false, undo: '', out: '', help: false };
+  const o = { base: '', apply: false, tables: null, linkLive: false, signal: {}, limit: 0, allowLoss: false, dumpPlan: false, undo: '', out: '', help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => { const v = argv[++i]; if (v === undefined) die(`${a} needs a value`); return v; };
     if (a === '--base') o.base = next();
     else if (a === '--apply') o.apply = true;
-    else if (a === '--tables') o.tables = next().split(',').map((s) => s.trim()).filter(Boolean);
+    else if (a === '--tables') { const v = next(); o.tables = v.trim().toLowerCase() === 'none' ? [] : v.split(',').map((s) => s.trim()).filter(Boolean); }
+    else if (a === '--link-live') o.linkLive = true;
     else if (a === '--signal') {
       const v = next(); const eq = v.indexOf('=');
       if (eq < 1) die('--signal expects "<legacy table name>=<rec id or mirror Name>"');
@@ -212,10 +221,16 @@ function normDomain(v) {
 const BANDS = [[1, 10, '1-10'], [11, 50, '11-50'], [51, 200, '51-200'], [201, 500, '201-500'], [501, 1000, '501-1000'], [1001, 5000, '1001-5000'], [5001, 10000, '5001-10000'], [10001, Infinity, '10001+']];
 const bandOf = (n) => { const b = BANDS.find(([lo, hi]) => n >= lo && n <= hi); return b ? b[2] : (n <= 0 ? null : '10001+'); };
 
-// Accepts a band string ("11-50", "10,001+") or a number (Storeleads). Returns null when it cannot band.
+// Legacy band spellings that fit a register band exactly (ruled 2026-09-02). "51 to 250" and "251 to 1,000" straddle
+// two bands and stay invalid: the cell stays empty rather than mislabelled.
+const EMPLOYEE_ALIAS = { '1 to 10': '1-10', '11 to 50': '11-50' };
+
+// Accepts a band string ("11-50", "10,001+", "1 to 10") or a number (Storeleads). Returns null when it cannot band.
 function bandEmployees(v) {
   if (isEmpty(v)) return null;
   if (typeof v === 'number') return bandOf(v);
+  const spelled = String(v).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (EMPLOYEE_ALIAS[spelled]) return EMPLOYEE_ALIAS[spelled];
   const s = String(v).trim().replace(/[\u2013\u2014]/g, '-').replace(/[\s,]/g, '');
   const exact = BANDS.find((b) => b[2] === s); if (exact) return exact[2];
   const plus = s.match(/^(\d+)\+$/); if (plus) return bandOf(Number(plus[1]));
@@ -229,6 +244,10 @@ const SOURCE_ALIAS = {
   supersoniq: 'Supersoniq', 'super soniq': 'Supersoniq', sq: 'Supersoniq',
   'ai-ark': 'AI-Ark', aiark: 'AI-Ark', 'ai ark': 'AI-Ark', ark: 'AI-Ark',
 };
+
+// The legacy Source column is the email lane's source: P0..P3 or none. Anything else in it (the DiscoLike
+// provenance string) is not a lane value and maps to nothing. Source never feeds Contact Source (ruled 2026-09-02).
+const isLaneSource = (v) => /^(p[0-3]|none)$/i.test(String(v).trim());
 
 const laterOf = (a, b) => {
   const ta = Date.parse(a), tb = Date.parse(b);
@@ -263,7 +282,8 @@ const COMPANY_MAP = [
   { to: 'State', from: ['Company State', 'State'], companyPrefixed: 'Company State' },
   { to: 'City', from: ['Company City', 'City'], companyPrefixed: 'Company City' },
   ...same(['Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'State Full']),
-  ...same(COMPANY_LANE, { shape: 'domains', group: 'lane' }),
+  ...same(COMPANY_LANE.filter((n) => n !== 'Email Source'), { shape: 'domains', group: 'lane' }),
+  { to: 'Email Source', from: ['Email Source', 'Source'], accept: { Source: isLaneSource }, shape: 'domains', group: 'lane' },
   { to: 'Campaigns', from: ['Campaigns'], shape: 'domains', links: true },
   ...same(SYNC_COLS, { shape: 'domains', group: 'sync' }),
   { to: 'Deploy Error', from: ['Deploy Error'], shape: 'domains', group: 'sync' },
@@ -274,16 +294,16 @@ const COMPANY_MAP = [
   ...same(REVIEWS_COLS, { group: 'reviews' }),
 ];
 
-// People: legacy column candidates per target field. Source is the old name of Contact Source on some
-// tables and the old name of Email Source on others; the select validation sorts the two apart.
+// People: legacy column candidates per target field. Contact Source comes only from a legacy Contact Source
+// column; Source is the email lane's source and reaches Email Source when it holds a lane value.
 const PEOPLE_MAP = [
   ...same(['Title', 'Seniority', 'Department', 'Email']),
   { to: 'LinkedIn URL', from: ['LinkedIn URL', 'Social'] },
   { to: 'Phone', from: ['Phone'] },
   { to: 'Company', from: ['Company', 'company_clean'] },
-  { to: 'Contact Source', from: ['Contact Source', 'Source', 'Email Source'], alias: SOURCE_ALIAS },
+  { to: 'Contact Source', from: ['Contact Source'], alias: SOURCE_ALIAS },
   { to: 'manually_approved', from: ['manually_approved'] },
-  { to: 'Email Source', from: ['Email Source', 'Source'], group: 'lane' },
+  { to: 'Email Source', from: ['Email Source', 'Source'], accept: { Source: isLaneSource }, group: 'lane' },
   ...same(PEOPLE_LANE, { group: 'lane' }),
   { to: 'Campaigns', from: ['Campaigns'], links: true },
   ...same(SYNC_COLS, { group: 'sync' }),
@@ -299,6 +319,14 @@ const REGISTER_CORE = {
 const WRITABLE_TYPES = new Set(['singleLineText', 'multilineText', 'richText', 'email', 'url', 'phoneNumber', 'number', 'currency', 'percent', 'duration', 'rating', 'singleSelect', 'multipleSelects', 'checkbox', 'date', 'dateTime', 'multipleRecordLinks']);
 // Never written even when writable: formulas by type, and these by name.
 const NEVER_WRITE = { Companies: new Set(['Build Date', 'People', 'Contacts Pulled At']), People: new Set(['Build Date', 'Source ID']) };
+
+// Ruled out of the register 2026-09-02: a non-empty legacy value in these columns is left behind on purpose.
+// Counted under acceptedDrops, never a data-bearing drop that blocks apply. On person rows the company facts
+// are accepted too: they arrive by lookup now (the company row may still take them as gap-fill).
+const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit'];
+const PERSON_COPY_COLS = ['City', 'State', 'Country', 'Zip', 'Street', 'Industry Groups', 'Employees', 'MX Provider', 'Description', 'Keywords', 'Business Model', 'Revenue Range'];
+const ACCEPTED_DROPS = { Companies: new Set(ACCEPTED_DROP_COLS), People: new Set([...ACCEPTED_DROP_COLS, ...PERSON_COPY_COLS]) };
+const fromNamesOf = (MAP) => new Set(MAP.flatMap((m) => m.from));
 
 // ------------------------------------------------------------------ Schema indexing
 
@@ -416,6 +444,7 @@ function mapRow(row, legacy, MAP, target, ctx) {
     let firstRaw; let done = false;
     for (const f of from) {
       const raw = row[f]; if (isEmpty(raw)) continue;
+      if (m.accept && m.accept[f] && !m.accept[f](raw)) continue;   // a value that means something else in this column (the provenance string in Source): not this key's, not invalid
       if (firstRaw === undefined) firstRaw = raw;
       if (!writable) break;
       const c = coerce(raw, tf, m, ctx);
@@ -459,7 +488,7 @@ function foldNotes(legacy, notes, role) {
 }
 
 function readFieldsFor(legacy, MAPS) {
-  const want = new Set(['Domain', 'Name', 'first_name', 'last_name', 'Contact Key', 'Tag', 'detected_at']);
+  const want = new Set(['Domain', 'Name', 'first_name', 'last_name', 'Contact Key', 'Tag', 'detected_at', ...legacy.acceptedCols]);
   for (const MAP of MAPS) for (const m of MAP) for (const f of m.from) want.add(f);
   return [...want].filter((f) => legacy.fieldSet.has(f));
 }
@@ -471,6 +500,7 @@ async function processLegacy(legacy, ctx) {
   legacy.rowsRead = rows.length;
   for (const r of rows) {
     const f = r.fields || {};
+    for (const c of legacy.acceptedCols) if (!isEmpty(f[c])) bump(legacy.acceptedDrops, c);   // left behind on purpose, counted
     const domain = normDomain(f.Domain);
     if (!isEmpty(f.Domain) && domain !== String(f.Domain).trim().toLowerCase()) legacy.domainNormalized++;
 
@@ -539,12 +569,12 @@ function finalizePlan(ctx) {
   const tally = { Companies: { create: 0, update: 0, unchanged: 0, existingMatched: 0, collisions: 0, tagCollisions: 0 }, People: { create: 0, update: 0, unchanged: 0, existingMatched: 0, collisions: 0, tagCollisions: 0, withoutCompaniesRow: 0 } };
   const decide = (row, t) => {
     if (!row.touched) { row.action = 'skip'; return; }
-    if (row.id) t.existingMatched++;
-    t.collisions += row.collisions; if (row.tagCollision) t.tagCollisions++;
-    if (!row.id) { row.action = 'create'; row.write = { ...row.fields }; t.create++; return; }
+    const fed = row.legacySources > 0;   // rows touched only by --link-live are tallied under linkLive, not here
+    if (fed) { if (row.id) t.existingMatched++; t.collisions += row.collisions; if (row.tagCollision) t.tagCollisions++; }
+    if (!row.id) { row.action = 'create'; row.write = { ...row.fields }; if (fed) t.create++; return; }
     const w = {};
     for (const [k, v] of Object.entries(row.fields)) if (!sameValue(v, row.live[k])) w[k] = v;
-    row.write = w; row.action = Object.keys(w).length ? 'update' : 'unchanged'; t[row.action]++;
+    row.write = w; row.action = Object.keys(w).length ? 'update' : 'unchanged'; if (fed) t[row.action]++;
   };
   for (const row of ctx.companies.values()) decide(row, tally.Companies);
   for (const row of new Set(ctx.people.values())) {   // a Set: aliased keys share one row
@@ -556,6 +586,125 @@ function finalizePlan(ctx) {
     decide(row, tally.People);
   }
   return tally;
+}
+
+// ------------------------------------------------------------------ Link live (--link-live)
+
+// The in-place conversion leaves every People.Companies link empty and every Companies.Domain Source
+// empty. This plans the live rows before the legacy tables, so a row's own evidence outranks what a
+// legacy table would infer for it, and so legacy rows merge into the Companies rows created here
+// instead of creating their own. Same plan rows, same writer, same undo log as the legacy path.
+// DiscoLike: a non-empty query_name (only the DiscoLike builder ever wrote it, ruled 2026-09-02) or a Source naming DiscoLike.
+const DOMAIN_SOURCE_EVIDENCE = { DiscoLike: ['Source', 'query_name'], Storeleads: ['Plan', 'Store Age Years', 'Key Apps'] };
+const LINK_LIVE_READ = { Companies: ['Domain', 'Domain Source', ...DOMAIN_SOURCE_EVIDENCE.DiscoLike, ...DOMAIN_SOURCE_EVIDENCE.Storeleads], People: ['Contact Key', 'Domain', 'Company', 'Tag', 'Companies'] };
+
+const asText = (v) => (Array.isArray(v) ? v : [v]).map((x) => (x && typeof x === 'object' ? JSON.stringify(x) : String(x === undefined || x === null ? '' : x))).join(' ');
+const namesDiscoLike = (v) => /disco\s*-?\s*like/i.test(asText(v));
+
+function newLinkLive() {
+  return {
+    people: { liveRows: 0, alreadyLinked: 0, newlyLinked: 0, linkedToLive: 0, linkedToCreated: 0, domainless: 0, unkeyed: 0, duplicateKeys: 0, beyondLimit: 0 },
+    companies: { liveRows: 0, domainless: 0, duplicateDomains: 0, created: 0, createdDomains: [], droppedKeys: {} },
+    domainSource: { fieldWritable: false, evidenceColumns: {}, evidenceHits: {}, backfilled: {}, alreadyFilled: 0, leftEmpty: { noEvidence: 0, choiceMissing: {}, fieldUnwritable: 0, beyondLimit: 0 }, unrecognizedSourceValues: {}, unrecognizedOverflow: 0 },
+    written: null,
+  };
+}
+
+// Every live row gets a plan row: the seeded one when the key names it, else one of its own under
+// "@id:<rec>" (a row with no key, or the second live row on a key the seeding already took).
+function livePlanRow(map, key, r, domain) {
+  let row = key ? map.get(key) : null;
+  if (row && row.id === r.id) return { row, seeded: true };
+  const alt = `@id:${r.id}`;
+  row = map.get(alt);
+  if (!row) { row = newPlanRow(r.id, r.fields || {}); row.domain = domain; map.set(alt, row); }
+  return { row, seeded: false };
+}
+
+function planLinkLive(ctx, liveC, liveP) {
+  const { targets, opts } = ctx;
+  const ll = newLinkLive(); ctx.linkLive = ll;
+  const limit = opts.limit || 0;
+
+  const coLink = targets.People.fields.get('Companies');
+  if (!coLink || coLink.type !== 'multipleRecordLinks' || !targets.People.writable.has('Companies')) die('--link-live: People has no writable Companies link field');
+  if (coLink.options.linkedTableId && coLink.options.linkedTableId !== targets.Companies.id) die(`--link-live: People.Companies links to table ${coLink.options.linkedTableId}, not to Companies (${targets.Companies.id})`);
+  if (!targets.People.fields.has('Domain')) die('--link-live: People has no Domain field to link by');
+
+  // 1. Domain Source on live Companies rows, from the evidence the row itself carries. Empty cells only.
+  const ds = ll.domainSource;
+  const dsField = targets.Companies.fields.get('Domain Source');
+  ds.fieldWritable = !!dsField && dsField.type === 'singleSelect' && !!dsField.choiceIndex && targets.Companies.writable.has('Domain Source');
+  const evidence = {}; for (const [value, cols] of Object.entries(DOMAIN_SOURCE_EVIDENCE)) evidence[value] = cols.filter((c) => targets.Companies.fields.has(c));
+  ds.evidenceColumns = evidence;
+  ll.companies.liveRows = liveC.length;
+  let backfills = 0;
+  for (const r of liveC) {
+    const f = r.fields || {};
+    const domain = normDomain(f.Domain);
+    const { row, seeded } = livePlanRow(ctx.companies, domain, r, domain);
+    if (!domain) ll.companies.domainless++; else if (!seeded) ll.companies.duplicateDomains++;
+    if (!isEmpty(f['Domain Source'])) { ds.alreadyFilled++; continue; }
+    const named = evidence.DiscoLike.filter((c) => !isEmpty(f[c]));
+    const discoCol = named.find((c) => c === 'query_name' || namesDiscoLike(f[c]));
+    const storeCol = evidence.Storeleads.find((c) => !isEmpty(f[c]));
+    const want = discoCol ? 'DiscoLike' : (storeCol ? 'Storeleads' : null);
+    if (!want) {
+      ds.leftEmpty.noEvidence++;
+      for (const c of named) { const k = `${c}=${asText(f[c]).slice(0, 40)}`; if (ds.unrecognizedSourceValues[k] !== undefined || Object.keys(ds.unrecognizedSourceValues).length < INVALID_SAMPLE_CAP) bump(ds.unrecognizedSourceValues, k); else ds.unrecognizedOverflow++; }
+      continue;
+    }
+    if (!ds.fieldWritable) { ds.leftEmpty.fieldUnwritable++; continue; }
+    const choice = dsField.choiceIndex.get(want.toLowerCase());
+    if (!choice) { bump(ds.leftEmpty.choiceMissing, want); continue; }   // never minted: the select must already carry the value
+    if (limit && backfills >= limit) { ds.leftEmpty.beyondLimit++; continue; }
+    row.fields['Domain Source'] = choice; row.touched = true; row.linkLive = true; backfills++;
+    bump(ds.backfilled, choice); bump(ds.evidenceHits, discoCol || storeCol);
+  }
+
+  // 2. Live People -> Companies by normalized Domain, empty links only; a Companies row per domain People carry alone.
+  ll.people.liveRows = liveP.length;
+  let links = 0;
+  for (const r of liveP) {
+    const f = r.fields || {};
+    const domain = normDomain(f.Domain);
+    const key = String(f['Contact Key'] || '').trim();
+    const { row, seeded } = livePlanRow(ctx.people, key, r, domain);
+    if (!key) ll.people.unkeyed++; else if (!seeded) ll.people.duplicateKeys++;
+    if (!isEmpty(f.Companies)) { ll.people.alreadyLinked++; continue; }   // a filled link is never overwritten
+    if (!domain) { ll.people.domainless++; continue; }
+    if (limit && links >= limit) { ll.people.beyondLimit++; continue; }
+    let co = ctx.companies.get(domain);
+    if (!co) {
+      co = newPlanRow(null, null); co.domain = domain; co.touched = true; co.linkLive = true; co.createdByLinkLive = true;
+      ctx.companies.set(domain, co);
+      const notes = newNotes();
+      assign(targets.Companies, co.fields, notes, 'Domain', domain, null, ctx);
+      for (const [k, n] of Object.entries(notes.dropped)) bump(ll.companies.droppedKeys, k, n);
+      ll.companies.created++; if (ll.companies.createdDomains.length < 20) ll.companies.createdDomains.push(domain);
+    }
+    if (co.createdByLinkLive) {   // Domain, Company and Tag only: the first non-empty seen across that domain's People rows. Domain Source stays empty, no door landed it
+      const notes = newNotes();
+      for (const k of ['Company', 'Tag']) if (isEmpty(co.fields[k]) && !isEmpty(f[k])) assign(targets.Companies, co.fields, notes, k, f[k], null, ctx);
+      for (const [k, n] of Object.entries(notes.dropped)) bump(ll.companies.droppedKeys, k, n);
+    }
+    row.fields.Companies = co.id ? [co.id] : [`@new:${domain}`];
+    row.touched = true; row.linkLive = true; links++;
+    ll.people.newlyLinked++; if (co.id) ll.people.linkedToLive++; else ll.people.linkedToCreated++;
+  }
+  return ll;
+}
+
+// After an apply: what --link-live actually landed, from the per-row written flags.
+function linkLiveWritten(ctx) {
+  const w = { peopleLinked: 0, companiesCreated: 0, domainSourceBackfilled: {} };
+  for (const row of new Set(ctx.people.values())) if (row.linkLive && row.written && row.write && row.write.Companies) w.peopleLinked++;
+  for (const row of ctx.companies.values()) {
+    if (!row.linkLive || !row.written) continue;
+    if (row.createdByLinkLive) w.companiesCreated++;
+    else if (row.write && row.write['Domain Source'] !== undefined) bump(w.domainSourceBackfilled, row.write['Domain Source']);
+  }
+  return w;
 }
 
 // ------------------------------------------------------------------ Apply
@@ -588,7 +737,7 @@ async function applyPlan(ctx, files, report) {
   const doCreates = async (role, rows) => runBatches(`${role} create`, rows, async (batch) => {
     const recs = await createRecords(base, targets[role].id, batch.map((r) => ({ fields: r.write })));
     if (recs.length !== batch.length) throw new Error(`${role} create returned ${recs.length} records for ${batch.length}`);
-    recs.forEach((rec, i) => { batch[i].id = rec.id; });
+    recs.forEach((rec, i) => { batch[i].id = rec.id; batch[i].written = true; });
     const ids = recs.map((r) => r.id);
     undo.created[role].push(...ids); appendUndo({ op: 'create', table: role, tableId: targets[role].id, ids });
     written[role].created += ids.length;
@@ -596,6 +745,7 @@ async function applyPlan(ctx, files, report) {
   const doUpdates = async (role, rows) => runBatches(`${role} update`, rows, async (batch) => {
     await updateRecords(base, targets[role].id, batch.map((r) => ({ id: r.id, fields: r.write })));
     const records = batch.map((r) => { const prior = {}; for (const k of Object.keys(r.write)) prior[k] = r.live && r.live[k] !== undefined ? r.live[k] : null; return { id: r.id, prior }; });
+    batch.forEach((r) => { r.written = true; });
     undo.updated[role].push(...records); appendUndo({ op: 'update', table: role, tableId: targets[role].id, records });
     written[role].updated += records.length;
   });
@@ -711,7 +861,15 @@ function legacyRecord(t, shape) {
     companiesNew: 0, companiesMergedIntoLive: 0, companiesCollisions: 0, companiesSeededFromContacts: 0, companiesTouchedFromContacts: 0,
     peopleNew: 0, peopleMergedIntoLive: 0, peopleCollisions: 0, unkeyed: 0, unkeyedIds: [], keyDrift: 0, keyFromLegacy: 0,
     droppedKeys: { Companies: {}, People: {} }, invalidValues: { Companies: {}, People: {} }, invalidOverflow: 0, unresolvedCampaignIds: 0, carriedKeys: { Companies: new Set(), People: new Set() }, samples: [],
+    acceptedCols: [], acceptedDrops: {},
   };
+}
+
+// The accepted columns this table carries that no map reads for its own target: read and counted, never written.
+function acceptedColsOf(legacy) {
+  const role = legacy.shape === 'domains' ? 'Companies' : 'People';
+  const carried = fromNamesOf(legacy.shape === 'domains' ? COMPANY_MAP : PEOPLE_MAP);
+  return [...ACCEPTED_DROPS[role]].filter((c) => legacy.fieldSet.has(c) && !carried.has(c));
 }
 
 async function main() {
@@ -752,10 +910,11 @@ async function main() {
     if (opts.tables && !opts.tables.includes(t.name) && !opts.tables.includes(t.id)) { skipped.push({ name: t.name, id: t.id, reason: 'not selected' }); continue; }
     const shape = shapeOf(t);
     if (!shape) { skipped.push({ name: t.name, id: t.id, reason: 'neither Domain nor Contact Key' }); continue; }
-    const legacy = legacyRecord(t, shape); legacy.domainSource = domainSourceOf(legacy); legacies.push(legacy);
+    const legacy = legacyRecord(t, shape); legacy.domainSource = domainSourceOf(legacy); legacy.acceptedCols = acceptedColsOf(legacy); legacies.push(legacy);
   }
   if (opts.tables) for (const sel of opts.tables) if (!byName.has(sel) && !byId.has(sel)) die(`--tables: "${sel}" is not a table in ${base}`);
-  if (!legacies.length) die('no eligible legacy table (needs a Domain or a Contact Key column)');
+  if (!legacies.length && !opts.linkLive) die('no eligible legacy table (needs a Domain or a Contact Key column); --link-live runs without one');
+  if (!legacies.length) console.log('  no legacy table selected: --link-live on the live rows only');
   legacies.sort((a, b) => (a.shape === b.shape ? 0 : a.shape === 'domains' ? -1 : 1));   // domains rows take precedence over contact-derived company data
 
   // 3. Mirrors.
@@ -782,13 +941,20 @@ async function main() {
     else signals.unresolved.push(legacy.name + (hit && hit.unresolvedOverride ? ` (override "${hit.name}" not found)` : ''));
   }
 
-  // 4. Live targets, seeded into the plan so the merge sees current values.
-  const liveFields = (target, MAP, extra) => [...new Set([target.primary, ...extra, ...MAP.map((m) => m.to), 'Tag', 'Domain Source', 'Signals'])].filter((n) => target.writable.has(n));
-  const liveC = await listAll(base, targets.Companies.id, liveFields(targets.Companies, COMPANY_MAP, ['Domain']), { label: 'Companies (live)' });
+  // 4. Live targets, seeded into the plan so the merge sees current values. --link-live also reads its evidence columns, whatever their type.
+  const liveFields = (target, MAP, extra, anyType) => [...new Set([...[target.primary, ...extra, ...MAP.map((m) => m.to), 'Tag', 'Domain Source', 'Signals'].filter((n) => target.writable.has(n)), ...(anyType || []).filter((n) => target.fields.has(n))])];
+  const liveC = await listAll(base, targets.Companies.id, liveFields(targets.Companies, COMPANY_MAP, ['Domain'], opts.linkLive ? LINK_LIVE_READ.Companies : []), { label: 'Companies (live)' });
   for (const r of liveC) { const d = normDomain((r.fields || {}).Domain); if (!d) continue; if (!ctx.companies.has(d)) { const row = newPlanRow(r.id, r.fields || {}); row.domain = d; ctx.companies.set(d, row); } }
-  const liveP = await listAll(base, targets.People.id, liveFields(targets.People, PEOPLE_MAP, ['Contact Key', 'Domain', 'Name', 'first_name', 'last_name', 'Companies']), { label: 'People (live)' });
+  const liveP = await listAll(base, targets.People.id, liveFields(targets.People, PEOPLE_MAP, ['Contact Key', 'Domain', 'Name', 'first_name', 'last_name', 'Companies'], opts.linkLive ? LINK_LIVE_READ.People : []), { label: 'People (live)' });
   for (const r of liveP) { const k = String((r.fields || {})['Contact Key'] || '').trim(); if (!k) continue; if (!ctx.people.has(k)) { const row = newPlanRow(r.id, r.fields || {}); row.domain = normDomain((r.fields || {}).Domain); ctx.people.set(k, row); } }
   console.log(`  live: ${liveC.length} Companies, ${liveP.length} People, ${campaignRows} campaign mirror rows, ${signalRows.length} signal mirror rows`);
+
+  // 4b. --link-live: the live rows themselves, planned before the legacy tables.
+  if (opts.linkLive) {
+    const ll = planLinkLive(ctx, liveC, liveP);
+    const per = (o) => Object.entries(o).map(([k, n]) => `${k} ${n}`).join(', ') || 'none';
+    console.log(`  link live: ${ll.people.newlyLinked} People to link (${ll.people.alreadyLinked} already linked, ${ll.people.domainless} domainless), ${ll.companies.created} Companies to create, Domain Source backfill ${per(ll.domainSource.backfilled)}`);
+  }
 
   // 5. Legacy rows -> plan.
   for (const legacy of legacies) {
@@ -799,10 +965,14 @@ async function main() {
   const tally = finalizePlan(ctx);
 
   // 6. Report.
-  const droppedKeys = { Companies: {}, People: {} }; const invalidValues = { Companies: {}, People: {} };
-  for (const l of legacies) for (const role of ['Companies', 'People']) {
-    for (const [k, n] of Object.entries(l.droppedKeys[role])) bump(droppedKeys[role], k, n);
-    for (const [k, n] of Object.entries(l.invalidValues[role])) bump(invalidValues[role], k, n);
+  // Drops split in two: accepted (ruled out of the register, counted, never blocking) and the rest, which block.
+  const droppedKeys = { Companies: {}, People: {} }; const invalidValues = { Companies: {}, People: {} }; const acceptedDrops = { Companies: {}, People: {} };
+  for (const l of legacies) {
+    for (const role of ['Companies', 'People']) {
+      for (const [k, n] of Object.entries(l.droppedKeys[role])) bump(ACCEPTED_DROPS[role].has(k) ? acceptedDrops[role] : droppedKeys[role], k, n);
+      for (const [k, n] of Object.entries(l.invalidValues[role])) bump(invalidValues[role], k, n);
+    }
+    for (const [k, n] of Object.entries(l.acceptedDrops)) bump(acceptedDrops[l.shape === 'domains' ? 'Companies' : 'People'], k, n);
   }
   const dataBearingDrops = Object.values(droppedKeys).reduce((a, o) => a + Object.values(o).reduce((x, y) => x + y, 0), 0);
   const unresolvedCampaignIds = legacies.reduce((a, l) => a + l.unresolvedCampaignIds, 0);
@@ -810,13 +980,15 @@ async function main() {
   if (dataBearingDrops) guards.reasons.push(`${dataBearingDrops} non-empty values would be dropped (keys the targets lack or cannot take)`);
   if (unresolvedCampaignIds) guards.reasons.push(`${unresolvedCampaignIds} Campaigns link ids do not resolve in the mirror`);
   if (signals.unresolved.length) guards.reasons.push(`signal unresolved for: ${signals.unresolved.join('; ')}`);
+  const linkLiveDrops = ctx.linkLive ? Object.values(ctx.linkLive.companies.droppedKeys).reduce((a, n) => a + n, 0) : 0;
+  if (linkLiveDrops) guards.reasons.push(`${linkLiveDrops} non-empty values would be dropped from the Companies rows --link-live creates (keys Companies lacks or cannot take)`);
   guards.blocked = guards.reasons.length > 0 && !opts.allowLoss;
 
   const accountedC = tally.Companies.create + tally.Companies.update + tally.Companies.unchanged;
   const accountedP = tally.People.create + tally.People.update + tally.People.unchanged;
   const report = {
     version: 1, base, mode: opts.apply ? 'apply' : 'dry-run', startedAt: startedAt.toISOString(), finishedAt: null,
-    options: { tables: opts.tables, limit: opts.limit, allowLoss: opts.allowLoss, signal: opts.signal },
+    options: { tables: opts.tables, linkLive: opts.linkLive, limit: opts.limit, allowLoss: opts.allowLoss, signal: opts.signal },
     targets: Object.fromEntries(Object.values(targets).map((t) => [t.role, { id: t.id, primary: t.primary, writable: [...t.writable], missingRegisterFields: t.missingRegisterFields }])),
     mirrors: { campaigns: campMirrorId ? { id: campMirrorId, name: (byId.get(campMirrorId) || {}).name, rows: campaignRows } : null, signals: sigMirrorId ? { id: sigMirrorId, name: (byId.get(sigMirrorId) || {}).name, rows: signalRows } : null },
     signals,
@@ -828,16 +1000,17 @@ async function main() {
         ? { new: l.companiesNew, mergedIntoLive: l.companiesMergedIntoLive, collisions: l.companiesCollisions }
         : { seededFromContacts: l.companiesSeededFromContacts, gapFilledFromContacts: l.companiesTouchedFromContacts },
       people: l.shape === 'contacts' ? { new: l.peopleNew, mergedIntoLive: l.peopleMergedIntoLive, collisions: l.peopleCollisions, unkeyed: l.unkeyed, unkeyedIds: l.unkeyedIds, keyDrift: l.keyDrift, keyFromLegacy: l.keyFromLegacy } : null,
-      carriedKeys: { Companies: [...l.carriedKeys.Companies].sort(), People: [...l.carriedKeys.People].sort() }, droppedKeys: l.droppedKeys, invalidValues: l.invalidValues, invalidOverflow: l.invalidOverflow, unresolvedCampaignIds: l.unresolvedCampaignIds,
+      carriedKeys: { Companies: [...l.carriedKeys.Companies].sort(), People: [...l.carriedKeys.People].sort() }, droppedKeys: l.droppedKeys, acceptedDrops: l.acceptedDrops, invalidValues: l.invalidValues, invalidOverflow: l.invalidOverflow, unresolvedCampaignIds: l.unresolvedCampaignIds,
       samples: l.samples,
     })),
     companies: { uniqueDomainsIn: ctx.domainsIn.size, planned: { create: tally.Companies.create, update: tally.Companies.update, unchanged: tally.Companies.unchanged }, existingMatched: tally.Companies.existingMatched, collisions: tally.Companies.collisions, tagCollisions: tally.Companies.tagCollisions, liveRows: liveC.length },
     people: { uniqueKeysIn: ctx.keysIn.size, planned: { create: tally.People.create, update: tally.People.update, unchanged: tally.People.unchanged }, existingMatched: tally.People.existingMatched, collisions: tally.People.collisions, tagCollisions: tally.People.tagCollisions, withoutCompaniesRow: tally.People.withoutCompaniesRow, unkeyed: legacies.reduce((a, l) => a + l.unkeyed, 0), keyDrift: legacies.reduce((a, l) => a + l.keyDrift, 0), liveRows: liveP.length },
-    droppedKeys, invalidValues, unresolvedCampaignIds,
+    droppedKeys, acceptedDrops, invalidValues, unresolvedCampaignIds,
     reconciliation: {
       companies: { uniqueDomainsIn: ctx.domainsIn.size, accounted: accountedC, ok: ctx.domainsIn.size === accountedC },
       people: { uniqueKeysIn: ctx.keysIn.size, accounted: accountedP, ok: ctx.keysIn.size === accountedP, note: ctx.keysIn.size === accountedP ? '' : 'key drift: a row whose rebuilt key differs from its legacy Contact Key was merged into the row that legacy key names (see legacy[].people.keyDrift); the difference is rows folded, not rows lost' },
     },
+    linkLive: ctx.linkLive || null,
     guards, written: null, api: apiStats, errors: [],
   };
 
@@ -847,16 +1020,19 @@ async function main() {
     ws.end();
   }
 
-  const finish = () => { report.finishedAt = new Date().toISOString(); report.api = apiStats; fs.writeFileSync(files.report, JSON.stringify(report, null, 1)); };
+  const finish = () => { report.finishedAt = new Date().toISOString(); report.api = apiStats; if (ctx.linkLive) ctx.linkLive.written = opts.apply ? linkLiveWritten(ctx) : null; fs.writeFileSync(files.report, JSON.stringify(report, null, 1)); };
   printSummary(report);
 
   if (!opts.apply) { finish(); console.log(`DRY RUN: nothing written. Report: ${files.report}`); return; }
   if (guards.blocked) { finish(); console.log(`APPLY refused: ${guards.reasons.join(' | ')}. Fix the scaffold or pass --allow-loss. Report: ${files.report}`); process.exitCode = 2; return; }
-  console.log(`APPLY in 5 s on ${base}: create ${tally.Companies.create} + update ${tally.Companies.update} Companies, create ${tally.People.create} + update ${tally.People.update} People. Ctrl-C to abort.`);
+  const ll = ctx.linkLive;
+  const llBanner = ll ? `; link live: link ${ll.people.newlyLinked} People, create ${ll.companies.created} Companies, backfill ${Object.values(ll.domainSource.backfilled).reduce((a, n) => a + n, 0)} Domain Source` : '';
+  console.log(`APPLY in 5 s on ${base}: create ${tally.Companies.create} + update ${tally.Companies.update} Companies, create ${tally.People.create} + update ${tally.People.update} People${llBanner}. Ctrl-C to abort.`);
   await sleep(5000);
   try { await applyPlan(ctx, files, report); }
   catch (e) { report.errors.push(String(e.message || e)); finish(); console.error(`STOPPED: ${e.message}. Partial writes are in ${files.undoJson}; rerun to resume (the merge reads live state) or --undo to reverse.`); process.exitCode = 1; return; }
   finish();
+  if (ll && ll.written) console.log(`  link live written: People linked ${ll.written.peopleLinked}, Companies created ${ll.written.companiesCreated}, Domain Source ${Object.entries(ll.written.domainSourceBackfilled).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}`);
   console.log(`APPLIED. Report: ${files.report}\nUndo: ${files.undoJson}`);
 }
 
@@ -873,9 +1049,18 @@ function printSummary(r) {
   row('Companies', `create ${r.companies.planned.create}, update ${r.companies.planned.update}, unchanged ${r.companies.planned.unchanged}; unique domains in ${r.companies.uniqueDomainsIn}; tag collisions ${r.companies.tagCollisions}`);
   row('People', `create ${r.people.planned.create}, update ${r.people.planned.update}, unchanged ${r.people.planned.unchanged}; unique keys in ${r.people.uniqueKeysIn}; without Companies row ${r.people.withoutCompaniesRow}`);
   row('Reconciliation', `companies ${r.reconciliation.companies.ok ? 'ok' : 'MISMATCH'} (${r.reconciliation.companies.uniqueDomainsIn} in / ${r.reconciliation.companies.accounted} accounted), people ${r.reconciliation.people.ok ? 'ok' : 'MISMATCH'} (${r.reconciliation.people.uniqueKeysIn} in / ${r.reconciliation.people.accounted} accounted)`);
+  if (r.linkLive) {
+    const p = r.linkLive.people; const c = r.linkLive.companies; const d = r.linkLive.domainSource;
+    const per = (o) => Object.entries(o).map(([k, n]) => `${k} ${n}`).join(', ') || 'none';
+    row('Link live: People', `${p.liveRows} live: already linked ${p.alreadyLinked}, newly linked ${p.newlyLinked} (to live ${p.linkedToLive}, to created ${p.linkedToCreated}), domainless ${p.domainless}, unkeyed ${p.unkeyed}, duplicate keys ${p.duplicateKeys}${p.beyondLimit ? `, beyond --limit ${p.beyondLimit}` : ''}`);
+    row('Link live: Companies', `${c.liveRows} live: create ${c.created} for People-only domains, domainless ${c.domainless}, duplicate domains ${c.duplicateDomains}${Object.keys(c.droppedKeys).length ? `; dropped ${per(c.droppedKeys)}` : ''}`);
+    row('Link live: Domain Source', `backfill ${per(d.backfilled)}; already filled ${d.alreadyFilled}; left empty: no evidence ${d.leftEmpty.noEvidence}, choice missing ${per(d.leftEmpty.choiceMissing)}, field unwritable ${d.leftEmpty.fieldUnwritable}${d.leftEmpty.beyondLimit ? `, beyond --limit ${d.leftEmpty.beyondLimit}` : ''}${Object.keys(d.unrecognizedSourceValues).length ? `; Source values not naming DiscoLike: ${per(d.unrecognizedSourceValues).slice(0, 160)}` : ''}`);
+  }
   for (const role of ['Companies', 'People']) {
     const d = r.droppedKeys[role]; const keys = Object.keys(d);
     row(`Dropped on ${role}`, keys.length ? keys.map((k) => `${k} (${d[k]})`).join(', ') : 'none');
+    const acc = (r.acceptedDrops || {})[role] || {}; const ak = Object.keys(acc);
+    if (ak.length) row(`Accepted drops on ${role}`, ak.map((k) => `${k} (${acc[k]})`).join(', '));
     const miss = r.targets[role].missingRegisterFields;
     if (miss.length) row(`${role} lacks (register)`, miss.join(', '));
   }

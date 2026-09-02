@@ -17,7 +17,12 @@ const plan=D.plan||{varCols:[]};
 const requiredCore=D.requiredCore||[];
 const needFirstName=D.needFirstName!==false;
 const emailRe=/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-const val=v=>{ if(v===null||v===undefined) return ''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(Array.isArray(v)) return v.filter(x=>typeof x==='string'||typeof x==='number').join(', '); if(typeof v==='object'&&typeof v.value==='string') return v.value.trim(); return ''; };
+// The one reader for every lead field. A register-shaped People table carries the company
+// facts (Country, State, City, Employees, Industry Groups, MX Provider, Tag, Signals, Signal At)
+// as lookups through the Companies link, so Airtable returns arrays (["California"]); legacy
+// tables carry plain text. An array yields its first element, an object its value or name,
+// never "[object Object]" and never a joined list (ruling 2026-09-02).
+const val=v=>{ if(v===null||v===undefined) return ''; if(Array.isArray(v)) return v.length?val(v[0]):''; if(typeof v==='string') return v.trim(); if(typeof v==='number'||typeof v==='boolean') return String(v); if(typeof v==='object'){ if(typeof v.value==='string') return v.value.trim(); if(typeof v.name==='string') return v.name.trim(); } return ''; };
 // A usable first name starts with a letter and has at least two letters, in any language.
 const NAME_OK=(s)=>{ const v=String(s||'').trim(); if(!v) return false; if(v.indexOf('�')>=0) return false; if(!/^\p{L}/u.test(v)) return false; return (v.match(/\p{L}/gu)||[]).length>=2; };
 D.rows={}; D.emailToRow={}; D.varMisses={};
@@ -47,8 +52,10 @@ for(const r of rowsArr){
   for(const c of requiredCore){ if(!val(f[c])){ coreMiss=c; break; } }
   if(coreMiss){ D.varMisses[coreMiss]=(D.varMisses[coreMiss]||0)+1; rec.skip='missing '+coreMiss; continue; }
   const lead={email:email};
-  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State Full'])||val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};
-  const soc=val(f['Social']);
+  // State carries the full state name (Clean Fields writes it there); State Full is never read.
+  const core={first_name:fn, last_name:val(f['last_name']), company_name:comp, state:val(f['State']), city:val(f['City']), country:val(f['Country']), job_title:val(f['Title'])};
+  // The LinkedIn URL comes from the one column Plan Variables resolved: LinkedIn URL, else legacy Social.
+  const soc=D.linkedinCol?val(f[D.linkedinCol]):'';
   if(/^https?:\/\//i.test(soc)) core.linkedin_person_url=soc;
   for(const k of Object.keys(core)){ if(core[k]) lead[k]=core[k]; }
   const cv={}; const missVars=[];

@@ -1,8 +1,8 @@
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
-if(D.abort){ return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
+if(D.abort){ return [{json:{needDe:false, field:null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
 const tables=D.schemaTables||[];
 const t=tables.find(x=>x.id===D.tableId);
-if(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
+if(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, field:null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
 const dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');
 D.dncTableId=dncT?dncT.id:'';
 // The campaigns mirror table, found by the same signature the PV->CR sync uses:
@@ -10,6 +10,28 @@ D.dncTableId=dncT?dncT.id:'';
 const mirT=tables.find(x=>{ const ns=new Set((x.fields||[]).map(f=>f.name)); return !ns.has('Final Email')&&ns.has('Campaign ID')&&ns.has('Sequencer'); });
 D.mirrorTableId=mirT?mirT.id:'';
 if(!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');
+const fields=t.fields||[];
+const have=new Set(fields.map(f=>f.name));
+// The lead's LinkedIn URL column (ruling 2026-09-02): `LinkedIn URL` on a register-shaped table;
+// `Social` only on a legacy table that has no `LinkedIn URL`. Never both, never guessed.
+D.linkedinCol=have.has('LinkedIn URL')?'LinkedIn URL':(have.has('Social')?'Social':'');
+// The machine fields this door ensures on the source table (ruling 2026-09-02): exactly the
+// register's machine set, specs identical to what Sync PlusVibe Leads to Clayroots creates and
+// writes. Nothing else is ever created on a client table by this door. Campaigns is a link to
+// the client's Campaigns mirror, so it is ensured only when the mirror resolved above.
+const MACHINE_SPECS=[
+ {name:'Deploy Error', type:'singleLineText', description:'Deploy outcome of the last attempt; empty = deployed clean or never deployed; written by Deploy View to Campaign only'}
+];
+if(D.mirrorTableId) MACHINE_SPECS.push({name:'Campaigns', type:'multipleRecordLinks', options:{linkedTableId:D.mirrorTableId}});
+MACHINE_SPECS.push(
+ {name:'Messages Sent', type:'number', options:{precision:0}},
+ {name:'Last Contacted', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}},
+ {name:'Campaign Status', type:'singleSelect', options:{choices:[{name:'NEVER_CONTACTED'},{name:'IN_SEQUENCE'},{name:'COMPLETED'},{name:'REPLIED'},{name:'BOUNCED'},{name:'UNSUBSCRIBED'}]}},
+ {name:'Bounce Reason', type:'singleLineText'},
+ {name:'Synced At', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}}
+);
+const ensure=MACHINE_SPECS.filter(s=>!have.has(s.name));
+D.ensure={queue:ensure, idx:0};
 const vm=D.viewMeta||{};
 const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.
@@ -17,14 +39,13 @@ const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // except the first name: it blocks only when the view actually shows first_name
 // or first_name_he, so company-inbox lists deploy without a person name.
 // CORE_LEAD is sent to PlusVibe as a standard lead field, and is required when visible.
+// MACHINE is the skip list: columns the door never reads and never sends (the email lane, the
+// sync's fields, retired legacy columns, and State Full: State itself carries the full name).
 const IGNORE=new Set(['last_name','Title','Social','Phone','MX Provider','MX provider','MX','Seniority','Department','Existing In Role','ICP Reason','Description','Industry Groups','Employees','Revenue Range','Keywords','Company Status','Company City','Company State','Phones','Public Emails','Social URLs','Email Pattern','Signal Detail','detected_at','LinkedIn URL']);
 const IDENTITY=new Set(['Final Email','first_name','first_name_he','company_clean','Company']);
-const CORE_LEAD=new Set(['State','State Full','City','Country']);
-const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','relevance','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','First Hire','linkedin_name_match','Tag']);
+const CORE_LEAD=new Set(['State','City','Country']);
+const MACHINE=new Set(['Status','MV','MV P0','MV P1','MV P2','MV P3','BB','P1','P2','P3','P1 (Trykitt)','P2 (LeadMagic)','P3 (Prospeo)','Source','Contact Source','Run ID','Build Date','Contact Key','Created','Seniority Rank','segment','query_name','ingested_at','RankInCompany','Co Rank','Campaign Segment','reloaded_patch','manually_approved','relevance','public_emails_clean','Email','Domain','Campaigns','Campaigns (old text)','Messages Sent','Last Contacted','Campaign Status','Bounce Reason','Synced At','Deploy Error','Name','Valid','Intent Status','LinkedIn Campaign','Email Campaign','LinkedIn Routed At','Email Routed At','Target Campaign','routed_at','Enroll Confirmed','Enroll Error','Event Type','First Hire','linkedin_name_match','Tag','State Full']);
 const snake=k=>String(k).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
-const fields=t.fields||[];
-let hasDe=false;
-for(const f of fields){ if(f.name==='Deploy Error') hasDe=true; }
 const varCols=[]; const rideCols=[]; const requiredCore=[]; let needFirstName=true;
 const consider=(name)=>{
   if(MACHINE.has(name)||IDENTITY.has(name)) return;
@@ -49,4 +70,4 @@ D.requiredCore=requiredCore;
 D.needFirstName=needFirstName;
 if(!needFirstName) D.warnings.push('view "'+D.view+'" does not show first_name; the first name is not enforced and leads deploy without one');
 D.schemaTables=null; D.viewMeta=null;
-return [{json:{needDe:!hasDe, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];
+return [{json:{needDe:ensure.length>0, field:ensure[0]||null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];

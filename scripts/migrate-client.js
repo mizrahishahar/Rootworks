@@ -267,7 +267,15 @@ const JOB_COLS = ['Job ID', 'Job Title', 'Job Link', 'Job Posted', 'Job Descript
 const STORELEADS_COLS = ['Plan', 'Revenue Est Monthly', 'Store Age Years', 'Product Count', 'App Spend Mo', 'Key Apps', 'Tech Stack', 'Trustpilot Rating', 'Trustpilot Reviews', 'Migrated From', 'Social Followers', 'Growth 90d', 'Features'];
 const REVIEWS_COLS = ['Review Count', 'Review Latest', 'Review Link', 'Review Titles', 'Review Quotes', 'Review Replied', 'Trustpilot Reviews Total', 'Trustpilot URL'];
 const SYNC_COLS = ['Messages Sent', 'Last Contacted', 'Campaign Status', 'Bounce Reason', 'Synced At'];
-const COMPANY_LANE = ['MV P0', 'BB', 'Final Email', 'Email Source', 'Status'];
+// The register's short lane on Companies, exactly as n8n/Onboard-Client/nodes/Scaffold-Register.js
+// declares it (COMPANY_LANE) and Flowroots/Operations/Field Standard.md rules it:
+// Email, MV P0, BB, Final Email, Status. Email Source is People's alone.
+const COMPANY_LANE = ['Email', 'MV P0', 'BB', 'Final Email', 'Status'];
+// The lane keys a legacy Domains table can actually feed. Companies.Email is the public inbox the
+// email waterfall picks and writes; no legacy Domains table carries it (checked on Dave's
+// "Accelerator 2025+ - Domains", tbl9SgBj5owhlS8BS: public_emails_clean, Public Emails and Final
+// Email, no Email column), so nothing maps into it and the waterfall fills it after the migration.
+const COMPANY_LANE_FROM_LEGACY = COMPANY_LANE.filter((n) => n !== 'Email');
 const PEOPLE_LANE = ['Status', 'Final Email', 'MV P0', 'P1 (Trykitt)', 'MV P1', 'P2 (LeadMagic)', 'MV P2', 'P3 (Prospeo)', 'MV P3', 'BB'];
 
 const same = (names, extra = {}) => names.map((n) => ({ to: n, from: [n], ...extra }));
@@ -282,7 +290,8 @@ const COMPANY_MAP = [
   { to: 'State', from: ['Company State', 'State'], companyPrefixed: 'Company State' },
   { to: 'City', from: ['Company City', 'City'], companyPrefixed: 'Company City' },
   ...same(['Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'State Full']),
-  ...same(COMPANY_LANE.filter((n) => n !== 'Email Source'), { shape: 'domains', group: 'lane' }),
+  ...same(COMPANY_LANE_FROM_LEGACY, { shape: 'domains', group: 'lane' }),
+  // Read so the drop is counted and named, never written: Companies has no Email Source in the register.
   { to: 'Email Source', from: ['Email Source', 'Source'], accept: { Source: isLaneSource }, shape: 'domains', group: 'lane' },
   { to: 'Campaigns', from: ['Campaigns'], shape: 'domains', links: true },
   ...same(SYNC_COLS, { shape: 'domains', group: 'sync' }),
@@ -312,9 +321,10 @@ const PEOPLE_MAP = [
 
 // Register core, for the "what does the scaffold still lack" line of the report.
 // Companies exactly as n8n/Onboard-Client/nodes/Scaffold-Register.js declares it: no State Full,
-// no Email Source (the lane source is People's alone), and the count field is Contacts Count.
+// no Email Pattern, no Email Source (the lane source is People's alone), and the count field is
+// Contacts Count. Its lane is COMPANY_LANE whole, Email included.
 const REGISTER_CORE = {
-  Companies: ['Domain', 'Company', 'Description', 'Industry Groups', 'Business Model', 'Employees', 'Revenue Range', 'Keywords', 'Country', 'State', 'City', 'Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'Domain Source', 'Tag', 'Build Date', 'Contacts Pulled At', 'Contacts Count', 'Contact Sources', 'Signals', 'Signal At', 'ICP Reason', ...COMPANY_LANE.filter((n) => n !== 'Email Source'), 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
+  Companies: ['Domain', 'Company', 'Description', 'Industry Groups', 'Business Model', 'Employees', 'Revenue Range', 'Keywords', 'Country', 'State', 'City', 'Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'Domain Source', 'Tag', 'Build Date', 'Contacts Pulled At', 'Contacts Count', 'Contact Sources', 'Signals', 'Signal At', 'ICP Reason', ...COMPANY_LANE, 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
   People: ['Name', 'first_name', 'last_name', 'Title', 'Seniority', 'Department', 'Email', 'LinkedIn URL', 'Phone', 'Domain', 'Company', 'Companies', 'Contact Key', 'Contact Source', 'Source ID', 'Tag', 'Build Date', 'Email Source', ...PEOPLE_LANE, 'relevance', 'manually_approved', 'linkedin_name_match', 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
 };
 
@@ -326,6 +336,13 @@ const NEVER_WRITE = { Companies: new Set(['Build Date', 'People', 'Contacts Pull
 // Counted under acceptedDrops, never a data-bearing drop that blocks apply. On person rows the company facts
 // are accepted too: they arrive by lookup now (the company row may still take them as gap-fill).
 const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit'];
+// Companies only, ruled out of the register 2026-09-02 alongside Company Status and State Full.
+// Email Pattern has no home on any register table and never will. Email Source is People's alone
+// (the register's Companies lane is Email, MV P0, BB, Final Email, Status); the Companies-side
+// legacy column is a mis-named provenance string, not a lane tier ("DiscoLike" on all 1,748 rows of
+// Dave's "Accelerator 2025+ - Domains"), so nothing of value is left behind. Both stay read and
+// reported by name under acceptedDrops; neither blocks --apply any more.
+const COMPANY_ACCEPTED_DROP_COLS = ['Email Pattern', 'Email Source'];
 const PERSON_COPY_COLS = ['City', 'State', 'Country', 'Zip', 'Street', 'Industry Groups', 'Employees', 'MX Provider', 'Description', 'Keywords', 'Business Model', 'Revenue Range'];
 // People carries Company, Domain and Tag as lookups through the Companies link (the On People rule,
 // Flowroots/Operations/Field Standard.md). A legacy value in one of them is not a loss: it arrives
@@ -334,7 +351,7 @@ const PERSON_COPY_COLS = ['City', 'State', 'Country', 'Zip', 'Street', 'Industry
 // Its own set, not ACCEPTED_DROP_COLS, because the maps do read these columns: an accepted column
 // no map reads is counted a second time, per row, by acceptedColsOf.
 const LOOKUP_DROPS = { Companies: new Set(), People: new Set(['Company', 'Domain', 'Tag']) };
-const ACCEPTED_DROPS = { Companies: new Set(ACCEPTED_DROP_COLS), People: new Set([...ACCEPTED_DROP_COLS, ...PERSON_COPY_COLS]) };
+const ACCEPTED_DROPS = { Companies: new Set([...ACCEPTED_DROP_COLS, ...COMPANY_ACCEPTED_DROP_COLS]), People: new Set([...ACCEPTED_DROP_COLS, ...PERSON_COPY_COLS]) };
 const fromNamesOf = (MAP) => new Set(MAP.flatMap((m) => m.from));
 
 // ------------------------------------------------------------------ Schema indexing

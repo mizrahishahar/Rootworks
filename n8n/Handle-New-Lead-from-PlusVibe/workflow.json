@@ -99,41 +99,6 @@
     },
     {
       "parameters": {
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblJAWVcCaW6TmfbC"
-        },
-        "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $json.Client || $json.fields.Client }}\", ARRAYJOIN({Client})))",
-        "returnAll": false,
-        "limit": 1,
-        "options": {}
-      },
-      "id": "7f3e4a90-1c2d-4e5f-9a6b-08d21c4b9e01",
-      "name": "Find Qual Prompt",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        560,
-        -416
-      ],
-      "executeOnce": true,
-      "alwaysOutputData": true,
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
         "jsCode": "@@file:nodes/Client-Vars.js"
       },
       "id": "f5d255bc-f9ef-4622-936a-c46e5aaeb993",
@@ -308,31 +273,44 @@
     },
     {
       "parameters": {
-        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Normalize').first().json.enrich_domain }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
+        "jsCode": "@@file:nodes/Qualify-Input.js"
       },
-      "id": "35cb5d27-c214-42eb-a0cf-2da3a7a4dbec",
-      "name": "DiscoLike BizData",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "id": "e1a2b3c4-0001-4000-8000-000000000001",
+      "name": "Qualify Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         3136,
         -320
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "jreseZ3JAhJNgkk0",
-          "name": "Discolike API"
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ENRICH_AND_QUALIFY_LEAD_ID",
+          "cachedResultName": "Enrich and Qualify Lead"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
         }
-      }
+      },
+      "id": "e1a2b3c4-0001-4000-8000-000000000002",
+      "name": "Enrich and Qualify Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3360,
+        -320
+      ]
     },
     {
       "parameters": {
@@ -417,9 +395,9 @@
             "Source": "Email",
             "Conversation Thread": "={{ $('Format Thread').item.json.thread_context }}",
             "First Engagement": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
-            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
-            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
-            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}",
+            "Headcount": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.employees && b.employees!=='N/A') ? b.employees : null;})() }}",
+            "ARR": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : null;})() }}",
+            "LinkedIn": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};const s=b.social_urls;if(Array.isArray(s)){return s.find(u=>String(u).toLowerCase().includes('linkedin'))||null;}if(s&&typeof s==='object'){return s.linkedin||s.LinkedIn||null;}return null;})() }}",
             "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
             "Last Engaged": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
@@ -494,68 +472,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=LEAD: {{ $('Normalize').first().json.first_name }} {{ $('Normalize').first().json.last_name }} | {{ $('Normalize').first().json.job_title }} | {{ $('Normalize').first().json.company_name }} | {{ $('Normalize').first().json.lead_email }}\nEMAIL TYPE: {{ $('Normalize').first().json.is_freemail ? \"PERSONAL/FREEMAIL — domain is the email provider, NOT the company; web-search the real company + phone\" : \"business domain\" }}\nLOCATION: {{ $('Normalize').first().json.city }}, {{ $('Normalize').first().json.state }}, {{ $('Normalize').first().json.country_code }}\nDOMAIN: {{ $('Normalize').first().json.domain }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPROSPECT LATEST REPLY:\n{{ $('Format Thread').first().json.reply_text }}\n\nRECENT EXCHANGE (our last message, then their reply — use this to interpret short replies like \"sure\"/\"yes\"):\n{{ $('Format Thread').first().json.last_two }}\n\nRun the qualification. Output structured JSON, and include a \"situation_summary\": ONE plain-English line (max 140 chars) stating what the prospect signaled and what they want next, interpreting the latest reply IN CONTEXT of our last message. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for (e.g. \"Said yes to a quick walkthrough video\" or \"Asked us to send more on how it works before a call\"). Never paste the raw reply verbatim; no names, signatures, or URLs. Also include a \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor.",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
-        }
-      },
-      "id": "d2443906-aa8e-4e68-8264-1b63dd27063d",
-      "name": "Qualify Lead",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        3360,
-        -320
-      ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.1"
-        },
-        "builtInTools": {
-          "webSearch": {
-            "searchContextSize": "medium"
-          }
-        },
-        "options": {
-          "reasoningEffort": "medium"
-        }
-      },
-      "id": "b8b141ee-2a20-475d-b6a1-c5ad06346f39",
-      "name": "GPT 5.1 Qualifier",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        3376,
-        -96
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "9P7fOmZxpETeDhu8",
-          "name": "OpenAI"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
-      },
-      "id": "5c2bd7e1-1c7d-4e4a-8f62-c0100194e855",
-      "name": "Parse Qualification",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        3504,
-        -96
-      ]
     },
     {
       "parameters": {
@@ -1405,17 +1321,6 @@
       "main": [
         [
           {
-            "node": "Find Qual Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Qual Prompt": {
-      "main": [
-        [
-          {
             "node": "Client Vars",
             "type": "main",
             "index": 0
@@ -1471,7 +1376,7 @@
       "main": [
         [
           {
-            "node": "DiscoLike BizData",
+            "node": "Qualify Input",
             "type": "main",
             "index": 0
           }
@@ -1495,39 +1400,6 @@
           {
             "node": "Resolve Prospect",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qualify Lead": {
-      "main": [
-        [
-          {
-            "node": "Flatten",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GPT 5.1 Qualifier": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Qualify Lead",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Qualification": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Qualify Lead",
-            "type": "ai_outputParser",
             "index": 0
           }
         ]
@@ -1695,17 +1567,6 @@
         [
           {
             "node": "Log Run",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "DiscoLike BizData": {
-      "main": [
-        [
-          {
-            "node": "Qualify Lead",
             "type": "main",
             "index": 0
           }
@@ -1953,6 +1814,28 @@
         [
           {
             "node": "Fire Inbox Routine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Input": {
+      "main": [
+        [
+          {
+            "node": "Enrich and Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich and Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
             "type": "main",
             "index": 0
           }

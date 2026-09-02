@@ -6,10 +6,8 @@ try{ const mi=$('Manual Input').first().json; if(mi){ lead_email=lead_email||mi.
 const r=$('Find Client Row').first().json||{};
 const f=r.fields||r;
 const name=f['Client']||'';
-// Qualification prompt lives in KB Files (Type=qualification-prompt); the
-// Clients field is the legacy fallback until it is deleted.
-let kbPrompt='';
-try{ const kb=$input.first().json||{}; const kf=kb.fields||kb; kbPrompt=String(kf['Content']||'').replace(/\\([_*[\]`#|>~-])/g,'$1').trim(); }catch(e){}
+// The qualification rubric is read by Enrich and Qualify Lead (KB Files, Type=qualification-prompt);
+// Qualify Input passes the legacy Clients field 'Qualification Prompt' as that helper's fallback.
 return [{ json: {
   lead_email: lead_email,
   manual: manual,
@@ -20,6 +18,5 @@ return [{ json: {
   slackChannel: f['Slack Channel ID']||'',
   driveFolder: f['driveMainFolderID']||'',
   clayrootsBase: f['Clayroots Base ID']||'',
-  qualPrompt: kbPrompt || f['Qualification Prompt'] || '',
   notifyGoalLine: f['Notify Goal Line']||''
 }}];

@@ -13,8 +13,10 @@ if (!contactId) {
     if (Array.isArray(c) && c.length) contactId = String(c[0] && c[0].id ? c[0].id : c[0]);
   } catch (e) {}
 }
-let sig = '', sigTf = '';
-try { const ft = $('Format Thread').first().json || {}; sig = String(ft.signature_phone || '').trim(); sigTf = String(ft.signature_phone_tollfree || '').trim(); } catch (e) {}
+// This intake carries no signature scrape: the PlusVibe intake gets its number from its Format Thread node,
+// and this workflow has no such node (the old reference to it resolved to nothing, every run). The waterfall's
+// own signature tier still reads the Conversation Thread on the prospect row.
+const sig = '', sigTf = '';
 const outOfIcp = f.custom_qualification_status === 'out_of_icp';
 const _call = (contactId && (!outOfIcp || sig)) ? 1 : 0;
 let reason = '';

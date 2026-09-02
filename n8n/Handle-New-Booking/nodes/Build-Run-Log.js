@@ -5,7 +5,6 @@ let p=null; try{ p=$('Resolve Prospect').first().json; }catch(e){}
 let lists=null; try{ lists=$('Assess Lists').first().json; }catch(e){}
 let seq=null; try{ seq=$('Assess Lead').first().json; }catch(e){}
 let v=null; try{ v=$('Flatten Verdict').first().json; }catch(e){}
-let qc=null; try{ qc=$('Qual Context').first().json; }catch(e){}
 let meetingId=''; try{ meetingId=$('Create Meeting').first().json.id||''; }catch(e){}
 let stamped=false; try{ stamped=!!($('Stamp Booked').first().json||{}).id; }catch(e){}
 let posted=false; try{ const s=$('Post Booking Card').first().json||{}; posted=!!(s.ts||(s.message&&s.message.ts)||s.ok===true); }catch(e){}
@@ -22,7 +21,7 @@ else {
     head=(p.tier==='Replied'?'Inbox lead booked':p.tier==='Sequenced'?'Sequenced lead booked (never replied)':p.tier==='Sourced'?'Sourced lead booked (company on our list)':'Lead booked');
     lines.push('- **Attribution:** '+(p.tier||'?')+' · '+(p.why||''));
     lines.push('- **Prospect:** '+(p.existed?'matched existing row':'created')+' ('+p.prospectId+')');
-    lines.push('- **Qualification:** '+(v?(v.qualificationStatus+(v.verdictReason?' · '+v.verdictReason:'')+(qc&&!qc.kbFound?' (no qualification-prompt KB row for this client, generic rubric used)':'')):'NOT run'));
+    lines.push('- **Qualification:** '+(v?(v.qualificationStatus+(v.verdictReason?' · '+v.verdictReason:'')+(v.kbFound===false?' (no qualification-prompt KB row for this client, generic rubric used)':'')):'NOT run'));
     if(!v) failed.push('qualification did not produce a verdict');
     lines.push('- **Stamped:** '+(stamped?'OutreachStatus = Scheduled Call, Call Booked At, QualificationStatus, Qualification Brief, contextNotes'+(c.isFlowroots?', PipelineStatus = Scheduled Call':''):'NOT stamped')); if(!stamped) failed.push('prospect not stamped');
     lines.push('- **Meeting:** '+(meetingId?'Meetings row created ('+meetingId+')':'NOT created')); if(!meetingId) failed.push('meeting row not created');

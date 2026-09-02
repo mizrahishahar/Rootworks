@@ -559,146 +559,45 @@
       }
     },
     {
-      "id": "f5f5ead8-0435-4ad9-ae0e-fe61abde1a9d",
-      "name": "Find Qual Prompt",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        4480,
-        0
-      ],
       "parameters": {
-        "resource": "record",
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblJAWVcCaW6TmfbC"
-        },
-        "returnAll": false,
-        "limit": 1,
-        "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $('Resolve Client').first().json.clientName }}\", ARRAYJOIN({Client})))",
-        "options": {}
+        "jsCode": "@@file:nodes/Qualify-Input.js"
       },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "188dadc7-3146-4a3d-9066-c07da0c89d56",
-      "name": "Qual Context",
+      "id": "e1a2b3c4-0003-4000-8000-000000000001",
+      "name": "Qualify Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
+        4480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ENRICH_AND_QUALIFY_LEAD_ID",
+          "cachedResultName": "Enrich and Qualify Lead"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1a2b3c4-0003-4000-8000-000000000002",
+      "name": "Enrich and Qualify Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
         4704,
         0
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Qual-Context.js"
-      }
-    },
-    {
-      "id": "a554cbf6-9e25-43c3-a222-b98f3d3ac0f8",
-      "name": "DiscoLike BizData",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        4928,
-        0
-      ],
-      "parameters": {
-        "url": "={{ 'https://api.discolike.com/v1/bizdata?domain=' + encodeURIComponent($('Normalize Booking').first().json.domain || '') }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          },
-          "timeout": 30000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "jreseZ3JAhJNgkk0",
-          "name": "Discolike API"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
-    },
-    {
-      "id": "f7fe3fe7-0f25-4fc0-b505-01bea8c6ed1d",
-      "name": "Qualify Booking",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        5152,
-        0
-      ],
-      "parameters": {
-        "promptType": "define",
-        "hasOutputParser": true,
-        "text": "=LEAD: {{ $('Normalize Booking').first().json.fullName }} | {{ $('Qual Context').first().json.title || 'title unknown' }} | {{ $('Qual Context').first().json.companyName || $('Normalize Booking').first().json.domain || 'company unknown' }} | {{ $('Normalize Booking').first().json.email }}\nEMAIL TYPE: {{ $('Normalize Booking').first().json.domain ? 'business domain' : 'PERSONAL/FREEMAIL, the domain is the email provider, NOT the company; web-search the real company' }}\nDOMAIN: {{ $('Normalize Booking').first().json.domain }}\n\nWHAT HAPPENED: this person BOOKED A CALL on the client's scheduler ({{ $('Normalize Booking').first().json.source }}): \"{{ $('Normalize Booking').first().json.title }}\" at {{ $('Normalize Booking').first().json.startTime }}.\nHOW WE GOT HERE: {{ $('Qual Context').first().json.attributionLine }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPRIOR HISTORY WITH THIS PROSPECT (thread and notes, may be empty for a cold booker):\n{{ $('Qual Context').first().json.history }}\n\nBOOKING NOTES THEY LEFT:\n{{ $('Normalize Booking').first().json.notes || '(none)' }}\n\nRun the qualification. Output structured JSON. \"situation_summary\": ONE plain-English line (max 140 chars) stating what the booking signals and what they want from the call. \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor. Never paste raw notes verbatim; no names, signatures, or URLs.",
-        "options": {
-          "systemMessage": "={{ $('Qual Context').first().json.systemPrompt }}"
-        }
-      }
-    },
-    {
-      "id": "c98e37cd-4a63-4f8b-bbae-c589a4f6ad1a",
-      "name": "GPT 5.1 Qualifier",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        5168,
-        224
-      ],
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.1"
-        },
-        "builtInTools": {
-          "webSearch": {
-            "searchContextSize": "medium"
-          }
-        },
-        "options": {
-          "reasoningEffort": "medium"
-        }
-      },
-      "credentials": {
-        "openAiApi": {
-          "id": "9P7fOmZxpETeDhu8",
-          "name": "OpenAI"
-        }
-      }
-    },
-    {
-      "id": "30514a10-3a66-4028-8a0a-38b026475c24",
-      "name": "Parse Qualification",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        5296,
-        224
-      ],
-      "parameters": {
-        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Booked a call to see the agent on their own helpdesk\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Prepare the demo on their site\"}"
-      }
+      ]
     },
     {
       "id": "82f8a882-e41c-492c-89eb-22b34164a4e1",
@@ -1276,73 +1175,7 @@
       "main": [
         [
           {
-            "node": "Find Qual Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Qual Prompt": {
-      "main": [
-        [
-          {
-            "node": "Qual Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qual Context": {
-      "main": [
-        [
-          {
-            "node": "DiscoLike BizData",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "DiscoLike BizData": {
-      "main": [
-        [
-          {
-            "node": "Qualify Booking",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GPT 5.1 Qualifier": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Qualify Booking",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Qualification": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Qualify Booking",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qualify Booking": {
-      "main": [
-        [
-          {
-            "node": "Flatten Verdict",
+            "node": "Qualify Input",
             "type": "main",
             "index": 0
           }
@@ -1456,6 +1289,28 @@
         [
           {
             "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Input": {
+      "main": [
+        [
+          {
+            "node": "Enrich and Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich and Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten Verdict",
             "type": "main",
             "index": 0
           }

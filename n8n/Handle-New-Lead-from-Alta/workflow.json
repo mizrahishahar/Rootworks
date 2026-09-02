@@ -68,41 +68,6 @@
     },
     {
       "parameters": {
-        "operation": "search",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblJAWVcCaW6TmfbC"
-        },
-        "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $json.Client || $json.fields.Client }}\", ARRAYJOIN({Client})))",
-        "returnAll": false,
-        "limit": 1,
-        "options": {}
-      },
-      "id": "8a4f5b01-2d3e-4f60-8b7c-19e32d5c0f12",
-      "name": "Find Qual Prompt",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        560,
-        -240
-      ],
-      "executeOnce": true,
-      "alwaysOutputData": true,
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
         "jsCode": "@@file:nodes/Client-Vars.js"
       },
       "id": "50a38719-9c67-4a35-beb0-daf30ddf3919",
@@ -303,34 +268,6 @@
     },
     {
       "parameters": {
-        "url": "=https://api.discolike.com/v1/bizdata?domain={{ $('Alta Normalize').first().json.enrich_domain }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "6c4f985b-65eb-4908-a7d6-e790cd604c5c",
-      "name": "DiscoLike BizData",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        4160,
-        -240
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "jreseZ3JAhJNgkk0",
-          "name": "Discolike API"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "upsert",
         "base": {
           "__rl": true,
@@ -356,9 +293,9 @@
             "Campaign": "={{ $('Alta Normalize').item.json.campaign_name || $('Search Campaign').first()?.json?.Campaign || $('Alta Normalize').item.json.alta_campaign_id || null }}",
             "First Engagement": "={{ $('Alta Normalize').item.json.first_engagement || $now.toISO() }}",
             "Conversation Thread": "={{ $('Alta Normalize').item.json.conversation_thread }}",
-            "Headcount": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.employees && b.employees!=='N/A') ? b.employees : ($('Alta Normalize').item.json.company_size || null);})() }}",
-            "ARR": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : ($('Alta Normalize').item.json.company_revenue || null);})() }}",
-            "LinkedIn": "={{ (function(){const b=$('DiscoLike BizData').item.json||{};const s=b.social_urls;if(Array.isArray(s)){const u=s.find(x=>String(x).toLowerCase().includes('linkedin'));if(u)return u;}else if(s&&typeof s==='object'&&(s.linkedin||s.LinkedIn)){return s.linkedin||s.LinkedIn;}return $('Alta Normalize').item.json.company_linkedin||null;})() }}",
+            "Headcount": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.employees && b.employees!=='N/A') ? b.employees : ($('Alta Normalize').item.json.company_size || null);})() }}",
+            "ARR": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : ($('Alta Normalize').item.json.company_revenue || null);})() }}",
+            "LinkedIn": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};const s=b.social_urls;if(Array.isArray(s)){const u=s.find(x=>String(x).toLowerCase().includes('linkedin'));if(u)return u;}else if(s&&typeof s==='object'&&(s.linkedin||s.LinkedIn)){return s.linkedin||s.LinkedIn;}return $('Alta Normalize').item.json.company_linkedin||null;})() }}",
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
             "Alta Prospect ID": "={{ $('Alta Normalize').item.json.alta_prospect_id || null }}",
             "Alta Msg ID": "={{ $('Capture Payload').first().json.body.reply ? $('Capture Payload').first().json.body.reply.messageId : null }}",
@@ -434,37 +371,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=LEAD: {{ $('Alta Normalize').first().json.first_name }} {{ $('Alta Normalize').first().json.last_name }} | {{ $('Alta Normalize').first().json.job_title }} | {{ $('Alta Normalize').first().json.company_name }} | {{ $('Alta Normalize').first().json.lead_email || $('Alta Normalize').first().json.linkedin_url }}\nSOURCE: Alta ({{ $('Alta Normalize').first().json.reply_channel }} reply)\nEMAIL TYPE: {{ $('Alta Normalize').first().json.is_freemail ? 'PERSONAL/FREEMAIL, the domain is the email provider, NOT the company; web-search the real company + phone' : ($('Alta Normalize').first().json.lead_email ? 'business domain' : 'no email, LinkedIn lead') }}\nLOCATION: {{ $('Alta Normalize').first().json.city }}, {{ $('Alta Normalize').first().json.state }}, {{ $('Alta Normalize').first().json.country_code }}\nDOMAIN: {{ $('Alta Normalize').first().json.domain }}\nLINKEDIN: {{ $('Alta Normalize').first().json.linkedin_url }}\n\nCOMPANY DATA (from Alta enrichment; fields may be missing, verify with web search):\nindustry: {{ $('Alta Normalize').first().json.company_industry }} | size: {{ $('Alta Normalize').first().json.company_size }} | revenue: {{ $('Alta Normalize').first().json.company_revenue }} | founded: {{ $('Alta Normalize').first().json.company_founded }} | HQ: {{ $('Alta Normalize').first().json.company_hq }}\nDescription: {{ $('Alta Normalize').first().json.company_description }}\nTechnologies: {{ $('Alta Normalize').first().json.company_tech }}\n\nCOMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n{{ JSON.stringify($('DiscoLike BizData').first().json) }}\n\nPROSPECT LATEST REPLY:\n{{ $('Alta Normalize').first().json.reply_text }}\n\nRECENT EXCHANGE (only their reply is available for this channel):\nTHEM: {{ $('Alta Normalize').first().json.reply_text }}\n\nRun the qualification. Output structured JSON, and include a \"situation_summary\": ONE plain-English line (max 140 chars) stating what the prospect signaled and what they want next. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for. Never paste the raw reply verbatim; no names, signatures, or URLs. Also include a \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor.",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $('Client Vars').first().json.qualPrompt }}"
-        }
-      },
-      "id": "a2816ca9-3915-4df0-ab02-a251e6a49558",
-      "name": "Qualify Lead",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        4384,
-        -240
-      ]
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
-      },
-      "id": "f917da0f-6ab6-4bc4-bfcd-9fe73ef37eea",
-      "name": "Parse Qualification",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        4464,
-        -16
-      ]
     },
     {
       "parameters": {
@@ -1745,6 +1651,47 @@
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Qualify-Input.js"
+      },
+      "id": "e1a2b3c4-0002-4000-8000-000000000001",
+      "name": "Qualify Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ENRICH_AND_QUALIFY_LEAD_ID",
+          "cachedResultName": "Enrich and Qualify Lead"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1a2b3c4-0002-4000-8000-000000000002",
+      "name": "Enrich and Qualify Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4384,
+        -240
+      ]
+    },
+    {
       "id": "2b4000c4-2842-4037-909f-0f241bd60f92",
       "name": "Append Record Link",
       "type": "n8n-nodes-base.code",
@@ -1868,17 +1815,6 @@
       "main": [
         [
           {
-            "node": "Find Qual Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Qual Prompt": {
-      "main": [
-        [
-          {
             "node": "Client Vars",
             "type": "main",
             "index": 0
@@ -1924,11 +1860,6 @@
         [
           {
             "node": "Screen Reply",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Qualify Lead",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -1981,28 +1912,6 @@
           {
             "node": "Create CRM Contact",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qualify Lead": {
-      "main": [
-        [
-          {
-            "node": "Flatten",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Qualification": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Qualify Lead",
-            "type": "ai_outputParser",
             "index": 0
           }
         ]
@@ -2102,17 +2011,6 @@
         [
           {
             "node": "Build Run Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "DiscoLike BizData": {
-      "main": [
-        [
-          {
-            "node": "Qualify Lead",
             "type": "main",
             "index": 0
           }
@@ -2309,7 +2207,7 @@
       "main": [
         [
           {
-            "node": "DiscoLike BizData",
+            "node": "Qualify Input",
             "type": "main",
             "index": 0
           }
@@ -2365,6 +2263,28 @@
         [
           {
             "node": "Fire Routine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Input": {
+      "main": [
+        [
+          {
+            "node": "Enrich and Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich and Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Flatten",
             "type": "main",
             "index": 0
           }

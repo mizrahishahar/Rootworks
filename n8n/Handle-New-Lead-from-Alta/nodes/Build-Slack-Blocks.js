@@ -3,7 +3,7 @@ const N = $('Alta Normalize').first().json;
 let phoneVal = '', phoneSrc = '';
 try { const rp = $('Resolve Phone').first().json || {}; phoneVal = String(rp.phone || '').trim(); phoneSrc = String(rp.phone_source || '').trim(); } catch (e) {}
 let B = {};
-try { B = $('DiscoLike BizData').first().json || {}; } catch (e) { B = {}; }
+try { B = $('Flatten').first().json.bizdata || {}; } catch (e) { B = {}; }
 let C = {};
 try { C = $('Resolve Campaign').first().json || {}; } catch (e) { C = {}; }
 let dash = '';

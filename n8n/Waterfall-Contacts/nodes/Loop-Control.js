@@ -8,7 +8,9 @@ const cfg=$('Find Tables').first().json;
 let row={}; try{ row=$('Read Tally').first().json||{}; }catch(e){}
 const zero=()=>({ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'' });
 let t={ batches:0, companies:0, contagen:zero(), supersoniq:zero(), aiark:zero(), built:0, heldSkipped:0, dupes:0, dnc:0, written:0, writeErrors:0, stamped:0, stampErrors:0, covered:0, zero:0, zeroDomains:[], failReasons:[] };
-try{ const raw=(row.fields&&row.fields.Tally)||''; if(raw){ const parsed=JSON.parse(raw); if(parsed&&typeof parsed==='object') t=Object.assign(t, parsed); } }catch(e){}
+// A launch row is reused across runs: only a Tally stamped with THIS execution id is ours; anything else is a previous run's and starts from zero.
+try{ const raw=(row.fields&&row.fields.Tally)||''; if(raw){ const parsed=JSON.parse(raw); if(parsed&&typeof parsed==='object'&&String(parsed.executionId||'')===String($execution.id)) t=Object.assign(t, parsed); } }catch(e){}
+t.executionId=String($execution.id);
 const n=(v)=>Number(v)||0;
 const batchNum=n(res.batchNum);
 if(res.allFailed){ throw new Error('Waterfall Contacts batch '+batchNum+' had every paid call fail after retry ('+String((res.failReasons&&res.failReasons[0])||'no reason captured').slice(0,200)+'). Totals so far: '+t.companies+' companies, '+t.written+' people written across '+t.batches+' batches.'); }

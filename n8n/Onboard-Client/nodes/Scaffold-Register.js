@@ -9,6 +9,12 @@
 // declared here as data (name, filter, fields, sort) so the register is their spec too; making
 // them in a base, like the two synced mirrors ("<Client> Campaigns", "<Client> Signals"), is the
 // Operator's manual act, never made here.
+// The Hub side (ruled 2026-09-02). Clients carries the only per-client table pointers:
+// ClayrootsCompaniesTableID, ClayrootsPeopleTableID, ClayrootsCompaniesSharedView,
+// ClayrootsPeopleSharedView. A machine that takes Table takes it by name (People or Companies) and
+// resolves it in the client's base; a machine that needs an id reads those four. Signals.View is the
+// Airtable view id of the queue view on the client's Companies table that the signal feeds. No
+// other Hub field points at a client table or view.
 //
 // Field kinds. plain: type + options, created with its table or as a column. formula: refs are
 // field names on the same table, swapped for field ids at plan time. link: to a register table.

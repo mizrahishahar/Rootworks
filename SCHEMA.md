@@ -18,16 +18,13 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Slack Channel ID | `fldP5V8vAPVHvpuut` | singleLineText |  |
 | Clayroots Base ID | `fldRAiazbtIutFb7s` | singleLineText |  |
 | Qualification Prompt | `fldN4HT0rGmNXNp78` | multilineText | The client-specific ICP qualification rubric, read at runtime by the client's Handle-new-lead automation and injected as the system prompt of the GPT qualifier. One per client. |
-| Close Smart View ID | `fldlSMNRyuLZn3qiP` | singleLineText | The Close saved-search (smart view) ID for this client's '{Client} — Prospects' view. Written by the Onboard Client automation when it creates the view. |
 | SESSIONS | `fldJy6MsPHAXKKVFn` | singleLineText |  |
 | AUTOMATIONS | `fld6hL8EhoXx2TxZd` | multipleRecordLinks |  |
 | Companies | `fldcH6aX0naSrHcJh` | multipleRecordLinks |  |
-| Transactions | `fldvniUaYfQTh5t98` | multipleRecordLinks |  |
+| Transactions | `fldvniUaYfQTh5t98` | singleLineText |  |
 | Recurring Templates | `fldrpuORcW1Bwkeoi` | multipleRecordLinks |  |
 | Scheduling Link | `fldUvzXg2Ktcx5wJk` | url |  |
 | Slack Sync | `fldLIg2HmU98tXdEh` | checkbox | Enables the nightly Sync Slack Logs automation for this client. Read by the Hub scheduled automation that fans out one n8n run per checked client. |
-| Notify Goal Line (DEPRECATED) | `fld7DPrYRLRvuIqzm` | singleLineText | DEPRECATED 2026-08-12, do not use. Copy does not belong in the registry (state lives in the tools, copy lives in the vault). The cards now carry a constant goal line instead: "Goal: book the demo." Left empty on every client so the existing card code falls through to that constant. Safe to delete once the card nodes stop referencing it. |
-| Intent Tables | `fld7i5QxSvHX2s6H8` | multilineText | The client's intent tables, one table ID (tblXXX) per line. The base is the client's Clayroots Base ID. Read by the daily Add Leads to Alta / Add Leads to PlusVibe automations to know which tables to enroll from. Empty = client has no intent plays. |
 | Campaigns | `fldK4rFkJyE01KVlU` | multipleRecordLinks |  |
 | Campaign Snapshots | `fld4JTnvDBXogj2mp` | singleLineText |  |
 | Billing Date | `fldhckiADqhdwylvk` | date |  |
@@ -43,7 +40,7 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | LinkedIn Setter API Key | `fldpuAB5jiyBxliuj` | singleLineText |  |
 | LinkedIn Setter Routine URL | `fldOQlJRrYvJMPiyr` | singleLineText | The full fire URL for this client's LINKEDIN routine, a separate session from the email inbox. Handle New Lead from Alta POSTs to this at the end of every run, with Authorization: Bearer {LinkedIn Setter API Key}. Empty = this client has no LinkedIn routine and the intake skips the fire step. |
 | Client KB | `fldVBndImTxRl9lSO` | multipleRecordLinks |  |
-| Logs | `fldevnA1BWrHhvfal` | multipleRecordLinks |  |
+| Logs | `fldevnA1BWrHhvfal` | singleLineText |  |
 | Meetings | `fldx6yapArKEZki0L` | multipleRecordLinks |  |
 | Email Domains | `fldOm4uLCpBFvsgou` | multilineText | The client's own email domains, one per line (e.g. getadelante.com and adelantedesk.com for Adelante). The matcher key that lets the Fathom meeting sync tell a client meeting from a sales meeting. Keep current: a client adding a domain without this list updated leaks their meetings into the sales path. |
 | Inboxes | `fldQkOvy4b8YeUYkG` | multipleRecordLinks |  |
@@ -53,6 +50,10 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | Task Templates | `fldoZrz4vQhf0K5j8` | multipleRecordLinks |  |
 | Tasks | `fld83ot47MF0FURDv` | multipleRecordLinks |  |
 | Signals | `fldX22tSP2fGWY4rY` | multipleRecordLinks |  |
+| ClayrootsCompaniesTableID | `fldHhhOlD6RSzYi3p` | singleLineText | The client's Companies table id (tbl...) in their ClayRoots base. Set at onboarding. |
+| ClayrootsPeopleTableID | `fldAkkVBD6fLBA9my` | singleLineText | The client's People table id (tbl...) in their ClayRoots base. Set at onboarding. |
+| ClayrootsCompaniesSharedView | `fldu7gE5tnsJsS7qc` | url | The share link of the client's Companies table (was the table description). What we send the client; they filter by campaign there. Replaces per-deploy lead-list links. |
+| ClayrootsPeopleSharedView | `fldVXKc6ToYeWNGEo` | url | The share link of the client's People table (was the table description). What we send the client; they filter by campaign there. Replaces per-deploy lead-list links. |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -148,7 +149,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Waterfall Contacts |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Handle New Lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Handle New Lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Weekly Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Handle New Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Waterfall Contacts, Scaffold Client Base |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -195,6 +196,8 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Query ID | `fldrfqxnv48dOGz6X` | singleLineText | A saved DiscoLike query id (uuid). Read by Land Companies from DiscoLike: the query's domains land in the client's Companies table. |
 | Sources | `fldNHjtxyFbWPVCD5` | multipleSelects | Waterfall Contacts: which contact sources this run may call. Blank means all three. - Choices: ContaGen, Supersoniq, AI-Ark |
 | Fire Waterfall | `fldGnFF8bwe1DB5Y6` | checkbox | Waterfall Contacts: when checked, the run hands the People view Relevant & Not Waterfalled to Waterfall Emails at the end. Off until watched on real runs. |
+| Table | `fldyIUpTgDWC7uAHN` | singleSelect | ClayRoots Standard: which table of the client base the run works on. With View it replaces Table ID; the machine resolves the table by name in the client's base. - Choices: People, Companies |
+| Extras | `fldUzNoF5hN2LkbnV` | multipleSelects | Scaffold Client Base and Onboard Client: the declared extras groups to create on Companies for this client. Working machines never create columns; they refuse a base that lacks their group. - Choices: Storeleads, Hiring, Reviews |
 
 ## Sessions (`tbl3c80o7QlZ4VByU`)
 
@@ -206,26 +209,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Log | `fldfvrtHMvGvzkFOO` | multilineText |  |
 | Deliverables | `fldpPdyu0U5zLhFCN` | multilineText |  |
 
-## Transactions (`tblftntMS1xNZD6iD`)
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Description | `fldsBZ8MvZ5vpeQFZ` | multilineText |  |
-| Transaction Type | `fldnfVA7gaheHV0Rd` | singleSelect | Choices: Income, Expense |
-| Amount | `fldLbr5x0MUrru32s` | currency |  |
-| Fee Percentage | `fldSJZTZwI1Zo3BX8` | percent |  |
-| Net Amount | `fldxQNrBy2SMBU2hO` | formula |  |
-| Date | `flduG4bZAMgtl4E3a` | date |  |
-| Month | `fldeVawSrfz61RoP0` | formula |  |
-| Category | `fldTIUJtYEt6yoigt` | singleSelect | Choices: Client-Specific, Shared (Clients), Shared (General) |
-| Notes | `fldP1ST98SQRdDizO` | multilineText |  |
-| Net Amonth | `fldG9n5RBT2xvL5Ak` | formula |  |
-| Income Only | `fldfbgtYA9wkZ9mge` | formula |  |
-| Frequency | `fldggL5mE6YtqqBGy` | singleSelect | Choices: Recurring, One Time |
-| Bucket | `fldGE1qLnAp5Mx6Hx` | formula |  |
-| Client | `fldkfHw4n5KVA3Yvi` | multipleRecordLinks |  |
-
-## Recurring Templates (`tblUcwz9cU2hjYlD0`)
+## Subscriptions (`tblUcwz9cU2hjYlD0`)
 
 Define all recurring expenses and incomes for automatic transaction creation.
 
@@ -364,12 +348,11 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Open Tracking | `fldgURTx3mJwfeXMH` | checkbox | Whether PV open tracking was enabled on this campaign (PV is_emailopened_tracking). Unchecked means opens were NOT measured, so Opens 0 is an absence of data, not an absence of opens. As of 2026-08-06 tracking is on for Adelante Shopify Plus campaigns only. |
 | Open Rate | `fldEQ6kbq5qKcHOnB` | formula | Unique Opens per contacted lead. Same computation PV shows in-app. Deliberately BLANK when Open Tracking is unchecked, so an unmeasured campaign never reads as 0% and drags the report down. |
 | Openers | `fldQSNF5FHrhEtL0D` | multipleRecordLinks |  |
-| PV Leads View | `fldiVF3811bpVr1ix` | formula | Deep link to this campaign's lead list in the PlusVibe app. Derived from Campaign ID, nothing to sync. Blank for non-PlusVibe (Alta) campaigns. |
 | Lead Lists | `fldOyL4INmC7cMu4p` | multipleRecordLinks |  |
 | Signal | `fld0fqwBbRfLIThPz` | multipleRecordLinks |  |
-| Signal View | `fldNrTQTlrGEpRPd6` | singleLineText |  |
 | Pull-in URL | `fldleh9GZLj3V83EN` | url |  |
 | Record ID | `fldiHNzJbMga4onFi` | formula | This row's Hub record id, synced into every client base's Campaigns mirror so machines link by id, never by name. |
+| Table | `fldr4Ua9qSm20qGMr` | singleSelect | ClayRoots Standard: the client-base table this campaign's views (PV Leads View, Signal View, the selector) live on. People for contact campaigns, Companies for company-inbox campaigns. - Choices: People, Companies |
 
 ## Signals (`tblDtJeqkUB2JFga1`)
 
@@ -378,14 +361,13 @@ One row per campaign instance across sequencers. Upserted on Campaign ID by two 
 | Name | `fldSxLq0GqMKRsAD8` | singleLineText |  |
 | Signal Type | `fldFlLFyp0fbh2oUK` | singleSelect | Choices: hiring, trustpilot_reviews |
 | Roles | `fldWNyb4tVR7K4e1l` | multilineText |  |
-| Target Table | `fldPmV7Fi6JRrPjVk` | singleLineText |  |
 | Country | `fldpzI1Fe3VmBgnK9` | singleLineText |  |
 | Max Employees | `fldXd78J9ZdrXOxV7` | number |  |
 | ICP | `fldrZ7I8ai7caze5b` | multilineText |  |
 | Client | `fldW6Binf0wnpLxZs` | multipleRecordLinks |  |
 | Campaigns | `fldNSaJ1fsF4QGGlT` | multipleRecordLinks |  |
-| Signal View (from Campaigns) | `fldXegjg9bni7x8Yr` | multipleLookupValues |  |
 | Record ID | `fldnHIgKG5CRzz9PM` | formula | This row's Hub record id, synced into every client base's Signals mirror so machines link by id, never by name. |
+| View | `fldOtjp7UF0pXLpCP` | singleLineText | The id (viw...) of this signal's live queue view on the client's People table: relevant people at companies that signalled, inside the freshness window. The daily feed deploys this view into every campaign linked to the signal; each door applies its own channel gate. |
 
 ## Reports (`tblUFzAV4sysSJktK`)
 
@@ -445,17 +427,6 @@ One row per deployed final view: {table} - {view}. Created by the Deploy View to
 | List URL | `fldx7jBAH2o1XuIqH` | url | Client-facing link to the list (share view / CSV). Mechanism TBD; Operator-pasted for now |
 | View Link | `fldQSPR23nP39jXvl` | url | Deep link to the exact Airtable view this list was deployed from. Built by Deploy View to Campaign as <client Clayroots shareable link>/<tableId>/<viewId>. |
 | Deployed | `fldQkDnj1kE4U5jEj` | number | How many leads this deploy confirmed into the campaign at read-back. Written by Deploy View to Campaign. |
-
-## Logs (`tbl70VAPYGBUhkyAp`)
-
-Session journal, replaces the deprecated Sessions table. One row per working session (local or cloud): what happened, what was decided, what is open. Written at session close. Durable decisions still go to their real homes (Overrides row, KB Files, GitHub issues); this is the narrative record that lets the next session pick up the thread.
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Session | `fldxBGAc7WYVwIHMo` | singleLineText | Short name of the session, e.g. 'Inbox Dave.io', 'List Adelante UK' |
-| Client | `fldlVaqQgiriwgXOk` | multipleRecordLinks |  |
-| Log | `fld4wmjzFCRaTAVf9` | richText | What happened, what was decided, what is open. Written at session close. |
-| Date | `fldLN7SOc1G0cUSUJ` | dateTime |  |
 
 ## Inboxes (`tblgdmibPyC2dRlVK`)
 

@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-08-22T19:49:28.246Z",
+  "updatedAt": "2026-09-02T19:07:47.609Z",
   "createdAt": "2026-06-11T13:34:22.982Z",
   "id": "jtBHNttawTdjG6Tv",
   "name": "Verify Emails",
+  "description": "MillionVerifier pass over a table: verifies Final Email if present, else raw Email; catch-alls resolve in the background via the BounceBan Poller. Writes MV / Status / Final Email back and logs the run to the Hub run-log.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -972,23 +973,38 @@
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
   },
+  "nodeGroups": [],
   "pinData": {},
-  "versionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
-  "activeVersionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
+  "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+  "activeVersionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+  "versionCounter": 32,
   "triggerCount": 2,
+  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-06-11T13:34:22.985Z",
       "createdAt": "2026-06-11T13:34:22.985Z",
       "role": "workflow:owner",
       "workflowId": "jtBHNttawTdjG6Tv",
-      "projectId": "pyoZAgnc0vv0Gq9W"
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
     }
   ],
+  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-14T12:09:35.686Z",
-    "createdAt": "2026-08-14T12:09:35.686Z",
-    "versionId": "649b16f3-04cf-49d3-9f12-a894ba141db7",
+    "updatedAt": "2026-09-02T19:07:47.611Z",
+    "createdAt": "2026-09-02T19:07:47.611Z",
+    "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
     "workflowId": "jtBHNttawTdjG6Tv",
     "nodes": [
       {
@@ -1003,7 +1019,8 @@
                 "requiredField": true
               },
               {
-                "fieldLabel": "Table ID",
+                "fieldLabel": "Table",
+                "placeholder": "People or Companies (required)",
                 "requiredField": true
               },
               {
@@ -1011,7 +1028,9 @@
                 "fieldType": "number"
               },
               {
-                "fieldLabel": "View"
+                "fieldLabel": "View",
+                "placeholder": "the view name on that table (required)",
+                "requiredField": true
               }
             ]
           },
@@ -1065,7 +1084,20 @@
       },
       {
         "parameters": {
-          "jsCode": "const tid=$('Params In').first().json['Table ID'];\nconst baseId=$('Params In').first().json['Clayroots Base ID'];\nconst resp=$('Check Table').first().json||{};\nconst t=(resp.tables||[]).find(x=>x.id===tid);\nif(!t){ throw new Error('Table '+tid+' not found in base '+baseId+'.'); }\nconst names=(t.fields||[]).map(f=>f.name);\nif(!(names.includes('Email')||names.includes('public_emails_clean'))){ throw new Error('Table \"'+t.name+'\" has no Email or public_emails_clean field. Aborting.'); }\nreturn [{ json:{ table:t.name, hasEmail:true, startedAt:new Date().toISOString() } }];"
+          "jsCode": "// Resolve Table: the launch names the table (People or Companies) and the view, both by name,\n// both required, no defaults (Operator ruling 2026-09-02); the ids come from the base meta Check\n// Table just read, never from the Hub (ClayRoots Standard, law 3). A blank Table or View, a table\n// the base lacks, or a view the table lacks refuses the run here, before any paid call. The lane\n// this machine writes follows the table: Companies takes the short lane (Email, MV P0, BB, Final\n// Email, Status), People today's full lane. Nothing here creates a table or a field.\nconst p=$('Params In').first().json;\nconst baseId=p['Clayroots Base ID'];\nconst resp=$('Check Table').first().json||{};\nconst tables=Array.isArray(resp.tables)?resp.tables:null;\nif(!tables){ throw new Error('Could not read the table list for base '+baseId+': '+JSON.stringify(resp).slice(0,200)+'. Nothing was spent or written.'); }\nconst want=String(p['Table']||'').trim();\nconst view=String(p['View']||'').trim();\nif(!want){ throw new Error('The launch row names no Table (People or Companies). Fill it and relaunch. Nothing was spent or written.'); }\nif(!view){ throw new Error('The launch row names no View. Fill it and relaunch. Nothing was spent or written.'); }\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()===want.toLowerCase());\nif(!t){ throw new Error('Base '+baseId+' has no '+want+' table. Scaffold the base first. Nothing was spent or written.'); }\nconst v=(t.views||[]).find(x=>x.id===view||String(x.name||'').trim()===view);\nif(!v){ throw new Error('Table \"'+t.name+'\" in base '+baseId+' has no view \"'+view+'\". Nothing was spent or written.'); }\nconst lane=String(t.name).toLowerCase()==='companies'?'companies':'people';\nreturn [{ json:{ tableId:t.id, tableName:t.name, viewId:v.id, viewName:v.name, lane, isCompanies:lane==='companies', fieldNames:(t.fields||[]).map(f=>f.name) } }];\n"
+        },
+        "id": "7c1e5b2a-0002-4a5e-9d31-resolvetable2",
+        "name": "Resolve Table",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          336,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const t=$('Resolve Table').first().json;\nconst names=t.fieldNames||[];\nif(!(names.includes('Email')||names.includes('public_emails_clean'))){ throw new Error('Table \"'+t.tableName+'\" has no Email or public_emails_clean field. Aborting.'); }\nreturn [{ json:{ table:t.tableName, hasEmail:true, startedAt:new Date().toISOString() } }];"
         },
         "id": "4bd43c96-53a8-45b4-b58c-0a077a5073c8",
         "name": "Email Guard",
@@ -1078,57 +1110,6 @@
       },
       {
         "parameters": {
-          "jsCode": "const MV=[{name:'ok',color:'greenBright'},{name:'catch_all',color:'yellowBright'},{name:'invalid',color:'redBright'},{name:'disposable',color:'orangeLight2'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst BB=[{name:'verifying',color:'blueBright'},{name:'deliverable',color:'greenBright'},{name:'undeliverable',color:'redBright'},{name:'risky',color:'yellowBright'},{name:'unknown',color:'grayBright'},{name:'error',color:'orangeBright'},{name:'skipped',color:'grayLight2'}];\nconst SRC=[{name:'P0',color:'blueBright'},{name:'P1',color:'cyanBright'},{name:'P2',color:'tealBright'},{name:'P3',color:'purpleBright'},{name:'none',color:'grayBright'}];\nconst ST=[{name:'done',color:'greenBright'},{name:'verifying',color:'blueBright'},{name:'no_email_found',color:'redBright'},{name:'error',color:'orangeBright'}];\nconst sel=(name,choices)=>({name,type:'singleSelect',options:{choices}});\nconst txt=(name)=>({name,type:'singleLineText'});\n// 2026-08-12: no bare 'MV' - P0 is the pre-existing-address tier, so a verify-only pass writes MV P0,\n// the same column the waterfall uses. 'Email Source' replaces 'Source' (Operator ruling: Email Source =\n// which tier found the email; Contact Source = where the contact came from, owned by the builders).\n// SRC carries P3 so this array stays byte-identical to Waterfall Emails' Field List.\nconst defs=[ sel('MV P0',MV), sel('BB',BB), txt('Final Email'), sel('Email Source',SRC), sel('Status',ST) ];\nreturn defs.map(d=>({json:{def:d}}));"
-        },
-        "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
-        "name": "Field List",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          672,
-          192
-        ]
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables/{{ $('Params In').first().json['Table ID'] }}/fields",
-          "authentication": "predefinedCredentialType",
-          "nodeCredentialType": "airtableTokenApi",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ $json.def }}",
-          "options": {
-            "batching": {
-              "batch": {
-                "batchSize": 1,
-                "batchInterval": 200
-              }
-            },
-            "response": {
-              "response": {
-                "neverError": true
-              }
-            }
-          }
-        },
-        "id": "69a35c18-18db-46f2-ade1-230c67a9b44d",
-        "name": "Create Field",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          896,
-          192
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "parameters": {
           "operation": "search",
           "base": {
             "__rl": true,
@@ -1138,7 +1119,7 @@
           "table": {
             "__rl": true,
             "mode": "id",
-            "value": "={{ $('Params In').first().json['Table ID'] }}"
+            "value": "={{ $('Resolve Table').first().json.tableId }}"
           },
           "filterByFormula": "NOT({Status} = 'verifying')",
           "options": {
@@ -1211,7 +1192,7 @@
       {
         "parameters": {
           "mode": "runOnceForEachItem",
-          "jsCode": "const row=$('Read Records').item.json; const f=row.fields||{};\nconst prior=((f['Final Email']||'')+'').trim();\nconst priorSrc=((f['Email Source']||f.Source||'')+'');\nconst wasDone=((f.Status||'')+'')==='done';\nconst existing=((prior||f.Email||(f.public_emails_clean||'').split(',')[0])||'').trim();\nconst slot=priorSrc||'P0';\n// Write the verdict into the tier column the address actually came from. Fall back to MV P0 when the\n// slot is not a known tier, or when that tier column does not exist on this table.\nconst tid=$('Params In').first().json['Table ID'];\nlet cols=[]; try{ const t=((($('Check Table').first().json)||{}).tables||[]).find(x=>x.id===tid); cols=((t||{}).fields||[]).map(x=>x.name); }catch(e){}\nlet mvCol='MV '+slot;\nif(!/^P[0-3]$/.test(slot)||(cols.length&&!cols.includes(mvCol))) mvCol='MV P0';\nconst G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };\nconst mv0=G('MV');\nconst SK='skipped';\nconst MVOK=['ok','catch_all','invalid','disposable','unknown'];\nconst mvVal=(r)=> r?(MVOK.includes(r.result)?r.result:'error'):SK;\nconst mvErr=(r)=> r&&(r.resultcode===4||(r.error&&r.error!=='')||!MVOK.includes(r.result));\nconst IND=(r)=> r==='catch_all'||r==='unknown';\nlet final='',source='none',bb='skipped',pe='',ps='',resolved=false,verifying=false,errored=false;\nif(existing&&mv0){ if(mv0.result==='ok'){final=existing;source=slot;resolved=true;} else if(IND(mv0.result)){verifying=true;bb='verifying';pe=existing;ps=slot;} else if(mvErr(mv0)){errored=true;} }\nconst status= resolved?'done':(verifying?'verifying':(errored?'error':'no_email_found'));\nconst mvOut= existing?mvVal(mv0):SK;\n// A definitive negative is the only reason to clear an address. An indeterminate result (catch_all,\n// unknown), an API error, or a missing response must never blank a Final Email that was already there.\nconst definitiveBad=!!(mv0&&(mv0.result==='invalid'||mv0.result==='disposable'));\nconst out={ id:row.id, 'BB':bb, 'Status':status, _pendEmail:pe, _pendSlot:ps, _mv:mvOut, _mvCol:mvCol, _wasDone:wasDone };\nout[mvCol]=mvOut;\nif(resolved){ out['Final Email']=final; out['Email Source']=source; out._preserved=false; out._blanked=false; }\nelse if(prior&&!definitiveBad){ out['Final Email']=prior; out['Email Source']=priorSrc||'none'; out._preserved=true; out._blanked=false; }\nelse { out['Final Email']=''; out['Email Source']='none'; out._blanked=!!prior; out._preserved=false; }\nreturn { json: out };"
+          "jsCode": "// Verdict: one row's MillionVerifier result into the lane the table carries.\n// Companies, the short lane (ruling 2026-09-02): the address is Email, else the first clean\n// address from public_emails_clean (then written into Email, so the row shows what was verified);\n// the verdict lands in MV P0, BB, Final Email, Status and nothing else. Never P1 to P3, MV P1 to\n// MV P3 or Email Source on Companies.\n// People, today's full lane: the address is Final Email if present, else Email, else the first\n// clean address; the verdict lands in the tier column the address came from (Email Source, MV Px,\n// falling back to MV P0 when the tier column is not on the table), BB, Final Email, Email Source, Status.\nconst row=$('Read Records').item.json; const f=row.fields||{};\nlet rt={}; try{ rt=$('Resolve Table').first().json||{}; }catch(e){}\nconst isCompanies=rt.lane==='companies';\nconst cols=Array.isArray(rt.fieldNames)?rt.fieldNames:[];\n// public_emails_clean is plain text on Companies and a lookup (an array) on People; the first clean address either way.\nconst firstClean=[].concat(f.public_emails_clean||'').join(',').split(',')[0].trim();\nconst prior=((f['Final Email']||'')+'').trim();\nconst rawEmail=((f.Email||'')+'').trim();\nconst priorSrc=isCompanies?'':((f['Email Source']||f.Source||'')+'');\nconst wasDone=((f.Status||'')+'')==='done';\nconst existing=isCompanies?(rawEmail||firstClean):(prior||rawEmail||firstClean);\nconst slot=isCompanies?'P0':(priorSrc||'P0');\n// Write the verdict into the tier column the address actually came from. Fall back to MV P0 when the\n// slot is not a known tier, or when that tier column does not exist on this table.\nlet mvCol='MV '+slot;\nif(!/^P[0-3]$/.test(slot)||(cols.length&&!cols.includes(mvCol))) mvCol='MV P0';\nconst G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };\nconst mv0=G('MV');\nconst SK='skipped';\nconst MVOK=['ok','catch_all','invalid','disposable','unknown'];\nconst mvVal=(r)=> r?(MVOK.includes(r.result)?r.result:'error'):SK;\nconst mvErr=(r)=> r&&(r.resultcode===4||(r.error&&r.error!=='')||!MVOK.includes(r.result));\nconst IND=(r)=> r==='catch_all'||r==='unknown';\nlet final='',source='none',bb='skipped',pe='',ps='',resolved=false,verifying=false,errored=false;\nif(existing&&mv0){ if(mv0.result==='ok'){final=existing;source=slot;resolved=true;} else if(IND(mv0.result)){verifying=true;bb='verifying';pe=existing;ps=slot;} else if(mvErr(mv0)){errored=true;} }\nconst status= resolved?'done':(verifying?'verifying':(errored?'error':'no_email_found'));\nconst mvOut= existing?mvVal(mv0):SK;\n// A definitive negative is the only reason to clear an address. An indeterminate result (catch_all,\n// unknown), an API error, or a missing response must never blank a Final Email that was already there.\nconst definitiveBad=!!(mv0&&(mv0.result==='invalid'||mv0.result==='disposable'));\nconst out={ id:row.id, 'BB':bb, 'Status':status, _pendEmail:pe, _pendSlot:ps, _mv:mvOut, _mvCol:mvCol, _wasDone:wasDone };\nout[mvCol]=mvOut;\nif(resolved){ out['Final Email']=final; out._preserved=false; out._blanked=false; }\nelse if(prior&&!definitiveBad){ out['Final Email']=prior; out._preserved=true; out._blanked=false; }\nelse { out['Final Email']=''; out._blanked=!!prior; out._preserved=false; }\nif(isCompanies){\n  // The short lane: Email carries the address verified when the row had none and public_emails_clean gave one.\n  if(!rawEmail&&existing) out['Email']=existing;\n} else {\n  out['Email Source']=resolved?source:((prior&&!definitiveBad)?(priorSrc||'none'):'none');\n}\nreturn { json: out };\n"
         },
         "id": "fb94b391-9290-4382-8124-d137e07cef0f",
         "name": "Verdict",
@@ -1246,7 +1227,7 @@
           "table": {
             "__rl": true,
             "mode": "id",
-            "value": "={{ $('Params In').first().json['Table ID'] }}"
+            "value": "={{ $('Resolve Table').first().json.tableId }}"
           },
           "columns": {
             "mappingMode": "autoMapInputData",
@@ -1277,7 +1258,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const wfid='jtBHNttawTdjG6Tv';\nconst p=$('Params In').first().json;\nconst start=$('Email Guard').first().json.startedAt;\nlet tableName=p['Table ID']; try{ tableName=$('Email Guard').first().json.table||tableName; }catch(e){}\nlet rows=[]; try{ rows=$('Verdict').all().map(i=>i.json); }catch(e){}\nlet recIn=0; try{ recIn=$('Read Records').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\nconst c=(fn)=>rows.filter(fn).length;\nconst mv=(v)=>c(r=>r._mv===v);\nconst sd=$getWorkflowStaticData('global');\nif(!sd._wfLogTotals || sd._wfLogTotals.execId!==String($execution.id)){ sd._wfLogTotals={ execId:String($execution.id), ok:0, catchAll:0, invalid:0, disposable:0, unknown:0, errd:0, skipped:0, verifying:0, recordsOut:0, preserved:0, blanked:0, reverified:0, p0:0, p1:0, p2:0, p3:0 }; }\nconst a=sd._wfLogTotals;\na.ok+=mv('ok'); a.catchAll+=mv('catch_all'); a.invalid+=mv('invalid'); a.disposable+=mv('disposable'); a.unknown+=mv('unknown'); a.errd+=mv('error'); a.skipped+=mv('skipped');\na.verifying+=c(r=>r.Status==='verifying');\na.preserved+=c(r=>r._preserved===true);\na.blanked+=c(r=>r._blanked===true);\na.reverified+=c(r=>r._wasDone===true);\na.p0+=c(r=>r._mvCol==='MV P0'); a.p1+=c(r=>r._mvCol==='MV P1'); a.p2+=c(r=>r._mvCol==='MV P2'); a.p3+=c(r=>r._mvCol==='MV P3');\na.recordsOut+=rows.length;\nconst recordsOut=a.recordsOut;\nconst cap=Number(p['Max Rows'])||100000;\nconst isFinal=recordsOut>=Math.min(recIn,cap);\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=p['_launchRecordId']?'record':'form';\nconst pct=(n)=>recordsOut?Math.round((n/recordsOut)*1000)/10:0;\nconst desc=[\n'**'+recIn+' read, '+recordsOut+' updated, '+a.errd+' errored**',\n'',\n'**Table:** '+tableName+' ('+p['Table ID']+')'+(p['View']?' · view '+p['View']:''),\n'**Launch:** '+trig+'-launched · MillionVerifier pass, catch-alls handed to the BounceBan Poller',\n'',\n'**Verdicts**',\n'- **ok:** '+a.ok+' ('+pct(a.ok)+'%)',\n'- **catch_all:** '+a.catchAll,\n'- **invalid:** '+a.invalid,\n'- **disposable:** '+a.disposable,\n'- **unknown:** '+a.unknown,\n'- **errored:** '+a.errd+' · **skipped, no email on the row:** '+a.skipped,\n'',\n'**Verdict written into**',\n'- MV P0: '+a.p0+' · MV P1: '+a.p1+' · MV P2: '+a.p2+' · MV P3: '+a.p3,\n'',\n'**Address safety**',\n'- Existing Final Email kept through an indeterminate or errored check: '+a.preserved,\n'- Cleared, definitive invalid or disposable only: '+a.blanked,\n'- Rows already Status=done that were re-verified: '+a.reverified,\n'',\n'**Sent to BounceBan (Status=verifying):** '+a.verifying,\n'',\n'**Duration:** '+(dur!=null?dur+'s':'n/a')\n].join('\\n');\nreturn [{ json:{ 'Automation':'Verify Emails', 'Run at': start||new Date().toISOString(), 'Target': p['Table ID'], 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': String($execution.id), 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+$execution.id, 'Status': isFinal?(a.errd?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errd, 'Duration s': dur, 'Description': desc } }];"
+          "jsCode": "const wfid='jtBHNttawTdjG6Tv';\nconst p=$('Params In').first().json;\nconst start=$('Email Guard').first().json.startedAt;\nlet t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}\nconst target=(t.tableName||p['Table']||'')+' ('+(t.tableId||'')+')';\nlet rows=[]; try{ rows=$('Verdict').all().map(i=>i.json); }catch(e){}\nlet recIn=0; try{ recIn=$('Read Records').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}\nconst c=(fn)=>rows.filter(fn).length;\nconst mv=(v)=>c(r=>r._mv===v);\nconst sd=$getWorkflowStaticData('global');\nif(!sd._wfLogTotals || sd._wfLogTotals.execId!==String($execution.id)){ sd._wfLogTotals={ execId:String($execution.id), ok:0, catchAll:0, invalid:0, disposable:0, unknown:0, errd:0, skipped:0, verifying:0, recordsOut:0, preserved:0, blanked:0, reverified:0, p0:0, p1:0, p2:0, p3:0 }; }\nconst a=sd._wfLogTotals;\na.ok+=mv('ok'); a.catchAll+=mv('catch_all'); a.invalid+=mv('invalid'); a.disposable+=mv('disposable'); a.unknown+=mv('unknown'); a.errd+=mv('error'); a.skipped+=mv('skipped');\na.verifying+=c(r=>r.Status==='verifying');\na.preserved+=c(r=>r._preserved===true);\na.blanked+=c(r=>r._blanked===true);\na.reverified+=c(r=>r._wasDone===true);\na.p0+=c(r=>r._mvCol==='MV P0'); a.p1+=c(r=>r._mvCol==='MV P1'); a.p2+=c(r=>r._mvCol==='MV P2'); a.p3+=c(r=>r._mvCol==='MV P3');\na.recordsOut+=rows.length;\nconst recordsOut=a.recordsOut;\nconst cap=Number(p['Max Rows'])||100000;\nconst isFinal=recordsOut>=Math.min(recIn,cap);\nconst ms=Date.parse(start);\nconst dur=ms?Math.round((Date.now()-ms)/1000):null;\nconst trig=p['_launchRecordId']?'record':'form';\nconst pct=(n)=>recordsOut?Math.round((n/recordsOut)*1000)/10:0;\nconst desc=[\n'**'+recIn+' read, '+recordsOut+' updated, '+a.errd+' errored**',\n'',\n'**Table:** '+target+(p['View']?' · view '+p['View']:''),\n'**Launch:** '+trig+'-launched · MillionVerifier pass, catch-alls handed to the BounceBan Poller',\n'',\n'**Verdicts**',\n'- **ok:** '+a.ok+' ('+pct(a.ok)+'%)',\n'- **catch_all:** '+a.catchAll,\n'- **invalid:** '+a.invalid,\n'- **disposable:** '+a.disposable,\n'- **unknown:** '+a.unknown,\n'- **errored:** '+a.errd+' · **skipped, no email on the row:** '+a.skipped,\n'',\n'**Verdict written into**',\n'- MV P0: '+a.p0+' · MV P1: '+a.p1+' · MV P2: '+a.p2+' · MV P3: '+a.p3,\n'',\n'**Address safety**',\n'- Existing Final Email kept through an indeterminate or errored check: '+a.preserved,\n'- Cleared, definitive invalid or disposable only: '+a.blanked,\n'- Rows already Status=done that were re-verified: '+a.reverified,\n'',\n'**Sent to BounceBan (Status=verifying):** '+a.verifying,\n'',\n'**Duration:** '+(dur!=null?dur+'s':'n/a')\n].join('\\n');\nreturn [{ json:{ 'Automation':'Verify Emails', 'Run at': start||new Date().toISOString(), 'Target': target, 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': String($execution.id), 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+$execution.id, 'Status': isFinal?(a.errd?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errd, 'Duration s': dur, 'Description': desc } }];"
         },
         "id": "1b9ce70f-36e4-4131-8be8-e706af9e400c",
         "name": "Build Log",
@@ -1331,7 +1312,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const baseId=$('Params In').first().json['Clayroots Base ID']; const tableId=$('Params In').first().json['Table ID']; const out=[]; for(const it of $input.all()){ const v=it.json; if(v.Status==='verifying' && v._pendEmail){ out.push({ json:{ rowId:v.id, email:v._pendEmail, slot:v._pendSlot, tableId, baseId } }); } } return out;"
+          "jsCode": "// 2026-09-02: the poller is fired and not waited on, so it writes its own Hub row and needs the key\n// for it. parentExecId is this run's execution, the same one its own log row is keyed on; the\n// poller's row is that id suffixed \"-bounceban\". This machine does not batch, so there is no\n// separate runExecId to send.\nconst baseId=$('Params In').first().json['Clayroots Base ID']; const tableId=$('Resolve Table').first().json.tableId; const parentExecId=String($execution.id); const out=[]; for(const it of $input.all()){ const v=it.json; if(v.Status==='verifying' && v._pendEmail){ out.push({ json:{ rowId:v.id, email:v._pendEmail, slot:v._pendSlot, tableId, baseId, parentExecId } }); } } return out;\n"
         },
         "id": "b07d8f75-c43a-4582-b4d5-88ac95b142f3",
         "name": "Collect Pending",
@@ -1552,7 +1533,7 @@
           560
         ],
         "parameters": {
-          "jsCode": "const rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst client=$('Resolve Base').first().json;\nconst cf=client.fields||{};\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table ID': ((f['Table ID']||'')+'').trim(),\n  'Max Rows': f['Max Rows'] || 0,\n  'View': ((f['View']||'')+'').trim(),\n  '_launchRecordId': rec.id,\n  'submittedAt': new Date().toISOString()\n} }];"
+          "jsCode": "const rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst client=$('Resolve Base').first().json;\nconst cf=client.fields||{};\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table': ((f['Table']||'')+'').trim(),\n  'Max Rows': f['Max Rows'] || 0,\n  'View': ((f['View']||'')+'').trim(),\n  '_launchRecordId': rec.id,\n  'submittedAt': new Date().toISOString()\n} }];"
         }
       },
       {
@@ -1674,6 +1655,19 @@
           },
           "options": {}
         }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Check Columns: the lane columns this machine writes must already exist on the target table\n// (Operator ruling 2026-09-02: a client base is set up once, by the scaffold; no working machine\n// creates a column). The lane is read from the field register, inlined by the push as REGISTER\n// at the @@register line, on the register table the launch named. Companies carries the short\n// lane, exactly five: Email (the address verified, written when it came from\n// public_emails_clean), MV P0, BB, Final Email, Status; nothing else is asked for or written\n// there. People carries today's full lane; MV P1..P3 are not required: Verdict writes the tier\n// column only when the table carries it and falls back to MV P0. Diffs by exact name against the\n// schema Resolve Table already read and refuses before the first paid call when anything is\n// missing. A lane name the register does not carry on that table is a register defect and fails\n// here, never as a silent pass.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"]}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"]},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"ContaGen\":\"blueLight2\",\"Supersoniq\":\"purpleLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst t=$('Resolve Table').first().json;\nconst p=$('Params In').first().json;\nconst LANES={ companies:['Email','MV P0','BB','Final Email','Status'], people:['MV P0','BB','Final Email','Email Source','Status'] };\nconst lane=t.lane==='companies'?'companies':'people';\nconst T=REGISTER.tables.find(x=>String(x.name).toLowerCase()===lane);\nif(!T) throw new Error('Check Columns: the register has no '+lane+' table');\nconst NEEDS=LANES[lane].map(n=>{ const f=T.fields.find(x=>x.name===n); if(!f) throw new Error('Check Columns: the register has no lane field \"'+n+'\" on '+T.name); return f.name; });\nconst have=new Set(t.fieldNames||[]);\nconst missing=NEEDS.filter(n=>!have.has(n));\nif(missing.length){ throw new Error('Table \"'+t.tableName+'\" ('+t.tableId+') in base '+p['Clayroots Base ID']+' is missing the columns Verify Emails writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.'); }\nreturn [{ json: $('Email Guard').first().json }];\n"
+        },
+        "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
+        "name": "Check Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          192
+        ]
       }
     ],
     "connections": {
@@ -1681,40 +1675,18 @@
         "main": [
           [
             {
+              "node": "Resolve Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Table": {
+        "main": [
+          [
+            {
               "node": "Email Guard",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Email Guard": {
-        "main": [
-          [
-            {
-              "node": "Field List",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Field List": {
-        "main": [
-          [
-            {
-              "node": "Create Field",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Field": {
-        "main": [
-          [
-            {
-              "node": "Read Records",
               "type": "main",
               "index": 0
             }
@@ -1966,13 +1938,68 @@
             }
           ]
         ]
+      },
+      "Email Guard": {
+        "main": [
+          [
+            {
+              "node": "Check Columns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Columns": {
+        "main": [
+          [
+            {
+              "node": "Read Records",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false
-  },
-  "tags": []
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-02T19:07:47.736Z",
+        "id": 2234,
+        "workflowId": "jtBHNttawTdjG6Tv",
+        "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T19:07:57.501Z",
+        "id": 2236,
+        "workflowId": "jtBHNttawTdjG6Tv",
+        "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T19:07:47.693Z",
+        "id": 2233,
+        "workflowId": "jtBHNttawTdjG6Tv",
+        "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T19:07:52.719Z",
+        "id": 2235,
+        "workflowId": "jtBHNttawTdjG6Tv",
+        "versionId": "c00fbfd2-1b88-4650-bdd2-4b38fb8d977a",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

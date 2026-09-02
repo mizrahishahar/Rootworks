@@ -71,6 +71,10 @@ for(const r of rowsArr){
   // The stamp-gate (Operator 2026-08-28): already linked to this campaign's mirror row =
   // already enrolled here once; never re-sent, whatever the sequencer's dedupe would say.
   if(D.stampMirrorRid&&rec.camps.indexOf(D.stampMirrorRid)>=0){ rec.skip='already in campaign (Campaigns stamp)'; continue; }
+  // Max Rows: the launch row's cap on what this run may enrol, blank on the launch row = no cap.
+  // Applied last, so the cap counts only rows that would really have been sent; the surplus is a
+  // named skip, never a silent drop, and the view offers it again on the next run.
+  if(D.maxRows&&leads.length>=D.maxRows){ rec.skip='over the run cap of '+D.maxRows+' rows'; continue; }
   D.emailToRow[email.toLowerCase()]=r.id;
   leads.push(lead);
 }

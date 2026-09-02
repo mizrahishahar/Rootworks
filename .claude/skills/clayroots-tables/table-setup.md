@@ -32,7 +32,7 @@ Both checkboxes exist on purpose: `relevance` is what the rule computes and a ru
 | `Relevant & Found : Campaigns` | same rows as Found, a lens, not a narrowing | `Final Email` + campaign fields |
 | `Relevant & Found : Never Contacted` | Found AND (`Messages Sent` empty OR = 0) | same |
 
-**`Relevant & Found : Campaigns` is deploy-gating, twice.** Deploy View to Campaign refuses to deploy from a table that does not carry this view by exact name, AND from a table whose description carries no share link for it; both abort before anything is sent. It is the durable lead-list window: every Lead Lists receipt links to it (never to the selector view that deployed, whose filter dissolves), and the deploy stamps `Campaigns` membership so the lens shows every deployed list forever.
+**`Relevant & Found : Campaigns` is deploy-gating, twice.** Deploy View to PlusVibe Campaign refuses to deploy from a table that does not carry this view by exact name, AND from a table whose description carries no share link for it; both abort before anything is sent. It is the durable lead-list window: every Lead Lists receipt links to it (never to the selector view that deployed, whose filter dissolves), and the deploy stamps `Campaigns` membership so the lens shows every deployed list forever.
 
 **The share link, part of setup.** This view is the one window clients see campaigns through; every other view is internal. In Chrome, on the view: Share view -> create link, password `{Client}01` (Dave01, Adelante01). Creating the link is the only manual act (no API can mint share links); the Operator hands the link to the session, and the session writes it as the TABLE description via the meta API. The description IS the link, only the link, nothing else. No one edits descriptions by hand. The deploy regex-extracts the first shr URL from the description (the password is never stored; the pattern is the convention) and writes it on the Lead Lists receipt. No link in the description, no deploy.
 
@@ -82,4 +82,4 @@ An intent table IS a standard contacts table; the signal only lands rows. Three 
 - **The drain:** `Channel (from Campaigns)` has none of this queue's channel, `Multi`. Enrolled anywhere on the channel = out of every queue on it, live
 - A not-empty condition on **every** column the campaign's copy uses as a variable, and those columns visible in the view (visible non-machine columns are the doors' variable contract)
 
-The queue view's id goes into `Signal View` on the Hub Campaigns row; the `Signal` link on that row is the feed's on/off switch. The machines behind this (handler funnel, doors, feeds, dedupe layers, Alta gotchas) are Rootworks' side: `n8n/INTENT-PLAYS.md`.
+The queue view's id goes into `Live View ID` on the Hub Campaigns row; that field is the feed's on/off switch, and only an ACTIVE campaign is fed. The machines behind this (handler funnel, doors, feeds, dedupe layers, Alta gotchas) are Rootworks' side: `n8n/INTENT-PLAYS.md`.

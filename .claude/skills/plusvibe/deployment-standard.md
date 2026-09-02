@@ -62,7 +62,7 @@ _Threaded, +2 days_
 
 ## Leads
 
-Leads reach a campaign through the Deploy View to Campaign automation, never by hand upload. The view is the control surface: every visible column filled or the row is held back. The dedupe mode is a launch decision (Strict is the default and means never re-email the touched); a looser mode is chosen only when re-contact is the intended play.
+Leads reach a campaign through the Deploy View to PlusVibe Campaign automation, never by hand upload. The view is the control surface: every visible column filled or the row is held back. The dedupe mode is a launch decision (Strict is the default and means never re-email the touched); a looser mode is chosen only when re-contact is the intended play.
 
 ## Conformance is verified by read-back
 

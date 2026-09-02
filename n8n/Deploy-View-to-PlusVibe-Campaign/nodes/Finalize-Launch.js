@@ -30,7 +30,17 @@ if(P){
   if(P.overwritten) md.push('   - Existing lead refreshed instead of added: '+fmt(P.overwritten));
   if(P.remaining!==null&&P.remaining!==undefined) md.push('- Leads left in plan: '+fmt(P.remaining));
 }
-if(D.missing){ md.push('- Sent but not found in the campaign afterwards: '+fmt(D.missing)); }
+// The duplicate mirror, never a gate: the view owns dedupe (Operator ruling 2026-09-02), and this
+// line is how a view that stopped excluding what it already sent shows up on day one instead of
+// quietly spending the whole daily allowance re-offering the same people. PlusVibe reports it as
+// counts on the lead/add response, never per email: `skipped` for the workspace-wide dedupe block
+// and `alreadyincampaign` for this campaign's own members. The stamp-gate number beside them is
+// ours, the same rows caught one step earlier, before anything was sent.
+const alreadyStamped=sc['already in campaign (Campaigns stamp)']||0;
+const pvDupes=(P?Number(P.skipped||0)+Number(P.already||0):0);
+md.push('');
+md.push('**Already present: '+fmt(pvDupes+alreadyStamped)+'** (PlusVibe: in this campaign '+fmt(P?P.already:0)+', in the workspace '+fmt(P?P.skipped:0)+' · Campaigns stamp, caught before sending: '+fmt(alreadyStamped)+')');
+if(D.missing){ md.push(''); md.push('- Sent but not found in the campaign afterwards: '+fmt(D.missing)); }
 const vm=D.varMisses||{};
 const vmKeys=Object.keys(vm).sort((a,b)=>vm[b]-vm[a]);
 if(vmKeys.length){

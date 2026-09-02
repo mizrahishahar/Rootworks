@@ -17,9 +17,9 @@ Intent is the standard list machine with a signal in front. Signals only LAND ro
 | **Handler** (`Handle Hiring Intent Signal`) | n8n, webhook `/intent-signal` | Scrape dataset -> hard lines -> ICP -> wide contact pull -> upsert -> waterfall |
 | **Intent table** | Client's ClayRoots base | A standard contacts table plus the signal's payload columns |
 | **Views** | On the table | The standing chain plus one live queue per campaign |
-| **Campaigns** rows | Hub `tblbVPakE4n16ob7Y` | Carry `Signal` link (the feed switch), `Signal View` (queue view id), `Pull-in URL` (Alta) |
-| **Doors** | `Deploy View to Campaign` (PV), `Deploy View to Alta Campaign` | Deploy a queue view into a campaign; stamp membership; write receipts |
-| **Feeds** | Schedule triggers inside the doors | Daily 13:30 IL (PV) / 13:35 IL (Alta): every Signal-linked campaign drinks from its Signal View |
+| **Campaigns** rows | Hub `tblbVPakE4n16ob7Y` | Carry `Live View ID` (the view the campaign drinks from, and the feed switch), `Status` (only ACTIVE is fed), `Pull-in URL` (Alta). The `Signal` link stays as reporting; no machine reads it |
+| **Doors** | `Deploy View to PlusVibe Campaign`, `Deploy View to Alta Campaign` | Deploy a queue view into a campaign; stamp membership; write receipts |
+| **Feeds** | Schedule triggers inside the doors | Daily 13:30 IL (PV) / 13:35 IL (Alta): every ACTIVE campaign with a `Live View ID` drinks from that view, capped at 1,000 rows a run (PV) / 150 (Alta) |
 
 ## The Signals row
 
@@ -44,7 +44,7 @@ Table setup, fields, the standing chain, and the campaign-queue anatomy live in 
 
 ## Feeds and doors
 
-- **The switch is the `Signal` link on the Campaigns row.** Linked = feeds daily. Removed = off. `Signal View` holds the queue view's **id**; Alta campaigns also carry their operator-pasted `Pull-in URL`.
+- **The switch is `Live View ID` on the Campaigns row.** Filled = feeds daily, from that view. Cleared = fed only by hand. A campaign whose `Status` is not ACTIVE is never fed, whatever the view holds. Alta campaigns also carry their operator-pasted `Pull-in URL`. **The view owns dedupe**: it must exclude what it already sent, and the doors log how many the sender saw as already present so a broken filter shows up on day one.
 - **PV door:** dedupe mode `None` on feeds; the **Campaigns stamp-gate** is the real dedupe (a row linked to this campaign's mirror is never re-sent). Vars = the view's visible non-machine columns as `custom_variables`; `Job `-prefixed and convention columns ride (sent when filled, never block); any other visible column is required (empty = skip, `Deploy Error` stamped).
 - **Alta door:** identity = LinkedIn URL + Company (first/last name ride when present, never block). Pushes pace **1 per 8s** (the old enroller's proven interval; faster bursts 429). Verify-Landing reads fresh prospects back (crash-heal resolves older members when pushed > fresh); Title-Gate re-checks the buyer rule after landing and pauses failures; stamps are written only after verified landing.
 - Both doors: union `Campaigns` stamps, per-view Lead Lists receipt (`{table} - {view}` name, share link from the table description), full run report on the launch row.
@@ -70,7 +70,7 @@ Table setup, fields, the standing chain, and the campaign-queue anatomy live in 
 2. **Apify task** + webhook payload carrying the Signals row id.
 3. **Table** in the client's ClayRoots base per the skill's Intent section (sessions create it via API; the share link is the one Chrome click).
 4. **Views**: standing chain + one queue per campaign, counts closed.
-5. **Campaigns**: create + launch in the sequencer; after the sync mirrors them to the Hub: paste `Signal View` (view id) and `Pull-in URL` (Alta), then link `Signal`. That link turns the feed on.
+5. **Campaigns**: create + launch in the sequencer; after the sync mirrors them to the Hub: paste `Pull-in URL` (Alta), then paste the queue view's id into `Live View ID`. That, plus Status ACTIVE, turns the feed on.
 6. **Prove**: one scraper run, funnel read, rows spot-checked both sides; first feed cycle verified by values (stamps, sequencer read-back, receipt).
 
 ## Retired (delete on sight)

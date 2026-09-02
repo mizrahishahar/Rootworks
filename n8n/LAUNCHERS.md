@@ -25,7 +25,7 @@ Do not hand-edit; rerun the script after every pull.
 | Contagen---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-contagen-supersoniq | Clayroots Base ID, Build name, ContaGen contacts CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
 | Create-PlusVibe-Weekly-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |
 | Deploy-View-to-Alta-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-alta |  | no |
-| Deploy-View-to-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
+| Deploy-View-to-PlusVibe-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
 | Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
 | Get-Availability | GET https://n8n.flowroots.com/webhook/availability |  | no |
 | Handle-New-Booking | POST https://n8n.flowroots.com/webhook/booking/cal <br> POST https://n8n.flowroots.com/webhook/booking/manual |  | no |

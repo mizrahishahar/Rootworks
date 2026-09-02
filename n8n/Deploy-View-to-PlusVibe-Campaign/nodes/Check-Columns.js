@@ -18,7 +18,7 @@ if(D&&!D.abort){
   const have=new Set(p.fieldNames||[]);
   const missing=NEEDS.filter(n=>!have.has(n));
   if(missing.length){
-    const msg='Table "'+(D.tableName||p.tableId)+'" ('+p.tableId+') in base '+p.crBase+' is missing the columns Deploy View to Campaign writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.';
+    const msg='Table "'+(D.tableName||p.tableId)+'" ('+p.tableId+') in base '+p.crBase+' is missing the columns Deploy View to PlusVibe Campaign writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.';
     sd[dk]=null;
     throw new Error(msg);
   }

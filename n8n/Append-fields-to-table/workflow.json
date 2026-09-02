@@ -448,7 +448,7 @@
           "mode": "id",
           "value": "tblK0nCoNVvFf5SPa"
         },
-        "filterByFormula": "={Clayroots Base ID} = '{{ $('Guard Schema').first().json.baseId }}'",
+        "filterByFormula": "={Clayroots Base ID} = '{{ $('Resolve Table').first().json.baseId }}'",
         "returnAll": false,
         "limit": 1,
         "options": {}
@@ -1283,6 +1283,83 @@
         1552,
         672
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ String($json.tableName || '').trim().toLowerCase() }}",
+              "rightValue": "companies",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7c1e5b2a-0008-4a5e-9d31-companiespth",
+      "name": "Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        352
+      ],
+      "notes": "The split (ruled 2026-09-02): on Companies the CSV lands through Insert domains to Clayroots (open fields created, allowNew on); on People the update-only merge below keeps its own path and creates nothing."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-CSV-Rows.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "7c1e5b2a-0009-4a5e-9d31-formatcsvrow",
+      "name": "Format CSV Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NEW-Insert-domains-to-Clayroots",
+          "cachedResultName": "Insert domains to Clayroots"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "7c1e5b2a-0010-4a5e-9d31-insertdomain",
+      "name": "Insert Domains",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        192
+      ],
+      "notes": "The landing helper: column check, open fields, DNC, Clean Fields, upsert on Domain (Domain Source = CSV on create only, Tag on every row). Counters come back. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
     }
   ],
   "connections": {
@@ -1422,7 +1499,47 @@
       "main": [
         [
           {
+            "node": "Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Companies?": {
+      "main": [
+        [
+          {
+            "node": "Format CSV Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Guard Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format CSV Rows": {
+      "main": [
+        [
+          {
+            "node": "Insert Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Domains": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
             "type": "main",
             "index": 0
           }

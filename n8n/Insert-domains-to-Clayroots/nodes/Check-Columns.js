@@ -26,8 +26,6 @@ const dnc=byName('dnc'); if(!dnc){ throw new Error('Base '+m.base+' has no DNC t
 const RC=REGISTER.tables.find(t=>t.name==='Companies'); const RP=REGISTER.tables.find(t=>t.name==='People');
 const LANDING=['Domain','Company','Description','Industry Groups','Business Model','Employees','Revenue Range','Keywords','Country','State','City','Street','Zip','Phones','Public Emails','Social URLs','public_emails_clean','MX Provider','Redirect Domain','Domain Source','Tag'];
 for(const n of LANDING){ if(!RC.fields.some(f=>f.name===n)) throw new Error('Check Columns: the register has no field "'+n+'" on Companies; the landing list and the register drifted apart.'); }
-const dsChoices=(((RC.fields.find(f=>f.name==='Domain Source')||{}).options||{}).choices||[]).map(c=>c.name);
-if(dsChoices.indexOf(m.domainSource)<0){ throw new Error('Insert domains to Clayroots: _meta.domainSource "'+m.domainSource+'" is not a Domain Source choice ('+dsChoices.join(', ')+'). Nothing was written.'); }
 const cType=new Map((companies.fields||[]).map(f=>[f.name,f.type]));
 const cLower=new Map((companies.fields||[]).map(f=>[ci(f.name),f.name]));
 const pNames=new Set((people.fields||[]).map(f=>f.name));

@@ -40,7 +40,7 @@ if(!clientLines.length) md.push('- none picked');
 if(failed.length){ md.push(''); md.push('**FAILED ('+failed.length+')**'); for(const e of failed) md.push('- '+e); }
 if(skipLines.length){ md.push(''); md.push('**Skipped ('+skipLines.length+')**'); for(const e of skipLines) md.push('- '+e); }
 if(warnLines.length){ md.push(''); md.push('**Warnings ('+warnLines.length+')**'); for(const e of warnLines) md.push('- '+e); }
-if(!clients.length && run.clientFilter) { md.push(''); md.push('**Skipped (1, the client filter matched no client with a PlusVibe workspace and a Clayroots base)**'); }
+if(!clients.length){ md.push(''); md.push(run.clientFilter ? '**Skipped (1, the client filter matched no client with a PlusVibe workspace and a Clayroots base)**' : '**Skipped (1, no Hub Clients row carries both a PlusVibe Workspace ID and a Clayroots Base ID; nothing to do)**'); }
 sd.clients={};
 sd.currentClient='';
 sd.pull=null;

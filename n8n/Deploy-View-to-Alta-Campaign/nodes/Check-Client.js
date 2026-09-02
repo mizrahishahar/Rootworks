@@ -6,6 +6,10 @@ if(!D.abort){
   const f=r.fields||r;
   D.clientName=String(f['Client']||'').trim();
   D.crBase=String(f['Clayroots Base ID']||'').trim();
+  // The registry carries the client's table ids (ClayrootsPeopleTableID / ClayrootsCompaniesTableID);
+  // Resolve Table reads the launch's table by that id first, by name on the base schema when absent.
+  const tl=String(D.table||'').trim().toLowerCase();
+  D.regTableId=String((tl==='companies'?f['ClayrootsCompaniesTableID']:(tl==='people'?f['ClayrootsPeopleTableID']:''))||'').trim();
   if(!/^app[A-Za-z0-9]{14}$/.test(D.crBase)){ D.abort='no ClayRoots base'; D.errors.push('client "'+(D.clientName||D.clientId)+'" has no valid Clayroots Base ID'); }
 }
 return [{json:{abort:!!D.abort, target:D.target||''}}];

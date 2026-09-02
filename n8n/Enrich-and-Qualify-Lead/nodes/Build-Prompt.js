@@ -13,6 +13,12 @@
 //                           linkedin_url it opens the base read: People by Final Email, then Email, then Contact Key,
 //                           then LinkedIn URL; the row's Companies link for the company facts. PlusVibe: Client Vars.clayrootsBase.
 //                           Alta: Get Client Row 'Clayroots Base ID'. Booking: Resolve Client.clayrootsBase.
+//   clayroots_people_table, clayroots_companies_table
+//                           the Clients row's ClayrootsPeopleTableID (fldAkkVBD6fLBA9my) and ClayrootsCompaniesTableID
+//                           (fldHhhOlD6RSzYi3p), '' when unset. The base read resolves both tables by these ids, never
+//                           by name; without both it skips the base and goes to DiscoLike, with the reason on base_reason.
+//                           PlusVibe: Find Client Row. Alta: Get Client Row. Booking: Resolve Client.clayrootsPeopleTable /
+//                           clayrootsCompaniesTable.
 //   system_prompt_fallback  optional. Rubric used when the KB has no row for the client. PlusVibe/Alta pass the
 //                           legacy Clients field 'Qualification Prompt'. Empty too: a generic one-line rubric.
 //   first_name, last_name, job_title, company_name, lead_email, linkedin_url
@@ -58,6 +64,8 @@ try { const b = $('Base Facts').first().json; if (b && b.base_found) base = b; }
 let baseReason = '';
 if (!base) {
   if (!s(lead.clayroots_base)) baseReason = 'client has no Clayroots base on its registry row';
+  else if (!s(lead.clayroots_people_table)) baseReason = 'client registry has no ClayrootsPeopleTableID';
+  else if (!s(lead.clayroots_companies_table)) baseReason = 'client registry has no ClayrootsCompaniesTableID';
   else if (!s(lead.lead_email) && !s(lead.linkedin_url)) baseReason = 'no reply email or LinkedIn URL to resolve against the base';
   else {
     try { const t = $('Resolve Base Tables').first().json || {}; if (!t.ready) baseReason = t.reason || 'base tables not resolved'; } catch (e) { baseReason = 'base tables not read'; }

@@ -52,6 +52,7 @@ let desc=[
 '- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),
 '- **Source:** PlusVibe campaign '+campaign+(n.is_freemail?' (freemail address)':'')+(manual?' | manual/airtable trigger':''),
 '- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),
+'- **Base:** '+(f.base_source||'unknown')+(f.base_match?' (matched on '+f.base_match+')':'')+(f.base_reason?' ('+f.base_reason+')':''),
 '- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')',
 '- **CRM:** Prospects row '+(created?'created':'updated (existing row)')+(prospectId?' ('+prospectId+')':'')+(created?', contact row + ':', ')+'qualification brief + conversation thread written',
 '- **Pipeline:** '+(verdictWritten?('set from verdict "'+verdict+'" (Positive Reply / Disqualified)'):'not written'),

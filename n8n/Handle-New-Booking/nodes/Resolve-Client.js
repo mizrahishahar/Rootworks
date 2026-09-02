@@ -5,7 +5,7 @@
 const n=$('Normalize Booking').first().json;
 const clients=$input.all().map(it=>it.json).filter(r=>r&&r.id).map(r=>{ const f=r.fields||r; return { id:r.id, f }; });
 const lines=(v)=>String(v||'').split('\n').map(s=>s.toLowerCase().trim()).filter(Boolean);
-const pick=(c)=>{ const f=c.f; const name=String(f['Client']||''); return { clientRecId:c.id, clientName:name, clientSlug:name.toLowerCase().replace(/[^a-z0-9]/g,''), slackChannel:String(f['Slack Channel ID']||'').trim(), pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), clayrootsBase:String(f['Clayroots Base ID']||'').trim(), dashboardPage:String(f['Dashboard Page ID']||'').trim(), isFlowroots:name.toLowerCase()==='flowroots' }; };
+const pick=(c)=>{ const f=c.f; const name=String(f['Client']||''); return { clientRecId:c.id, clientName:name, clientSlug:name.toLowerCase().replace(/[^a-z0-9]/g,''), slackChannel:String(f['Slack Channel ID']||'').trim(), pvWorkspace:String(f['PlusVibe Workspace ID']||'').trim(), clayrootsBase:String(f['Clayroots Base ID']||'').trim(), clayrootsPeopleTable:String(f['ClayrootsPeopleTableID']||'').trim(), clayrootsCompaniesTable:String(f['ClayrootsCompaniesTableID']||'').trim(), dashboardPage:String(f['Dashboard Page ID']||'').trim(), isFlowroots:name.toLowerCase()==='flowroots' }; };
 let hit=null, resolution='';
 if(n.clientRecId){ hit=clients.find(c=>c.id===n.clientRecId)||null; resolution=hit?'named by the caller':''; }
 if(!hit && n.hostKeys && n.hostKeys.length){ hit=clients.find(c=>lines(c.f['Booking Keys']).some(k=>n.hostKeys.includes(k)))||null; if(hit) resolution='host key matched Booking Keys'; }

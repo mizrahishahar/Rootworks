@@ -16,6 +16,8 @@ const context=[
 return [{ json:{
   client_name:c.clientName||'',
   clayroots_base:c.clayrootsBase||'',
+  clayroots_people_table:c.clayrootsPeopleTable||'',
+  clayroots_companies_table:c.clayrootsCompaniesTable||'',
   first_name:n.firstName||'', last_name:n.lastName||'', job_title:title, company_name:companyName,
   lead_email:n.email||'', linkedin_url:'',
   domain:n.domain||'', enrich_domain:n.domain||'', is_freemail:!n.domain,

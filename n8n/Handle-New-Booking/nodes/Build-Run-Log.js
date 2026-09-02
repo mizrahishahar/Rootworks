@@ -23,6 +23,7 @@ else {
     lines.push('- **Prospect:** '+(p.existed?'matched existing row':'created')+' ('+p.prospectId+')');
     lines.push('- **Qualification:** '+(v?(v.qualificationStatus+(v.verdictReason?' · '+v.verdictReason:'')+(v.kbFound===false?' (no qualification-prompt KB row for this client, generic rubric used)':'')):'NOT run'));
     if(!v) failed.push('qualification did not produce a verdict');
+    if(v) lines.push('- **Base:** '+(v.baseSource||'unknown')+(v.baseMatch?' (matched on '+v.baseMatch+')':'')+(v.baseReason?' ('+v.baseReason+')':''));
     lines.push('- **Stamped:** '+(stamped?'OutreachStatus = Scheduled Call, Call Booked At, QualificationStatus, Qualification Brief, contextNotes'+(c.isFlowroots?', PipelineStatus = Scheduled Call':''):'NOT stamped')); if(!stamped) failed.push('prospect not stamped');
     lines.push('- **Meeting:** '+(meetingId?'Meetings row created ('+meetingId+')':'NOT created')); if(!meetingId) failed.push('meeting row not created');
     if(c.slackChannel){ lines.push('- **Slack:** '+(posted?'card posted to '+c.slackChannel:'card NOT posted')); if(!posted) failed.push('slack card not posted'); }

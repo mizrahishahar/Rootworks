@@ -1,7 +1,10 @@
-// Enrich and Qualify Lead, base step 1: the client's People and Companies tables, resolved by name from the
-// base meta (the Find Tables model of Waterfall Contacts), and the one People search that covers the whole
-// resolve order at once. Nothing here throws: an intake must never crash on a base that is not on the
-// standard; it reports `ready: false` and the run keeps today's DiscoLike path.
+// Enrich and Qualify Lead, base step 1: the client's People and Companies tables, resolved by the registry's
+// table ids (Clients.ClayrootsPeopleTableID fldAkkVBD6fLBA9my and Clients.ClayrootsCompaniesTableID
+// fldHhhOlD6RSzYi3p, passed by the caller as clayroots_people_table / clayroots_companies_table), looked up in
+// the base meta for their field spellings, and the one People search that covers the whole resolve order at
+// once. Never by table name: a client's People table is whatever the registry says it is (Adelante's is
+// "USA DTC - Contacts"). Nothing here throws: an intake must never crash on a base that is off the standard;
+// it reports `ready: false` with the reason and the run keeps today's DiscoLike path.
 //
 // Resolve order (Operator ruling 2026-09-02), the replier against the People table:
 //   1. Final Email equals the reply email     2. Email equals it (both sides lowercased)
@@ -11,6 +14,8 @@
 const lead = $('Lead In').first().json || {};
 const s = (v) => String(v == null ? '' : v).trim();
 const base = s(lead.clayroots_base);
+const peopleId = s(lead.clayroots_people_table);
+const companiesId = s(lead.clayroots_companies_table);
 const email = s(lead.lead_email).toLowerCase();
 const emailDomain = email.includes('@') ? email.split('@')[1] : '';
 const linkedinKey = s(lead.linkedin_url).toLowerCase().replace(/\/+$/, '');
@@ -19,13 +24,15 @@ const body = (r.body !== undefined) ? r.body : r;
 const tables = (body && Array.isArray(body.tables)) ? body.tables : null;
 
 const out = { base, email, emailDomain, contactKey: '', linkedinKey, ready: false, reason: '', peopleTableId: '', peopleTableName: '', companiesTableId: '', companiesTableName: '', peopleFields: {}, companiesFields: {}, matchOrder: [], peopleUrl: '' };
+if (!peopleId) { out.reason = 'client registry has no ClayrootsPeopleTableID'; return [{ json: out }]; }
+if (!companiesId) { out.reason = 'client registry has no ClayrootsCompaniesTableID'; return [{ json: out }]; }
 if (!tables) { out.reason = 'could not read the table list for base ' + base + ': ' + JSON.stringify(body).slice(0, 160); return [{ json: out }]; }
 
-const byName = (n) => tables.find((x) => String(x.name || '').trim().toLowerCase() === n);
-const people = byName('people');
-const companies = byName('companies');
-if (!people) { out.reason = 'base ' + base + ' has no People table'; return [{ json: out }]; }
-if (!companies) { out.reason = 'base ' + base + ' has no Companies table'; return [{ json: out }]; }
+const byId = (id) => tables.find((x) => String(x.id || '') === id);
+const people = byId(peopleId);
+const companies = byId(companiesId);
+if (!people) { out.reason = 'registry People table ' + peopleId + ' is not in base ' + base; return [{ json: out }]; }
+if (!companies) { out.reason = 'registry Companies table ' + companiesId + ' is not in base ' + base; return [{ json: out }]; }
 
 // Field names as the base actually spells them (case-insensitive), so a formula never names a missing column (422).
 const actual = (t, wanted) => { const f = (t.fields || []).find((x) => String(x.name || '').trim().toLowerCase() === wanted.toLowerCase()); return f ? f.name : ''; };
@@ -48,7 +55,7 @@ if (email && out.peopleFields['Final Email']) { parts.push('LOWER({' + out.peopl
 if (email && out.peopleFields['Email']) { parts.push('LOWER({' + out.peopleFields['Email'] + '}) = ' + q(email)); out.matchOrder.push('Email'); }
 if (out.contactKey && out.peopleFields['Contact Key']) { parts.push('LOWER({' + out.peopleFields['Contact Key'] + '}) = ' + q(out.contactKey)); out.matchOrder.push('Contact Key'); }
 if (linkedinKey && out.peopleFields['LinkedIn URL']) { parts.push('LOWER(REGEX_REPLACE({' + out.peopleFields['LinkedIn URL'] + '} & "", "/+$", "")) = ' + q(linkedinKey)); out.matchOrder.push('LinkedIn URL'); }
-if (!parts.length) { out.reason = 'People table carries none of Final Email / Email / Contact Key / LinkedIn URL, or the lead has neither an email nor a LinkedIn URL'; return [{ json: out }]; }
+if (!parts.length) { out.reason = 'People table ' + people.name + ' carries none of Final Email / Email / Contact Key / LinkedIn URL, or the lead has neither an email nor a LinkedIn URL'; return [{ json: out }]; }
 const formula = parts.length === 1 ? parts[0] : 'OR(' + parts.join(', ') + ')';
 out.peopleUrl = 'https://api.airtable.com/v0/' + base + '/' + people.id + '?maxRecords=10&filterByFormula=' + encodeURIComponent(formula);
 out.ready = true;

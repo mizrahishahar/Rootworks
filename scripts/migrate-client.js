@@ -311,8 +311,10 @@ const PEOPLE_MAP = [
 ];
 
 // Register core, for the "what does the scaffold still lack" line of the report.
+// Companies exactly as n8n/Onboard-Client/nodes/Scaffold-Register.js declares it: no State Full,
+// no Email Source (the lane source is People's alone), and the count field is Contacts Count.
 const REGISTER_CORE = {
-  Companies: ['Domain', 'Company', 'Description', 'Industry Groups', 'Business Model', 'Employees', 'Revenue Range', 'Keywords', 'Country', 'State', 'City', 'Street', 'Zip', 'State Full', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'Domain Source', 'Tag', 'Build Date', 'Contacts Pulled At', 'Contacts', 'Contact Sources', 'Signals', 'Signal At', 'ICP Reason', ...COMPANY_LANE, 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
+  Companies: ['Domain', 'Company', 'Description', 'Industry Groups', 'Business Model', 'Employees', 'Revenue Range', 'Keywords', 'Country', 'State', 'City', 'Street', 'Zip', 'Phones', 'Public Emails', 'Social URLs', 'public_emails_clean', 'MX Provider', 'Redirect Domain', 'Domain Source', 'Tag', 'Build Date', 'Contacts Pulled At', 'Contacts Count', 'Contact Sources', 'Signals', 'Signal At', 'ICP Reason', ...COMPANY_LANE.filter((n) => n !== 'Email Source'), 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
   People: ['Name', 'first_name', 'last_name', 'Title', 'Seniority', 'Department', 'Email', 'LinkedIn URL', 'Phone', 'Domain', 'Company', 'Companies', 'Contact Key', 'Contact Source', 'Source ID', 'Tag', 'Build Date', 'Email Source', ...PEOPLE_LANE, 'relevance', 'manually_approved', 'linkedin_name_match', 'Campaigns', ...SYNC_COLS, 'Deploy Error'],
 };
 
@@ -325,6 +327,13 @@ const NEVER_WRITE = { Companies: new Set(['Build Date', 'People', 'Contacts Pull
 // are accepted too: they arrive by lookup now (the company row may still take them as gap-fill).
 const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit'];
 const PERSON_COPY_COLS = ['City', 'State', 'Country', 'Zip', 'Street', 'Industry Groups', 'Employees', 'MX Provider', 'Description', 'Keywords', 'Business Model', 'Revenue Range'];
+// People carries Company, Domain and Tag as lookups through the Companies link (the On People rule,
+// Flowroots/Operations/Field Standard.md). A legacy value in one of them is not a loss: it arrives
+// by lookup once the person is linked to its company row. Accepted like the ruled-out columns, so
+// it never blocks apply, but counted and named on its own report line rather than among the losses.
+// Its own set, not ACCEPTED_DROP_COLS, because the maps do read these columns: an accepted column
+// no map reads is counted a second time, per row, by acceptedColsOf.
+const LOOKUP_DROPS = { Companies: new Set(), People: new Set(['Company', 'Domain', 'Tag']) };
 const ACCEPTED_DROPS = { Companies: new Set(ACCEPTED_DROP_COLS), People: new Set([...ACCEPTED_DROP_COLS, ...PERSON_COPY_COLS]) };
 const fromNamesOf = (MAP) => new Set(MAP.flatMap((m) => m.from));
 
@@ -522,7 +531,18 @@ async function processLegacy(legacy, ctx) {
     }
 
     // Contacts-shaped: the person, keyed exactly as the builders key it.
-    const full = String(f.Name || '').trim() || [f.first_name, f.last_name].map((x) => String(x || '').trim()).filter(Boolean).join(' ');
+    // Some legacy Contacts tables hold the COMPANY name in Name (Dave's "Finance US 11-1000 -
+    // Contacts": 20,606 of 20,727 rows), and the person only in first_name/last_name. Keying off
+    // that Name collapses every contact at a company into one row and writes the company name into
+    // People.Name. When Name equals the row's own Company or company_clean and the row carries a
+    // first or last name, the built name wins, for the person's Name and for the key. Every other
+    // row keeps the old order exactly, so live keys stay byte-identical on a re-run.
+    const nameRaw = String(f.Name || '').trim();
+    const builtName = [f.first_name, f.last_name].map((x) => String(x || '').trim()).filter(Boolean).join(' ');
+    const companyish = [f.Company, f.company_clean].map((x) => String(x || '').trim().toLowerCase()).filter(Boolean);
+    const nameIsCompany = !!nameRaw && !!builtName && companyish.includes(nameRaw.toLowerCase());
+    if (nameIsCompany) legacy.nameWasCompany++;
+    const full = (nameIsCompany ? builtName : nameRaw) || builtName;
     const first = cleanFirst(full); const last = cleanLast(full);
     let key = contactKey(first, last, domain);
     const legacyKey = String(f['Contact Key'] || '').trim();
@@ -859,7 +879,7 @@ function legacyRecord(t, shape) {
     isIntent: /\(intent\)/i.test(t.name), domainSource: '', signalId: null, signalName: null,
     rowsRead: 0, noDomain: 0, domainNormalized: 0,
     companiesNew: 0, companiesMergedIntoLive: 0, companiesCollisions: 0, companiesSeededFromContacts: 0, companiesTouchedFromContacts: 0,
-    peopleNew: 0, peopleMergedIntoLive: 0, peopleCollisions: 0, unkeyed: 0, unkeyedIds: [], keyDrift: 0, keyFromLegacy: 0,
+    peopleNew: 0, peopleMergedIntoLive: 0, peopleCollisions: 0, unkeyed: 0, unkeyedIds: [], keyDrift: 0, keyFromLegacy: 0, nameWasCompany: 0,
     droppedKeys: { Companies: {}, People: {} }, invalidValues: { Companies: {}, People: {} }, invalidOverflow: 0, unresolvedCampaignIds: 0, carriedKeys: { Companies: new Set(), People: new Set() }, samples: [],
     acceptedCols: [], acceptedDrops: {},
   };
@@ -965,11 +985,12 @@ async function main() {
   const tally = finalizePlan(ctx);
 
   // 6. Report.
-  // Drops split in two: accepted (ruled out of the register, counted, never blocking) and the rest, which block.
-  const droppedKeys = { Companies: {}, People: {} }; const invalidValues = { Companies: {}, People: {} }; const acceptedDrops = { Companies: {}, People: {} };
+  // Drops split in three: lookup (arrives by lookup through the Companies link, no loss at all),
+  // accepted (ruled out of the register, counted, never blocking) and the rest, which block.
+  const droppedKeys = { Companies: {}, People: {} }; const invalidValues = { Companies: {}, People: {} }; const acceptedDrops = { Companies: {}, People: {} }; const lookupDrops = { Companies: {}, People: {} };
   for (const l of legacies) {
     for (const role of ['Companies', 'People']) {
-      for (const [k, n] of Object.entries(l.droppedKeys[role])) bump(ACCEPTED_DROPS[role].has(k) ? acceptedDrops[role] : droppedKeys[role], k, n);
+      for (const [k, n] of Object.entries(l.droppedKeys[role])) bump(LOOKUP_DROPS[role].has(k) ? lookupDrops[role] : ACCEPTED_DROPS[role].has(k) ? acceptedDrops[role] : droppedKeys[role], k, n);
       for (const [k, n] of Object.entries(l.invalidValues[role])) bump(invalidValues[role], k, n);
     }
     for (const [k, n] of Object.entries(l.acceptedDrops)) bump(acceptedDrops[l.shape === 'domains' ? 'Companies' : 'People'], k, n);
@@ -999,13 +1020,13 @@ async function main() {
       companies: l.shape === 'domains'
         ? { new: l.companiesNew, mergedIntoLive: l.companiesMergedIntoLive, collisions: l.companiesCollisions }
         : { seededFromContacts: l.companiesSeededFromContacts, gapFilledFromContacts: l.companiesTouchedFromContacts },
-      people: l.shape === 'contacts' ? { new: l.peopleNew, mergedIntoLive: l.peopleMergedIntoLive, collisions: l.peopleCollisions, unkeyed: l.unkeyed, unkeyedIds: l.unkeyedIds, keyDrift: l.keyDrift, keyFromLegacy: l.keyFromLegacy } : null,
+      people: l.shape === 'contacts' ? { new: l.peopleNew, mergedIntoLive: l.peopleMergedIntoLive, collisions: l.peopleCollisions, unkeyed: l.unkeyed, unkeyedIds: l.unkeyedIds, keyDrift: l.keyDrift, keyFromLegacy: l.keyFromLegacy, nameWasCompany: l.nameWasCompany } : null,
       carriedKeys: { Companies: [...l.carriedKeys.Companies].sort(), People: [...l.carriedKeys.People].sort() }, droppedKeys: l.droppedKeys, acceptedDrops: l.acceptedDrops, invalidValues: l.invalidValues, invalidOverflow: l.invalidOverflow, unresolvedCampaignIds: l.unresolvedCampaignIds,
       samples: l.samples,
     })),
     companies: { uniqueDomainsIn: ctx.domainsIn.size, planned: { create: tally.Companies.create, update: tally.Companies.update, unchanged: tally.Companies.unchanged }, existingMatched: tally.Companies.existingMatched, collisions: tally.Companies.collisions, tagCollisions: tally.Companies.tagCollisions, liveRows: liveC.length },
-    people: { uniqueKeysIn: ctx.keysIn.size, planned: { create: tally.People.create, update: tally.People.update, unchanged: tally.People.unchanged }, existingMatched: tally.People.existingMatched, collisions: tally.People.collisions, tagCollisions: tally.People.tagCollisions, withoutCompaniesRow: tally.People.withoutCompaniesRow, unkeyed: legacies.reduce((a, l) => a + l.unkeyed, 0), keyDrift: legacies.reduce((a, l) => a + l.keyDrift, 0), liveRows: liveP.length },
-    droppedKeys, acceptedDrops, invalidValues, unresolvedCampaignIds,
+    people: { uniqueKeysIn: ctx.keysIn.size, planned: { create: tally.People.create, update: tally.People.update, unchanged: tally.People.unchanged }, existingMatched: tally.People.existingMatched, collisions: tally.People.collisions, tagCollisions: tally.People.tagCollisions, withoutCompaniesRow: tally.People.withoutCompaniesRow, unkeyed: legacies.reduce((a, l) => a + l.unkeyed, 0), keyDrift: legacies.reduce((a, l) => a + l.keyDrift, 0), nameWasCompany: legacies.reduce((a, l) => a + l.nameWasCompany, 0), liveRows: liveP.length },
+    droppedKeys, acceptedDrops, lookupDrops, invalidValues, unresolvedCampaignIds,
     reconciliation: {
       companies: { uniqueDomainsIn: ctx.domainsIn.size, accounted: accountedC, ok: ctx.domainsIn.size === accountedC },
       people: { uniqueKeysIn: ctx.keysIn.size, accounted: accountedP, ok: ctx.keysIn.size === accountedP, note: ctx.keysIn.size === accountedP ? '' : 'key drift: a row whose rebuilt key differs from its legacy Contact Key was merged into the row that legacy key names (see legacy[].people.keyDrift); the difference is rows folded, not rows lost' },
@@ -1043,11 +1064,12 @@ function printSummary(r) {
     const c = l.companies; const p = l.people || {};
     const bits = l.shape === 'domains'
       ? `companies new ${c.new}, into live ${c.mergedIntoLive}, collisions ${c.collisions}`
-      : `people new ${p.new}, into live ${p.mergedIntoLive}, collisions ${p.collisions}, unkeyed ${p.unkeyed}, key drift ${p.keyDrift}; companies seeded ${c.seededFromContacts}, gap-filled ${c.gapFilledFromContacts}`;
+      : `people new ${p.new}, into live ${p.mergedIntoLive}, collisions ${p.collisions}, unkeyed ${p.unkeyed}, key drift ${p.keyDrift}, name held the company ${p.nameWasCompany}; companies seeded ${c.seededFromContacts}, gap-filled ${c.gapFilledFromContacts}`;
     row(l.name.slice(0, 34), `${l.rowsRead} rows: ${bits}`);
   }
   row('Companies', `create ${r.companies.planned.create}, update ${r.companies.planned.update}, unchanged ${r.companies.planned.unchanged}; unique domains in ${r.companies.uniqueDomainsIn}; tag collisions ${r.companies.tagCollisions}`);
   row('People', `create ${r.people.planned.create}, update ${r.people.planned.update}, unchanged ${r.people.planned.unchanged}; unique keys in ${r.people.uniqueKeysIn}; without Companies row ${r.people.withoutCompaniesRow}`);
+  row('Name held the company', `${r.people.nameWasCompany} contact rows: Name equalled the row's own Company, first_name + last_name took over for the person's Name and for the Contact Key`);
   row('Reconciliation', `companies ${r.reconciliation.companies.ok ? 'ok' : 'MISMATCH'} (${r.reconciliation.companies.uniqueDomainsIn} in / ${r.reconciliation.companies.accounted} accounted), people ${r.reconciliation.people.ok ? 'ok' : 'MISMATCH'} (${r.reconciliation.people.uniqueKeysIn} in / ${r.reconciliation.people.accounted} accounted)`);
   if (r.linkLive) {
     const p = r.linkLive.people; const c = r.linkLive.companies; const d = r.linkLive.domainSource;
@@ -1061,6 +1083,8 @@ function printSummary(r) {
     row(`Dropped on ${role}`, keys.length ? keys.map((k) => `${k} (${d[k]})`).join(', ') : 'none');
     const acc = (r.acceptedDrops || {})[role] || {}; const ak = Object.keys(acc);
     if (ak.length) row(`Accepted drops on ${role}`, ak.map((k) => `${k} (${acc[k]})`).join(', '));
+    const lk = (r.lookupDrops || {})[role] || {}; const lkk = Object.keys(lk);
+    if (lkk.length) row(`Arrive by lookup on ${role}`, `${lkk.map((k) => `${k} (${lk[k]})`).join(', ')} - not written, not lost: looked up through the Companies link`);
     const miss = r.targets[role].missingRegisterFields;
     if (miss.length) row(`${role} lacks (register)`, miss.join(', '));
   }

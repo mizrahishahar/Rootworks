@@ -1,8 +1,9 @@
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id; const D=sd[dk];
-if(D.abort){ return [{json:{needDe:false, field:null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
+const shape=(extra)=>Object.assign({view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId||'', mirrorTableId:D.mirrorTableId||'', fieldNames:[]}, extra||{});
+if(D.abort){ return [{json:shape()}]; }
 const tables=D.schemaTables||[];
 const t=tables.find(x=>x.id===D.tableId);
-if(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:{needDe:false, field:null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:''}}]; }
+if(!t){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not resolved in schema'); return [{json:shape()}]; }
 const dncT=tables.find(x=>String(x.name).toLowerCase()==='dnc');
 D.dncTableId=dncT?dncT.id:'';
 // The campaigns mirror table, found by the same signature the PV->CR sync uses:
@@ -15,23 +16,8 @@ const have=new Set(fields.map(f=>f.name));
 // The lead's LinkedIn URL column (ruling 2026-09-02): `LinkedIn URL` on a register-shaped table;
 // `Social` only on a legacy table that has no `LinkedIn URL`. Never both, never guessed.
 D.linkedinCol=have.has('LinkedIn URL')?'LinkedIn URL':(have.has('Social')?'Social':'');
-// The machine fields this door ensures on the source table (ruling 2026-09-02): exactly the
-// register's machine set, specs identical to what Sync PlusVibe Leads to Clayroots creates and
-// writes. Nothing else is ever created on a client table by this door. Campaigns is a link to
-// the client's Campaigns mirror, so it is ensured only when the mirror resolved above.
-const MACHINE_SPECS=[
- {name:'Deploy Error', type:'singleLineText', description:'Deploy outcome of the last attempt; empty = deployed clean or never deployed; written by Deploy View to Campaign only'}
-];
-if(D.mirrorTableId) MACHINE_SPECS.push({name:'Campaigns', type:'multipleRecordLinks', options:{linkedTableId:D.mirrorTableId}});
-MACHINE_SPECS.push(
- {name:'Messages Sent', type:'number', options:{precision:0}},
- {name:'Last Contacted', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}},
- {name:'Campaign Status', type:'singleSelect', options:{choices:[{name:'NEVER_CONTACTED'},{name:'IN_SEQUENCE'},{name:'COMPLETED'},{name:'REPLIED'},{name:'BOUNCED'},{name:'UNSUBSCRIBED'}]}},
- {name:'Bounce Reason', type:'singleLineText'},
- {name:'Synced At', type:'dateTime', options:{dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc'}}
-);
-const ensure=MACHINE_SPECS.filter(s=>!have.has(s.name));
-D.ensure={queue:ensure, idx:0};
+// The columns this door writes (Deploy Error, Campaigns) are Check Columns' business, next:
+// nothing is ever created on a client table by this door (Operator ruling 2026-09-02).
 const vm=D.viewMeta||{};
 const visible=Array.isArray(vm.visibleFieldIds)?vm.visibleFieldIds:null;
 // THE RULE: anything VISIBLE in the view must be filled, or the row is skipped.
@@ -70,4 +56,4 @@ D.requiredCore=requiredCore;
 D.needFirstName=needFirstName;
 if(!needFirstName) D.warnings.push('view "'+D.view+'" does not show first_name; the first name is not enforced and leads deploy without one');
 D.schemaTables=null; D.viewMeta=null;
-return [{json:{needDe:ensure.length>0, field:ensure[0]||null, view:D.view, crBase:D.crBase, tableId:D.tableId, dncTableId:D.dncTableId, mirrorTableId:D.mirrorTableId}}];
+return [{json:shape({fieldNames:Array.from(have)})}];

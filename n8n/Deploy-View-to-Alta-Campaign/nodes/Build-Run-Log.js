@@ -12,7 +12,7 @@ const sc=D.skipCounts||{};
 const md=[];
 md.push('**Landed '+nf(D.landed)+' of '+nf(D.rowsTotal)+' view rows in '+(D.campName||D.target||'?')+'**');
 md.push('');
-md.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+') · **View:** '+(D.view||'?')+' on '+(D.tableName||D.tableId||'?'));
+md.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+') · **View:** '+(D.view||'?')+' on '+(D.tableName||D.table||'?')+' ('+(D.tableId||'?')+')');
 md.push('');
 md.push('**Funnel**');
 md.push('- **View rows:** '+nf(D.rowsTotal));
@@ -38,7 +38,7 @@ return [{json:Object.assign({_launchId:D.launchId||''},{
   'Records In':D.rowsTotal||0,
   'Records Out':D.landed||0,
   'Errors':failed.length+ (pz?1:0),
-  'Target':(D.tableName||D.tableId||'')+' -> '+(D.campName||D.target||''),
+  'Target':(D.tableName||D.table||'')+' ('+(D.tableId||'')+') -> '+(D.campName||D.target||''),
   'Execution ID':String($execution.id),
   'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,
   'Description':desc.slice(0,95000)

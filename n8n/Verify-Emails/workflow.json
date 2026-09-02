@@ -18,8 +18,8 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "Table ID",
-              "requiredField": true
+              "fieldLabel": "Table",
+              "placeholder": "People or Companies, blank = People"
             },
             {
               "fieldLabel": "Max Rows",
@@ -80,6 +80,19 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "7c1e5b2a-0002-4a5e-9d31-resolvetable2",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        32
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Email-Guard.js"
       },
       "id": "4bd43c96-53a8-45b4-b58c-0a077a5073c8",
@@ -93,57 +106,6 @@
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/Field-List.js"
-      },
-      "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
-      "name": "Field List",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        672,
-        192
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params In').first().json['Clayroots Base ID'] }}/tables/{{ $('Params In').first().json['Table ID'] }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.def }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 200
-            }
-          },
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "69a35c18-18db-46f2-ade1-230c67a9b44d",
-      "name": "Create Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        896,
-        192
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "search",
         "base": {
           "__rl": true,
@@ -153,7 +115,7 @@
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params In').first().json['Table ID'] }}"
+          "value": "={{ $('Resolve Table').first().json.tableId }}"
         },
         "filterByFormula": "NOT({Status} = 'verifying')",
         "options": {
@@ -261,7 +223,7 @@
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params In').first().json['Table ID'] }}"
+          "value": "={{ $('Resolve Table').first().json.tableId }}"
         },
         "columns": {
           "mappingMode": "autoMapInputData",
@@ -689,6 +651,19 @@
         },
         "options": {}
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "3dff4bba-a7a7-468e-88d8-874530a22a44",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ]
     }
   ],
   "connections": {
@@ -696,40 +671,18 @@
       "main": [
         [
           {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
             "node": "Email Guard",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Guard": {
-      "main": [
-        [
-          {
-            "node": "Field List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Field List": {
-      "main": [
-        [
-          {
-            "node": "Create Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Field": {
-      "main": [
-        [
-          {
-            "node": "Read Records",
             "type": "main",
             "index": 0
           }
@@ -976,6 +929,28 @@
         [
           {
             "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Guard": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Read Records",
             "type": "main",
             "index": 0
           }

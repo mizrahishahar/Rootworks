@@ -17,7 +17,7 @@ const parts = [];
 parts.push('**' + fmt(written) + ' ranks written across ' + fmt(st.companies || 0) + ' companies**');
 parts.push('**Scope**\n- **Table:** ' + g.tableName + ' (' + g.tableId + ')\n- **Scope:** ' + (g.scope || 'whole table') + '\n- **Rows scanned:** ' + fmt(st.rowsScanned || 0) + '\n- **Companies found:** ' + fmt(st.companies || 0));
 parts.push('**Ranks**\n- **Written:** ' + fmt(written) + '\n- **Already correct (unchanged):** ' + fmt(st.unchanged || 0) + '\n- **Skipped, no domain:** ' + fmt(st.skippedNoDomain || 0) + '\n- **Write failures:** ' + fmt(wf) + '\n- **Largest company in scope:** ' + (st.largestDomain || 'none') + ' (' + fmt(st.largestCount || 0) + ' contacts)');
-parts.push('**Details**\n- **RankInCompany column:** ' + (g.rankFieldCreated ? 'created by this run' : 'already existed') + '\n- **Pages fetched:** ' + fmt(st.pages || 0) + '\n- Idempotent by design: re-running overwrites RankInCompany and only rewrites rows whose rank changed.');
+parts.push('**Details**\n- **Pages fetched:** ' + fmt(st.pages || 0) + '\n- Idempotent by design: re-running overwrites RankInCompany and only rewrites rows whose rank changed.');
 parts.push('**Source:** Rank Contacts (' + (g.trigger === 'record' ? 'record' : 'form') + '-launched)');
 const log = {
   'Automation': 'Add rank in company to table',

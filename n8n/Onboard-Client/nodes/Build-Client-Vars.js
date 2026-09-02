@@ -10,4 +10,13 @@ for(const item of $input.all()){
 }
 const sections=['Offer & info source','Infrastructure','List building','Outreach','Sequencer','Copy','Scheduler','Inbox management','Automations','Communication'];
 const overrides='# Overrides - ' + clientName + '\n\n' + sections.map(s => '## ' + s).join('\n\n') + '\n';
-return [{ json: { clientName, slug, channelName, emails, overrides, prospectId: q.prospectId } }];
+// Extras: the declared extras groups the scaffold creates on Companies (Storeleads, Hiring,
+// Reviews), picked on the onboarding call as ?extras=Storeleads,Hiring (or body.extras, a list or
+// a comma-separated string). Blank means the register core only. Scaffold Init validates the picks.
+let extras=[];
+try{
+  const w=$('Onboard Webhook').first().json||{};
+  const raw=(w.query&&w.query.extras)||(w.body&&w.body.extras)||'';
+  extras=(Array.isArray(raw)?raw:String(raw).split(',')).map(x=>String(x).trim()).filter(Boolean);
+}catch(e){}
+return [{ json: { clientName, slug, channelName, emails, overrides, extras, prospectId: q.prospectId } }];

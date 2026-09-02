@@ -6,8 +6,7 @@ const existing=((prior||f.Email||(f.public_emails_clean||'').split(',')[0])||'')
 const slot=priorSrc||'P0';
 // Write the verdict into the tier column the address actually came from. Fall back to MV P0 when the
 // slot is not a known tier, or when that tier column does not exist on this table.
-const tid=$('Params In').first().json['Table ID'];
-let cols=[]; try{ const t=((($('Check Table').first().json)||{}).tables||[]).find(x=>x.id===tid); cols=((t||{}).fields||[]).map(x=>x.name); }catch(e){}
+let cols=[]; try{ cols=$('Resolve Table').first().json.fieldNames||[]; }catch(e){}
 let mvCol='MV '+slot;
 if(!/^P[0-3]$/.test(slot)||(cols.length&&!cols.includes(mvCol))) mvCol='MV P0';
 const G=(n)=>{ try{ const v=$(n).item.json; return (v&&typeof v==='object')?v:null; }catch(e){ return null; } };

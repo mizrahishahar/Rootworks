@@ -1,4 +1,4 @@
-const g = $('Rank Field Ready').first().json;
+const g = $('Check Columns').first().json;
 const sd = $getWorkflowStaticData('global');
 const rows = Array.isArray(sd.ricRows) ? sd.ricRows : [];
 const scanned = rows.length;

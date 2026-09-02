@@ -7,9 +7,10 @@ if(!D.metaPhase||D.metaPhase==='schema'){
   if(!tables.length){
     if(!D.abort){ D.abort='could not read base schema'; D.errors.push('could not read base schema for '+D.crBase+(j.error?': '+JSON.stringify(j.error).slice(0,150):'')); }
   } else {
-    const t=tables.find(x=>x.id===D.tableId||x.name===D.tableId);
+    // Resolve Table already turned the launch's table name into D.tableId; a miss aborted there.
+    const t=tables.find(x=>x.id===D.tableId);
     if(!t){
-      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+D.tableId+' not found in base '+D.crBase); }
+      if(!D.abort){ D.abort='table not found'; D.errors.push('table '+(D.tableName||D.table)+' not found in base '+D.crBase); }
     } else {
       D.tableId=t.id; D.tableName=t.name;
       // The standing receipt view is a hard gate: no deploy without it. It is the

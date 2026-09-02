@@ -7,13 +7,22 @@
 //   node tools/n8n/push.js n8n/<workflow-slug>            update the live workflow
 //   node tools/n8n/push.js n8n/<workflow-slug> --dry      print the payload summary, send nothing
 //
+// Directives inside a code file:
+//   @@file:nodes/X.js   (in workflow.json) the node's code is that file
+//   // @@register       (a line in a code file) the field register is inlined at that line as
+//                       `const REGISTER = <JSON>;`, evaluated from
+//                       n8n/Onboard-Client/nodes/Scaffold-Register.js at push time. n8n-pull.js
+//                       strips the constant and restores the directive on the way back.
+//
 // Auth: N8N_API_KEY env var, or ~/.config/rootworks/n8n-api-key (one line).
 // The key never lives in this repo.
 
 const fs = require('fs');
 const path = require('path');
+const { loadRegister } = require('./register');
 
 const BASE = process.env.N8N_URL || 'https://n8n.flowroots.com';
+const REGISTER_DIRECTIVE = /^\/\/ @@register$/gm;
 
 function apiKey() {
   if (process.env.N8N_API_KEY) return process.env.N8N_API_KEY.trim();
@@ -32,11 +41,20 @@ const dir = path.resolve(dirArg);
 const doc = JSON.parse(fs.readFileSync(path.join(dir, 'workflow.json'), 'utf8'));
 
 let inlined = 0;
+let registerLine = null;
+const registered = [];
 for (const node of doc.nodes || []) {
   for (const [param, value] of Object.entries(node.parameters || {})) {
     if (typeof value === 'string' && value.startsWith('@@file:')) {
       const file = path.join(dir, value.slice('@@file:'.length));
-      node.parameters[param] = fs.readFileSync(file, 'utf8');
+      let code = fs.readFileSync(file, 'utf8');
+      if (REGISTER_DIRECTIVE.test(code)) {
+        REGISTER_DIRECTIVE.lastIndex = 0;
+        if (!registerLine) registerLine = `const REGISTER = ${JSON.stringify(loadRegister())};`;
+        code = code.replace(REGISTER_DIRECTIVE, () => registerLine);
+        registered.push(node.name);
+      }
+      node.parameters[param] = code;
       inlined++;
     }
   }
@@ -56,6 +74,10 @@ const payload = {
 
 console.log(`workflow: ${doc.name} (${doc.id || 'NEW - will be created'})`);
 console.log(`nodes: ${payload.nodes.length}, code files inlined: ${inlined}`);
+if (registered.length) {
+  console.log(`register inlined (${registerLine.length} chars) into: ${registered.join(', ')}`);
+  if (dry) console.log(`  ${registerLine.slice(0, 200)}...`);
+}
 if (dry) { console.log('dry run, nothing sent'); process.exit(0); }
 
 (async () => {

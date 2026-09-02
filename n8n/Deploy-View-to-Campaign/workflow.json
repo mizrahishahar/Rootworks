@@ -253,6 +253,20 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "7c1e5b2a-0003-4a5e-9d31-resolvetable3",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      }
+    },
+    {
       "id": "38351b27-f408-4edf-a0e7-ef57f78dd855",
       "name": "Plan Variables",
       "type": "n8n-nodes-base.code",
@@ -265,77 +279,6 @@
         "mode": "runOnceForAllItems",
         "jsCode": "@@file:nodes/Plan-Variables.js"
       }
-    },
-    {
-      "id": "eeb21e88-f163-4a7e-b9a9-15ef55b96ff0",
-      "name": "Need Machine Field?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        800,
-        100
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "nd1",
-              "leftValue": "={{ $json.needDe ? 'yes' : 'no' }}",
-              "rightValue": "yes",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "2b9edb57-e4b4-4593-b508-3ce26db8f9cf",
-      "name": "Create Machine Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1020,
-        20
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables/{{ $json.tableId }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.field) }}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput"
     },
     {
       "id": "9f4b48b5-95be-4191-a8a2-9acb7af75503",
@@ -1539,7 +1482,7 @@
           "schema": [],
           "value": {
             "Client": "={{ [$json.clientId] }}",
-            "Table ID": "={{ $json.tableId }}",
+            "Table": "={{ $json.table }}",
             "View": "={{ $json.view }}",
             "Target": "={{ $json.target }}",
             "Dedupe Mode": "None",
@@ -1692,18 +1635,18 @@
       }
     },
     {
-      "id": "ensure-collect-01",
-      "name": "Collect Field Create",
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "eeb21e88-f163-4a7e-b9a9-15ef55b96ff0",
+      "name": "Check Columns",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1020,
-        -140
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "@@file:nodes/Collect-Field-Create.js"
-      }
+        800,
+        100
+      ]
     }
   ],
   "connections": {
@@ -1785,57 +1728,6 @@
         [
           {
             "node": "Finalize Launch",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Plan Variables": {
-      "main": [
-        [
-          {
-            "node": "Find Mirror Rid",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Need Machine Field?": {
-      "main": [
-        [
-          {
-            "node": "Create Machine Field",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Read View Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Machine Field": {
-      "main": [
-        [
-          {
-            "node": "Collect Field Create",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Collect Field Create": {
-      "main": [
-        [
-          {
-            "node": "Need Machine Field?",
             "type": "main",
             "index": 0
           }
@@ -2203,6 +2095,17 @@
       "main": [
         [
           {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
             "node": "Meta Router",
             "type": "main",
             "index": 0
@@ -2288,17 +2191,6 @@
         ]
       ]
     },
-    "Set Mirror Rid": {
-      "main": [
-        [
-          {
-            "node": "Need Machine Field?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Daily Feed 13:45 IL": {
       "main": [
         [
@@ -2377,6 +2269,39 @@
         [
           {
             "node": "Log Feed Refusals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Variables": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Find Mirror Rid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Mirror Rid": {
+      "main": [
+        [
+          {
+            "node": "Read View Rows",
             "type": "main",
             "index": 0
           }

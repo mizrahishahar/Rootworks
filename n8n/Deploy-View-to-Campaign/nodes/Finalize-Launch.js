@@ -9,6 +9,7 @@ const md=[];
 md.push('**Deployed '+fmt(D.deployed||0)+' of '+fmt(D.rowsTotal||0)+' view rows to '+(D.campName||'?')+'**');
 md.push('');
 md.push('**Campaign:** '+(D.campName||'?')+' ('+(D.target||'?')+')');
+md.push('**Table:** '+(D.tableName||D.table||'?')+' ('+(D.tableId||'?')+')');
 md.push('**View:** '+(D.view||'?'));
 if(D.viewLink) md.push('**Link:** '+D.viewLink);
 md.push('**Dedupe mode:** '+(D.dedupe||'Strict'));

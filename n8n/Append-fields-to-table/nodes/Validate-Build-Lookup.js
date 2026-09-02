@@ -1,6 +1,7 @@
 const p=$('Merge Launch').first().json;
 const baseId=String(p['Clayroots Base ID']||'').trim();
-const tableId=String(p['Table ID']||'').trim();
+// The launch names its table (People or Companies, blank = People); Resolve Table turns it into the id.
+const table=String(p['Table']||'').trim()||'People';
 const keyName=(String(p['Key column']||p['Key Column']||'Domain').trim())||'Domain';
 const fieldsRaw=String(p['Fields to attach']||p['Fields to Attach']||'').trim();
 // Allowed keys must be unique per row in the target table. Contact Key is the ContaGen/Supersoniq
@@ -8,7 +9,6 @@ const fieldsRaw=String(p['Fields to attach']||p['Fields to Attach']||'').trim();
 const ALLOWED_KEYS=['Domain','Final Email','Contact Key'];
 if(!ALLOWED_KEYS.includes(keyName)){ throw new Error('Key guard: Key column "'+keyName+'" is not one of '+ALLOWED_KEYS.join(' / ')+'. Nothing was written.'); }
 if(!/^app[A-Za-z0-9]{14}$/.test(baseId)){ throw new Error('Head guard: Clayroots Base ID "'+baseId+'" is not a valid Airtable base id (appXXXXXXXXXXXXXX). Nothing was written.'); }
-if(!/^tbl[A-Za-z0-9]{14}$/.test(tableId)){ throw new Error('Head guard: Table ID "'+tableId+'" is not a valid Airtable table id (tblXXXXXXXXXXXXXX). Nothing was written.'); }
 const rows=$input.all().map(i=>i.json).filter(r=>r&&Object.keys(r).length>0);
 if(rows.length===0){ throw new Error('Head guard: the uploaded CSV parsed to zero data rows. Nothing was written.'); }
 const headers=Object.keys(rows[0]);
@@ -36,4 +36,4 @@ let dupKeys=0;
 for(const r of rows){ const k=flat(r[keyHeader]).trim().toLowerCase(); if(!k) continue; if(lookup[k]) dupKeys++; const attrs={}; for(const c of attrCols){ attrs[c]=flat(r[c]).trim(); } lookup[k]=attrs; }
 const distinctKeys=Object.keys(lookup).length;
 if(distinctKeys===0){ throw new Error('Head guard: every CSV row has an empty '+keyName+' value. Nothing was written.'); }
-return [{ json: { baseId, tableId, keyName, fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];
+return [{ json: { baseId, table, keyName, fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];

@@ -1,7 +1,8 @@
 const wfid='jtBHNttawTdjG6Tv';
 const p=$('Params In').first().json;
 const start=$('Email Guard').first().json.startedAt;
-let tableName=p['Table ID']; try{ tableName=$('Email Guard').first().json.table||tableName; }catch(e){}
+let t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}
+const target=(t.tableName||p['Table']||'')+' ('+(t.tableId||'')+')';
 let rows=[]; try{ rows=$('Verdict').all().map(i=>i.json); }catch(e){}
 let recIn=0; try{ recIn=$('Read Records').all().map(i=>i.json).filter(j=>j&&j.id).length; }catch(e){}
 const c=(fn)=>rows.filter(fn).length;
@@ -26,7 +27,7 @@ const pct=(n)=>recordsOut?Math.round((n/recordsOut)*1000)/10:0;
 const desc=[
 '**'+recIn+' read, '+recordsOut+' updated, '+a.errd+' errored**',
 '',
-'**Table:** '+tableName+' ('+p['Table ID']+')'+(p['View']?' · view '+p['View']:''),
+'**Table:** '+target+(p['View']?' · view '+p['View']:''),
 '**Launch:** '+trig+'-launched · MillionVerifier pass, catch-alls handed to the BounceBan Poller',
 '',
 '**Verdicts**',
@@ -49,4 +50,4 @@ const desc=[
 '',
 '**Duration:** '+(dur!=null?dur+'s':'n/a')
 ].join('\n');
-return [{ json:{ 'Automation':'Verify Emails', 'Run at': start||new Date().toISOString(), 'Target': p['Table ID'], 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': String($execution.id), 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+$execution.id, 'Status': isFinal?(a.errd?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errd, 'Duration s': dur, 'Description': desc } }];
+return [{ json:{ 'Automation':'Verify Emails', 'Run at': start||new Date().toISOString(), 'Target': target, 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': String($execution.id), 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+$execution.id, 'Status': isFinal?(a.errd?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errd, 'Duration s': dur, 'Description': desc } }];

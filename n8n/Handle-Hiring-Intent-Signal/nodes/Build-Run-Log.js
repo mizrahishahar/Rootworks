@@ -4,7 +4,7 @@
 const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;
 let cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }
 let base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}
-let tbl={}; try{ tbl=$('Verify Extras').first().json||{}; }catch(e){ try{ tbl=$('Find Companies Table').first().json||{}; }catch(e2){} }
+let tbl={}; try{ tbl=$('Check Columns').first().json||{}; }catch(e){ try{ tbl=$('Find Companies Table').first().json||{}; }catch(e2){} }
 const nf=(x)=>Number(x||0).toLocaleString('en-US');
 const failed=[]; const skips=[];
 
@@ -43,7 +43,6 @@ if(bc.no_domain) skips.push(nf(bc.no_domain)+' no domain');
 const errs=failed.length;
 const status=errs?'Succeeded with errors':'Succeeded';
 const rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);
-const extras=tbl.extrasCreated||[];
 const lines=[
   '**'+nf(upserted)+' companies stamped into '+(tbl.tableName||'Companies')+' ('+nf(bc.created)+' new, '+nf(bc.updated)+' signalled again) from '+nf(fq.jobs_in)+' jobs, '+errs+' error'+(errs===1?'':'s')+'**',
   '',
@@ -57,8 +56,6 @@ const lines=[
   '- **First hire (Existing In Role):** yes '+nf(ir.yes)+' · no '+nf(ir.no)+' · unknown '+nf(ir.unknown),
   '- **Rows built:** '+nf(bc.kept)+' ('+nf(bc.created)+' new with Domain Source = Signal, '+nf(bc.updated)+' existing updated in place)',
   '- **Upserted (record id returned):** '+nf(upserted),
-  '',
-  '**Extras created on Companies:** '+(extras.length?extras.join(', '):'none, all present'),
   '',
   '**Contacts:** none here; the nightly Waterfall Contacts run covers the Uncovered view. **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'
 ];

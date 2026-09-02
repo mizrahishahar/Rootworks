@@ -1,6 +1,6 @@
 // One item per record of the page, shaped for the Clean Fields helper: Company carries the source
 // the helper cleans, the raw values ride along for Plan Writes to diff against.
-const cfg = $('Detect Company Columns').first().json;
+const cfg = $('Check Columns').first().json;
 const readVal = (v) => { if (v === null || v === undefined) return ''; if (typeof v === 'object') { return typeof v.value === 'string' ? v.value : ''; } return String(v); };
 const resp = $input.first().json || {};
 const records = Array.isArray(resp.records) ? resp.records : [];

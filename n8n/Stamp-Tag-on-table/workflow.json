@@ -29,11 +29,11 @@
               "requiredField": true
             },
             {
-              "fieldName": "Table ID",
-              "fieldLabel": "Table ID",
+              "fieldName": "Table",
+              "fieldLabel": "Table",
               "fieldType": "text",
-              "placeholder": "tblXXXXXXXXXXXXXX",
-              "requiredField": true
+              "placeholder": "People or Companies, blank = People",
+              "requiredField": false
             },
             {
               "fieldName": "Tag",
@@ -219,8 +219,22 @@
       "executeOnce": true
     },
     {
+      "id": "7c1e5b2a-0005-4a5e-9d31-resolvetable5",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      }
+    },
+    {
       "id": "a0f86384-abd9-49f2-9339-7ff80b21293d",
-      "name": "Check Tag Column",
+      "name": "Check Columns",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -229,7 +243,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "@@file:nodes/Check-Tag-Column.js"
+        "jsCode": "@@file:nodes/Check-Columns.js"
       }
     },
     {
@@ -328,7 +342,7 @@
       ],
       "parameters": {
         "method": "PATCH",
-        "url": "=https://api.airtable.com/v0/{{ $('Check Tag Column').first().json.baseId }}/{{ $('Check Tag Column').first().json.tableId }}",
+        "url": "=https://api.airtable.com/v0/{{ $('Check Columns').first().json.baseId }}/{{ $('Check Columns').first().json.tableId }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
         "sendBody": true,
@@ -550,7 +564,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ !!$json.query?.baseId && !!$json.query?.tableId && !!$json.query?.tag }}",
+              "leftValue": "={{ !!$json.query?.baseId && (!!$json.query?.table || !!$json.query?.tableId) && !!$json.query?.tag }}",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -649,14 +663,25 @@
       "main": [
         [
           {
-            "node": "Check Tag Column",
+            "node": "Resolve Table",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Tag Column": {
+    "Resolve Table": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
       "main": [
         [
           {

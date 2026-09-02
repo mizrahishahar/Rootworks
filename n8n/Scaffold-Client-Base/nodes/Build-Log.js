@@ -14,6 +14,7 @@ const lines=[
   '**'+name+': base '+S.base+' brought to the register'+(failed.length?', '+failed.length+' error'+(failed.length===1?'':'s'):'')+'**',
   '',
   '**Scope:** client '+name+', base '+S.base+', '+S.pass+' schema pass'+(S.pass===1?'':'es')+', '+nFields+' fields on '+nTables+' tables created',
+  '**Extras:** '+((S.extras||[]).length?S.extras.join(', ')+' (declared columns on Companies)':'none picked, the register core only'),
   '',
   '**Scaffold**'
 ];

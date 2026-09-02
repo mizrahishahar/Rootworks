@@ -1,14 +1,5 @@
 const sd=$getWorkflowStaticData('global');
 const c=sd.clients[sd.currentClient];
-const inFirst=($input.first()||{}).json||{};
-if(!inFirst._none){
-  try{
-    const res=$('Create Fields').all();
-    let ok=0;
-    for(const it of res){ const j=it.json||{}; if(j.id) ok++; else if(j.error){ c.errors.push('field create: '+JSON.stringify(j.error).slice(0,200)); c.writeOk=false; } }
-    c.fieldsCreated=ok;
-  }catch(e){}
-}
 const emails=Object.keys(c.payloads);
 sd.write={queue:[], idx:0, current:null};
 for(const t of c.targetTables){

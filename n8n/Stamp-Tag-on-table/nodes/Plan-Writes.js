@@ -1,4 +1,4 @@
-const cfg = $('Check Tag Column').first().json;
+const cfg = $('Check Columns').first().json;
 const s = $getWorkflowStaticData('global');
 s.stt = s.stt || {};
 if (!s.stt[$execution.id]) { s.stt[$execution.id] = { scanned: 0, changed: 0, unchanged: 0, filled: 0, overwritten: 0, pages: 0, batches: 0 }; }

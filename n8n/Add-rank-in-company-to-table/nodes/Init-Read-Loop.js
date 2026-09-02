@@ -1,4 +1,4 @@
-const g = $('Rank Field Ready').first().json;
+const g = $('Check Columns').first().json;
 const sd = $getWorkflowStaticData('global');
 sd.ricRows = [];
 sd.ricPages = 0;

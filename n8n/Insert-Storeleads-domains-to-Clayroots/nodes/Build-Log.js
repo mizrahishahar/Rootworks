@@ -2,7 +2,7 @@
 // separated from errors, Client attached (a launched run serves exactly one client).
 // Records Out is what the upserts returned record ids for, never the pre-write count.
 const p=$('Launch Params').first().json;
-let cfg={}; try{ cfg=$('Verify Extras').first().json||{}; }catch(e){}
+let cfg={}; try{ cfg=$('Check Columns').first().json||{}; }catch(e){}
 const sd=$getWorkflowStaticData('global');
 const st=(sd.slBatchState)||{};
 const t=Object.assign({ pulled:0, kept:0, upserted:0, withEmails:0, failed:0, skipped:0, inactive:0, duplicate:0 }, st.totals||{});
@@ -17,7 +17,6 @@ const SKIP=new Set(['page_size','sort','fields','f:cc']);
 const filters=Object.entries((queries[0]||{}).pullQuery||{}).filter(([k])=>!SKIP.has(k)).map(([k,v])=>k+'='+v).join(', ');
 let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}
 const fmt=v=>Number(v||0).toLocaleString('en-US');
-const extras=(cfg.extrasCreated&&cfg.extrasCreated.length)?cfg.extrasCreated.join(', '):'none';
 const lines=[
   '**'+fmt(t.pulled)+' stores pulled, '+fmt(t.upserted)+' upserted into '+(cfg.tableName||'Companies')+'**',
   '',
@@ -30,9 +29,7 @@ const lines=[
   '- **Kept (active, unique domain, under the cap):** '+fmt(t.kept),
   '- **Upserted (record id returned):** '+fmt(t.upserted),
   '- **With public emails:** '+fmt(t.withEmails),
-  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails)),
-  '',
-  '**Extras created on Companies:** '+extras
+  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails))
 ];
 const skips=[]; if(t.skipped) skips.push(fmt(t.skipped)+' empty domain'); if(t.inactive) skips.push(fmt(t.inactive)+' inactive store'); if(t.duplicate) skips.push(fmt(t.duplicate)+' duplicate domain in the pull');
 if(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');

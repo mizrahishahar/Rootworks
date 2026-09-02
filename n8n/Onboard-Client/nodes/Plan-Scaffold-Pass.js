@@ -6,8 +6,11 @@
 // DNC after the People link. What exists is left alone and counted as a skip. A column of
 // another type, or a case variant of the name, is a clash: reported, never retyped or renamed.
 // A mirror link whose "<Client> Signals" / "<Client> Campaigns" table is absent is a counted
-// skip, as is anything that depends on it. Emits {_done:true} when nothing is left, or when what
-// is left can never resolve (those land in failed). A create that failed is never retried.
+// skip, as is anything that depends on it. The declared extras groups the launch picked
+// (Scaffold Init, S.extras) walk with their table's own fields, deduplicated by name (Trustpilot
+// Rating sits in two groups); an unpicked group is never touched. Emits {_done:true} when nothing
+// is left, or when what is left can never resolve (those land in failed). A create that failed is
+// never retried.
 const sd=$getWorkflowStaticData('global'); const S=sd.scaffold;
 const REG=$('Scaffold Register').first().json;
 const r=$input.first().json||{}; const body=(r.body!==undefined)?r.body:r;
@@ -34,6 +37,9 @@ const gone=(st)=>st==='failed'||st==='clash'||st==='skipped';
 const OK={ singleLineText:['singleLineText','multilineText','richText','email','url','phoneNumber'], multilineText:['multilineText','richText','singleLineText'], singleSelect:['singleSelect'], dateTime:['dateTime','date'], date:['date','dateTime'], number:['number','currency','percent'], checkbox:['checkbox'], url:['url','singleLineText'], formula:['formula'], link:['multipleRecordLinks'], mirrorLink:['multipleRecordLinks'], lookup:['multipleLookupValues'], count:['count'], rollup:['rollup'] };
 const mark=(key,state,line)=>{ if(S.seen[key]) return; S.seen[key]=state; if(state==='existed') S.existed.push(key); else if(state==='skipped') S.skipped.push(line); else S.failed.push(line); };
 const plainBody=(f)=>{ const o={ name:f.name, type:f.type }; if(f.options) o.options=f.options; return o; };
+// The picked extras groups' fields for a table, after its own register fields, one field per name.
+const picked=new Set(S.extras||[]);
+const fieldsOf=(T)=>{ const seen=new Set(T.fields.map(f=>f.name)); const out=T.fields.slice(); for(const g of (REG.extras||[])){ if(g.table!==T.name||!picked.has(g.group)) continue; for(const f of g.fields){ if(seen.has(f.name)) continue; seen.add(f.name); out.push(f); } } return out; };
 
 function resolve(f,T,t){
   if(f.kind==='plain') return { body: plainBody(f) };
@@ -74,6 +80,7 @@ const calls=[]; const deferred=[];
 for(const T of REG.tables){
   const t=tableByName(T.name);
   const tkey=T.name+'.(table)';
+  const fields=fieldsOf(T);
   if(!t){
     if(gone(S.seen[tkey])) continue;
     const waits=(T.after||[]).filter(d=>{
@@ -83,14 +90,14 @@ for(const T of REG.tables){
       return !gone(S.seen[d.table+'.'+d.field]);
     });
     if(waits.length){ deferred.push({ key:tkey, why:'waits for '+waits.map(d=>d.table+(d.field?'.'+d.field:'')).join(', ') }); continue; }
-    const plain=T.fields.filter(f=>f.kind==='plain');
+    const plain=fields.filter(f=>f.kind==='plain');
     const primary=plain.find(f=>f.name===T.primary)||plain[0];
-    const fields=[primary].concat(plain.filter(f=>f!==primary)).map(plainBody);
-    calls.push({ key:tkey, table:T.name, name:'(table)', kind:'table', fieldNames:fields.map(f=>f.name), method:'POST', url:urlTables, body:{ name:T.name, fields:fields } });
+    const tableFields=[primary].concat(plain.filter(f=>f!==primary)).map(plainBody);
+    calls.push({ key:tkey, table:T.name, name:'(table)', kind:'table', fieldNames:tableFields.map(f=>f.name), method:'POST', url:urlTables, body:{ name:T.name, fields:tableFields } });
     continue;
   }
   mark(tkey,'existed');
-  for(const f of T.fields){
+  for(const f of fields){
     const key=T.name+'.'+f.name;
     const expect=(f.kind==='plain')?f.type:f.kind;
     const ex=fieldExact(t,f.name);

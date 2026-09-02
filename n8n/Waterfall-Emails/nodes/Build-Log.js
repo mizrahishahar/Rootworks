@@ -2,8 +2,9 @@ const wfid='iNzuePWU2UoByJ7U';
 let r=null;
 try{ r=$('Read Records').first().json; }catch(e){ r=null; }
 if(!r||!r._execId){ let p={}; try{ p=$('Params').first().json||{}; }catch(e){}
+  let t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}
   let st=''; try{ st=$('Email Guard').first().json.startedAt||''; }catch(e){}
-  r={ _execId:String($execution.id), _tableId:p['Table ID']||'', _view:p['View']||'', _startedAt:st||new Date().toISOString(), _trigger:'form', _total:0, _clientId:'' }; }
+  r={ _execId:String($execution.id), _tableId:t.tableId||'', _tableName:t.tableName||p['Table']||'', _view:p['View']||'', _startedAt:st||new Date().toISOString(), _trigger:'form', _total:0, _clientId:'' }; }
 const eid=String(r._execId);
 const start=r._startedAt||new Date().toISOString();
 const recIn=Number(r._total)||0;
@@ -51,9 +52,11 @@ const ms=Date.parse(start);
 const dur=ms?Math.round((Date.now()-ms)/1000):null;
 const trig=r._trigger||'form';
 const viewTxt=r._view?(' · view: '+r._view):'';
+const target=(r._tableName||'')+' ('+(r._tableId||'')+')';
 const desc=[
 '**'+recIn+' read, '+a.resolved+' resolved, '+a.verifying+' verifying, '+a.errored+' errored**'+(ffTotal?' · '+ffTotal+' finder calls refused':''),
 '',
+'**Table:** '+target,
 '**Launch:** '+trig+'-launched · batched 100/sub-execution'+viewTxt+' · find + verify (MV P0 / Trykitt / LeadMagic / Prospeo / BounceBan)',
 '',
 '**Progress:** '+accounted+' of '+recIn+' accounted',
@@ -65,4 +68,4 @@ const desc=[
 '- **Errored (never actually looked up, retryable):** '+a.errored,
 '- **Rows written (resolved+verifying):** '+recordsOut
 ].concat(ffTotal?['','**Finder failures (the API refused the call, not a negative)**',ffLine('P2','LeadMagic',a.ffP2),ffLine('P3','Prospeo',a.ffP3)]:[]).concat(['','**Duration:** '+(dur!=null?dur+'s':'n/a')]).join('\n');
-return [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': r._tableId, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];
+return [{ json:{ 'Automation':'Waterfall Emails', 'Run at': start, 'Target': target, 'View': r._view||'', 'Records In': recIn, 'Records Out': recordsOut, 'Execution ID': eid, 'Execution Link': 'https://n8n.flowroots.com/workflow/'+wfid+'/executions/'+eid, 'Status': isFinal?((a.errored||ffTotal)?'Succeeded with errors':'Succeeded'):'Running', 'Trigger': trig, 'Errors': a.errored, 'Duration s': dur, 'Tally': JSON.stringify(a), 'Description': desc } }];

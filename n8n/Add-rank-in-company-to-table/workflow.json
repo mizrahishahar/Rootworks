@@ -18,9 +18,8 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "Table ID",
-              "placeholder": "tblXXXXXXXXXXXXXX - the contacts table to rank",
-              "requiredField": true
+              "fieldLabel": "Table",
+              "placeholder": "People or Companies, blank = People"
             },
             {
               "fieldLabel": "View ID",
@@ -265,6 +264,19 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "7c1e5b2a-0004-4a5e-9d31-resolvetable4",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -64
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Table-Guard.js"
       },
       "id": "afc9df6d-ddb1-43b4-abdb-1876c2e1e6c5",
@@ -273,126 +285,6 @@
       "typeVersion": 2,
       "position": [
         1040,
-        96
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.needsRankField }}",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              },
-              "rightValue": ""
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "e24e19a4-a497-413c-bf62-d917f71ec1d9",
-      "name": "Needs Rank Field?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1264,
-        96
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables/{{ $json.tableId }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { \"name\": \"RankInCompany\", \"type\": \"number\", \"options\": { \"precision\": 0 } } }}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "168bd11c-36d1-4bed-b433-afd6563fba79",
-      "name": "AT Create Rank Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1488,
-        32
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Table Guard').first().json.baseId }}/tables",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "3f4ed502-b943-456f-9052-a31034429753",
-      "name": "AT Verify Rank Schema",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1712,
-        32
-      ],
-      "executeOnce": true,
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Verify-Rank-Field.js"
-      },
-      "id": "c2706b52-9b99-4de7-b8a4-a58d4980706a",
-      "name": "Verify Rank Field",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1936,
-        32
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Rank-Field-Ready.js"
-      },
-      "id": "9377b6ec-3afa-47cd-9c17-e0a9d62d60d4",
-      "name": "Rank Field Ready",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2160,
         96
       ]
     },
@@ -684,6 +576,19 @@
         }
       },
       "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "e24e19a4-a497-413c-bf62-d917f71ec1d9",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        96
+      ]
     }
   ],
   "connections": {
@@ -801,80 +706,18 @@
       "main": [
         [
           {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
             "node": "Table Guard",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Table Guard": {
-      "main": [
-        [
-          {
-            "node": "Needs Rank Field?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Needs Rank Field?": {
-      "main": [
-        [
-          {
-            "node": "AT Create Rank Field",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Rank Field Ready",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AT Create Rank Field": {
-      "main": [
-        [
-          {
-            "node": "AT Verify Rank Schema",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AT Verify Rank Schema": {
-      "main": [
-        [
-          {
-            "node": "Verify Rank Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Verify Rank Field": {
-      "main": [
-        [
-          {
-            "node": "Rank Field Ready",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Rank Field Ready": {
-      "main": [
-        [
-          {
-            "node": "Init Read Loop",
             "type": "main",
             "index": 0
           }
@@ -1010,6 +853,28 @@
         [
           {
             "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Table Guard": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Init Read Loop",
             "type": "main",
             "index": 0
           }

@@ -46,6 +46,11 @@ const CODE_PARAMS = {
   'n8n-nodes-base.functionItem': 'functionCode',
 };
 
+// The push inlines the field register as one `const REGISTER = {...};` line wherever a node file
+// carries `// @@register`. The source keeps the directive, never the inlined copy.
+const REGISTER_LINE = /^const REGISTER = \{.*\};$/gm;
+const restoreDirective = (code) => code.replace(REGISTER_LINE, '// @@register');
+
 async function listAll() {
   let cursor; const all = [];
   do {
@@ -67,7 +72,7 @@ function decompile(wf) {
     if (param && node.parameters && typeof node.parameters[param] === 'string' && node.parameters[param].length) {
       fs.mkdirSync(path.join(dir, 'nodes'), { recursive: true });
       const file = `nodes/${slug(node.name)}.js`;
-      fs.writeFileSync(path.join(dir, file), node.parameters[param]);
+      fs.writeFileSync(path.join(dir, file), restoreDirective(node.parameters[param]));
       node.parameters[param] = `@@file:${file}`;
       codeFiles++;
     }

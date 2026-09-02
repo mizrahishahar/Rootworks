@@ -189,7 +189,7 @@
     {
       "parameters": {
         "formTitle": "Field Merge — attach CSV columns by key",
-        "formDescription": "Upload a CSV keyed by Domain or Final Email with any extra columns. Every non-key column is stamped onto all rows of the target table sharing the key value. Additive only: no inserts, no deletes, missing fields auto-created as text. Final Email merges are refused on *Domains* tables.",
+        "formDescription": "Upload a CSV keyed by Domain or Final Email with any extra columns. Every non-key column is stamped onto all rows of the target table sharing the key value. Additive only: no inserts, no deletes. Every CSV column must already exist on the table: a missing one refuses the run before any write (the scaffold or the Operator adds columns, never this door). Final Email merges are refused on *Domains* tables.",
         "formFields": {
           "values": [
             {
@@ -198,9 +198,8 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "Table ID",
-              "placeholder": "tblXXXXXXXXXXXXXX — the target table in that base",
-              "requiredField": true
+              "fieldLabel": "Table",
+              "placeholder": "People or Companies, blank = People"
             },
             {
               "fieldLabel": "Key column",
@@ -307,6 +306,19 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "7c1e5b2a-0007-4a5e-9d31-resolvetable7",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        512
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Guard-Schema.js"
       },
       "id": "ca0c9846-c420-4c1d-8e1c-dbcd6cd6233c",
@@ -315,124 +327,6 @@
       "typeVersion": 2,
       "position": [
         1328,
-        672
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.missingFields.length }}",
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              },
-              "rightValue": 0
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "fe501b95-1f09-40e5-b10b-c03ce4060726",
-      "name": "Fields Missing?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1552,
-        672
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Split-Missing-Fields.js"
-      },
-      "id": "b7258e4f-e951-483b-b031-3c90b6605358",
-      "name": "Split Missing Fields",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1760,
-        560
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Guard Schema').first().json.baseId }}/tables/{{ $('Guard Schema').first().json.tableId }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ name: $json.name, type: \"singleLineText\" }) }}",
-        "options": {}
-      },
-      "id": "f276c2bf-3f0c-48aa-afe1-de6e569b6748",
-      "name": "Create Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1984,
-        560
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Guard Schema').first().json.baseId }}/tables",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "options": {}
-      },
-      "id": "dffdeb2b-49eb-49e4-a27a-2e7b748b791f",
-      "name": "Refetch Schema",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        2208,
-        560
-      ],
-      "executeOnce": true,
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Verify-Fields.js"
-      },
-      "id": "498fa8d6-09f1-48d9-bb8c-40db34b51af4",
-      "name": "Verify Fields",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2432,
-        560
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "051bc43a-1e54-4061-a4de-3f9a52aab138",
-      "name": "Fields Ready",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        2640,
         672
       ]
     },
@@ -1376,6 +1270,19 @@
         },
         "options": {}
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "fe501b95-1f09-40e5-b10b-c03ce4060726",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        672
+      ]
     }
   ],
   "connections": {
@@ -1504,91 +1411,18 @@
       "main": [
         [
           {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
             "node": "Guard Schema",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Guard Schema": {
-      "main": [
-        [
-          {
-            "node": "Fields Missing?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fields Missing?": {
-      "main": [
-        [
-          {
-            "node": "Split Missing Fields",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Fields Ready",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Missing Fields": {
-      "main": [
-        [
-          {
-            "node": "Create Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Field": {
-      "main": [
-        [
-          {
-            "node": "Refetch Schema",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Refetch Schema": {
-      "main": [
-        [
-          {
-            "node": "Verify Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Verify Fields": {
-      "main": [
-        [
-          {
-            "node": "Fields Ready",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fields Ready": {
-      "main": [
-        [
-          {
-            "node": "Get Table Rows",
             "type": "main",
             "index": 0
           }
@@ -1673,6 +1507,28 @@
         [
           {
             "node": "Update Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Schema": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Get Table Rows",
             "type": "main",
             "index": 0
           }

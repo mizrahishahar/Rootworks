@@ -18,8 +18,8 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "Table ID",
-              "requiredField": true
+              "fieldLabel": "Table",
+              "placeholder": "People or Companies, blank = People"
             },
             {
               "fieldLabel": "Max Rows",
@@ -80,6 +80,19 @@
     },
     {
       "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "7c1e5b2a-0001-4a5e-9d31-resolvetable1",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        -128
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Email-Guard.js"
       },
       "id": "d227eea2-c7da-416e-abcc-a752df1aed34",
@@ -93,57 +106,6 @@
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/Field-List.js"
-      },
-      "id": "a3326d94-9857-48fd-b7a4-fd85d3d5f8b7",
-      "name": "Field List",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1312,
-        32
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json['Clayroots Base ID'] }}/tables/{{ $('Params').first().json['Table ID'] }}/fields",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.def }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 200
-            }
-          },
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "6c111717-a230-4df0-b075-00f235c3deec",
-      "name": "Create Field",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1536,
-        32
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "search",
         "base": {
           "__rl": true,
@@ -153,7 +115,7 @@
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Params').first().json['Table ID'] }}"
+          "value": "={{ $('Resolve Table').first().json.tableId }}"
         },
         "filterByFormula": "=AND(NOT({Status} = 'done'), NOT({Status} = 'verifying'), OR('{{ $('Params').first().json.recordId }}' = '', RECORD_ID() = '{{ $('Params').first().json.recordId }}'))",
         "options": {
@@ -957,8 +919,14 @@
           "assignments": [
             {
               "id": "p1",
-              "name": "Table ID",
-              "value": "={{ $json['Table ID'] || ($json.body && $json.body.tableId) || '' }}",
+              "name": "Table",
+              "value": "={{ $json['Table'] || ($json.body && $json.body.table) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p8",
+              "name": "tableId",
+              "value": "={{ ($json.body && $json.body.tableId) || '' }}",
               "type": "string"
             },
             {
@@ -1587,6 +1555,19 @@
       },
       "notes": "Always emits exactly one item so the Split In Batches loop advances regardless of what the sub-execution returned. The sub's last node is Collect Pending, which is empty whenever a batch sends nobody to BounceBan; feeding that straight back stopped the loop after one batch.",
       "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "a3326d94-9857-48fd-b7a4-fd85d3d5f8b7",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        32
+      ]
     }
   ],
   "connections": {
@@ -1594,40 +1575,18 @@
       "main": [
         [
           {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
             "node": "Email Guard",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Guard": {
-      "main": [
-        [
-          {
-            "node": "Field List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Field List": {
-      "main": [
-        [
-          {
-            "node": "Create Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Field": {
-      "main": [
-        [
-          {
-            "node": "Fetch Rows",
             "type": "main",
             "index": 0
           }
@@ -2128,7 +2087,7 @@
     },
     "Batch": {
       "main": [
-        null,
+        [],
         [
           {
             "node": "Run Batch",
@@ -2198,6 +2157,28 @@
         [
           {
             "node": "Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Guard": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Fetch Rows",
             "type": "main",
             "index": 0
           }

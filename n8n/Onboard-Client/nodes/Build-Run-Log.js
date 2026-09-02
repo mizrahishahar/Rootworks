@@ -30,6 +30,7 @@ if(S){
   for(const f of S.failed||[]) failed.push(f);
   const created=S.created||[];
   lines.push('', '**Scaffold** (base '+S.base+', '+S.pass+' schema pass'+(S.pass===1?'':'es')+', '+created.filter(c=>c.name!=='(table)').length+' fields on '+created.filter(c=>c.name==='(table)').length+' tables created)');
+  lines.push('**Extras:** '+((S.extras||[]).length?S.extras.join(', ')+' (declared columns on Companies)':'none picked, the register core only'));
   for(const T of ['Companies','People','DNC']){
     const tbl=created.find(c=>c.table===T&&c.name==='(table)');
     const withTable=created.filter(c=>c.table===T&&c.name!=='(table)'&&(c.how==='base'||c.how==='withTable')).map(c=>c.name);

@@ -325,6 +325,21 @@ const PEOPLE_MAP = [
   // nothing here, and a target People that lacks the column makes every non-empty legacy value a
   // counted drop that blocks --apply. Create the column on People before migrating an Israeli table.
   { to: 'first name he', from: ['first name he'] },
+  // Client custom columns on the same footing, added for Flowroots' own base 2026-09-03. Flowroots
+  // runs its outreach off its own list: a campaign is selected by FR Vertical crossed with FR
+  // Persona, and hebrew_speaker routes the Hebrew-versus-English split those campaigns are written
+  // for. Person-level, so they live on People rather than travelling by the Companies lookup.
+  // Same contract as "first name he": mapped by name, a legacy table without the column
+  // contributes nothing, and a target People that lacks the column turns every non-empty legacy
+  // value into a counted drop that blocks --apply. Create the columns on People first, with the
+  // choices spelled exactly as the legacy table spells them, because coerce() matches a select
+  // value against the target's own choices and never mints one.
+  { to: 'hebrew_speaker', from: ['hebrew_speaker'] },
+  { to: 'FR Vertical', from: ['FR Vertical'] },
+  { to: 'FR Persona', from: ['FR Persona'] },
+  // The frozen output of an AI field whose prompt is already gone (the legacy column is plain
+  // text, sparkle and all). Carried because it cannot be regenerated, never read by a machine.
+  { to: 'ICP Fit', from: ['✨ ICP Fit', 'ICP Fit'] },
   { to: 'Company', from: ['Company', 'company_clean'] },
   { to: 'Contact Source', from: ['Contact Source'], alias: SOURCE_ALIAS },
   { to: 'manually_approved', from: ['manually_approved'] },
@@ -352,7 +367,16 @@ const NEVER_WRITE = { Companies: new Set(['Build Date', 'People', 'Contacts Pull
 // Ruled out of the register 2026-09-02: a non-empty legacy value in these columns is left behind on purpose.
 // Counted under acceptedDrops, never a data-bearing drop that blocks apply. On person rows the company facts
 // are accepted too: they arrive by lookup now (the company row may still take them as gap-fill).
-const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit'];
+const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit',
+  // Added 2026-09-03 from the Flowroots base. Named here so the report counts them instead of
+  // letting them vanish unmentioned, since no map reads them.
+  //   Revenue          a Revenue Range lookalike that is not one: the column shifted on import and
+  //                    mixes bands ("Under 1 Million", "51 to 250") with MX providers ("Google",
+  //                    "IronPort") across 4,098 of 4,774 rows. Never feed it to Revenue Range.
+  //   Company Website  redundant with Domain and dirty ("MD", "https://linkedin.com").
+  //   Vendors          the segment definition frozen as a column ("heroku.com" on all 638 rows);
+  //                    the Tag carries it.
+  'Revenue', 'Company Website', 'Vendors'];
 // Companies only, ruled out of the register 2026-09-02 alongside Company Status and State Full.
 // Email Pattern has no home on any register table and never will. Email Source is People's alone
 // (the register's Companies lane is Email, MV P0, BB, Final Email, Status); the Companies-side

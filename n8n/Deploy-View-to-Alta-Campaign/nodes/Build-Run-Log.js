@@ -42,7 +42,7 @@ const durS=Math.round((Date.now()-(D.startedAt||Date.now()))/1000);
 sd[dk]=null;
 const status=D.abort?'Failed':(failed.length||pz||D.missing?'Succeeded with errors':'Succeeded');
 return [{json:Object.assign({_launchId:D.launchId||''},{
-  'Automation':'Deploy View to Campaign',
+  'Automation':'Deploy View to Alta Campaign',
   'Status':status,
   'Run at':D.runAt||$now.toISO(),
   'Duration s':durS,

@@ -7,8 +7,8 @@
 const sd=$getWorkflowStaticData('global'); const dk='deploy_'+$execution.id;
 // Static data does not survive the RB Wait resume; restore from the state Collect Push carried.
 let D=sd[dk]; if(!D){ try{ D=$('Collect Push').first().json._state; }catch(e){} if(D) sd[dk]=D; }
-if(!D){ return [{json:{_lost:true, error:'run state lost and no Collect Push state to restore'}}]; }
-if(D.abort){ return [{json:{prospectIds:[], action:'pause', _none:true}}]; }
+// No state to read means nothing can be judged; Close Deploy owns the recovery and the row.
+if(!D||D.abort){ return [{json:{prospectIds:[], action:'pause', _none:true}}]; }
 let persons=[];
 try{ const j=($input.first()||{}).json||{}; persons=Array.isArray(j.rows)?j.rows:[]; }catch(e){}
 const normUrl=u=>String(u||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/+$/,'').split('?')[0];

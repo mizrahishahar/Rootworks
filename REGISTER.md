@@ -7,7 +7,7 @@ Views are declared per table as data (filter, fields, sort); the Operator makes 
 
 ## Companies
 
-Primary field: Domain. 42 fields.
+Primary field: Domain. 43 fields.
 
 | Field | Type | Options | Kind |
 |---|---|---|---|
@@ -45,6 +45,7 @@ Primary field: Domain. 42 fields.
 | Final Email | singleLineText |  | plain |
 | Status | singleSelect | done (greenBright), verifying (blueBright), no_email_found (redBright), error (orangeBright) | plain |
 | Campaigns | multipleRecordLinks | to the client's synced Campaigns mirror | mirrorLink |
+| Sequencers | multipleLookupValues | Campaigns.Sequencer, through the link to the client's synced Campaigns mirror. The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders. | mirrorLookup |
 | Messages Sent | number | precision 0 | plain |
 | Last Contacted | dateTime | iso, 24hour, utc | plain |
 | Campaign Status | singleSelect | NEVER_CONTACTED (grayLight2), IN_SEQUENCE (blueBright), COMPLETED (greenBright), REPLIED (purpleBright), BOUNCED (redBright), UNSUBSCRIBED (orangeBright) | plain |
@@ -111,7 +112,7 @@ Primary field: Domain. 42 fields.
 
 ## People
 
-Primary field: Name. 59 fields.
+Primary field: Name. 60 fields.
 
 | Field | Type | Options | Kind |
 |---|---|---|---|
@@ -168,6 +169,7 @@ Primary field: Name. 59 fields.
 | Signal At | multipleLookupValues | Companies.Signal At | lookup |
 | ICP Reason | multipleLookupValues | Companies.ICP Reason | lookup |
 | Campaigns | multipleRecordLinks | to the client's synced Campaigns mirror | mirrorLink |
+| Sequencers | multipleLookupValues | Campaigns.Sequencer, through the link to the client's synced Campaigns mirror. The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders. | mirrorLookup |
 | Messages Sent | number | precision 0 | plain |
 | Last Contacted | dateTime | iso, 24hour, utc | plain |
 | Campaign Status | singleSelect | NEVER_CONTACTED (grayLight2), IN_SEQUENCE (blueBright), COMPLETED (greenBright), REPLIED (purpleBright), BOUNCED (redBright), UNSUBSCRIBED (orangeBright) | plain |
@@ -256,7 +258,7 @@ On People (24 core fields, 24 lookups on People): Domain, Company, Description, 
 
 Extras groups on People when picked: Storeleads, Hiring, Reviews.
 
-Not on People (18): Build Date, Contacts Pulled At, Contacts Count, Contact Sources, Email, MV P0, BB, Final Email, Status, Campaigns, Messages Sent, Last Contacted, Campaign Status, Bounce Reason, Synced At, Deploy Error, manually_approved, relevance.
+Not on People (19): Build Date, Contacts Pulled At, Contacts Count, Contact Sources, Email, MV P0, BB, Final Email, Status, Campaigns, Sequencers, Messages Sent, Last Contacted, Campaign Status, Bounce Reason, Synced At, Deploy Error, manually_approved, relevance.
 
 ## Palettes
 

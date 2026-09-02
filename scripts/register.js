@@ -34,7 +34,7 @@ function airtableType(f) {
     case 'plain': return f.type;
     case 'formula': return 'formula';
     case 'link': case 'mirrorLink': return 'multipleRecordLinks';
-    case 'lookup': return 'multipleLookupValues';
+    case 'lookup': case 'mirrorLookup': return 'multipleLookupValues';
     case 'count': return 'count';
     case 'rollup': return 'rollup';
     default: return f.type || f.kind;
@@ -67,11 +67,15 @@ function options(f) {
     case 'link': return `to ${f.table}`;
     case 'mirrorLink': return `to the client's synced ${f.mirror} mirror`;
     case 'lookup': return `${f.via}.${f.field}`;
+    case 'mirrorLookup': return `${f.mirror}.${f.field}, through the link to the client's synced ${f.mirror} mirror`;
     case 'count': return `of ${f.via}`;
     case 'rollup': return `${f.via}.${f.field}, \`${f.formula}\``;
     default: return '';
   }
 }
+
+// A field's Options cell: how it resolves, then the field's own description when it carries one.
+const describe = (f) => [options(f), f.description].filter(Boolean).join('. ');
 
 // The On People rule: the Companies fields flagged `company` (on People as lookups of the same
 // name), the extras groups (the same, when picked), and the Companies fields that stay off People.
@@ -100,7 +104,7 @@ function compile(reg) {
   for (const t of reg.tables) {
     lines.push(`## ${t.name}`, '', `Primary field: ${t.primary}. ${t.fields.length} fields.`, '');
     lines.push('| Field | Type | Options | Kind |', '|---|---|---|---|');
-    for (const f of t.fields) lines.push(`| ${clean(f.name)} | ${airtableType(f)} | ${clean(options(f))} | ${f.kind} |`);
+    for (const f of t.fields) lines.push(`| ${clean(f.name)} | ${airtableType(f)} | ${clean(describe(f))} | ${f.kind} |`);
     lines.push('');
     const groups = (reg.extras || []).filter((g) => g.table === t.name);
     if (groups.length) {

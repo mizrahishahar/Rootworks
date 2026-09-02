@@ -21,6 +21,10 @@
 // field names on the same table, swapped for field ids at plan time. link: to a register table.
 // mirrorLink: to the client's synced mirror when the base carries it, else a counted skip.
 // lookup / count / rollup: through a link, resolved by the linked table's id, never by name.
+// mirrorLookup: a lookup through a mirrorLink instead of through the Companies link. It resolves
+// by the mirror's own table (whose name carries the client's name), so it names `mirror`, the way
+// mirrorLink does, and never `via`, the way every Companies lookup does. Same skip rule as
+// mirrorLink: no mirror in the base, no field.
 const SEL=(choices)=>({ choices: choices.map(c=>typeof c==='string'?{name:c}:c) });
 const txt=(name)=>({ name, kind:'plain', type:'singleLineText' });
 const long=(name)=>({ name, kind:'plain', type:'multilineText' });
@@ -32,6 +36,16 @@ const chk=(name)=>({ name, kind:'plain', type:'checkbox', options:{ color:'green
 const url=(name)=>({ name, kind:'plain', type:'url' });
 const formula=(name,f,refs)=>({ name, kind:'formula', formula:f, refs:refs||[] });
 const lookup=(name)=>({ name, kind:'lookup', via:'Companies', field:name });
+const mirrorLookup=(name,mirror,field,description)=>({ name, kind:'mirrorLookup', mirror, field, description });
+// Sequencers, the one mirror-derived lookup, on both Companies and People through their own
+// Campaigns link. It names which senders already hold this row. Plural on purpose: a row can link
+// several campaigns, so the value is a list ("PlusVibe, PlusVibe" or "Alta, PlusVibe"), and the
+// name says so at a glance. The mirror's own column stays `Sequencer`, singular, because one
+// campaign really does have one sender. A live view tests this list with does-not-contain, never
+// equals: a campaign-feeding view excludes only its own sender, because a person already in an
+// Alta campaign is still a legitimate target for a PlusVibe one, and the reverse.
+const SEQUENCERS=()=>mirrorLookup('Sequencers','Campaigns','Sequencer',
+  'The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.');
 // about: a Companies field that describes the company. The On People rule (ruled 2026-09-02):
 // every such field is on People as a lookup of the identical name, generated below from this flag,
 // never typed by hand. A Companies field without the flag stays off People.
@@ -92,6 +106,15 @@ const LINKEDIN_NAME_MATCH='IF(AND({LinkedIn URL}, OR({first_name}, {last_name}))
 
 // Views (ruled 2026-09-02): name, filter (in words and as an Airtable formula), the visible fields
 // in order, sort. Build Date descending everywhere it exists; DNC has no Build Date and sorts by Added.
+// The standard set below is a reporting set: every one of them describes a state of the table, and
+// "Found : Campaigns" and "Found : Never Contacted" are read, not fed from. "Never Contacted" reads
+// Messages Sent = 0, which is a fact about the row, not an exclusion rule.
+// A campaign-feeding view is the Operator's, made per campaign on top of these, and it excludes per
+// sender, never blanket (ruled 2026-09-03). Being in some other campaign is not a reason to skip a
+// person: someone already enrolled on Alta is still a legitimate target on PlusVibe, and the
+// reverse. The exclusion filter is Sequencers does-not-contain the campaign's own sender, and only
+// that. Sequencers is a list (a row can link several campaigns), so it is never tested with equals,
+// and a Campaigns-is-empty filter is wrong wherever it appears.
 const view=(name,words,f,fields,sortField)=>({ name, filter:{ words, formula:f }, fields, sort:{ field:sortField||'Build Date', direction:'desc' } });
 const RELEVANT='{relevance} = 1';
 const NOT_WATERFALLED='AND({relevance} = 1, NOT({Status}))';
@@ -114,7 +137,7 @@ const COMPANIES={ name:'Companies', primary:'Domain', fields:[
   about({ name:'Signals', kind:'mirrorLink', mirror:'Signals' }),
   about(dt('Signal At')), about(long('ICP Reason')),
   ...COMPANY_LANE(),
-  { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' },
+  { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' }, SEQUENCERS(),
   ...MACHINE(), chk('manually_approved'),
   formula('relevance',COMPANY_RELEVANCE,['manually_approved','public_emails_clean'])
 ], views:[
@@ -145,7 +168,7 @@ const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], field
   formula('relevance',PEOPLE_RELEVANCE,['manually_approved']),
   formula('linkedin_name_match',LINKEDIN_NAME_MATCH,['LinkedIn URL','first_name','last_name']),
   ...COMPANY_LOOKUPS(),
-  { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' },
+  { name:'Campaigns', kind:'mirrorLink', mirror:'Campaigns' }, SEQUENCERS(),
   ...MACHINE()
 ], views:[
   view('Relevant','relevance = 1',RELEVANT,['Name','Title','Seniority','Department','Company','Description','Employees','Email','LinkedIn URL','Contact Source','Tag','Build Date']),

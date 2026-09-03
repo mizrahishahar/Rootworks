@@ -1,6 +1,11 @@
 {
+  "updatedAt": "2026-09-02T20:20:05.465Z",
+  "createdAt": "2026-09-01T23:50:55.483Z",
+  "id": "61QayoPOnxClmE54",
   "name": "Waterfall Contacts Batch",
+  "description": null,
   "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -2014,5 +2019,2088 @@
     "executionOrder": "v1",
     "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
   },
-  "id": "61QayoPOnxClmE54"
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+  "activeVersionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+  "versionCounter": 4,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-09-01T23:50:55.489Z",
+      "createdAt": "2026-09-01T23:50:55.489Z",
+      "role": "workflow:owner",
+      "workflowId": "61QayoPOnxClmE54",
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-09-02T20:20:05.509Z",
+    "createdAt": "2026-09-02T20:20:05.509Z",
+    "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+    "workflowId": "61QayoPOnxClmE54",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "b7a20001-0046-4000-8000-000000000046",
+        "name": "Batch Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -220,
+          0
+        ],
+        "notes": "One item from Waterfall Contacts: { mode: writer | ark, parentExecId, batchNum, batchCount, base, clientRecId, peopleTableId, peopleTableName, companiesTableId, dncTableId, peopleFields[], sources[], cgDepartments[], arkFunctions[], companies[{ recordId, domain, company, employees, heldCount, heldKeys[], heldLinkedin[] }] }. Writer: one 250-company batch, awaited, held state from its recount returned. Ark: the same batch, fired not awaited the moment the writer closed, held state from that recount on the companies. Both write their own Hub row before answering."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Input: the caller's passthrough item, one per call, exactly as the parent shaped it.\n// Two modes, one machine (ruled 2026-09-02). Mode \"writer\": one 250-company batch through\n// ContaGen and Supersoniq, Clean Fields, DNC, the People writer, the Companies stamps, a recount,\n// its own Hub row keyed \"<parentExecId>-<batchNum>\", and the recount's held state back to the\n// parent. Mode \"ark\": ONE pass for the whole run, fired by the parent, not awaited, once the\n// writer lane has drained (rebuilt 2026-09-02; before that it was one pass per batch and the\n// overlapping passes 429'd each other off AI-Ark's global ceiling). It carries every company from\n// every closed writer batch with that batch's recount as held state, one AI-Ark export per company\n// still under its band cap, completion through the callback door's data table, the People writer,\n// no new stamps, its own Hub row keyed \"<parentExecId>-ark\" (the parent waits on that row).\n// The key parts are required here, before any paid call; startedAt is the clock Duration s runs on.\nconst raw=$input.first().json||{};\nconst inp=Object.assign({}, raw);\nconst mode=String(inp.mode||'writer').toLowerCase()==='ark'?'ark':'writer';\nconst parentExecId=String(inp.parentExecId||'').trim();\nconst batchNum=Math.floor(Number(inp.batchNum)||0);\nconst who='Waterfall Contacts Batch ('+mode+')';\nif(!parentExecId) throw new Error(who+' was called without parentExecId. Its Hub row is keyed by it. Nothing was pulled.');\nif(mode==='writer'&&!(batchNum>0)) throw new Error(who+' '+parentExecId+' was called without batchNum. Its Hub row is keyed \"<parentExecId>-<batchNum>\". Nothing was pulled.');\nif(!/^app[A-Za-z0-9]{14}$/.test(String(inp.base||''))) throw new Error(who+' '+parentExecId+' has no valid base. Nothing was pulled.');\nfor(const k of ['peopleTableId','companiesTableId']){ if(!inp[k]) throw new Error(who+' '+parentExecId+' has no '+k+'. Nothing was pulled.'); }\nif(!Array.isArray(inp.companies)||!inp.companies.length) throw new Error(who+' '+parentExecId+' received an empty company list. The parent must never send one.');\ninp.mode=mode;\ninp.parentExecId=parentExecId;\ninp.batchNum=batchNum;\ninp.logKey=mode==='ark'?(parentExecId+'-ark'):(parentExecId+'-'+String(batchNum));\ninp.startedAt=new Date().toISOString();\nreturn [{ json: inp }];\n"
+        },
+        "id": "b7a20001-0001-4000-8000-000000000001",
+        "name": "Batch Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Plan Batch: the companies in, the plan out. People per company follows size, a rule in code\n// (ruled 2026-09-02): 1-10 employees 4, 11-50 6, 51-200 10, 201 and up 12, unknown 6. The cap is\n// a per-source cap at ContaGen and Supersoniq (every company in the batch, grouped by band so\n// results_by_company and per_company_limit are the band cap) and absolute at AI-Ark (gap-sized,\n// planned by the ark pass after one recount over the whole run). In mode \"writer\" the tier-1 and\n// tier-2 requests are built here; in mode \"ark\" only the band caps are needed and no request is\n// built. Pull WIDE, cut in the base: the nets here are fixed; who gets messaged is the relevance\n// formula and the views on People. No Tag: People stores none (a lookup through Companies).\n//\n// TWO LEVERS ON THE LAUNCH ROW (ruled 2026-09-02), both carried here by the parent:\n//   arkOnly, set when Tiers is the \"AI-Ark\" mode: a FLAT cap of five people per company, every\n//   company size, instead of the band caps. Nothing else about the bands changes.\n//   cgSeniority / sqSeniority, the launch row's Roles mapped into each provider's vocabulary by\n//   the parent's Launch Params: present, they REPLACE the in-code seniority net for that provider\n//   (including the 1-10 widening); absent, the in-code nets below stand unchanged.\nconst inp=$input.first().json||{};\nconst companies=Array.isArray(inp.companies)?inp.companies:[];\nif(!companies.length) throw new Error('Waterfall Contacts Batch received an empty company list. The parent must never send one.');\nconst mode=inp.mode==='ark'?'ark':'writer';\nconst sources=Array.isArray(inp.sources)?inp.sources:[];\nconst on=(s)=>sources.indexOf(s)>-1;\nconst arkOnly=inp.arkOnly===true;\nconst ARK_ONLY_CAP=5;\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst capOf=(b)=>{ if(arkOnly) return ARK_ONLY_CAP; if(b==='1-10') return 4; if(b==='11-50') return 6; if(b==='51-200') return 10; if(b) return 12; return 6; };\nconst plan=companies.map(c=>{ const b=band(c.employees); return {\n  recordId:c.recordId, domain:String(c.domain||'').trim().toLowerCase(), company:String(c.company||'').trim(),\n  band:b||'unknown', small:b==='1-10', cap:capOf(b),\n  held:Number(c.heldCount)||0,\n  heldKeys:(Array.isArray(c.heldKeys)?c.heldKeys:[]).map(k=>String(k).toLowerCase()),\n  heldLinkedin:(Array.isArray(c.heldLinkedin)?c.heldLinkedin:[]).map(l=>String(l).trim()).filter(Boolean)\n}; }).filter(c=>c.domain);\n// One group per (net, cap): 1-10 is the wider net at cap 4; an unknown band shares cap 6 with 11-50.\nconst groups={};\nfor(const c of plan){ const k=(c.small?'small':'standard')+':'+String(c.cap).padStart(2,'0'); (groups[k]=groups[k]||{ small:c.small, cap:c.cap, list:[] }).list.push(c); }\nconst chunk=(arr,n)=>{ const out=[]; for(let i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; };\n// Tier 1, ContaGen (DiscoLike contacts/discover, domain mode): seniority executive, vp, director,\n// manager, plus senior_ic for 1-10; department only when the launch row mapped one; 250 domains per call.\nconst CG_SEN=['executive','vp','director','manager'];\nconst cgDep=Array.isArray(inp.cgDepartments)?inp.cgDepartments:[];\nconst cgRoles=Array.isArray(inp.cgSeniority)?inp.cgSeniority:[];\nconst sqRoles=Array.isArray(inp.sqSeniority)?inp.sqSeniority:[];\n// Tier 2, Supersoniq companies/enrich: their vocabulary exactly as SQ Contacts Batch sends it\n// (Unclassified included: \"we don't know\" is not \"not a decision-maker\"), Senior added for 1-10,\n// no department, no country, tier full so the email rides, up to 1,000 domains per call.\nconst STANDARD_SEN=['Manager','Senior Manager','Director','Head','VP','EVP / SVP','President','C-Suite','Owner','Founder','Partner','Board / Chair','Unclassified'];\nconst SMALL_SEN=STANDARD_SEN.concat(['Senior']);\nconst cgRequests=[], sqRequests=[];\nif(mode==='writer'){\n  for(const k of Object.keys(groups).sort()){\n    const g=groups[k];\n    if(on('ContaGen')){\n      for(const part of chunk(g.list,250)){\n        const body={ domain:part.map(c=>c.domain), seniority:(cgRoles.length?cgRoles:(g.small?CG_SEN.concat(['senior_ic']):CG_SEN)), max_companies:part.length, results_by_company:g.cap };\n        if(cgDep.length) body.department=cgDep;\n        cgRequests.push({ body:body, domains:part.map(c=>c.domain), cap:g.cap });\n      }\n    }\n    if(on('Supersoniq')){\n      for(const part of chunk(g.list,1000)){\n        sqRequests.push({ body:{ companies:part.map(c=>({ domain:c.domain })), filters:{ seniority:(sqRoles.length?sqRoles:(g.small?SMALL_SEN:STANDARD_SEN)) }, per_company_limit:g.cap, tier:'full' }, domains:part.map(c=>c.domain), cap:g.cap });\n      }\n    }\n  }\n}\nreturn [{ json: {\n  mode:mode, batchNum:Number(inp.batchNum)||0, batchCount:Number(inp.batchCount)||0,\n  sources:sources, plan:plan, cgRequests:cgRequests, sqRequests:sqRequests,\n  arkOnly:arkOnly, capRule:(arkOnly?('flat '+ARK_ONLY_CAP):'by band'),\n  arkOn:mode==='ark'&&on('AI-Ark'), arkFunctions:(Array.isArray(inp.arkFunctions)?inp.arkFunctions:[]),\n  arkSeniority:(Array.isArray(inp.arkSeniority)?inp.arkSeniority:[])\n} }];\n"
+        },
+        "id": "b7a20001-0002-4000-8000-000000000002",
+        "name": "Plan Batch",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.dncTableId }}"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain"
+            ]
+          }
+        },
+        "id": "b7a20001-0003-4000-8000-000000000003",
+        "name": "Get DNC Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The client's table named DNC (resolved by name in the parent), every page via the node's own offset pagination. No DNC table: the read errors quietly and nothing is dropped."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Plan Ready: the DNC read sits between Plan Batch and the tiers so both DNC passes share it;\n// re-emit the plan as the one item the gates read, so no gate ever evaluates against DNC rows.\nreturn [{ json: $('Plan Batch').first().json }];\n"
+        },
+        "id": "b7a20001-0004-4000-8000-000000000004",
+        "name": "Plan Ready",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "m1",
+                "leftValue": "={{ $json.mode }}",
+                "rightValue": "ark",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0047-4000-8000-000000000047",
+        "name": "Ark Pass?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          0
+        ],
+        "notes": "Mode ark: the run's single AI-Ark lane over every company from every closed writer batch (held state from those batches' recounts comes with the item, no read here), exports, the People writer. Mode writer: ContaGen and Supersoniq for one 250-company batch, the People writer, the stamps, a recount whose held state goes back to the parent."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "cg1",
+                "leftValue": "={{ ($json.cgRequests || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0005-4000-8000-000000000005",
+        "name": "Run ContaGen?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// CG Requests: one item per ContaGen call (one per band group per 250 domains).\nreturn ($('Plan Batch').first().json.cgRequests||[]).map(r=>({ json: { body: r.body, domains: r.domains, cap: r.cap } }));\n"
+        },
+        "id": "b7a20001-0006-4000-8000-000000000006",
+        "name": "CG Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.discolike.com/v1/contacts/discover",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.body }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 4500
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 180000
+          }
+        },
+        "id": "b7a20001-0007-4000-8000-000000000007",
+        "name": "ContaGen Discover",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1540,
+          0
+        ],
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "notes": "Tier 1. DiscoLike /contacts/discover in domain mode, one call per band group per 250 domains, results_by_company = the band cap. Paced 4.5 s apart (documented limit 15 req/min on the Team plan; left as is 2026-09-02, its 429s are documented and the saving would be a minute); a 429 retries up to 5 times 5 s apart instead of dying. Bills net-new only inside its 90-day cache."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse ContaGen: DiscoLike /contacts/discover responses (fullResponse items aligned to CG\n// Requests) -> people per domain, truncated to the band cap. An errored call (after the node's\n// own retries) counts once and lands in the counters with its reason; nothing is silently dropped.\nconst plan=$('Plan Batch').first().json;\nconst byDomain={}; for(const c of plan.plan) byDomain[c.domain]=c;\nlet reqs=[]; try{ reqs=$('CG Requests').all().map(i=>i.json); }catch(e){}\nlet items=[]; try{ items=$('ContaGen Discover').all(); }catch(e){}\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,200); };\nconst linkedinOf=(urls)=>Array.isArray(urls)?(urls.find(u=>/linkedin\\.com\\/in\\//i.test(String(u)))||''):'';\nconst firstPhone=(p)=>Array.isArray(p)&&p.length?String((p[0]&&p[0].phone)||p[0]||''):(p?String(p):'');\nconst people={}; const st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[] };\nitems.forEach((it,i)=>{\n  const req=reqs[i]; if(!req) return;\n  st.called++;\n  const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ st.errors++; const r='ContaGen: '+String((j.error&&(j.error.message||j.error.description))||'call failed').slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const status=Number(j.statusCode)||0; const b=parse(j.body===undefined?j:j.body);\n  if(!(status>=200&&status<300)||!b||typeof b!=='object'){ st.errors++; const r='ContaGen HTTP '+status+' '+why(b,j.body); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const cr=b.credits_used!=null?b.credits_used:(b.credits!=null?b.credits:((b.usage&&b.usage.credits_used)||0)); st.credits+=Number(cr)||0;\n  const results=(b.results&&typeof b.results==='object')?b.results:{};\n  for(const d of req.domains){\n    const entry=results[d]||null; const c=byDomain[d]; if(!entry||!c) continue;\n    const contacts=Array.isArray(entry.contacts)?entry.contacts:[];\n    st.returned+=contacts.length;\n    const list=people[d]||(people[d]=[]);\n    for(const p of contacts){\n      if(list.length>=c.cap) break;\n      list.push({ source:'ContaGen', sourceId:String(p.persona_id||''), name:String(p.name||'').trim(), title:String(p.title||'').trim(), seniority:String(p.seniority||''), department:String(p.department||''), email:String(p.email||'').trim(), linkedin:linkedinOf(p.social_urls), phone:firstPhone(p.phone), state:String(p.state||'') });\n      st.kept++;\n    }\n  }\n});\nreturn [{ json: { people: people, stats: st } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0008-4000-8000-000000000008",
+        "name": "Parse ContaGen",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          120
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sq1",
+                "leftValue": "={{ ($('Plan Batch').first().json.sqRequests || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0009-4000-8000-000000000009",
+        "name": "Run Supersoniq?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1980,
+          120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// SQ Requests: one item per Supersoniq call (one per band group, up to 1,000 domains each).\nreturn ($('Plan Batch').first().json.sqRequests||[]).map(r=>({ json: { body: r.body, domains: r.domains, cap: r.cap } }));\n"
+        },
+        "id": "b7a20001-0010-4000-8000-000000000010",
+        "name": "SQ Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.body }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "id": "b7a20001-0011-4000-8000-000000000011",
+        "name": "SQ Enrich",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2420,
+          0
+        ],
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 10000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        },
+        "notes": "Tier 2. Supersoniq companies/enrich, one call per band group (up to 1,000 domains), per_company_limit = the band cap, tier full. 1 credit per delivered contact (email included); billed only on what is delivered."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse Supersoniq: companies/enrich responses -> people per domain (Format Batch's parse).\n// Contacts at domains we did not send are dropped; an email whose domain is neither the\n// company domain nor a subdomain of it is blanked, the person kept. Their LinkedIn URLs\n// never route to LinkedIn (the name-match fence lives on the table). Never throws on a\n// failed response: the failure rides in the counters and the parent decides.\nconst plan=$('Plan Batch').first().json;\nconst byDomain={}; for(const c of plan.plan) byDomain[c.domain]=c;\nlet reqs=[]; try{ reqs=$('SQ Requests').all().map(i=>i.json); }catch(e){}\nlet items=[]; try{ items=$('SQ Enrich').all(); }catch(e){}\nconst people={}; const st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], dropped:0, emailBlanked:0 };\nconst emailDomainOk=(email,domain)=>{ const at=String(email||'').lastIndexOf('@'); if(at<0) return false; const ed=String(email).slice(at+1).toLowerCase().trim(); return ed===domain||ed.endsWith('.'+domain); };\nitems.forEach((it,i)=>{\n  const req=reqs[i]; if(!req) return;\n  st.called++;\n  const resp=it.json||{};\n  if(!Array.isArray(resp.results)){ st.errors++; const r='Supersoniq: '+JSON.stringify(resp).slice(0,200); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const cr=resp.credits_used!=null?resp.credits_used:(resp.credits!=null?resp.credits:((resp.usage&&resp.usage.credits_used)||0)); st.credits+=Number(cr)||0;\n  const sent=new Set(req.domains);\n  for(const r of resp.results){\n    const contacts=Array.isArray(r.contacts)?r.contacts:[];\n    for(const ct of contacts){\n      st.returned++;\n      const domain=String(ct.company_domain||'').trim().toLowerCase();\n      const c=byDomain[domain];\n      if(!domain||!sent.has(domain)||!c){ st.dropped++; continue; }\n      const list=people[domain]||(people[domain]=[]);\n      if(list.length>=c.cap) continue;\n      const full=((String(ct.first_name||'')+' '+String(ct.last_name||'')).trim())||String(ct.full_name||'');\n      let email=String(ct.email||'').trim();\n      if(email&&!emailDomainOk(email,domain)){ email=''; st.emailBlanked++; }\n      list.push({ source:'Supersoniq', sourceId:String(ct.contact_id||ct.id||''), name:full, title:String(ct.job_title||'').trim(), seniority:String(ct.seniority||''), department:String(ct.function||''), email:email, linkedin:String(ct.linkedin_url||ct.linkedin||'').trim(), phone:'', state:'' });\n      st.kept++;\n    }\n  }\n});\nreturn [{ json: { people: people, stats: st } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0012-4000-8000-000000000012",
+        "name": "Parse Supersoniq",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build People: every person ContaGen and Supersoniq returned, in that order, into the\n// register's People shape. The fill-blanks rule: a person the base already holds (Contact Key\n// or LinkedIn URL, tier zero) is never written at all, and a later tier never overwrites an\n// earlier one. The cap is per source here (each tier already returned at most the band cap),\n// absolute only at AI-Ark. People stores no Domain, Company or Tag (lookups through the Companies\n// link, ruled 2026-09-02): the row carries the link and the Contact Key built from the company's\n// domain, and the domain itself rides on the _domain carrier for the DNC pass and the coverage\n// count, stripped before the write. Names go out raw; Clean Fields splits them into first_name /\n// last_name next. The Seniority and Department vocabularies come from the field register, inlined\n// by the push as REGISTER at the @@register line; the maps below translate each source into them.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"]}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"]},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"ContaGen\":\"blueLight2\",\"Supersoniq\":\"purpleLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\nconst have=new Set(inp.peopleFields||[]);\nconst tiers=[];\ntry{ tiers.push($('Parse ContaGen').first().json.people||{}); }catch(e){ tiers.push({}); }\ntry{ tiers.push($('Parse Supersoniq').first().json.people||{}); }catch(e){ tiers.push({}); }\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst PEOPLE=REGISTER.tables.find(t=>t.name==='People');\nconst choices=(n)=>new Set(PEOPLE.fields.find(f=>f.name===n).options.choices.map(c=>c.name));\nconst SENIORITY=choices('Seniority'), DEPARTMENT=choices('Department');\n// Source enums -> the People Seniority select. Unknown -> Unclassified.\nconst SEN={ 'executive':'Executive', 'c-suite':'C-Suite', 'c_suite':'C-Suite', 'csuite':'C-Suite', 'cxo':'C-Suite', 'founder':'Founder', 'owner':'Owner', 'president':'President', 'vp':'VP', 'vice president':'VP', 'head':'Head', 'director':'Director', 'manager':'Manager', 'senior manager':'Manager', 'senior':'Senior', 'senior_ic':'Senior', 'partner':'Partner', 'evp / svp':'EVP / SVP', 'evp':'EVP / SVP', 'svp':'EVP / SVP', 'board / chair':'Board / Chair', 'board':'Board / Chair', 'chair':'Board / Chair', 'unclassified':'Unclassified' };\n// Source departments -> the People Department select. Unknown -> the key is omitted.\nconst DEP={ 'executive':'Executive', 'engineering':'Engineering', 'technology':'Technology', 'it':'Technology', 'information technology':'Technology', 'r&d':'R&D', 'research & development':'R&D', 'research and development':'R&D', 'research':'R&D', 'product':'Product', 'product management':'Product', 'data':'Data', 'data science':'Data', 'analytics':'Data', 'security':'Security', 'information security':'Security', 'design':'Design', 'operations':'Operations', 'sales':'Sales', 'sales - marketing':'Sales', 'business development':'Sales', 'marketing':'Marketing', 'finance':'Finance', 'accounting':'Finance', 'human resources':'Human Resources', 'hr':'Human Resources', 'people':'Human Resources', 'customer success':'Customer Success', 'customer service':'Customer Success', 'support':'Customer Success', 'project management':'Project Management', 'strategy':'Strategy', 'legal':'Legal', 'supply chain':'Supply Chain', 'logistics':'Supply Chain', 'procurement':'Supply Chain', 'communications':'Communications', 'public relations':'Communications', 'community':'Community & Social', 'community & social':'Community & Social', 'social':'Community & Social', 'compliance':'Compliance & GRC', 'compliance & grc':'Compliance & GRC', 'grc':'Compliance & GRC', 'risk':'Compliance & GRC' };\n// A map target the register does not carry is a build defect: fail here, never mint a choice.\nfor(const v of Object.values(SEN)){ if(!SENIORITY.has(v)) throw new Error('Build People: Seniority \"'+v+'\" is not on the register'); }\nfor(const v of Object.values(DEP)){ if(!DEPARTMENT.has(v)) throw new Error('Build People: Department \"'+v+'\" is not on the register'); }\nconst mapSen=(v)=>SEN[String(v||'').trim().toLowerCase()]||'Unclassified';\nconst mapDep=(v)=>{ for(const part of String(v||'').split(/[,;|]/)){ const m=DEP[part.trim().toLowerCase()]; if(m) return m; } return ''; };\nconst seenKey=new Set(); const seenLi=new Set();\nconst stats={ built:0, heldSkipped:0, dupes:0, noKey:0 };\nconst out=[];\nfor(const c of plan.plan){\n  const heldKeys=new Set(c.heldKeys||[]); const heldLi=new Set((c.heldLinkedin||[]).map(l=>l.toLowerCase()));\n  for(const list of tiers){\n    for(const p of (list[c.domain]||[])){\n      const full=String(p.name||'').trim();\n      const first=cleanFirst(full), last=cleanLast(full);\n      const key=(first.toLowerCase()+last.toLowerCase()+c.domain).trim();\n      const li=String(p.linkedin||'').trim(); const lil=li.toLowerCase();\n      if(!key||!first){ stats.noKey++; continue; }\n      if(heldKeys.has(key)||(lil&&heldLi.has(lil))){ stats.heldSkipped++; continue; }\n      if(seenKey.has(key)||(lil&&seenLi.has(lil))){ stats.dupes++; continue; }\n      seenKey.add(key); if(lil) seenLi.add(lil);\n      const row={\n        'Name': full,\n        'Title': String(p.title||''),\n        'Seniority': mapSen(p.seniority),\n        'Department': mapDep(p.department),\n        'Email': String(p.email||'').trim(),\n        'LinkedIn URL': li,\n        'Phone': String(p.phone||''),\n        'Companies': [c.recordId],\n        'Contact Key': key,\n        'Contact Source': p.source,\n        'Source ID': String(p.sourceId||''),\n        '_domain': c.domain\n      };\n      if(!row['Department']) delete row['Department'];\n      for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }\n      out.push({ json: row }); stats.built++;\n    }\n  }\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0013-4000-8000-000000000013",
+        "name": "Build People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          120
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "p1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0014-4000-8000-000000000014",
+        "name": "Any People?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3080,
+          300
+        ],
+        "notes": "Fed by Build People (writer) or Build Ark People (ark): one People pipeline for both modes from here to the writer."
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "b7a20001-0015-4000-8000-000000000015",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          3300,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Apply DNC: one pass for both modes (the writer's ContaGen and Supersoniq rows, the ark pass's\n// AI-Ark rows; Any People? feeds Clean Fields from either builder). Drops people whose domain sits\n// on the client's DNC table (every page of it, read once by Get DNC Domains); the domain is the\n// _domain carrier the builders set, backed by a Contact Key -> domain map read straight from the\n// builders in case the helper dropped the carrier. Then fences the write set to exactly what this\n// machine writes on People (ruled 2026-09-02): Name, Title, Seniority, Department, Email,\n// LinkedIn URL, Phone, Companies, Contact Key, Contact Source, Source ID, plus first_name and\n// last_name, the split Clean Fields made from Name (register text fields the linkedin_name_match\n// formula reads). Domain, Company and Tag are lookups through the Companies link and are never\n// written; every other key, carriers included, is stripped, and a key the table does not carry is\n// stripped too, so the writer never meets an unknown field. Zero survivors still emit one {_empty}\n// placeholder so the gate reaches the close. Batch Summary counts the drop as rows in minus rows out.\nconst WRITE_FIELDS=['Name','first_name','last_name','Title','Seniority','Department','Email','LinkedIn URL','Phone','Companies','Contact Key','Contact Source','Source ID'];\nconst have=new Set(($('Batch Input').first().json.peopleFields)||[]);\nconst allow=new Set(WRITE_FIELDS.filter(k=>have.has(k)));\nconst dnc=new Set();\ntry{ for(const it of $('Get DNC Domains').all()){ const j=it.json||{}; const f=j.fields||{}; const d=String(f.Domain||f.domain||'').toLowerCase().trim(); if(d) dnc.add(d); } }catch(e){}\nconst domainByKey={};\nconst learn=(n)=>{ try{ for(const it of $(n).all()){ const j=it.json||{}; const k=String(j['Contact Key']||'').toLowerCase(); if(k&&j._domain) domainByKey[k]=String(j._domain).toLowerCase(); } }catch(e){} };\nlearn('Build People'); learn('Build Ark People');\nconst out=[];\nfor(const i of $('Clean Fields').all()){\n  const j=i.json||{};\n  if(j._empty) continue;\n  const key=String(j['Contact Key']||'').toLowerCase().trim();\n  if(!key) continue;\n  const d=String(j._domain||domainByKey[key]||'').toLowerCase().trim();\n  if(dnc.size&&d&&dnc.has(d)) continue;\n  const row={};\n  for(const k of Object.keys(j)){ if(allow.has(k)) row[k]=j[k]; }\n  out.push({ json: row });\n}\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0016-4000-8000-000000000016",
+        "name": "Apply DNC",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          180
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "d1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0017-4000-8000-000000000017",
+        "name": "Any After DNC?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3740,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk People: the survivors of Apply DNC in tens, one item per Airtable request. Write People\n// PATCHes each as {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records, typecast} at 200 ms\n// apart: the Airtable node sends one record per request (measured 4.5 rows per second, 2026-09-02);\n// this writer sends ten per request at five requests per second, 50 rows per second. The Contact\n// Keys and the size ride on the item, never in the body, for the count-back: written rows are\n// counted from the answer's records[], a failed request counts every record in it as a write error.\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty&&j['Contact Key']);\nconst out=[];\nfor(let i=0;i<rows.length;i+=10){\n  const part=rows.slice(i,i+10);\n  out.push({ json: {\n    body: { performUpsert: { fieldsToMergeOn: ['Contact Key'] }, records: part.map(r=>({ fields: r })), typecast: true },\n    keys: part.map(r=>String(r['Contact Key']).toLowerCase()),\n    size: part.length\n  } });\n}\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0048-4000-8000-000000000048",
+        "name": "Chunk People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3960,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.peopleTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0018-4000-8000-000000000018",
+        "name": "Write People",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4180,
+          60
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The one People writer, both modes (ruled 2026-09-02): PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason and the pass continues. Written rows are counted from the answer's records[], never from item ids."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "w1",
+                "leftValue": "={{ $('Batch Input').first().json.mode }}",
+                "rightValue": "writer",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0049-4000-8000-000000000049",
+        "name": "Writer Pass?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4400,
+          180
+        ],
+        "notes": "After the writer (or with nothing to write): the writer batch goes on to stamp its companies and recount; the ark pass stamps nothing new and closes."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Stamp Rows: Contacts Pulled At = now on every company in the batch, tried or not, found or\n// not, in tens, one item per Airtable request (Stamp Companies PATCHes each by record id, typecast\n// on, 200 ms apart). The Not Sourced view drops them; Not Covered keeps the zero-contact ones\n// visible. Writer mode only: the ark pass stamps nothing new.\nconst plan=$('Plan Batch').first().json;\nconst now=new Date().toISOString();\nconst ids=plan.plan.map(c=>c.recordId).filter(Boolean);\nconst out=[];\nfor(let i=0;i<ids.length;i+=10){\n  const part=ids.slice(i,i+10);\n  out.push({ json: { body: { records: part.map(id=>({ id: id, fields: { 'Contacts Pulled At': now } })), typecast: true }, size: part.length } });\n}\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0043-4000-8000-000000000043",
+        "name": "Stamp Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4620,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.companiesTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0044-4000-8000-000000000044",
+        "name": "Stamp Companies",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4840,
+          60
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The one Companies writer: Contacts Pulled At = now on every company in the batch, PATCH by record id, ten per request, 200 ms apart, no retry; a request that is not 2xx counts its ten as stamp errors. Stamped rows are counted from the answer's records[]."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Recount Filters: after the writer's stamps, read People again for the batch's domains, ids\n// only (Contact Key, LinkedIn URL, Domain), one OR formula per 100 domains: the batch's coverage\n// is what the base holds now, and the same held state goes back to the parent, which hands it to\n// this batch's AI-Ark pass so AI-Ark is sized to the gap and its exclude list is exact. Domain on\n// People is a lookup through the Companies link; filterByFormula {Domain}='x' matches the lookup's\n// text, so the read works unchanged.\nconst plan=$('Plan Batch').first().json;\nconst d=plan.plan.map(c=>c.domain);\nconst esc=(s)=>String(s).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nconst out=[];\nfor(let i=0;i<d.length;i+=100){\n  const chunk=d.slice(i,i+100);\n  out.push({ json: { formula: chunk.length===1?(\"{Domain}='\"+esc(chunk[0])+\"'\"):('OR('+chunk.map(x=>\"{Domain}='\"+esc(x)+\"'\").join(',')+')') } });\n}\nif(!out.length) out.push({ json: { formula: \"{Domain}=''\" } });\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0020-4000-8000-000000000020",
+        "name": "Recount Filters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5060,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.peopleTableId }}"
+          },
+          "filterByFormula": "={{ $json.formula }}",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Contact Key",
+              "LinkedIn URL",
+              "Domain"
+            ]
+          }
+        },
+        "id": "b7a20001-0021-4000-8000-000000000021",
+        "name": "Recount People",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5280,
+          60
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "What the base holds now at the batch's domains, after the writer and the stamps: the batch's coverage. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text, the field comes back as an array of one."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Plan: tier 3 is absolute, sized to the gap the base still showed when the writer batch that\n// covered each company closed: the parent's Ark Lane passes that batch's recount as held state on\n// every company (heldCount, heldKeys, heldLinkedin, carried into the plan by Plan Batch), so no\n// read happens here. One lane per run since 2026-09-02, never one pass per batch. Only\n// companies under their band cap, size = cap minus held, the LinkedIn URLs held at that domain\n// excluded (contact.linkedin.any.exclude, verified in their docs 2026-09-02). One export per\n// company. Export People with Email: 0.5 credits per person plus 0.5 per email found. Completion\n// comes through the callback door: the export's webhook is AI-Ark Export Callback's door with the\n// parent execution id as ?run=, and that door records every call into the data table Read\n// Callbacks polls.\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\n// Seniority enum verified in docs 2026-09-02 (people-export-with-email): founder, owner, partner,\n// c_suite, vp, director, head, manager, senior, mid-level, entry, intern. The contract's \"cxo\" is c_suite.\n// Three settings, in this order of precedence (ruled 2026-09-02):\n//   1. the launch row's Roles, mapped into AI-Ark's vocabulary by the parent's Launch Params;\n//   2. the AI-Ark-only mode (Tiers = \"AI-Ark\"), the intent path: the real buyers only, since that\n//      lane carries the whole run on a flat cap of five people per company;\n//   3. the full waterfall's wider net, where AI-Ark is the third tier over what the first two left.\nconst SENIORITY=['founder','owner','partner','c_suite','vp','head','director','manager'];\nconst ARK_ONLY_SENIORITY=['founder','owner','partner','c_suite','vp'];\n// The export endpoint requires an HTTPS webhook (verified in docs). The door is AI-Ark Export\n// Callback (POST /webhook/ai-ark-export-noop), which answers 200 at once and records the call.\nconst WEBHOOK='https://n8n.flowroots.com/webhook/ai-ark-export-noop?run='+encodeURIComponent(String(inp.parentExecId||''));\nconst functions=Array.isArray(plan.arkFunctions)?plan.arkFunctions:[];\nconst roleSeniority=Array.isArray(plan.arkSeniority)?plan.arkSeniority:[];\nconst seniority=roleSeniority.length?roleSeniority:(plan.arkOnly?ARK_ONLY_SENIORITY:SENIORITY);\nconst requests=[]; const heldOut={};\nif(plan.arkOn){\n  for(const c of plan.plan){\n    const h={ count:Number(c.held)||0, keys:Array.isArray(c.heldKeys)?c.heldKeys:[], linkedin:Array.isArray(c.heldLinkedin)?c.heldLinkedin:[] };\n    heldOut[c.domain]=h;\n    const gap=c.cap-h.count; if(gap<=0) continue;\n    const exclude=Array.from(new Set(h.linkedin.filter(u=>/linkedin\\.com\\/in\\//i.test(u))));\n    const contact={ seniority:{ any:{ include:seniority } } };\n    if(exclude.length) contact.linkedin={ any:{ exclude:exclude } };\n    // contact.departmentAndFunction.any.include (key and nesting verified in docs); values come from\n    // the parent's mapping of the launch row's Departments into AI-Ark's taxonomy, never guessed here.\n    if(functions.length) contact.departmentAndFunction={ any:{ include:functions } };\n    requests.push({ domain:c.domain, gap:gap, body:{ account:{ domain:{ any:{ include:[c.domain] } } }, contact:contact, page:0, size:gap, webhook:WEBHOOK } });\n  }\n}\nreturn [{ json: { arkRequests:requests, held:heldOut, arkSeniorityUsed:seniority } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0022-4000-8000-000000000022",
+        "name": "Ark Plan",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          -360
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ar1",
+                "leftValue": "={{ ($json.arkRequests || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0023-4000-8000-000000000023",
+        "name": "Any Ark Requests?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1760,
+          -360
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Requests: one item per AI-Ark export, one per company still under its cap. Since 2026-09-02\n// this pass is the run's only AI-Ark traffic (one lane, never one per batch), so the whole global\n// ceiling belongs to it: Ark Export paces 250 ms apart, four per second against a documented five\n// per second and 300 per minute. Ark Windows hands them over fifty at a time so Ark Window Check\n// can stop the submission when AI-Ark starts refusing instead of burning every remaining company.\nreturn ($('Ark Plan').first().json.arkRequests||[]).map((r,i)=>({ json: { i: i, domain: r.domain, gap: r.gap, body: r.body } }));\n"
+        },
+        "id": "b7a20001-0024-4000-8000-000000000024",
+        "name": "Ark Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.ai-ark.com/api/developer-portal/v1/people/export",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.body }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0025-4000-8000-000000000025",
+        "name": "Ark Export",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2200,
+          -480
+        ],
+        "retryOnFail": true,
+        "maxTries": 2,
+        "waitBetweenTries": 3000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        },
+        "notes": "Tier 3, one lane per run, fired by the parent once the writer lane drained and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from that batch's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 250 ms apart, four per second: AI-Ark's ceiling (5 per second, 300 per minute) is global, and since 2026-09-02 nothing else in the run is talking to it. Fed fifty at a time by Ark Windows so the 429 breaker can stop the submission."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Track: every window's export answers (Ark Export run by run, paired to Ark Window's items)\n// -> one poll state: pending track ids, exports already DONE at submission, submit errors, the\n// attempt counter, and submittedAt, the clock the 4-minute safety net runs on (this node runs the\n// moment the last window landed). toPoll holds the exports whose statistics one read will settle\n// later. Since 2026-09-02 the lane submits in windows of fifty behind Ark Window Check's circuit\n// breaker, so this also carries what the breaker did: how many answers were 429, whether it\n// stopped, and how many planned companies were therefore never submitted (unserved). Response\n// shape verified in docs 2026-09-02: { trackId, state (PENDING | DONE), statistics\n// { total, found }, webhook { state, retry }, description }.\nconst runs=(name)=>{ const out=[]; for(let i=0;i<10000;i++){ let it=null; try{ it=$(name).all(0,i); }catch(e){ break; } if(!it||!it.length) break; out.push(it); } return out; };\nlet planned=0; try{ planned=$('Ark Requests').all().length; }catch(e){}\nlet stoppedEarly=false;\ntry{ const cr=runs('Ark Window Check'); const last=cr[cr.length-1]; stoppedEarly=!!(last&&last[0]&&last[0].json&&last[0].json.stop); }catch(e){}\nconst reqRuns=runs('Ark Window'), respRuns=runs('Ark Export');\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message||b.description):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,200); };\nconst st={ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:planned, rateLimited:0, unserved:0, stoppedEarly:stoppedEarly, submittedAt:Date.now(), attempts:0, callbacks:0 };\nfor(let r=0;r<respRuns.length;r++){\n  const reqs=reqRuns[r]||[]; const resps=respRuns[r]||[];\n  for(let i=0;i<resps.length;i++){\n    const req=(reqs[i]||{}).json; if(!req) continue;\n    st.submitted++;\n    const j=(resps[i]||{}).json||{};\n    if(j.error&&j.statusCode===undefined){ st.errors.push({ domain:req.domain, reason:'AI-Ark export: '+String((j.error&&j.error.message)||'call failed').slice(0,160) }); continue; }\n    const status=Number(j.statusCode)||0; const b=parse(j.body===undefined?j:j.body);\n    const trackId=b&&typeof b==='object'?String(b.trackId||''):'';\n    if(status===429) st.rateLimited++;\n    if(!(status>=200&&status<300)||!trackId){ st.errors.push({ domain:req.domain, reason:'AI-Ark export HTTP '+status+' '+why(b,j.body) }); continue; }\n    const entry={ domain:req.domain, trackId:trackId, gap:req.gap };\n    if(String(b.state||'').toUpperCase()==='DONE') st.done.push(Object.assign(entry,{ total:Number((b.statistics||{}).total)||0, found:Number((b.statistics||{}).found)||0 }));\n    else st.pending.push(entry);\n  }\n}\nst.unserved=Math.max(0, planned-st.submitted);\nreturn [{ json: st }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0026-4000-8000-000000000026",
+        "name": "Ark Track",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "as1",
+                "leftValue": "={{ ($json.pending || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0027-4000-8000-000000000027",
+        "name": "Ark Submitted?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "amount": 15,
+          "unit": "seconds"
+        },
+        "id": "b7a20001-0028-4000-8000-000000000028",
+        "name": "Ark Wait",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2860,
+          -600
+        ],
+        "webhookId": "b7a20001-aaaa-4000-8000-000000000028"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Pending: one item per track id still pending. The whole poll state rides on the FIRST item\n// only, which is all Ark Check reads: the lane can hold thousands of pending exports at once, and\n// a copy of the state on every item is quadratic memory (the n8n host has been OOM-killed by\n// exactly that shape before). Read Callbacks queries the data table once per item, by track id.\nconst st=$input.first().json||{};\nreturn (st.pending||[]).map((p,i)=>{\n  const o={ trackId:p.trackId, domain:p.domain, gap:p.gap };\n  if(i===0) o.state=st;\n  return { json: o };\n});\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0029-4000-8000-000000000029",
+        "name": "Ark Pending",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3080,
+          -600
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "PYw0JjF0o7FLmaPw"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "trackId",
+                "condition": "eq",
+                "keyValue": "={{ $json.trackId }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0052-4000-8000-000000000052",
+        "name": "Read Callbacks",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          3300,
+          -600
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "The completion webhooks AI-Ark Export Callback recorded, one local query per pending track id (a local read, no API, no credits). Data table ai_ark_callbacks (id PYw0JjF0o7FLmaPw; columns trackId string, state string, found number, total number, run string, receivedAt string, payload string), created by the Operator 2026-09-02."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Check: the callback rows (Read Callbacks, one data table query per pending track id; AI-Ark\n// Export Callback fills that table from every completion webhook) -> the next poll state. A row\n// in state DONE settles the export: found from the row when the webhook carried statistics, else\n// into toPoll for one statistics read later; no row keeps it pending. Polled every 15 s, clocked\n// from submittedAt. The 4-minute cap is the safety net for exports whose webhook never arrives:\n// past it, whatever is still pending moves to toPoll, where one statistics read each decides DONE\n// or still PENDING. Never a hang, never a poll per export while the webhook works. The breaker's\n// counters (planned, rateLimited, unserved, stoppedEarly) ride through untouched.\nconst WAIT_MS=15000, MAX_POLL_MS=240000;\nlet pend=[]; try{ pend=$('Ark Pending').all().map(i=>i.json); }catch(e){}\nconst prev=(pend[0]&&pend[0].state)||{ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, attempts:0 };\nconst now=Date.now(); const submittedAt=Number(prev.submittedAt)||now; const elapsed=now-submittedAt;\nconst rows={};\ntry{ for(const it of $('Read Callbacks').all()){ const j=it.json||{}; const id=String(j.trackId||'').trim(); if(id) rows[id]=j; } }catch(e){}\nconst st={ pending:[], done:(prev.done||[]).slice(), toPoll:(prev.toPoll||[]).slice(), errors:(prev.errors||[]).slice(), submitted:prev.submitted||0, planned:prev.planned||0, rateLimited:prev.rateLimited||0, unserved:prev.unserved||0, stoppedEarly:!!prev.stoppedEarly, submittedAt:submittedAt, attempts:(prev.attempts||0)+1, callbacks:(prev.callbacks||0)+Object.keys(rows).length };\nconst known=(v)=>v!==null&&v!==undefined&&v!==''&&isFinite(Number(v))&&Number(v)>=0;\nfor(const p of pend){\n  const entry={ domain:p.domain, trackId:p.trackId, gap:Number(p.gap)||0 };\n  const r=rows[p.trackId];\n  const state=r?String(r.state||'').toUpperCase():'';\n  if(state==='DONE'){\n    if(known(r.found)) st.done.push(Object.assign(entry,{ total:known(r.total)?Number(r.total):0, found:Number(r.found) }));\n    else st.toPoll.push(Object.assign(entry,{ why:'webhook DONE without statistics' }));\n    continue;\n  }\n  if(state&&state!=='PENDING'&&state!=='IN_PROGRESS'&&state!=='PROCESSING'&&state!=='RUNNING'){ st.errors.push({ domain:p.domain, reason:'AI-Ark export '+p.trackId+' reported state '+state }); continue; }\n  st.pending.push(entry);\n}\nif(st.pending.length&&elapsed+WAIT_MS>=MAX_POLL_MS){\n  const secs=Math.round(elapsed/1000);\n  for(const p of st.pending) st.toPoll.push(Object.assign({}, p, { why:'no webhook after '+secs+' s' }));\n  st.pending=[];\n}\nreturn [{ json: st }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0031-4000-8000-000000000031",
+        "name": "Ark Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          -600
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ad1",
+                "leftValue": "={{ ($json.pending || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0032-4000-8000-000000000032",
+        "name": "Ark Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3740,
+          -600
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Fill Found: one item per export whose statistics are still unknown (a DONE webhook without\n// statistics.found, or no webhook inside the 4-minute cap); Ark Statistics reads each once, 250 ms\n// apart, and Ark Found settles them. The whole state rides on the FIRST item only, which is all\n// Ark Found reads: the list can be thousands long on a lane, and a copy per item is quadratic\n// memory. Nothing to poll: one placeholder (empty trackId) so Any To Poll? routes straight to Ark\n// Found. The input is the state item from Ark Track (nothing was pending), Ark Check (the poll\n// drained) or Ark Plan (no export at all; an empty state is built).\nconst inp=$input.first().json||{};\nconst st=Array.isArray(inp.pending)?inp:{ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, submittedAt:Date.now(), attempts:0, callbacks:0 };\nconst list=Array.isArray(st.toPoll)?st.toPoll:[];\nif(!list.length) return [{ json: { trackId:'', state:st } }];\nreturn list.map((p,i)=>{\n  const o={ trackId:p.trackId, domain:p.domain, gap:Number(p.gap)||0, why:p.why||'' };\n  if(i===0) o.state=st;\n  return { json: o };\n});\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0053-4000-8000-000000000053",
+        "name": "Fill Found",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3960,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "tp1",
+                "leftValue": "={{ $json.trackId || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0054-4000-8000-000000000054",
+        "name": "Any To Poll?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4180,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/statistics",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "id": "b7a20001-0030-4000-8000-000000000030",
+        "name": "Ark Statistics",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4400,
+          -600
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        },
+        "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Found: the final export state. The polled statistics (Ark Statistics answers, aligned to\n// Fill Found's items) settle the unknowns: DONE with statistics -> done; still PENDING -> an\n// error (the webhook never came and the cap passed); a 4xx -> an error (403 stuck refund, 404\n// expired). Everything else is what the callbacks already settled, and the breaker's counters\n// (planned, rateLimited, unserved, stoppedEarly) ride through to the log. Ark Result Items reads\n// done from here and fetches only where found > 0.\nlet polled=[]; let st=null;\ntry{ const all=$('Fill Found').all().map(i=>i.json); st=(all[0]&&all[0].state)||null; polled=all.filter(x=>x.trackId); }catch(e){}\nst=st||{ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, attempts:0, callbacks:0 };\nconst out={ pending:[], done:(st.done||[]).slice(), toPoll:[], errors:(st.errors||[]).slice(), submitted:st.submitted||0, planned:st.planned||0, rateLimited:st.rateLimited||0, unserved:st.unserved||0, stoppedEarly:!!st.stoppedEarly, submittedAt:st.submittedAt, attempts:st.attempts||0, callbacks:st.callbacks||0, polled:polled.length };\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst resp=polled.length?$input.all():[];\npolled.forEach((p,i)=>{\n  const j=(resp[i]&&resp[i].json)||{};\n  const status=Number(j.statusCode)||0; const b=parse(j.body===undefined?j:j.body);\n  const state=b&&typeof b==='object'?String(b.state||'').toUpperCase():'';\n  const entry={ domain:p.domain, trackId:p.trackId, gap:Number(p.gap)||0 };\n  if(status>=200&&status<300&&state==='DONE'){ out.done.push(Object.assign(entry,{ total:Number((b.statistics||{}).total)||0, found:Number((b.statistics||{}).found)||0 })); return; }\n  if(status>=200&&status<300){ out.errors.push({ domain:p.domain, reason:'AI-Ark export '+p.trackId+' still '+(state||'unknown')+' ('+p.why+')' }); return; }\n  out.errors.push({ domain:p.domain, reason:'AI-Ark statistics HTTP '+status+' for '+p.trackId+' ('+p.why+') '+String((b&&(b.description||b.message||b.error))||(j.error&&j.error.message)||'').slice(0,120) });\n});\nreturn [{ json: out }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0055-4000-8000-000000000055",
+        "name": "Ark Found",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4620,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Result Items: one item per finished export that found anyone (found > 0; 78 percent of\n// exports return nothing, measured 2026-09-02, and the results door is not read for those). The\n// results door is paged by the HTTP node. Nothing to fetch: one placeholder (empty trackId) so\n// Any Ark Results? routes straight to Parse Ark.\nconst st=$input.first().json||{};\nconst items=(st.done||[]).filter(d=>Number(d.found)>0).map(d=>({ json: { trackId:d.trackId, domain:d.domain, gap:d.gap, total:d.total, found:d.found } }));\nreturn items.length?items:[{ json: { trackId:'' } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0034-4000-8000-000000000034",
+        "name": "Ark Result Items",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4840,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "an1",
+                "leftValue": "={{ $json.trackId || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0033-4000-8000-000000000033",
+        "name": "Any Ark Results?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5060,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/inquiries",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page",
+                "value": "0"
+              },
+              {
+                "name": "size",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "page",
+                      "value": "={{ $pageCount }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body || $response.body.last === true || !Array.isArray($response.body.content) || $response.body.content.length === 0 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 100,
+                "requestInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0035-4000-8000-000000000035",
+        "name": "Ark Results",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5280,
+          -600
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TFaSEjm5g2RUVDCA",
+            "name": "ai-ark"
+          }
+        },
+        "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse Ark: export result pages (bodies carrying trackId and content[]) -> people per domain,\n// kept up to the gap. Results endpoint verified in docs 2026-09-02: GET\n// /v1/people/export/{trackId}/inquiries?page&size, content[] of { id, profile { full_name,\n// title, headline }, department { seniority, functions }, link { linkedin }, location, email\n// { state, output [ { address, status } ] } }. Email: the first VALID address delivered, else\n// the first address; emails land as delivered. Credits: 0.5 per person plus 0.5 per email\n// found, from the statistics each export reported (the results door carries no credit figure).\n// The state comes from Ark Found (every export settled: callbacks, then the one-shot polls).\nlet st={ pending:[], done:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, attempts:0, callbacks:0, polled:0 };\ntry{ st=$('Ark Found').first().json||st; }catch(e){}\nlet items=[]; try{ items=$('Ark Results').all(); }catch(e){}\nconst doneByTrack={}; for(const d of (st.done||[])) doneByTrack[d.trackId]=d;\nconst people={};\nconst stats={ called:Number(st.submitted)||0, returned:0, kept:0, credits:0, errors:(st.errors||[]).length, firstError:((st.errors||[])[0]||{}).reason||'', failReasons:(st.errors||[]).slice(0,5).map(e=>'AI-Ark '+e.domain+': '+e.reason), polls:Number(st.attempts)||0, callbacks:Number(st.callbacks)||0, polled:Number(st.polled)||0, done:(st.done||[]).length, withPeople:(st.done||[]).filter(d=>Number(d.found)>0).length, planned:Number(st.planned)||0, rateLimited:Number(st.rateLimited)||0, unserved:Number(st.unserved)||0, stoppedEarly:!!st.stoppedEarly };\nfor(const d of (st.done||[])) stats.credits+=0.5*(Number(d.total)||0)+0.5*(Number(d.found)||0);\nconst pickEmail=(e)=>{ const out=e&&Array.isArray(e.output)?e.output:[]; const valid=out.find(o=>String((o||{}).status||'').toUpperCase()==='VALID'); const o=valid||out[0]; return o?String(o.address||'').trim():''; };\nfor(const it of items){\n  const b=it.json||{};\n  if(!Array.isArray(b.content)){ if(b.error||b.status>=400){ stats.errors++; const r='AI-Ark results: '+String((b.error&&b.error.message)||b.message||b.description||'call failed').slice(0,160); if(!stats.firstError) stats.firstError=r; stats.failReasons.push(r); } continue; }\n  const d=doneByTrack[String(b.trackId||'')]; if(!d) continue;\n  const list=people[d.domain]||(people[d.domain]=[]);\n  for(const h of b.content){\n    const prof=(h&&h.profile)||{}; if(!prof.full_name) continue;\n    stats.returned++;\n    if(list.length>=d.gap) continue;\n    const loc=h.location||{};\n    list.push({ source:'AI-Ark', sourceId:String(h.id||''), name:String(prof.full_name||'').trim(), title:String(prof.title||prof.headline||'').trim(), seniority:String((h.department||{}).seniority||''), department:[].concat((h.department||{}).functions||[]).join(', '), email:pickEmail(h.email), linkedin:String((h.link||{}).linkedin||'').trim(), phone:'', state:String(loc.state||'') });\n    stats.kept++;\n  }\n}\nreturn [{ json: { people: people, stats: stats } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0036-4000-8000-000000000036",
+        "name": "Parse Ark",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5500,
+          -480
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Ark People: the AI-Ark people into the register's People shape, capped absolutely at\n// the gap the run's recount showed. Anyone the base already holds at the domain (Contact Key or\n// LinkedIn URL, per the recount) is never written. Same shape as Build People: no Domain, Company\n// or Tag (lookups through the Companies link, ruled 2026-09-02), the domain on the _domain carrier\n// for the DNC pass and the coverage count, stripped before the write. The Seniority and Department\n// vocabularies come from the field register, inlined by the push as REGISTER at the @@register line.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"]}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"]},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"ContaGen\":\"blueLight2\",\"Supersoniq\":\"purpleLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\nconst have=new Set(inp.peopleFields||[]);\nlet ark={ people:{} }; try{ ark=$('Parse Ark').first().json||ark; }catch(e){}\nlet held={}; let gaps={};\ntry{ const ap=$('Ark Plan').first().json||{}; held=ap.held||{}; for(const r of (ap.arkRequests||[])) gaps[r.domain]=r.gap; }catch(e){}\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst PEOPLE=REGISTER.tables.find(t=>t.name==='People');\nconst choices=(n)=>new Set(PEOPLE.fields.find(f=>f.name===n).options.choices.map(c=>c.name));\nconst SENIORITY=choices('Seniority'), DEPARTMENT=choices('Department');\nconst SEN={ 'executive':'Executive', 'c-suite':'C-Suite', 'c_suite':'C-Suite', 'csuite':'C-Suite', 'cxo':'C-Suite', 'founder':'Founder', 'owner':'Owner', 'president':'President', 'vp':'VP', 'vice president':'VP', 'head':'Head', 'director':'Director', 'manager':'Manager', 'senior manager':'Manager', 'senior':'Senior', 'senior_ic':'Senior', 'partner':'Partner', 'evp / svp':'EVP / SVP', 'evp':'EVP / SVP', 'svp':'EVP / SVP', 'board / chair':'Board / Chair', 'board':'Board / Chair', 'chair':'Board / Chair', 'unclassified':'Unclassified' };\nconst DEP={ 'executive':'Executive', 'engineering':'Engineering', 'software_development':'Engineering', 'technology':'Technology', 'it':'Technology', 'information_technology':'Technology', 'information technology':'Technology', 'r&d':'R&D', 'research & development':'R&D', 'research_and_development':'R&D', 'research':'R&D', 'product':'Product', 'product_management':'Product', 'product management':'Product', 'data':'Data', 'data_science':'Data', 'data science':'Data', 'analytics':'Data', 'security':'Security', 'information_security':'Security', 'design':'Design', 'operations':'Operations', 'sales':'Sales', 'business_development':'Sales', 'marketing':'Marketing', 'demand_generation':'Marketing', 'finance':'Finance', 'accounting':'Finance', 'human resources':'Human Resources', 'human_resources':'Human Resources', 'hr':'Human Resources', 'recruiting_talent_acquisition':'Human Resources', 'customer success':'Customer Success', 'customer_success':'Customer Success', 'customer service':'Customer Success', 'customer_service':'Customer Success', 'support':'Customer Success', 'project management':'Project Management', 'project_management':'Project Management', 'strategy':'Strategy', 'legal':'Legal', 'supply chain':'Supply Chain', 'supply_chain':'Supply Chain', 'logistics':'Supply Chain', 'procurement':'Supply Chain', 'communications':'Communications', 'public relations':'Communications', 'public_relations':'Communications', 'community':'Community & Social', 'compliance':'Compliance & GRC', 'grc':'Compliance & GRC', 'risk':'Compliance & GRC' };\n// A map target the register does not carry is a build defect: fail here, never mint a choice.\nfor(const v of Object.values(SEN)){ if(!SENIORITY.has(v)) throw new Error('Build Ark People: Seniority \"'+v+'\" is not on the register'); }\nfor(const v of Object.values(DEP)){ if(!DEPARTMENT.has(v)) throw new Error('Build Ark People: Department \"'+v+'\" is not on the register'); }\nconst mapSen=(v)=>SEN[String(v||'').trim().toLowerCase()]||'Unclassified';\nconst mapDep=(v)=>{ for(const part of String(v||'').split(/[,;|]/)){ const m=DEP[part.trim().toLowerCase()]; if(m) return m; } return ''; };\nconst seenKey=new Set(); const seenLi=new Set();\nconst stats={ built:0, heldSkipped:0, dupes:0, noKey:0, overCap:0 };\nconst out=[];\nfor(const c of plan.plan){\n  const list=(ark.people||{})[c.domain]||[]; if(!list.length) continue;\n  const h=held[c.domain]||{ count:0, keys:[], linkedin:[] };\n  const heldKeys=new Set((h.keys||[]).map(k=>String(k).toLowerCase())); const heldLi=new Set((h.linkedin||[]).map(l=>String(l).toLowerCase()));\n  const gap=Number(gaps[c.domain])||0; let written=0;\n  for(const p of list){\n    if(written>=gap){ stats.overCap++; continue; }\n    const full=String(p.name||'').trim();\n    const first=cleanFirst(full), last=cleanLast(full);\n    const key=(first.toLowerCase()+last.toLowerCase()+c.domain).trim();\n    const li=String(p.linkedin||'').trim(); const lil=li.toLowerCase();\n    if(!key||!first){ stats.noKey++; continue; }\n    if(heldKeys.has(key)||(lil&&heldLi.has(lil))){ stats.heldSkipped++; continue; }\n    if(seenKey.has(key)||(lil&&seenLi.has(lil))){ stats.dupes++; continue; }\n    seenKey.add(key); if(lil) seenLi.add(lil);\n    const row={\n      'Name': full,\n      'Title': String(p.title||''),\n      'Seniority': mapSen(p.seniority),\n      'Department': mapDep(p.department),\n      'Email': String(p.email||'').trim(),\n      'LinkedIn URL': li,\n      'Phone': String(p.phone||''),\n      'Companies': [c.recordId],\n      'Contact Key': key,\n      'Contact Source': 'AI-Ark',\n      'Source ID': String(p.sourceId||''),\n      '_domain': c.domain\n    };\n    if(!row['Department']) delete row['Department'];\n    for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }\n    out.push({ json: row }); written++; stats.built++;\n  }\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0037-4000-8000-000000000037",
+        "name": "Build Ark People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5720,
+          -480
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Summary: the counters of this pass, and the ONLY thing that crosses back to the parent\n// (through Batch Response, after this pass's own Hub row is written). Written rows are counted\n// from the writer's answers (records[] of every 2xx PATCH), never from item ids; a request that\n// was not 2xx counts every record it carried as a write error with the HTTP reason, and the\n// writer never retried it (a 429 locks Airtable for 30 s). Coverage: writer mode reads the\n// recount taken after the stamps (what the base holds now at the batch's domains) and hands that\n// held state back as `held` (Contact Keys and LinkedIn URLs per domain, for the AI-Ark pass of\n// this batch; Build Batch Log keeps it out of the Tally); ark mode reads the held state it was\n// given plus what it wrote, so its coverage is the batch's final coverage and the parent takes it\n// over the writer's.\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\nconst mode=inp.mode==='ark'?'ark':'writer';\nconst n=(v)=>Number(v)||0;\nconst zero=()=>({ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[] });\nconst grab=(name)=>{ try{ return Object.assign(zero(), $(name).first().json.stats||{}); }catch(e){ return zero(); } };\nconst cg=grab('Parse ContaGen'), sq=grab('Parse Supersoniq'), ark=grab('Parse Ark');\nconst bstats=(name)=>{ try{ const j=$(name).first().json||{}; return j._stats||{}; }catch(e){ return {}; } };\nconst b1=bstats('Build People'), b2=bstats('Build Ark People');\nconst rowsOf=(name)=>{ try{ return $(name).all().filter(i=>i.json&&!i.json._empty&&i.json['Contact Key']).length; }catch(e){ return 0; } };\nconst dnc=Math.max(0, rowsOf('Clean Fields')-rowsOf('Apply DNC'));\nconst domainByKey={};\nconst learn=(name)=>{ try{ for(const it of $(name).all()){ const j=it.json||{}; const k=String(j['Contact Key']||'').toLowerCase(); if(k&&j._domain) domainByKey[k]=String(j._domain).toLowerCase(); } }catch(e){} };\nlearn('Build People'); learn('Build Ark People');\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst failReasons=[];\nconst reason=(prefix,j,b,status)=>{ const e=b&&b.error; const why=e?(typeof e==='object'?(e.message||e.type||JSON.stringify(e)):String(e)):((j.error&&j.error.message)||(typeof j.body==='string'?j.body:'')); return (prefix+' HTTP '+status+' '+String(why||'').replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim()).slice(0,180)+(status===429?' (rate limited; never retried)':''); };\n// The writer's answers, aligned to the chunks it was sent.\nlet written=0, writeErrors=0; const writtenByDomain={};\nlet chunks=[], resps=[];\ntry{ chunks=$('Chunk People').all().map(i=>i.json); resps=$('Write People').all(); }catch(e){}\nresps.forEach((it,i)=>{\n  const c=chunks[i]||{ size:0, keys:[] }; const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ writeErrors+=n(c.size); if(failReasons.length<10) failReasons.push('People writer: '+String((j.error&&j.error.message)||'call failed').slice(0,160)); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){\n    written+=b.records.length;\n    for(const r of b.records){ const k=String(((r||{}).fields||{})['Contact Key']||'').toLowerCase(); const d=domainByKey[k]||''; if(d) writtenByDomain[d]=(writtenByDomain[d]||0)+1; }\n    if(b.records.length<n(c.size)){ writeErrors+=n(c.size)-b.records.length; if(failReasons.length<10) failReasons.push('People writer: '+(n(c.size)-b.records.length)+' of '+c.size+' records missing from a 2xx answer'); }\n    return;\n  }\n  writeErrors+=n(c.size);\n  if(failReasons.length<10) failReasons.push(reason('People writer',j,b,status));\n});\n// The stamps' answers, writer mode only.\nlet stamped=0, stampErrors=0; let sChunks=[], sResps=[];\ntry{ sChunks=$('Stamp Rows').all().map(i=>i.json); sResps=$('Stamp Companies').all(); }catch(e){}\nsResps.forEach((it,i)=>{\n  const c=sChunks[i]||{ size:0 }; const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ stampErrors+=n(c.size); if(failReasons.length<10) failReasons.push('Contacts Pulled At stamp: '+String((j.error&&j.error.message)||'call failed').slice(0,160)); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){ stamped+=b.records.length; if(b.records.length<n(c.size)) stampErrors+=n(c.size)-b.records.length; return; }\n  stampErrors+=n(c.size);\n  if(failReasons.length<10) failReasons.push(reason('Contacts Pulled At stamp',j,b,status));\n});\n// Held state: writer mode from the recount taken after the stamps; ark mode from what it was given.\nconst held={}; let recountRows=0;\nconst domainOf=(f)=>{ const v=f.Domain; return String(Array.isArray(v)?(v[0]||''):(v||'')).trim().toLowerCase(); };\nif(mode==='writer'){\n  try{ for(const it of $('Recount People').all()){ const j=it.json||{}; if(!j.id) continue; const f=j.fields||{}; const d=domainOf(f); if(!d) continue; const h=held[d]||(held[d]={ count:0, keys:[], linkedin:[] }); h.count++; recountRows++; const k=String(f['Contact Key']||'').trim().toLowerCase(); if(k) h.keys.push(k); const li=String(f['LinkedIn URL']||'').trim(); if(li) h.linkedin.push(li); } }catch(e){}\n}else{\n  for(const c of plan.plan){ held[c.domain]={ count:n(c.held), keys:c.heldKeys||[], linkedin:c.heldLinkedin||[] }; recountRows+=n(c.held); }\n}\nlet covered=0; const zeroDomains=[];\nfor(const c of plan.plan){\n  const have=((held[c.domain]||{}).count||0)+(writtenByDomain[c.domain]||0)+(mode==='writer'&&!recountRows?n(c.held):0);\n  if(have>0) covered++; else if(zeroDomains.length<50) zeroDomains.push(c.domain);\n}\nlet underCap=0; try{ underCap=($('Ark Plan').first().json.arkRequests||[]).length; }catch(e){}\nconst ran=[cg,sq,ark].filter(s=>s.called>0);\nconst allFailed=ran.length>0&&ran.every(s=>s.errors>=s.called);\nfor(const s of [cg,sq,ark]) for(const r of (s.failReasons||[])) if(failReasons.length<10) failReasons.push(String(r));\nconst strip=(s)=>({ called:s.called, returned:s.returned, kept:s.kept, credits:s.credits, errors:s.errors, firstError:s.firstError||'' });\nreturn [{ json: {\n  mode: mode, batchNum: plan.batchNum, batchCount: plan.batchCount, logKey: inp.logKey,\n  companiesIn: plan.plan.length, underCap: underCap,\n  contagen: strip(cg), supersoniq: strip(sq), aiark: strip(ark),\n  arkCallbacks: n(ark.callbacks), arkPolled: n(ark.polled), arkDone: n(ark.done), arkWithPeople: n(ark.withPeople),\n  arkPlanned: n(ark.planned), arkRateLimited: n(ark.rateLimited), arkUnserved: n(ark.unserved), arkStopped: !!ark.stoppedEarly,\n  built: n(b1.built)+n(b2.built), heldSkipped: n(b1.heldSkipped)+n(b2.heldSkipped), dupes: n(b1.dupes)+n(b2.dupes), dnc: dnc,\n  written: written, writeErrors: writeErrors, writeRequests: resps.length, stamped: stamped, stampErrors: stampErrors,\n  covered: covered, zero: plan.plan.length-covered, zeroDomains: zeroDomains,\n  allFailed: allFailed, failReasons: failReasons,\n  held: mode==='writer'?held:undefined\n} }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0045-4000-8000-000000000045",
+        "name": "Batch Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5500,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Batch Log: this pass's own Hub row (ruled 2026-09-02): Execution ID \"<parentExecId>-<n>\"\n// for a writer batch, \"<parentExecId>-ark\" for the run's single AI-Ark lane; Automation\n// \"Waterfall Contacts Batch\"; Client attached; Records In = companies in; Records Out = people\n// written; Description = the counters as text; Tally = the counters JSON the parent sums once every\n// pass row landed (the writer's held state stays out of it: it is for the lane, not the log).\n// Status computed: Failed when every paid call in the pass died (the pass did no work; the parent\n// stops launching on a writer's), Succeeded with errors when failed[] is not empty, Succeeded\n// otherwise. A company the lane never submitted because the 429 breaker stopped it counts as a\n// failure of this pass, one per company, so the number is loud instead of buried in prose.\n// Written before Batch Response answers. The key is unique by construction: batchNum is dealt once\n// by the parent's Make Batches, one lane per run, the parent execution id is n8n's.\nconst inp=$('Batch Input').first().json;\nconst s=Object.assign({}, $('Batch Summary').first().json||{});\ndelete s.held;\nconst num=(v)=>Number(v)||0;\nconst failed=[];\nconst tierName={ contagen:'ContaGen', supersoniq:'Supersoniq', aiark:'AI-Ark' };\nfor(const k of ['contagen','supersoniq','aiark']){ const x=s[k]||{}; for(let i=0;i<num(x.errors);i++) failed.push({ tier:tierName[k], reason:x.firstError||'call failed' }); }\nfor(let i=0;i<num(s.arkUnserved);i++) failed.push({ tier:'AI-Ark', reason:'company never submitted; the lane stopped after eight rate-limit answers in a row' });\nfor(let i=0;i<num(s.writeErrors);i++) failed.push({ tier:'People writer', reason:'row not in the answer' });\nfor(let i=0;i<num(s.stampErrors);i++) failed.push({ tier:'Contacts Pulled At stamp', reason:'row not in the answer' });\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(inp.startedAt).getTime())/1000)); }catch(e){}\nconst companiesIn=num(s.companiesIn), covered=num(s.covered), pct=companiesIn?Math.round(100*covered/companiesIn):0;\nconst on=(x)=>(inp.sources||[]).indexOf(x)>-1;\nconst tier=(label,x)=>'- **'+label+':** called '+num(x.called)+', returned '+num(x.returned)+', kept '+num(x.kept)+', credits '+(Math.round(num(x.credits)*100)/100)+(num(x.errors)?', errors '+num(x.errors):'');\nconst zd=Array.isArray(s.zeroDomains)?s.zeroDomains:[];\nconst isArk=s.mode==='ark';\nconst head=isArk?('AI-Ark lane: '+companiesIn+' companies from '+num(s.batchCount)+' closed writer batch'+(num(s.batchCount)===1?'':'es')+', '+num(s.underCap)+' still under cap, '+num(s.written)+' people written, '+covered+' of '+companiesIn+' covered after it ('+pct+'%)'):('Batch '+num(s.batchNum)+' of '+num(s.batchCount)+': '+companiesIn+' companies in, '+num(s.written)+' people written, '+covered+' of '+companiesIn+' covered ('+pct+'%)');\nconst roles=Array.isArray(inp.roles)?inp.roles:[];\nconst capLine=inp.arkOnly===true?'flat 5 per company, every size (AI-Ark only)':'by band, 1-10 four, 11-50 six, 51-200 ten, 201 and up twelve';\nconst lines=[ '**'+head+'**', '',\n  '**Parent run:** '+inp.parentExecId+' (this row is one pass of it; the parent sums the passes)',\n  '**Tiers:** '+(inp.tiers||(inp.sources||[]).join(', '))+' | **Cap per company:** '+capLine+' | **Roles:** '+(roles.length?roles.join(', '):'blank (each source on its in-code seniority net)'),\n  '' ];\nif(isArk){\n  lines.push(tier('AI-Ark', s.aiark||{}));\n  lines.push('- **Exports:** '+num(s.arkPlanned)+' planned, '+num((s.aiark||{}).called)+' submitted 250 ms apart in windows of fifty, '+num(s.arkDone)+' settled ('+num(s.arkCallbacks)+' by webhook, '+num(s.arkPolled)+' by a statistics read), '+num(s.arkWithPeople)+' with people (results fetched only for those)');\n  if(num(s.arkRateLimited)) lines.push('- **Rate limited:** '+num(s.arkRateLimited)+' export'+(num(s.arkRateLimited)===1?'':'s')+' answered HTTP 429 (AI-Ark allows five per second, 300 per minute, globally)');\n  if(num(s.arkUnserved)) lines.push('- **Unserved:** '+num(s.arkUnserved)+' companies were never submitted');\n}else{\n  if(on('ContaGen')) lines.push(tier('ContaGen', s.contagen||{}));\n  if(on('Supersoniq')) lines.push(tier('Supersoniq', s.supersoniq||{}));\n}\nlines.push('- **People built:** '+num(s.built)+' (skipped: '+num(s.heldSkipped)+' already held, '+num(s.dupes)+' duplicate in the pull, '+num(s.dnc)+' on the DNC table)');\nlines.push('- **Written (rows in the writer\\'s answers):** '+num(s.written)+' in '+num(s.writeRequests)+' requests of up to ten');\nlines.push('- **Coverage:** '+covered+' of '+companiesIn+' companies with at least one person ('+pct+'%)');\nlines.push('- **Zero-contact companies:** '+num(s.zero)+(zd.length?' ('+zd.slice(0,20).join(', ')+(zd.length>20?', ...':'')+')':''));\nif(!isArk) lines.push('- **Contacts Pulled At stamped:** '+num(s.stamped));\nif(s.arkStopped) lines.push('', '**The AI-Ark lane stopped submitting: eight exports in a row came back HTTP 429. '+num(s.arkUnserved)+' companies were not served and no further call was made.**');\nif(s.allFailed) lines.push('', '**Every paid call in this pass failed after retry.**'+(isArk?'':' The parent launches no further batches.'));\nif(failed.length){\n  const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; }\n  lines.push('', '**Failures ('+failed.length+')**');\n  for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r);\n  for(const r of (Array.isArray(s.failReasons)?s.failReasons:[]).slice(0,5)) lines.push('- '+r);\n}\nconst status=s.allFailed?'Failed':(failed.length?'Succeeded with errors':'Succeeded');\nconst log={\n  'Execution ID': String(inp.logKey),\n  'Automation': 'Waterfall Contacts Batch',\n  'Status': status,\n  'Trigger': 'event',\n  'Errors': failed.length,\n  'Run at': inp.startedAt,\n  'Target': (inp.peopleTableName||'People')+' ('+(inp.peopleTableId||'')+')',\n  'Records In': companiesIn,\n  'Records Out': num(s.written),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Tally': JSON.stringify(s),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id\n};\nif(inp.clientRecId) log['Client']=[inp.clientRecId];\nreturn [{ json: log }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0056-4000-8000-000000000056",
+        "name": "Build Batch Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5720,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "b7a20001-0057-4000-8000-000000000057",
+        "name": "Log Batch",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5940,
+          180
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "This pass's own Hub row (ruled 2026-09-02), upsert on Execution ID \"<parentExecId>-<batchNum>\" or \"<parentExecId>-ark\", Client attached, Tally = the counters JSON the parent sums. Loud: a failed write crashes into the Error Logger instead of vanishing."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Response: the last node, so its output is what Execute Workflow hands back to the parent:\n// the counters (Batch Summary), never rows. It runs after Log Batch, so this pass's Hub row exists\n// before the parent hears back and the parent's close reads it by prefix.\nreturn [{ json: $('Batch Summary').first().json }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0058-4000-8000-000000000058",
+        "name": "Batch Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6160,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "batchSize": 50,
+          "options": {}
+        },
+        "id": "b7a20001-0055-4000-8000-000000000055",
+        "name": "Ark Windows",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          1980,
+          -480
+        ],
+        "notes": "Fifty exports per window (about 13 s at 250 ms apart). The window is the granularity the 429 circuit breaker works at: without it the node fires every planned export before anything can look at an answer, which is how execution 7954 burned about 1,679 rate-limited calls. Its done output means every planned export was submitted."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Window: the fifty exports this window submits, re-emitted unchanged. It exists so the\n// answers align to their requests run by run: Ark Track and Ark Window Check pair\n// $('Ark Window').all(0, run) with $('Ark Export').all(0, run), which no branch index can confuse.\nreturn $input.all().map(i=>({ json: i.json }));\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0056-4000-8000-000000000056",
+        "name": "Ark Window",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          -360
+        ],
+        "notes": "The window's requests, re-emitted so Ark Track and Ark Window Check can pair answers to requests run by run without touching a loop branch index."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Ark Window Check: the circuit breaker on the AI-Ark lane, added 2026-09-02. AI-Ark answers HTTP\n// 429 once its global ceiling is crossed, and a 429 storm means every further export is a wasted\n// call: execution 7954 burned about 1,679 of them for twenty people because nothing ever stopped\n// submitting. Count the trailing run of 429 answers across every window so far; eight in a row and\n// the lane stops submitting, the companies it never reached are recorded as unserved by Ark Track,\n// and the pass closes cleanly on what it did get instead of grinding through the rest.\nconst STOP_STREAK=8;\nconst runs=(name)=>{ const out=[]; for(let i=0;i<10000;i++){ let it=null; try{ it=$(name).all(0,i); }catch(e){ break; } if(!it||!it.length) break; out.push(it); } return out; };\nlet submitted=0, rateLimited=0, streak=0;\nfor(const run of runs('Ark Export')){\n  for(const it of run){\n    const j=it.json||{};\n    submitted++;\n    if(Number(j.statusCode)===429){ rateLimited++; streak++; } else streak=0;\n  }\n}\nreturn [{ json: { stop: streak>=STOP_STREAK, streak: streak, rateLimited: rateLimited, submitted: submitted } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0057-4000-8000-000000000057",
+        "name": "Ark Window Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          -360
+        ],
+        "notes": "The circuit breaker: the trailing run of HTTP 429 answers across every window so far. Eight in a row and the lane stops submitting."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ks1",
+                "leftValue": "={{ $json.stop }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0058-4000-8000-000000000058",
+        "name": "Keep Submitting?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2860,
+          -360
+        ],
+        "notes": "True means stop: eight AI-Ark answers in a row were HTTP 429, so no further export is submitted and Ark Track records the rest as unserved. False takes the next window."
+      }
+    ],
+    "connections": {
+      "Batch Trigger": {
+        "main": [
+          [
+            {
+              "node": "Batch Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Input": {
+        "main": [
+          [
+            {
+              "node": "Plan Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Batch": {
+        "main": [
+          [
+            {
+              "node": "Get DNC Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get DNC Domains": {
+        "main": [
+          [
+            {
+              "node": "Plan Ready",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Ready": {
+        "main": [
+          [
+            {
+              "node": "Ark Pass?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Pass?": {
+        "main": [
+          [
+            {
+              "node": "Ark Plan",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Run ContaGen?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run ContaGen?": {
+        "main": [
+          [
+            {
+              "node": "CG Requests",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Parse ContaGen",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CG Requests": {
+        "main": [
+          [
+            {
+              "node": "ContaGen Discover",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "ContaGen Discover": {
+        "main": [
+          [
+            {
+              "node": "Parse ContaGen",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse ContaGen": {
+        "main": [
+          [
+            {
+              "node": "Run Supersoniq?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Supersoniq?": {
+        "main": [
+          [
+            {
+              "node": "SQ Requests",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Parse Supersoniq",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Requests": {
+        "main": [
+          [
+            {
+              "node": "SQ Enrich",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Enrich": {
+        "main": [
+          [
+            {
+              "node": "Parse Supersoniq",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Supersoniq": {
+        "main": [
+          [
+            {
+              "node": "Build People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build People": {
+        "main": [
+          [
+            {
+              "node": "Any People?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any People?": {
+        "main": [
+          [
+            {
+              "node": "Clean Fields",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Writer Pass?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Apply DNC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply DNC": {
+        "main": [
+          [
+            {
+              "node": "Any After DNC?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any After DNC?": {
+        "main": [
+          [
+            {
+              "node": "Chunk People",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Writer Pass?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk People": {
+        "main": [
+          [
+            {
+              "node": "Write People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write People": {
+        "main": [
+          [
+            {
+              "node": "Writer Pass?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Writer Pass?": {
+        "main": [
+          [
+            {
+              "node": "Stamp Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Batch Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Rows": {
+        "main": [
+          [
+            {
+              "node": "Stamp Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Companies": {
+        "main": [
+          [
+            {
+              "node": "Recount Filters",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recount Filters": {
+        "main": [
+          [
+            {
+              "node": "Recount People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recount People": {
+        "main": [
+          [
+            {
+              "node": "Batch Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Plan": {
+        "main": [
+          [
+            {
+              "node": "Any Ark Requests?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Ark Requests?": {
+        "main": [
+          [
+            {
+              "node": "Ark Requests",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fill Found",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Requests": {
+        "main": [
+          [
+            {
+              "node": "Ark Windows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Export": {
+        "main": [
+          [
+            {
+              "node": "Ark Window Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Track": {
+        "main": [
+          [
+            {
+              "node": "Ark Submitted?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Submitted?": {
+        "main": [
+          [
+            {
+              "node": "Ark Wait",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fill Found",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Wait": {
+        "main": [
+          [
+            {
+              "node": "Ark Pending",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Pending": {
+        "main": [
+          [
+            {
+              "node": "Read Callbacks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Callbacks": {
+        "main": [
+          [
+            {
+              "node": "Ark Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Check": {
+        "main": [
+          [
+            {
+              "node": "Ark Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Done?": {
+        "main": [
+          [
+            {
+              "node": "Fill Found",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Wait",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fill Found": {
+        "main": [
+          [
+            {
+              "node": "Any To Poll?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any To Poll?": {
+        "main": [
+          [
+            {
+              "node": "Ark Statistics",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Found",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Statistics": {
+        "main": [
+          [
+            {
+              "node": "Ark Found",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Found": {
+        "main": [
+          [
+            {
+              "node": "Ark Result Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Result Items": {
+        "main": [
+          [
+            {
+              "node": "Any Ark Results?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Ark Results?": {
+        "main": [
+          [
+            {
+              "node": "Ark Results",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Parse Ark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Results": {
+        "main": [
+          [
+            {
+              "node": "Parse Ark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Ark": {
+        "main": [
+          [
+            {
+              "node": "Build Ark People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Ark People": {
+        "main": [
+          [
+            {
+              "node": "Any People?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Summary": {
+        "main": [
+          [
+            {
+              "node": "Build Batch Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Batch Log": {
+        "main": [
+          [
+            {
+              "node": "Log Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Batch": {
+        "main": [
+          [
+            {
+              "node": "Batch Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Windows": {
+        "main": [
+          [
+            {
+              "node": "Ark Track",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Window",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Window": {
+        "main": [
+          [
+            {
+              "node": "Ark Export",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ark Window Check": {
+        "main": [
+          [
+            {
+              "node": "Keep Submitting?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Keep Submitting?": {
+        "main": [
+          [
+            {
+              "node": "Ark Track",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ark Windows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-02T20:20:05.954Z",
+        "id": 2252,
+        "workflowId": "61QayoPOnxClmE54",
+        "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T20:20:16.470Z",
+        "id": 2254,
+        "workflowId": "61QayoPOnxClmE54",
+        "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T20:20:05.877Z",
+        "id": 2251,
+        "workflowId": "61QayoPOnxClmE54",
+        "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-02T20:20:11.207Z",
+        "id": 2253,
+        "workflowId": "61QayoPOnxClmE54",
+        "versionId": "bedfad74-f090-49f6-bd43-3bbb35b95038",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
 }

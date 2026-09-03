@@ -1,7 +1,11 @@
 {
+  "updatedAt": "2026-09-03T00:37:32.695Z",
+  "createdAt": "2026-07-28T09:25:51.367Z",
   "id": "9iMXBGRlPk3O6pDZ",
   "name": "Insert Hiring domains to Clayroots",
+  "description": "Shared intent-signal play. POST /webhook/intent-signal (body or query: client, table, campaign + knobs); base from the client's Clayroots Base ID. Head guard fails fast. Apify jobs, Supersoniq DMs, DNC gate, upsert, one batched waterfall call.",
   "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "id": "31785609-44b2-49f4-a527-b90fd255f60e",
@@ -1530,5 +1534,1611 @@
     "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
     "executionOrder": "v1",
     "availableInMCP": true
+  },
+  "staticData": {
+    "global": {
+      "runStartedAt": 1788430422466
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+  "activeVersionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+  "versionCounter": 38,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T09:25:51.384Z",
+      "createdAt": "2026-07-28T09:25:51.384Z",
+      "role": "workflow:owner",
+      "workflowId": "9iMXBGRlPk3O6pDZ",
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-09-03T00:37:32.698Z",
+    "createdAt": "2026-09-03T00:37:32.698Z",
+    "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+    "workflowId": "9iMXBGRlPk3O6pDZ",
+    "nodes": [
+      {
+        "id": "31785609-44b2-49f4-a527-b90fd255f60e",
+        "name": "Intent Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -900,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "intent-signal",
+          "options": {}
+        },
+        "webhookId": "7b43eda9-3cc8-472e-866f-6300525553a4"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000001",
+        "name": "Parse Launch",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -680,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Parse Launch: the Apify run webhook. Body: { play: <KB Files record id>, resource: <Apify run> }.\n// Nothing else is read from the payload; the play row carries the play. The resource object\n// carries the run's dataset (the jobs). The roles counted for Existing In Role come from the play.\nconst sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst j=$input.first().json||{};\nconst q=j.query||{}; const b=j.body||{};\nconst pick=(k)=>{ const v=(b[k]!==undefined&&b[k]!=='')?b[k]:q[k]; return (v===undefined||v===null)?'':String(v).trim(); };\nconst res=b.resource||{};\nconst cfg={\n  play: pick('play'),\n  datasetId: String(res.defaultDatasetId||''),\n  kvStoreId: String(res.defaultKeyValueStoreId||''),\n  sender: pick('sender')||'webhook'\n};\nconst missing=[];\nif(!/^rec[A-Za-z0-9]{14}$/.test(cfg.play)) missing.push('play (KB Files record id)');\nif(!cfg.datasetId) missing.push('resource.defaultDatasetId');\ncfg.config_ok=(missing.length===0);\ncfg.missing=missing;\ncfg.guard='launch';\nreturn [{ json: cfg }];\n"
+        }
+      },
+      {
+        "id": "45b59c92-e048-423e-8b10-792e07ac23ad",
+        "name": "Config OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -460,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "g1",
+                "leftValue": "={{ $json.config_ok }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000002",
+        "name": "Get Play Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -240,
+          -160
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblDtJeqkUB2JFga1"
+          },
+          "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'hiring')",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000003",
+        "name": "Parse Play",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -20,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Parse Play: the Signals row (Hub, one row per signal) into the run's config. Typed fields,\n// no grammar: Name, Client (link), Signal Type, Roles, Country, Max Employees, ICP. Target\n// Table is retired (List Building 2.0, 2026-09-02): every signal writes the client's Companies\n// table, resolved downstream from the Client link. A signal is the Signals link on the row,\n// never a Tag: nothing here reads a Tag.\n// The upstream node searches Signals with OR(RECORD_ID() = launch play id, {Signal Type} = 'hiring'),\n// so a legacy launch id (the retired KB play row) still resolves as long as exactly ONE hiring\n// signal exists; ambiguity or no match stops the run before any paid call.\n// Who gets MESSAGED is not config here or anywhere in this machine: relevance and the views\n// on People decide that. This machine only lands company rows.\nconst launch=$('Parse Launch').first().json;\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));\nconst norm=(r)=>({ id:r.id, f:(r.fields||r) });\nconst wanted=launch.play;\nconst all=rows.map(norm);\nconst missing=[];\nlet hit=all.find(r=>r.id===wanted);\nlet legacy=false;\nif(!hit){\n  const hiring=all.filter(r=>String(r.f['Signal Type']||'')==='hiring');\n  if(hiring.length===1){ hit=hiring[0]; legacy=true; }\n  else missing.push(hiring.length===0?'no Signals row found for launch id '+wanted:'launch id '+wanted+' unknown and '+hiring.length+' hiring signals exist (ambiguous); update the Apify webhook payload to the Signals record id');\n}\nconst f=hit?hit.f:{};\nconst list=(s)=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);\nconst clientLink=Array.isArray(f['Client'])?f['Client'][0]:'';\nconst client=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\nconst roles=list(f['Roles']);\nconst country=String(f['Country']||'').trim();\nconst maxEmployees=Number(f['Max Employees'])||0;\nconst icp=String(f['ICP']||'').trim();\nif(hit){\n  if(!client) missing.push('Client link on the Signals row');\n  if(!roles.length) missing.push('Roles');\n  if(!country) missing.push('Country');\n  if(!maxEmployees) missing.push('Max Employees');\n  if(!icp) missing.push('ICP');\n}\nreturn [{ json: {\n  play: launch.play, datasetId: launch.datasetId, kvStoreId: launch.kvStoreId, sender: launch.sender,\n  play_name: f['Name']||'', signal_row: hit?hit.id:'', legacy_launch_id: legacy,\n  client, event_type: String(f['Signal Type']||'hiring'),\n  country, max_headcount: maxEmployees, icp_text: icp,\n  roles,\n  config_ok: missing.length===0, missing, guard:'play'\n}}];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000004",
+        "name": "Play OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          200,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "p1",
+                "leftValue": "={{ $json.config_ok }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "78327094-cb47-4fe0-af2d-f6a30f4ed43c",
+        "name": "Get Client Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -240,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $('Parse Play').first().json.client }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "4da2d650-482b-4249-bf6c-77ec7732cac3",
+        "name": "Client Vars",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -20,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst name=f['Client']||'';\nreturn [{ json: {\n  clientName: name,\n  clientRecId: r.id||$('Parse Play').first().json.client||'',\n  clientSlug: String(name).toLowerCase().replace(/[^a-z0-9]/g,''),\n  slackChannel: f['Slack Channel ID']||'',\n  base: f['Clayroots Base ID']||''\n}}];"
+        }
+      },
+      {
+        "id": "e7b94bde-214f-43e6-8dcf-d41c2a5b4c57",
+        "name": "Base OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          200,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "b1",
+                "leftValue": "={{ $json.base || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000001",
+        "name": "AT List Tables",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          420,
+          -160
+        ],
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Client Vars').first().json.base }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "notes": "The client base's schema, once, BEFORE any paid call. Companies and the Signals mirror are resolved from it; nothing is created here, the columns are checked by the helper Insert domains to Clayroots."
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000002",
+        "name": "Find Companies Table",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          640,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Find Companies Table: the client base must already carry a table named \"Companies\"\n// (case-insensitive) and the Signals mirror: the synced table whose name ends with \"Signals\".\n// Nothing here ever creates a table; the scaffold is Onboard Client's job (List Building 2.0).\n// The columns, DNC and the upsert are the helper Insert domains to Clayroots' business (Operator\n// ruling 2026-09-02); this node only names the table for the log and describes the mirror the\n// Signals link points at. Every refusal names what is missing.\n//\n// The mirror row is matched on the signal's NAME (Operator ruling 2026-09-02). The previous match\n// was a synced \"Record ID\" column, which no client base carries: all four live mirrors were\n// audited and none had it, so every hiring and reviews signal died at this node. Name and Client\n// ride the sync on their own, so a mirror needs nothing configured, now or at onboarding.\n//\n// This node builds the mirror query and Resolve Mirror Row does the strict matching. The query is\n// deliberately PERMISSIVE and the code deliberately STRICT, so that a near miss arrives as a\n// candidate and gets refused by name instead of silently never being seen:\n//   - TRIM() so a mirror row whose Name carries stray whitespace is still a candidate.\n//   - LOWER() so a case variant is still a candidate. Airtable's \"=\" on text is case-SENSITIVE on\n//     its own, probed live against a real mirror on 2026-09-02, so without LOWER() a case-only\n//     mismatch would come back as \"no row at all\" and cost the Operator the real diagnosis.\n//     Resolve Mirror Row then applies the case-SENSITIVE rule and names what it rejected.\n// Because the code re-checks exactly, any divergence between Airtable's LOWER() and JS\n// toLowerCase() on exotic input can only ever cause a refusal, never a wrong match.\n// No field restriction is set on the query: the mirror's Companies link column is fat and grows,\n// but only matching rows are ever returned, and a \"fields\" list naming Client would 422 on a\n// mirror that does not carry it.\nconst base=$('Client Vars').first().json.base;\nconst cfg=$('Parse Play').first().json;\nconst r=$input.first().json||{};\nconst body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nif(!tables){ throw new Error('Could not read the table list for base '+base+': '+JSON.stringify(body).slice(0,200)+'. Nothing was spent or written.'); }\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='companies');\nif(!t){ throw new Error('Base '+base+' has no Companies table. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.'); }\nconst mirror=tables.find(x=>/signals$/i.test(String(x.name||'').trim()));\nif(!mirror){ throw new Error('Base '+base+' has no Signals mirror (a synced table whose name ends with \"Signals\"). Sync the Hub Signals view into the client base first. Nothing was spent or written.'); }\nconst mirrorFields=new Set((mirror.fields||[]).map(x=>x.name));\nif(!mirrorFields.has('Name')){ throw new Error('The Signals mirror '+mirror.name+' ('+mirror.id+') has no \"Name\" field, so a Hub signal cannot be resolved to a mirror row. Include Name in the synced Signals view first. Nothing was spent or written.'); }\nconst signalName=String(cfg.play_name||'').trim();\nif(!signalName){ throw new Error('The Hub signal '+cfg.signal_row+' has no Name, so there is nothing to match against the Signals mirror '+mirror.name+' ('+mirror.id+') in base '+base+'. Name the Signals row first. Nothing was spent or written.'); }\nconst esc=signalName.toLowerCase().replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nreturn [{ json: {\n  base, tableId:t.id, tableName:t.name,\n  signalsTableId:mirror.id, signalsTableName:mirror.name,\n  mirrorHasClient:mirrorFields.has('Client'),\n  signalName,\n  mirrorFilter:\"LOWER(TRIM({Name})) = '\"+esc+\"'\"\n} }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000009",
+        "name": "Get Signal Mirror Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2180,
+          -160
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Vars').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Companies Table').first().json.signalsTableId }}"
+          },
+          "filterByFormula": "={{ $('Find Companies Table').first().json.mirrorFilter }}",
+          "returnAll": true,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "notes": "Candidate rows in the client base's Signals mirror for this Hub signal, fetched by LOWER(TRIM({Name})) = the signal's name, built upstream by Find Companies Table (2026-09-02: the former match was a synced Record ID column that no client base carries, so every signal died here). The query is permissive on purpose, LOWER and TRIM letting whitespace and case variants through as candidates, because Airtable's = is otherwise exact and case-sensitive (probed live). Resolve Mirror Row then does the strict exact, case-sensitive, client-scoped match and refuses anything but exactly one row, before any paid call. No fields restriction: a fields list naming Client would 422 on a mirror without that column. Companies.Signals links to the mirror row id, never to the Hub row."
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000015",
+        "name": "Resolve Mirror Row",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2400,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Resolve Mirror Row: the client base's Signals mirror row this Hub signal maps to, resolved\n// BEFORE any paid call (Operator ruling 2026-09-02). No row, no relation: refuse here, nothing\n// spent, nothing written. Emits the table facts (Find Companies Table) plus the mirror row id\n// Format Companies links to.\n//\n// Matched on the signal's NAME (Operator ruling 2026-09-02, replacing a synced \"Record ID\" column\n// that no client base ever carried). Strictness is what makes name matching safe, and it is not\n// optional: exactly one row survives, or the run stops here with a named error saying what it\n// looked for and what it found. A silent wrong guess is the failure mode this check exists to\n// remove, and it is the reason name matching was accepted at all.\n//\n//   - Exact, trimmed name. Never a contains, never a fuzzy match.\n//   - CASE-SENSITIVE. The Hub row's Name and the mirror row's Name are the same string carried\n//     across by Airtable's own sync; nobody retypes it in between. So a case difference does not\n//     mean \"same signal, spelled loosely\", it means these are two different Hub rows, and\n//     resolving one to the other would be exactly the silent wrong guess. Refusing costs a named\n//     error the Operator fixes in seconds; guessing costs a paid run written against the wrong\n//     signal. The upstream query wraps the name in LOWER() on purpose, so a case-variant row\n//     arrives here as a candidate and gets refused out loud instead of never being seen.\n//   - Scoped to the client whenever the mirror carries a Client column, so two clients' signals\n//     sharing a name cannot collide. A blank Client is not evidence of another owner, so such a\n//     row stays a candidate; a Client naming a different client is, and that row is dropped.\nconst cfg=$('Parse Play').first().json;\nconst t=$('Find Companies Table').first().json;\nconst clientName=String(($('Client Vars').first().json||{}).clientName||'').trim();\nconst want=String(t.signalName||cfg.play_name||'').trim();\nconst where='the Signals mirror '+(t.signalsTableName||t.signalsTableId)+' in base '+t.base;\nconst rows=$input.all().map(i=>i.json||{}).filter(j=>j&&j.id);\nconst fieldsOf=(j)=>(j.fields&&typeof j.fields==='object')?j.fields:j;\nconst nameOf=(j)=>String(fieldsOf(j)['Name']||'').trim();\nconst clientOf=(j)=>{ const c=fieldsOf(j)['Client']; return String(Array.isArray(c)?(c[0]||''):(c||'')).trim(); };\nconst exact=rows.filter(j=>nameOf(j)===want);\nconst scoped=(t.mirrorHasClient&&clientName)?exact.filter(j=>{ const c=clientOf(j); return !c||c===clientName; }):exact;\nif(scoped.length!==1){\n  const show=(j)=>'\"'+nameOf(j)+'\"'+(clientOf(j)?' ['+clientOf(j)+']':' [no Client]')+' ('+j.id+')';\n  let found;\n  if(scoped.length===0){\n    found=rows.length===0\n      ? 'the mirror returned no row at all'\n      : 'the mirror returned '+rows.length+' near miss(es) that did not survive the exact, case-sensitive'+(t.mirrorHasClient&&clientName?', client-scoped':'')+' check: '+rows.map(show).join(', ');\n  } else {\n    found=scoped.length+' rows carry that exact name: '+scoped.map(show).join(', ');\n  }\n  throw new Error('Cannot resolve Hub signal \"'+want+'\" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire. Nothing was spent or written.');\n}\nreturn [{ json: Object.assign({}, t, { mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];\n"
+        },
+        "notes": "Refuses before any paid call when the mirror row is missing."
+      },
+      {
+        "id": "86aaef2a-6853-4d9e-b8a5-cc7825872ef0",
+        "name": "Get Scraped Jobs",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2620,
+          -160
+        ],
+        "parameters": {
+          "url": "=https://api.apify.com/v2/datasets/{{ $('Parse Launch').first().json.datasetId }}/items?clean=true&format=json",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {}
+        },
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "aDxiCFTdpoU3NFzm",
+            "name": "Apify"
+          }
+        },
+        "alwaysOutputData": true
+      },
+      {
+        "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
+        "name": "Filter & Qualify Jobs",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2840,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Filter & Qualify Jobs: 100 scraped job posts in, one row per qualified company out, every\n// drop counted by reason. The full job record rides on the company row so the writer can\n// stamp it on the Companies row. _stats on the first row feeds Build Run Log.\n//\n// Drops, in order: country, staffing (name / poster title / industry), body shop, headcount,\n// no domain, hosted platform, duplicate domain. An unknown headcount passes on purpose: a blank\n// LinkedIn count is not a large company. The \"already worked\" line is gone (Operator ruling\n// 2026-09-02): a company that signals again is updated in place and re-enters the queue.\nconst cfg=$('Parse Play').first().json;\nlet items=$('Get Scraped Jobs').all().map(i=>i.json);\nif(items.length===1&&Array.isArray(items[0])) items=items[0];\nitems=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));\n\nconst badName=['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];\nconst badIndustry=['staffing','recruiting','executive search','venture capital','private equity','venture'];\nconst has=(s,list)=>{ s=String(s||'').toLowerCase(); return list.some(w=>s.includes(w)); };\n\n// Body-shop test: a real employer names itself in its own post (\"Fortreum is seeking...\",\n// \"About IO River\"). A staffing firm pastes a bare requirements list for a client it never\n// names. Verified on the 2026-08-20 dataset: 6/6. Employer-brand phrases are the second tell.\nconst LEGAL=/\\b(inc|llc|ltd|corp|corporation|co|company|solutions|technologies|technology|group|systems|services|consulting)\\b/g;\nconst BRAND=['equal opportunity','401(k)','401k','we offer','about us','who we are','our team','our mission','our company','join us','benefits'];\nfunction looksLikeBodyShop(j){\n  const desc=String(j.descriptionText||'');\n  if(!desc) return false;\n  const d=desc.toLowerCase();\n  const core=String(j.companyName||'').toLowerCase().replace(LEGAL,' ').replace(/[^a-z0-9]+/g,' ').trim().split(/\\s+/).filter(w=>w.length>=3)[0]||'';\n  if(core&&d.includes(core)) return false;\n  if(BRAND.some(w=>d.includes(w))) return false;\n  return true;\n}\n\n// A company whose \"website\" lives on a free-hosting subdomain is not a company: a personal\n// vercel.app page posting a DevOps job put its own author into the table (2026-08-31).\nconst HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com','carrd.co','notion.site','framer.website','framer.app','glitch.me','herokuapp.com','pages.dev','web.app','firebaseapp.com','squarespace.com','weebly.com','wordpress.com','godaddysites.com','mystrikingly.com','super.site'];\nconst isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));\n\nconst drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0};\n// The Signals row's Country may be a comma list (\"US, GB\"); a single value still works\n// unchanged (Operator 2026-09-01, Adelante US+UK row). Unknown country passes, as before.\nconst allowedCountries=String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);\nconst seen=new Set();\nconst out=[];\nfor(const j of items){\n  const country=(j.companyAddress&&j.companyAddress.addressCountry)||'';\n  if(country&&allowedCountries.length&&!allowedCountries.includes(String(country).toUpperCase())){ drops.country++; continue; }\n  if(has(j.companyName,badName)||has(j.jobPosterTitle,badName)){ drops.staffing_name++; continue; }\n  if(has(j.industries,badIndustry)){ drops.staffing_industry++; continue; }\n  if(looksLikeBodyShop(j)){ drops.body_shop++; continue; }\n  const emp=Number(j.companyEmployeesCount||0);\n  if(emp>cfg.max_headcount){ drops.headcount++; continue; }\n  const domain=String(j.companyWebsite||'').toLowerCase().replace('https://','').replace('http://','').replace('www.','').split('?')[0].split('#')[0].split('/')[0].trim();\n  if(!domain){ drops.no_domain++; continue; }\n  if(isHosted(domain)){ drops.hosted_platform++; continue; }\n  if(seen.has(domain)){ drops.duplicate++; continue; }\n  seen.add(domain);\n  out.push({ json: {\n    domain,\n    company: j.companyName||'',\n    headcount: emp,\n    country: country||(allowedCountries.length===1?allowedCountries[0]:''),\n    company_linkedin: j.companyLinkedinUrl||'',\n    company_website: j.companyWebsite||'',\n    job: {\n      id: String(j.id||''),\n      title: j.title||'',\n      link: j.link||'',\n      posted_at: j.postedAt||'',\n      description: j.descriptionText||'',\n      seniority: j.seniorityLevel||'',\n      function: j.jobFunction||'',\n      employment_type: j.employmentType||'',\n      industries: j.industries||'',\n      applicants: Number(j.applicantsCount)||null,\n      salary: j.salary||'',\n      poster_name: j.jobPosterName||'',\n      poster_title: j.jobPosterTitle||'',\n      poster_linkedin: j.jobPosterProfileUrl||''\n    }\n  }});\n}\nconst stats={ jobs_in: items.length, qualified: out.length, drops };\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+        },
+        "alwaysOutputData": false
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000001",
+        "name": "Any Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3060,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.domain || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000002",
+        "name": "DiscoLike BizData",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3280,
+          -160
+        ],
+        "parameters": {
+          "url": "=https://api.discolike.com/v1/bizdata?domain={{ $json.domain }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2100
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "notes": "One call per qualified company. fullResponse + neverError: Company Facts reads the status and classifies a miss (404) vs an error."
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000006",
+        "name": "Company Facts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3500,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Company Facts: reads BizData for every company that passed the hard lines, drops the ones\n// DiscoLike reports closed, and hands the survivors to the ICP check as ONE list (one task,\n// per DiscoLike's own rule). Industry groups are recorded on the row later, never a verdict.\n// Emits one item: { domains, icp_text, companies:{domain -> {company row, biz}} }.\nconst cfg=$('Parse Play').first().json;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst rows=$('Filter & Qualify Jobs').all().map(i=>i.json).filter(c=>c&&c.domain);\nlet bizItems=[]; try{ bizItems=$('DiscoLike BizData').all(); }catch(e){}\nconst stats={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] };\nconst companies={};\nconst closed=[];\nrows.forEach((c,i)=>{\n  const it=bizItems[i]; const j=(it&&it.json)||{};\n  const status=Number(j.statusCode)||0; const b=parse(j.body===undefined?null:j.body);\n  stats.called++;\n  let biz=null;\n  if(status>=200&&status<300&&b&&typeof b==='object'&&(b.domain||b.name)){ biz=b; stats.matched++; }\n  else if(status===204||status===404){ stats.unknown++; }\n  else { stats.errors++; stats.failed.push({ tier:'BizData', name:c.domain, reason:'HTTP '+status+' '+String((b&&(b.detail||b.error||b.message))||'').slice(0,120) }); }\n  if(biz&&biz.status&&biz.status.status==='closed'&&Number(biz.status.confidence||0)>=0.8){ stats.closed++; closed.push(c.domain); return; }\n  companies[c.domain]={ company:c, biz };\n});\nconst domains=Object.keys(companies);\nconst out={ domains, icp_text: cfg.icp_text, companies, closed, _stats: stats };\nreturn [{ json: out }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000007",
+        "name": "Any Facts?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3720,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "f1",
+                "leftValue": "={{ ($json.domains || []).length ? 'x' : '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000008",
+        "name": "Start ICP Check",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3940,
+          -260
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.discolike.com/v1/validate/icp",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { icp_text: $json.icp_text, domains: $json.domains, context_mode: \"website\" } }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "executeOnce": true,
+        "notes": "One task for the whole list (DiscoLike rule). BYOK: the Operator's LLM key, no platform charge.",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 10000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000009",
+        "name": "Prep Poll",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4160,
+          -260
+        ],
+        "parameters": {
+          "jsCode": "// Prep Poll: reads the task id the ICP check returned and starts the poll loop.\n// No task id means the check never started: the loop is skipped and every company is\n// reported as an ICP error downstream (never passed through as a yes).\nconst j=$input.first().json||{};\nconst status=Number(j.statusCode)||0;\nlet b=j.body; if(typeof b==='string'){ try{ b=JSON.parse(b); }catch(e){ b=null; } }\nconst taskId=b&&b.task_id?String(b.task_id):'';\nif(!taskId) return [{ json: { task_id:'', done:true, results:null, error:'validate/icp HTTP '+status+' '+String((b&&(b.detail||b.error||b.message))||'no task_id').slice(0,120) } }];\nreturn [{ json: { task_id: taskId, done:false, results:null, error:'' } }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000010",
+        "name": "Wait ICP",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          4380,
+          -260
+        ],
+        "parameters": {
+          "amount": 15,
+          "unit": "seconds"
+        },
+        "webhookId": "c3000000-aaaa-4000-8000-000000000010"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000011",
+        "name": "ICP Status",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4600,
+          -260
+        ],
+        "parameters": {
+          "url": "=https://api.discolike.com/v1/discogen/status/{{ $('Prep Poll').first().json.task_id }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 10000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000012",
+        "name": "Poll Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4820,
+          -260
+        ],
+        "parameters": {
+          "jsCode": "// Poll Check: one pass of the ICP poll loop. Reads the discogen status; done when the task\n// completed or failed, or after 20 passes (5 minutes at 15 s), which is reported as an error.\nconst j=$input.first().json||{};\nconst status=Number(j.statusCode)||0;\nlet b=j.body; if(typeof b==='string'){ try{ b=JSON.parse(b); }catch(e){ b=null; } }\nconst taskId=String(($('Prep Poll').first().json||{}).task_id||'');\nconst pass=Number($runIndex)||0;\nconst st=b&&b.status?String(b.status):'';\nif(st==='completed') return [{ json: { task_id:taskId, done:true, results:(b.results||{}), error:'', passes:pass+1 } }];\nif(st==='failed'||st==='error'||status>=400) return [{ json: { task_id:taskId, done:true, results:null, error:'discogen '+(st||('HTTP '+status))+' '+String((b&&(b.error||b.detail||b.message))||'').slice(0,120), passes:pass+1 } }];\nif(pass+1>=20) return [{ json: { task_id:taskId, done:true, results:null, error:'ICP check timed out after '+(pass+1)+' polls', passes:pass+1 } }];\nreturn [{ json: { task_id:taskId, done:false, results:null, error:'', passes:pass+1 } }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000013",
+        "name": "ICP Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5040,
+          -260
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "i1",
+                "leftValue": "={{ $json.done }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000014",
+        "name": "Apply ICP",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5260,
+          -260
+        ],
+        "parameters": {
+          "jsCode": "// Apply ICP: a company the check called `yes` or `partial` goes on (Operator ruling 2026-08-23:\n// partial stays in). `no` and missing verdicts are dropped with their reason kept for the run log. A check that never completed rejects everything and is\n// logged as an error: no company is ever passed through on a missing verdict.\n// One row per kept company: { domain, company, biz, icp_reason, icp_confidence }.\nconst poll=$input.first().json||{};\nconst facts=$('Company Facts').first().json||{};\nconst companies=facts.companies||{};\nconst stats={ checked:0, yes:0, partial:0, no:0, missing:0, error:poll.error||'', rejected:[] };\nconst out=[];\nif(poll.error||!poll.results){\n  stats.error=poll.error||'no results';\n  return [{ json: { _empty:true, _stats:stats } }];\n}\nconst res=poll.results;\nfor(const d of Object.keys(companies)){\n  const r=res[d]||res[d.replace(/^www\\./,'')]||null;\n  stats.checked++;\n  if(!r){ stats.missing++; stats.rejected.push({ domain:d, fit:'missing', reason:'no verdict returned' }); continue; }\n  const fit=String(r.Fit||r.fit||'').toLowerCase();\n  const reason=String(r.Reasoning||r.reasoning||'').slice(0,200);\n  const conf=String(r.Confidence||r.confidence||'');\n  if(fit==='yes'||fit==='partial'){ if(fit==='yes') stats.yes++; else stats.partial++; out.push({ json: { domain:d, company:companies[d].company, biz:companies[d].biz, icp_reason:(fit==='partial'?'PARTIAL: ':'')+reason, icp_confidence:conf } }); }\n  else { stats.no++; stats.rejected.push({ domain:d, fit:fit||'?', reason }); }\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000015",
+        "name": "Any ICP?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5480,
+          -260
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "y1",
+                "leftValue": "={{ $json.domain || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000016",
+        "name": "Count Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5700,
+          -360
+        ],
+        "parameters": {
+          "jsCode": "// Count Calls: one row per ICP-approved company with the FREE count request that answers\n// \"does this company already employ the role it is hiring for?\". The role terms are the play's\n// `roles` line, nothing else. (Supersoniq's match count left with Supersoniq, ruling 2026-08-26.)\n//   cg_url: DiscoLike GET /contacts/count?domain=&title=...\nconst cfg=$('Parse Play').first().json;\nconst terms=Array.isArray(cfg.roles)?cfg.roles:[];\nconst out=[];\nfor(const it of $('Apply ICP').all()){\n  const c=it.json||{}; if(!c.domain) continue;\n  const q=['domain='+encodeURIComponent(c.domain)].concat(terms.map(t=>'title='+encodeURIComponent(t))).join('&');\n  out.push({ json: { domain:c.domain, terms,\n    cg_url:'https://api.discolike.com/v1/contacts/count?'+q } });\n}\nif(!out.length) return [{ json: { _empty:true } }];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000018",
+        "name": "CG Count",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5920,
+          -360
+        ],
+        "parameters": {
+          "url": "={{ $('Count Calls').item.json.cg_url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2100
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "notes": "FREE. DiscoLike /contacts/count on the signal's roles: the Existing In Role column. Read by Format Companies.",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 10000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dcfd7053-2759-43fa-90e1-db6198e9ce47",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          8120,
+          -60
+        ],
+        "parameters": {
+          "jsCode": "// Build Run Log: the one row this run writes, per the logging standard. Status computed from\n// failed[], skips separated (hard lines, closed, ICP rejects with reasons, DNC from the helper's\n// counters, no domain), the Description is the whole funnel. Every node reference is guarded: a\n// branch that never ran reads as 0. Records Out is what the helper Insert domains to Clayroots\n// landed; the Waterfall Contacts hand-off is stated when it fired.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nlet tbl={}; try{ tbl=$('Find Companies Table').first().json||{}; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst failed=[]; const skips=[];\n\nlet fq={ jobs_in:0, qualified:0, drops:{} };\ntry{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(e){}\nconst d=fq.drops||{};\nconst dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'hosted platform '+nf(d.hosted_platform),'duplicate '+nf(d.duplicate)].join(' · ');\nconst hardDropped=Math.max(0,(fq.jobs_in||0)-(fq.qualified||0));\n\nlet bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];\ntry{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}\nfor(const f of (bz.failed||[])) failed.push(f);\n\nlet icp={ checked:0, yes:0, partial:0, no:0, missing:0, error:'', rejected:[] }; let polls=0;\ntry{ const s=$('Apply ICP').first().json._stats; if(s) icp=s; }catch(e){}\ntry{ polls=Number($('Poll Check').last().json.passes)||0; }catch(e){}\nif(icp.error) failed.push({ tier:'ICP check', name:'task', reason:icp.error });\n\nlet fm={ icp:0, no_domain:0, new:0, existing:0, kept:0, in_role:{ yes:0, no:0, unknown:0 }, failed:[] };\ntry{ const s=$('Format Companies').first().json._stats; if(s) fm=s; }catch(e){}\nfor(const f of (fm.failed||[])) failed.push(f);\nconst ir=fm.in_role||{};\n\n// The helper's counters: the only truth about what landed. Absent when nothing was formatted.\nlet hp=null; try{ hp=$('Read Counters').first().json||null; }catch(e){}\nconst landed=hp?Number(hp.landed||0):0;\nfor(const f of ((hp&&hp.failed)||[])) failed.push(f);\nif(hp&&fm.kept&&!landed&&!(hp.failed||[]).length&&!hp.dnc) failed.push({ tier:'Insert domains', name:nf(fm.kept)+' row(s)', reason:'formatted but the helper reported nothing landed' });\n\nlet waterfall=false; try{ waterfall=!!$('Waterfall Call').first().json; }catch(e){}\n\nif(hardDropped) skips.push(nf(hardDropped)+' failed the hard lines: '+dropLine);\nif(bz.closed) skips.push(nf(bz.closed)+' reported closed by BizData'+(closedList.length?' ('+closedList.join(', ')+')':''));\nif((icp.no||0)+(icp.missing||0)) skips.push(nf((icp.no||0)+(icp.missing||0))+' failed the ICP check');\nif(hp&&hp.dnc) skips.push(nf(hp.dnc)+' on the DNC table (helper)');\nif(fm.no_domain) skips.push(nf(fm.no_domain)+' no domain');\n\nconst errs=failed.length;\nconst status=errs?'Succeeded with errors':'Succeeded';\nconst rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);\nconst helperLine=hp?('created '+nf(hp.created)+' · updated '+nf(hp.updated)+' · DNC skipped '+nf(hp.dnc)+' · landed '+nf(landed)):'not called (nothing to land)';\nconst lines=[\n  '**'+nf(landed)+' companies landed in '+(tbl.tableName||'Companies')+' via Insert domains to Clayroots ('+nf(fm.new)+' new, '+nf(fm.existing)+' signalled again) from '+nf(fq.jobs_in)+' jobs, '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Signal:** '+(cfg.play_name||cfg.play||'')+(cfg.legacy_launch_id?' (legacy launch id, update the Apify webhook to the Signals record id)':'')+' · **Type:** '+(cfg.event_type||'')+' · **Table:** '+(tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':'')+' in '+(base||''),\n  '',\n  '**Funnel**',\n  '- **Jobs scraped:** '+nf(fq.jobs_in),\n  '- **Past the hard lines:** '+nf(fq.qualified),\n  '- **BizData:** matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+' · errors '+nf(bz.errors),\n  '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),\n  '- **First hire (Existing In Role):** yes '+nf(ir.yes)+' · no '+nf(ir.no)+' · unknown '+nf(ir.unknown),\n  '- **Rows formatted:** '+nf(fm.kept)+' ('+nf(fm.new)+' not yet in Companies, '+nf(fm.existing)+' existing, Signals unioned)',\n  '- **Insert domains to Clayroots:** '+helperLine,\n  '',\n  '**Contacts:** '+(waterfall?'Waterfall Contacts fired as a sub-workflow (Companies · Not Sourced · ContaGen, Supersoniq, AI-Ark · cap 5,000); its own run-log row carries the pull.':'Waterfall Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'\n];\nif(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\\n'+rejLines.join('\\n')+((icp.rejected||[]).length>10?'\\n- ...and '+((icp.rejected||[]).length-10)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(skips.length) lines.push('','**Skipped**\\n'+skips.map(s=>'- '+s).join('\\n'));\nconst row={\n 'Automation':'Insert Hiring domains to Clayroots',\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': fq.jobs_in||0,\n 'Records Out': landed,\n 'Errors': errs,\n 'Target': (tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':''),\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{json:row}];\n"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c236c040-a8fc-4d34-8a3d-0ad623c9e57f",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          8340,
+          -60
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "01083aac-28b3-4bc5-83b4-002dc4310328",
+        "name": "Build Guard Fail Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          420,
+          300
+        ],
+        "parameters": {
+          "jsCode": "// A guard tripped before any paid call: the launch payload, the Signals row, or the client row\n// is missing something. One error, the row says exactly what. 'Failed' is the Error Logger's\n// word for a crash; a guard trip is Succeeded with errors.\nlet g={};\ntry{ const p=$('Parse Play').first().json; if(p&&p.config_ok===false) g=p; }catch(e){}\nif(!g.guard){ try{ const l=$('Parse Launch').first().json; if(l&&l.config_ok===false) g=l; }catch(e){} }\nlet baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json; if(c&&!c.base){ baseMissing=true; g=Object.assign({},$('Parse Play').first().json,{guard:'client'}); } }catch(e){} }\nconst what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'Signals row '+(g.play||''):'client row '+(g.client||''));\nconst missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');\nconst row={\n 'Automation':'Insert Hiring domains to Clayroots',\n 'Status':'Succeeded with errors',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': 'Companies',\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Guard tripped before any paid call, 1 error**\\n\\n**Where:** '+what+'\\n\\n**Missing / unreadable:** '+missing+'\\n\\nThe Signals row needs: Client link (its Clients row carries the Clayroots Base ID), Roles, Country, Max Employees, ICP. The Apify payload needs {play: <Signals record id>, resource}. Fix and rerun.'\n};\nif(g.client) row['Client']=[g.client];\nreturn [{json:row}];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000001",
+        "name": "Read Existing Signals",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6140,
+          -360
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Client Vars').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Companies Table').first().json.tableId }}"
+          },
+          "filterByFormula": "=OR({{ $('Apply ICP').all().filter(i => i.json && i.json.domain).map(i => \"{Domain}='\" + String(i.json.domain).trim().toLowerCase() + \"'\").join(',') }})",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain",
+              "Signals"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "notes": "One small read before formatting: the Signals links the signalled domains already hold, so the upsert unions them instead of replacing them. Kept because the helper returns counters, not rows."
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000002",
+        "name": "Format Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6360,
+          -360
+        ],
+        "parameters": {
+          "jsCode": "// Format Companies: one Companies row per ICP-approved company, in the register's shape plus the\n// Hiring group (the 15 Job columns and Existing In Role), for the helper Insert domains to\n// Clayroots (Operator ruling 2026-09-02). The helper owns Check Columns, DNC, Clean Fields and the\n// upsert on Domain, so nothing here filters on the table's columns: every group key is emitted and\n// a base without the Hiring group is refused by the helper, loudly, nothing written.\n// The signal is a relation: `Signals` links the row to the mirror row Resolve Mirror Row found,\n// unioned with the links the row already holds (Read Existing Signals, one small read by Domain,\n// kept because the helper returns counters, not rows). `Signal At` is now, `ICP Reason` the\n// verdict, the Job payload the event (latest event wins), `Existing In Role` the free DiscoLike\n// count on the signal's roles (meaningful only when BizData knows the company; else omitted).\n// Domain Source rides in _meta (Attach Meta), never on the row. No Tag: a signal is the link.\n// Never write null: a payload value the run does not have is omitted, never cleared; on an\n// existing row an empty core value is omitted too (a signal never blanks what a landing door\n// wrote). _stats on row 0 feeds Build Run Log; zero rows emit one {_empty} placeholder so the\n// gate reaches the close.\nconst t=$('Resolve Mirror Row').first().json;\nconst mirrorId=t.mirrorId;\nconst nowIso=new Date().toISOString();\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==null?'':String(a));\nconst kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);\nconst keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst PAYLOAD=new Set(['Job ID','Job Title','Job Link','Job Posted','Job Description','Job Seniority','Job Function','Job Employment Type','Job Industries','Job Applicants','Job Salary','Job Poster Name','Job Poster Title','Job Poster LinkedIn','Existing In Role']);\nconst stats={ icp:0, no_domain:0, new:0, existing:0, kept:0, in_role:{ yes:0, no:0, unknown:0 }, failed:[] };\n\n// Rows already in Companies for the signalled domains: their Signals links are unioned, never replaced.\nconst existing={};\ntry{ for(const it of $('Read Existing Signals').all()){ const j=it.json||{}; const f=j.fields||{}; const d=norm(f.Domain); if(j.id&&d) existing[d]={ id:j.id, signals:(Array.isArray(f.Signals)?f.Signals:[]).map(x=>(x&&typeof x==='object')?x.id:x).filter(Boolean) }; } }catch(e){}\n\n// Existing In Role: the free DiscoLike count on the signal's roles, aligned by index to Count\n// Calls. A failed count is an error on the row, never a silent unknown.\nconst icpRows=$('Apply ICP').all().map(i=>i.json).filter(c=>c&&c.domain);\nconst bizKnown={}; for(const r of icpRows) bizKnown[r.domain]=!!r.biz;\nconst inRole={};\ntry{\n  const calls=$('Count Calls').all().map(i=>i.json).filter(c=>c&&c.domain);\n  let cgItems=[]; try{ cgItems=$('CG Count').all(); }catch(e){}\n  calls.forEach((c,i)=>{\n    const cj=(cgItems[i]&&cgItems[i].json)||{}; const cs=Number(cj.statusCode)||0; const cb=parse(cj.body===undefined?null:cj.body);\n    if(cs>=200&&cs<300&&cb&&typeof cb==='object'&&cb.count!==undefined){ if(bizKnown[c.domain]) inRole[c.domain]=Number(cb.count)||0; }\n    else stats.failed.push({ tier:'In role (DiscoLike)', name:c.domain, reason:cs?('HTTP '+cs+' '+String((cb&&(cb.detail||cb.error||cb.message))||'').slice(0,100)):String((cj.error&&(cj.error.message||cj.error))||'no response').slice(0,100) });\n  });\n}catch(e){}\n\nconst out=[];\nfor(const e of icpRows){\n  stats.icp++;\n  const d=norm(e.domain); if(!d){ stats.no_domain++; continue; }\n  const c=e.company||{}; const b=e.biz||null; const j=c.job||{}; const addr=(b&&b.address)||{};\n  const ex=existing[d]||null;\n  const signals=Array.from(new Set([].concat(ex?ex.signals:[], [mirrorId])));\n  const count=inRole[d]; const verdict=(count===undefined)?'unknown':(count===0?'yes':'no'); stats.in_role[verdict]++;\n  const row={\n    'Domain': d,\n    'Company': String(c.company||(b&&b.name)||'').trim(),\n    'Country': String(addr.country||c.country||''),\n    'Employees': band((b&&b.employees)||c.headcount),\n    'Signals': signals,\n    'Signal At': nowIso,\n    'ICP Reason': e.icp_reason||''\n  };\n  if(b){ Object.assign(row, {\n    'Description': String(b.description||''),\n    'Industry Groups': kv(b.industry_groups),\n    'Business Model': kv(b.business_model),\n    'Revenue Range': String(b.revenue_range||''),\n    'Keywords': keys(b.keywords),\n    'State': String(addr.state||''), 'City': String(addr.city||''), 'Street': String(addr.street||''), 'Zip': String(addr.zip||''),\n    'Phones': join(b.phones), 'Public Emails': join(b.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(b.social_urls),\n    'MX Provider': String(b.mx_provider||''), 'Redirect Domain': String(b.redirect_domain||'')\n  }); }\n  Object.assign(row, {\n    'Job ID': j.id||'', 'Job Title': j.title||'', 'Job Link': j.link||'', 'Job Posted': j.posted_at||'',\n    'Job Description': j.description||'', 'Job Seniority': j.seniority||'', 'Job Function': j.function||'',\n    'Job Employment Type': j.employment_type||'', 'Job Industries': j.industries||'',\n    'Job Applicants': j.applicants, 'Job Salary': j.salary||'',\n    'Job Poster Name': j.poster_name||'', 'Job Poster Title': j.poster_title||'', 'Job Poster LinkedIn': j.poster_linkedin||'',\n    'Existing In Role': count\n  });\n  // Never null. Empty payload values omitted everywhere; empty core values omitted on existing rows.\n  for(const k of Object.keys(row)){ const v=row[k]; if(v==null||(v===''&&(ex||PAYLOAD.has(k)))) delete row[k]; }\n  if(ex&&row['Public Emails']!==undefined) row['public_emails_clean']='';\n  if(ex) stats.existing++; else stats.new++;\n  out.push({ json: row }); stats.kept++;\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000003",
+        "name": "Any Rows?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6580,
+          -360
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "r1",
+                "leftValue": "={{ $json['Domain'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000004",
+        "name": "Attach Meta",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6800,
+          -460
+        ],
+        "parameters": {
+          "jsCode": "// Attach Meta: the call shape the helper Insert domains to Clayroots reads. The rows go through\n// as formatted, minus the run's own carriers (_stats and _empty stay behind for Build Run Log),\n// and the first item carries _meta {base, clientRecId, tag, domainSource, allowNew}: no Tag (a\n// signal is the Signals link, never a Tag), Domain Source = Signal, allowNew false (the Job\n// columns are register extras; nothing outside the register may be created, so a base without\n// the Hiring group is refused by the helper).\nconst cv=$('Client Vars').first().json;\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty);\nconst out=rows.map(j=>{ const r={}; for(const k of Object.keys(j)){ if(!k.startsWith('_')) r[k]=j[k]; } return { json:r }; });\nif(!out.length) return [{ json:{ _empty:true } }];\nout[0].json._meta={ base: cv.base, clientRecId: cv.clientRecId, tag:'', domainSource:'Signal', allowNew:false };\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000005",
+        "name": "Insert domains to Clayroots",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          7020,
+          -460
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "NEG4Cs7wPOwQkpnQ",
+            "cachedResultName": "Insert domains to Clayroots"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "notes": "The one landing helper (Check Columns, DNC, Clean Fields, upsert on Domain). Rows in the register shape, _meta on the first item; one counters item back. NEG4Cs7wPOwQkpnQ is a placeholder: replace with the helper workflow id after its first push."
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000006",
+        "name": "Read Counters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7240,
+          -460
+        ],
+        "parameters": {
+          "jsCode": "// Read Counters: the one counters item the helper Insert domains to Clayroots returns, read into\n// one shape for the Any Landed? gate and Build Run Log. The helper's key names are read by alias\n// until its contract lands (created / updated / upserted, dnc, in, failed[] or an errors count);\n// landed falls back to created + updated. A Check Columns refusal never reaches here: the helper\n// throws and the run crashes into the Error Logger with nothing written. Never throws itself: an\n// unreadable item reads as zero landed and one failure, so the run still closes its row.\nconst j=$input.first().json||{};\nconst num=(...ks)=>{ for(const k of ks){ const v=j[k]; if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(isFinite(n)) return n; } } return null; };\nconst created=num('created','new','inserted')||0;\nconst updated=num('updated','existing')||0;\nlet landed=num('upserted','landed','written','out','rows_out','records_out'); if(landed===null) landed=created+updated;\nconst dnc=num('dnc','dnc_skipped','skipped_dnc','suppressed')||0;\nconst rowsIn=num('in','rows_in','received','records_in')||0;\nlet failed=[];\nif(Array.isArray(j.failed)) failed=j.failed.map(f=>(f&&typeof f==='object')?Object.assign({ tier:'Insert domains' }, f):{ tier:'Insert domains', name:'', reason:String(f) });\nelse { const e=num('errors','failed'); if(e) failed=[{ tier:'Insert domains', name:e+' row(s)', reason:'reported by the helper, no detail' }]; }\nif(!Object.keys(j).length) failed.push({ tier:'Insert domains', name:'counters', reason:'the helper returned no counters item' });\nreturn [{ json:{ rowsIn, created, updated, landed, dnc, failed, counters:j } }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000007",
+        "name": "Any Landed?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          7460,
+          -460
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.landed || 0 }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000008",
+        "name": "Waterfall Call",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7680,
+          -560
+        ],
+        "parameters": {
+          "jsCode": "// Waterfall Call: the one event item Waterfall Contacts reads at its Sub Trigger (Event Row):\n// the same keys as a launch row. Client = the Hub Clients record, Table Companies, View\n// \"Not Sourced\", Max companies 5000 as the spend cap.\n//\n// Tiers is \"AI-Ark\", the intent path (Operator ruling 2026-09-02). This door has no launch row to\n// read a mode off, and the intent lane is deliberately AI-Ark only: a flat five people per company\n// and the buyer seniorities only, not the full waterfall's wide net. Departments and Roles stay\n// empty on purpose: nothing about who gets MESSAGED is configured in this machine, the relevance\n// formula and the views on People do all the cutting. The Signals row's Roles field is the hiring\n// signal's job-title intent, not a contact filter, and is deliberately not read here.\n//\n// Reached only after at least one company landed; the sub-workflow runs on its own\n// (waitForSubWorkflow false) and writes its own run-log row.\nconst cv=$('Client Vars').first().json;\nreturn [{ json:{ Client:[cv.clientRecId], Table:'Companies', View:'Not Sourced', Tiers:'AI-Ark', Departments:[], Roles:[], 'Max companies':5000 } }];\n"
+        },
+        "executeOnce": true
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000009",
+        "name": "Waterfall Contacts",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          7900,
+          -560
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "PLTNYqqoYfrt9ypd",
+            "cachedResultName": "Waterfall Contacts"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        },
+        "notes": "Fire and continue: Waterfall Contacts runs on its own execution (Companies, Not Sourced, all three sources, cap 5000) and writes its own run-log row. Only after at least one company landed."
+      }
+    ],
+    "connections": {
+      "Intent Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse Launch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Launch": {
+        "main": [
+          [
+            {
+              "node": "Config OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Config OK?": {
+        "main": [
+          [
+            {
+              "node": "Get Play Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Play Row": {
+        "main": [
+          [
+            {
+              "node": "Parse Play",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Play": {
+        "main": [
+          [
+            {
+              "node": "Play OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Play OK?": {
+        "main": [
+          [
+            {
+              "node": "Get Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Client Row": {
+        "main": [
+          [
+            {
+              "node": "Client Vars",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client Vars": {
+        "main": [
+          [
+            {
+              "node": "Base OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Base OK?": {
+        "main": [
+          [
+            {
+              "node": "AT List Tables",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AT List Tables": {
+        "main": [
+          [
+            {
+              "node": "Find Companies Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Signal Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Resolve Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Get Scraped Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Scraped Jobs": {
+        "main": [
+          [
+            {
+              "node": "Filter & Qualify Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter & Qualify Jobs": {
+        "main": [
+          [
+            {
+              "node": "Any Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Companies?": {
+        "main": [
+          [
+            {
+              "node": "DiscoLike BizData",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DiscoLike BizData": {
+        "main": [
+          [
+            {
+              "node": "Company Facts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Company Facts": {
+        "main": [
+          [
+            {
+              "node": "Any Facts?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Facts?": {
+        "main": [
+          [
+            {
+              "node": "Start ICP Check",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Start ICP Check": {
+        "main": [
+          [
+            {
+              "node": "Prep Poll",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Poll": {
+        "main": [
+          [
+            {
+              "node": "ICP Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait ICP": {
+        "main": [
+          [
+            {
+              "node": "ICP Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "ICP Status": {
+        "main": [
+          [
+            {
+              "node": "Poll Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Poll Check": {
+        "main": [
+          [
+            {
+              "node": "ICP Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "ICP Done?": {
+        "main": [
+          [
+            {
+              "node": "Apply ICP",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Wait ICP",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply ICP": {
+        "main": [
+          [
+            {
+              "node": "Any ICP?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any ICP?": {
+        "main": [
+          [
+            {
+              "node": "Count Calls",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Count Calls": {
+        "main": [
+          [
+            {
+              "node": "CG Count",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CG Count": {
+        "main": [
+          [
+            {
+              "node": "Read Existing Signals",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Guard Fail Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run": {
+        "main": [
+          []
+        ]
+      },
+      "Find Companies Table": {
+        "main": [
+          [
+            {
+              "node": "Get Signal Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Existing Signals": {
+        "main": [
+          [
+            {
+              "node": "Format Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Companies": {
+        "main": [
+          [
+            {
+              "node": "Any Rows?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Rows?": {
+        "main": [
+          [
+            {
+              "node": "Attach Meta",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Meta": {
+        "main": [
+          [
+            {
+              "node": "Insert domains to Clayroots",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert domains to Clayroots": {
+        "main": [
+          [
+            {
+              "node": "Read Counters",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Counters": {
+        "main": [
+          [
+            {
+              "node": "Any Landed?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Landed?": {
+        "main": [
+          [
+            {
+              "node": "Waterfall Call",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Waterfall Call": {
+        "main": [
+          [
+            {
+              "node": "Waterfall Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Waterfall Contacts": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-03T00:37:32.881Z",
+        "id": 2341,
+        "workflowId": "9iMXBGRlPk3O6pDZ",
+        "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-03T00:38:01.805Z",
+        "id": 2347,
+        "workflowId": "9iMXBGRlPk3O6pDZ",
+        "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-03T00:37:32.838Z",
+        "id": 2340,
+        "workflowId": "9iMXBGRlPk3O6pDZ",
+        "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-03T00:37:55.799Z",
+        "id": 2346,
+        "workflowId": "9iMXBGRlPk3O6pDZ",
+        "versionId": "cbc07256-e367-4c83-a8d3-fb874fc9fc3b",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
   }
 }

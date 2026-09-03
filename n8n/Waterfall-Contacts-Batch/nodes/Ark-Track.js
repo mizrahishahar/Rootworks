@@ -12,8 +12,7 @@
 const runs=(name)=>{ const out=[]; for(let i=0;i<10000;i++){ let it=null; try{ it=$(name).all(0,i); }catch(e){ break; } if(!it||!it.length) break; out.push(it); } return out; };
 let planned=0; try{ planned=$('Ark Requests').all().length; }catch(e){}
 let stoppedEarly=false, backoffs=0;
-try{ const cr=runs('Ark Window Check'); const last=cr[cr.length-1]; stoppedEarly=!!(last&&last[0]&&last[0].json&&last[0].json.stop); }catch(e){}
-try{ backoffs=runs('Ark Backoff').length; }catch(e){}
+try{ const cr=runs('Ark Window Check'); const last=cr[cr.length-1]; const j=(last&&last[0]&&last[0].json)||{}; stoppedEarly=!!j.stop; backoffs=Number(j.stormsTotal)||0; }catch(e){}
 const reqRuns=runs('Ark Window'), respRuns=runs('Ark Export');
 const parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };
 const why=(b,raw)=>{ const m=b&&typeof b==='object'?(b.detail||b.error||b.message||b.description):null; const s=m?String(typeof m==='object'?JSON.stringify(m):m):(typeof raw==='string'?raw:(raw?JSON.stringify(raw):'')); return String(s||'empty body').slice(0,200); };

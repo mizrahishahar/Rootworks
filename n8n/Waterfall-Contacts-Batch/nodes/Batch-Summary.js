@@ -76,7 +76,7 @@ return [{ json: {
   companiesIn: plan.plan.length, underCap: underCap,
   contagen: strip(cg), supersoniq: strip(sq), aiark: strip(ark),
   arkCallbacks: n(ark.callbacks), arkPolled: n(ark.polled), arkDone: n(ark.done), arkWithPeople: n(ark.withPeople),
-  arkPlanned: n(ark.planned), arkRateLimited: n(ark.rateLimited), arkUnserved: n(ark.unserved), arkStopped: !!ark.stoppedEarly,
+  arkPlanned: n(ark.planned), arkRateLimited: n(ark.rateLimited), arkUnserved: n(ark.unserved), arkStopped: !!ark.stoppedEarly, arkBackoffs: n(ark.backoffs),
   built: n(b1.built)+n(b2.built), heldSkipped: n(b1.heldSkipped)+n(b2.heldSkipped), dupes: n(b1.dupes)+n(b2.dupes), dnc: dnc,
   written: written, writeErrors: writeErrors, writeRequests: resps.length, stamped: stamped, stampErrors: stampErrors,
   covered: covered, zero: plan.plan.length-covered, zeroDomains: zeroDomains,

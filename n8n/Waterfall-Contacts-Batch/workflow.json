@@ -739,7 +739,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 250
+              "batchInterval": 600
             }
           },
           "response": {
@@ -769,7 +769,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "Tier 3, one lane per run, fired by the parent once the writer lane drained and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from that batch's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 250 ms apart, four per second: AI-Ark's ceiling (5 per second, 300 per minute) is global, and since 2026-09-02 nothing else in the run is talking to it. Fed fifty at a time by Ark Windows so the 429 breaker can stop the submission."
+      "notes": "Tier 3, one lane per run, fired by the parent once the writer lane drained and not awaited. AI-Ark Export People with Email (POST /v1/people/export, verified in docs 2026-09-02), one call per company still under its cap after the writer (the held state came with the item, from that batch's recount), size = the gap, held LinkedIn URLs excluded. 0.5 credits per person plus 0.5 per email found. The export's webhook is AI-Ark Export Callback's door with ?run=<parent execution id>; completion is read from the data table that door fills. Paced 600 ms apart, 1.7 per second (was 250 ms, four per second, which is right for one lane and wrong for two): AI-Ark's ceiling of five a second and 300 a minute belongs to the KEY, and four Insert machines call Waterfall Contacts without waiting while it fires this lane without waiting, so two lanes can and do overlap. At 600 ms two concurrent lanes sit under five a second and three sit on it; past that Ark Window Check's back-off carries it. Fed fifty at a time by Ark Windows so that governor sees answers before the next window is submitted."
     },
     {
       "parameters": {
@@ -984,7 +984,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 250
+              "batchInterval": 600
             }
           },
           "response": {
@@ -1011,7 +1011,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
+      "notes": "FREE, one read per export whose statistics the webhook did not settle: a DONE webhook without statistics.found, or no webhook inside the 4-minute cap (the safety net). GET /v1/people/export/{trackId}/statistics (verified in docs): state PENDING | DONE, statistics { total, found }. Paced 600 ms apart, 1.7 per second (was 250 ms): AI-Ark's ceiling of five a second and 300 a minute belongs to the KEY, not to a run, and the lane no longer owns it alone. Free of credits is not free of the ceiling; a 429 here still burns the budget the paid exports need."
     },
     {
       "parameters": {
@@ -1097,7 +1097,7 @@
           "batching": {
             "batch": {
               "batchSize": 1,
-              "batchInterval": 250
+              "batchInterval": 600
             }
           },
           "pagination": {
@@ -1116,7 +1116,7 @@
               "completeExpression": "={{ !$response.body || $response.body.last === true || !Array.isArray($response.body.content) || $response.body.content.length === 0 }}",
               "limitPagesFetched": true,
               "maxRequests": 100,
-              "requestInterval": 250
+              "requestInterval": 600
             }
           },
           "response": {
@@ -1142,7 +1142,7 @@
           "name": "ai-ark"
         }
       },
-      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 250 ms apart, four per second, under the global ceiling the lane owns alone."
+      "notes": "GET /v1/people/export/{trackId}/inquiries?page&size (verified in docs; size max 100), paged until last, only for exports with found > 0 (78 percent return nothing, measured 2026-09-02, and are never fetched). Already paid at submission. Paced 600 ms apart between items and between pages, 1.7 per second (was 250 ms both): AI-Ark's ceiling of five a second and 300 a minute belongs to the KEY, not to a run, and the lane no longer owns it alone."
     },
     {
       "parameters": {
@@ -1271,7 +1271,7 @@
         1980,
         -480
       ],
-      "notes": "Fifty exports per window (about 13 s at 250 ms apart). The window is the granularity the 429 circuit breaker works at: without it the node fires every planned export before anything can look at an answer, which is how execution 7954 burned about 1,679 rate-limited calls. Its done output means every planned export was submitted."
+      "notes": "Fifty exports per window (about 30 s at 600 ms apart). The window is the granularity the rate governor works at: without it the node fires every planned export before anything can look at an answer, which is how execution 7954 burned about 1,679 rate-limited calls. Its done output means every planned export was submitted."
     },
     {
       "parameters": {
@@ -1301,7 +1301,58 @@
         2640,
         -360
       ],
-      "notes": "The circuit breaker: the trailing run of HTTP 429 answers across every window so far. Eight in a row and the lane stops submitting."
+      "notes": "The rate governor. Eight or more HTTP 429 answers in ONE window is a storm; a storm routes through Ark Backoff for a minute and the lane then takes the next window. Only the ninth storm stops it, and Ark Track still counts every company it never submitted as unserved. Was a one-way breaker until 2026-09-03: it stopped on the first storm and abandoned the rest, which is the wrong trade when a 429 costs no credits and only the coverage is lost."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bo1",
+              "leftValue": "={{ $json.backoff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0059-4000-8000-000000000059",
+      "name": "Backoff?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        -240
+      ],
+      "notes": "True means this window stormed and the governor has sleeps left: go through Ark Backoff, then on to Keep Submitting?. False goes straight there. Both branches carry the same item, so Keep Submitting? reads the same stop flag either way."
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "b7a20001-0060-4000-8000-000000000060",
+      "name": "Ark Backoff",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3080,
+        -240
+      ],
+      "webhookId": "b7a20001-aaaa-4000-8000-000000000060",
+      "notes": "One minute, held in memory because it is under n8n's 65 s persistence line. One run of this node per storm slept through: Ark Window Check counts its runs to know how many it has already spent, and Ark Track reads the same count into the run row as Backed off."
     },
     {
       "parameters": {
@@ -1336,7 +1387,7 @@
         2860,
         -360
       ],
-      "notes": "True means stop: eight AI-Ark answers in a row were HTTP 429, so no further export is submitted and Ark Track records the rest as unserved. False takes the next window."
+      "notes": "True means give up: this window stormed and the governor had already slept through its eight minutes, so no further export is submitted and Ark Track records the rest as unserved. False takes the next window, whether or not a minute of back-off was just spent."
     }
   ],
   "connections": {
@@ -1986,6 +2037,35 @@
       ]
     },
     "Ark Window Check": {
+      "main": [
+        [
+          {
+            "node": "Backoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backoff?": {
+      "main": [
+        [
+          {
+            "node": "Ark Backoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Keep Submitting?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Backoff": {
       "main": [
         [
           {

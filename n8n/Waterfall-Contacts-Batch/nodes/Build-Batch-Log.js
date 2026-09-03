@@ -5,8 +5,10 @@
 // pass row landed (the writer's held state stays out of it: it is for the lane, not the log).
 // Status computed: Failed when every paid call in the pass died (the pass did no work; the parent
 // stops launching on a writer's), Succeeded with errors when failed[] is not empty, Succeeded
-// otherwise. A company the lane never submitted because the 429 breaker stopped it counts as a
-// failure of this pass, one per company, so the number is loud instead of buried in prose.
+// otherwise. A company the lane never submitted because the rate governor finally gave up counts
+// as a failure of this pass, one per company, so the number is loud instead of buried in prose.
+// Since 2026-09-03 the governor sleeps through a rate-limit storm and resumes, so unserved is
+// normally zero and the Backed off line is what a contended run reads like.
 // Written before Batch Response answers. The key is unique by construction: batchNum is dealt once
 // by the parent's Make Batches, one lane per run, the parent execution id is n8n's.
 const inp=$('Batch Input').first().json;
@@ -16,7 +18,7 @@ const num=(v)=>Number(v)||0;
 const failed=[];
 const tierName={ contagen:'ContaGen', supersoniq:'Supersoniq', aiark:'AI-Ark' };
 for(const k of ['contagen','supersoniq','aiark']){ const x=s[k]||{}; for(let i=0;i<num(x.errors);i++) failed.push({ tier:tierName[k], reason:x.firstError||'call failed' }); }
-for(let i=0;i<num(s.arkUnserved);i++) failed.push({ tier:'AI-Ark', reason:'company never submitted; the lane stopped after eight rate-limit answers in a row' });
+for(let i=0;i<num(s.arkUnserved);i++) failed.push({ tier:'AI-Ark', reason:'company never submitted; the lane gave up after '+num(s.arkBackoffs)+' rate-limit storms it had already slept through' });
 for(let i=0;i<num(s.writeErrors);i++) failed.push({ tier:'People writer', reason:'row not in the answer' });
 for(let i=0;i<num(s.stampErrors);i++) failed.push({ tier:'Contacts Pulled At stamp', reason:'row not in the answer' });
 let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(inp.startedAt).getTime())/1000)); }catch(e){}
@@ -34,8 +36,9 @@ const lines=[ '**'+head+'**', '',
   '' ];
 if(isArk){
   lines.push(tier('AI-Ark', s.aiark||{}));
-  lines.push('- **Exports:** '+num(s.arkPlanned)+' planned, '+num((s.aiark||{}).called)+' submitted 250 ms apart in windows of fifty, '+num(s.arkDone)+' settled ('+num(s.arkCallbacks)+' by webhook, '+num(s.arkPolled)+' by a statistics read), '+num(s.arkWithPeople)+' with people (results fetched only for those)');
-  if(num(s.arkRateLimited)) lines.push('- **Rate limited:** '+num(s.arkRateLimited)+' export'+(num(s.arkRateLimited)===1?'':'s')+' answered HTTP 429 (AI-Ark allows five per second, 300 per minute, globally)');
+  lines.push('- **Exports:** '+num(s.arkPlanned)+' planned, '+num((s.aiark||{}).called)+' submitted 600 ms apart in windows of fifty, '+num(s.arkDone)+' settled ('+num(s.arkCallbacks)+' by webhook, '+num(s.arkPolled)+' by a statistics read), '+num(s.arkWithPeople)+' with people (results fetched only for those)');
+  if(num(s.arkRateLimited)) lines.push('- **Rate limited:** '+num(s.arkRateLimited)+' export'+(num(s.arkRateLimited)===1?'':'s')+' answered HTTP 429 (AI-Ark allows five per second, 300 per minute, and the ceiling is the key\'s, not this run\'s)');
+  if(num(s.arkBackoffs)) lines.push('- **Backed off:** '+num(s.arkBackoffs)+' time'+(num(s.arkBackoffs)===1?'':'s')+', a minute each, after a window came back rate limited eight times or more; the lane resumed on the next window'+(s.arkStopped?'':' and served every planned company'));
   if(num(s.arkUnserved)) lines.push('- **Unserved:** '+num(s.arkUnserved)+' companies were never submitted');
 }else{
   if(on('ContaGen')) lines.push(tier('ContaGen', s.contagen||{}));
@@ -46,7 +49,7 @@ lines.push('- **Written (rows in the writer\'s answers):** '+num(s.written)+' in
 lines.push('- **Coverage:** '+covered+' of '+companiesIn+' companies with at least one person ('+pct+'%)');
 lines.push('- **Zero-contact companies:** '+num(s.zero)+(zd.length?' ('+zd.slice(0,20).join(', ')+(zd.length>20?', ...':'')+')':''));
 if(!isArk) lines.push('- **Contacts Pulled At stamped:** '+num(s.stamped));
-if(s.arkStopped) lines.push('', '**The AI-Ark lane stopped submitting: eight exports in a row came back HTTP 429. '+num(s.arkUnserved)+' companies were not served and no further call was made.**');
+if(s.arkStopped) lines.push('', '**The AI-Ark lane gave up submitting. It slept through '+num(s.arkBackoffs)+' rate-limit storms, a minute each, and the window after the last one came back rate limited again, so something else is holding the key\'s ceiling. '+num(s.arkUnserved)+' companies were not served and no further call was made.**');
 if(s.allFailed) lines.push('', '**Every paid call in this pass failed after retry.**'+(isArk?'':' The parent launches no further batches.'));
 if(failed.length){
   const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; }

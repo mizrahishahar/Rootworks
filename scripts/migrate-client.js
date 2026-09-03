@@ -340,6 +340,41 @@ const PEOPLE_MAP = [
   // The frozen output of an AI field whose prompt is already gone (the legacy column is plain
   // text, sparkle and all). Carried because it cannot be regenerated, never read by a machine.
   { to: 'ICP Fit', from: ['✨ ICP Fit', 'ICP Fit'] },
+  // Client custom columns on the same footing, added for Piper AI's base 2026-09-03. Piper's six
+  // legacy contact tables carry a decade of hand-built segmentation and frozen AI copy that no
+  // register field has a home for. Same contract as the entries above: mapped by name, a legacy
+  // table without the column contributes nothing, and a target People that lacks the column makes
+  // every non-empty legacy value a counted drop that blocks --apply, so create the columns on
+  // People first. All of them are created as text rather than selects: coerce() matches a select
+  // value against the target's own choices and never mints one, and these columns hold hundreds of
+  // distinct hand-typed values ("Verticals" alone has 346).
+  //   personalised opener  the frozen output of an AI field; the legacy column name carries a
+  //                        trailing space, so both spellings are read. Prompt captured to
+  //                        Clients/Piper AI/Piper AI Airtable AI Field Prompts.md before the run.
+  //   AutorithyLine        the same, the client's spelling of the authority clause. Not regenerable.
+  //   Revenue Band         Piper's "Revenue" is a clean revenue band (1-10M, 10-100M, 100M-1B,
+  //                        >1B, <1M), not the corrupted Flowroots column that put "Revenue" on the
+  //                        accepted-drop list. Carried under its own name so it never reaches
+  //                        Revenue Range, which that ruling forbids. It stays on the accepted-drop
+  //                        list, so the report counts it under acceptedDrops as well as carrying
+  //                        it; that double count is expected, not a loss.
+  { to: 'personalised opener', from: ['personalised opener ', 'personalised opener'] },
+  { to: 'AutorithyLine', from: ['AutorithyLine'] },
+  { to: 'Persona', from: ['Persona'] },
+  { to: 'RankInCompany', from: ['RankInCompany'] },
+  { to: 'Verticals', from: ['Verticals'] },
+  { to: 'Campaign', from: ['Campaign'] },
+  { to: 'Valid', from: ['Valid'] },
+  { to: 'EmailStatus', from: ['EmailStatus'] },
+  { to: 'Revenue Band', from: ['Revenue'] },
+  { to: 'Company Social', from: ['Company Social'] },
+  { to: 'second-part', from: ['second-part'] },
+  { to: 'MV', from: ['MV'] },
+  { to: 'Corrupted', from: ['Corrupted'] },
+  { to: 'Backfill', from: ['Backfill'] },
+  { to: 'Vertical Signal', from: ['Vertical Signal'] },
+  { to: 'Vertical Signal backfilled', from: ['Vertical Signal backfilled'] },
+  { to: 'Not a GC (Dequalified)', from: ['Not a GC (Dequalified)'] },
   { to: 'Company', from: ['Company', 'company_clean'] },
   { to: 'Contact Source', from: ['Contact Source'], alias: SOURCE_ALIAS },
   { to: 'manually_approved', from: ['manually_approved'] },
@@ -376,7 +411,15 @@ const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at'
   //   Company Website  redundant with Domain and dirty ("MD", "https://linkedin.com").
   //   Vendors          the segment definition frozen as a column ("heroku.com" on all 638 rows);
   //                    the Tag carries it.
-  'Revenue', 'Company Website', 'Vendors'];
+  'Revenue', 'Company Website', 'Vendors',
+  // Added 2026-09-03 from the Piper AI base. These are Piper's own spellings of concepts already
+  // ruled out above, named here so the report counts them instead of letting them vanish unread.
+  //   Created              a CREATED_TIME formula on all six legacy tables, redundant with the
+  //                        register's own Build Date.
+  //   Build Date (legacy)  literally the legacy Build Date, on all six tables.
+  //   State Full (calc)    literally State Full, the formula spelling.
+  //   ✨ ICP Fit (2)       an empty second copy of the frozen ICP Fit column, 0 non-empty cells.
+  'Created', 'Build Date (legacy)', 'State Full (calc)', '✨ ICP Fit (2)'];
 // Companies only, ruled out of the register 2026-09-02 alongside Company Status and State Full.
 // Email Pattern has no home on any register table and never will. Email Source is People's alone
 // (the register's Companies lane is Email, MV P0, BB, Final Email, Status); the Companies-side
@@ -443,6 +486,17 @@ function resolveSignal(legacy, signalRows, overrides) {
 
 function coerce(raw, tf, m, ctx) {
   let v = raw;
+  // An Airtable AI field (aiText) never reads back as a bare string: the API returns the envelope
+  // { state, value, isStale }. Unwrap it to the generated text so the value migrates as ordinary
+  // text. Without this the whole envelope lands as a JSON blob, and a cell that never generated
+  // writes the literal string {"state":"empty","value":null,"isStale":true} into the target, which
+  // then reads as data. An envelope carrying no value is nothing to carry, so it skips rather than
+  // writing the string "null". Found on Piper AI's base 2026-09-03, where two frozen AI columns on
+  // the 50+ employees US table (6,910 rows each) migrated as blobs before this.
+  if (v && typeof v === 'object' && !Array.isArray(v) && 'state' in v && 'value' in v) {
+    v = v.value;
+    if (isEmpty(v)) return { ok: false, skip: true };
+  }
   if (Array.isArray(v) && tf.type !== 'multipleRecordLinks' && tf.type !== 'multipleSelects') v = v.filter((x) => !isEmpty(x)).map(String).join(', ');
   switch (tf.type) {
     case 'multipleRecordLinks': {

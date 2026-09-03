@@ -6,9 +6,12 @@
 // Read Batch Rows pulled them by that prefix, and they are summed here (no read-add-write Tally
 // loop in this machine, ruled 2026-09-02). The lane row carries the final coverage of every batch
 // it took and replaces those writer rows' coverage. Pass outcomes come from every Pass Result run,
-// the lane from Ark Lane, the wait verdict from Ark Rows Check, hand-offs from every Fire
-// Waterfall run, the view checks from every Find Waterfall View run. Status computed from
+// the lane from Ark Lane, the wait verdict from Ark Rows Check, the hand-off from the single Fire
+// Waterfall run, the view check from the single Find Waterfall View run. Status computed from
 // failed[], skips separated from errors, Client attached (a run serves exactly one client).
+// The email hand-off is one call per run since 2026-09-03, made after the writer lane drained and
+// the AI-Ark lane's row landed, never once per batch; the counts below are therefore 0 or 1 and
+// this row says which.
 const p=$('Launch Params').first().json;
 let cfg={}; try{ cfg=$('Find Tables').first().json||{}; }catch(e){}
 let pick={ viewRows:0, noDomain:0, duplicate:0, capped:0, picked:0 };
@@ -136,13 +139,13 @@ const skips=skipsEarly.slice();
 if(!companiesIn) lines.push('**Waterfall:** not fired, nothing was pulled');
 else if(fires.length||viewSkips){
   const bits=[];
-  if(fired) bits.push(fired+' hand-off'+(fired===1?'':'s')+' fired to the email door (People view "Not Waterfalled", one after every writer batch and one after the AI-Ark lane\'s row, the door not awaited; the email waterfall writes its own rows)');
-  if(fireFailed) bits.push(fireFailed+' failed');
-  if(viewSkips) bits.push(viewSkips+' skipped, People had no view "Not Waterfalled"');
+  if(fired) bits.push('the hand-off fired once for the whole run'+(fired===1?'':' ('+fired+' calls, which should never happen)')+', to the email door (People view "Not Waterfalled", called after the writer lane drained and the AI-Ark lane\'s row landed, never once per batch; the door is not awaited and the email waterfall writes its own rows)');
+  if(fireFailed) bits.push('the hand-off failed'+(fireFailed===1?'':' ('+fireFailed+' calls)'));
+  if(viewSkips) bits.push('the hand-off was skipped, People had no view "Not Waterfalled"');
   lines.push('**Waterfall:** '+bits.join('; '));
-  if(viewSkips) skips.push('waterfall hand-over skipped '+viewSkips+' time'+(viewSkips===1?'':'s')+', People has no view "Not Waterfalled"');
+  if(viewSkips) skips.push('the waterfall hand-over was skipped, People has no view "Not Waterfalled"');
 }
-else lines.push('**Waterfall:** no hand-off ran (no pass closed)');
+else lines.push('**Waterfall:** the one hand-off did not run (the base meta could not be read, so the view check gave no verdict)');
 if(pick.noDomain) skips.push(num(pick.noDomain)+' view rows without a domain');
 if(pick.duplicate) skips.push(num(pick.duplicate)+' duplicate domains in the view');
 if(pick.capped) skips.push(num(pick.capped)+' view rows beyond Max companies');

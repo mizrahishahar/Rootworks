@@ -120,6 +120,18 @@ const LINKEDIN_NAME_MATCH='IF(AND({LinkedIn URL}, OR({first_name}, {last_name}))
 // reverse. The exclusion filter is Sequencers does-not-contain the campaign's own sender, and only
 // that. Sequencers is a list (a row can link several campaigns), so it is never tested with equals,
 // and a Campaigns-is-empty filter is wrong wherever it appears.
+// Numeric fields a machine writes (Messages Sent, and anything shaped like it) carry a trap: an
+// Airtable formula treats a blank number as 0, so a formula filter written as "field = 0" is
+// correct as intent and needs no change there. Airtable's own filter-builder interface does not:
+// a condition of "field = 0" matches only a literal zero and skips every blank, so a view built
+// from the words alone, by hand in that interface, matches nothing where the field was never
+// written. Any view filtering on a numeric field a machine writes must add the empty case by hand:
+// field = 0 OR field is empty. This does not apply to computed count fields such as Contacts
+// Count: a count always returns a number and is never blank, which is why "Not Covered" (Contacts
+// Count = 0) is unaffected.
+// A grid view's primary field (Name on People, Domain on Companies) is always visible in Airtable
+// and cannot be hidden from a grid view, so a view's `fields` list below is the rest of the visible
+// columns, not the complete set; the primary field being absent from a list here is not drift.
 const view=(name,words,f,fields,sortField)=>({ name, filter:{ words, formula:f }, fields, sort:{ field:sortField||'Build Date', direction:'desc' } });
 const RELEVANT='{relevance} = 1';
 const NOT_WATERFALLED='AND({relevance} = 1, NOT({Status}))';
@@ -195,7 +207,7 @@ const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], field
   view('Not Found','relevance = 1 and Status is no_email_found or error',NOT_FOUND,PEOPLE_EMAILS),
   view('Found','relevance = 1 and Status = done',FOUND,PEOPLE_EMAILS),
   view('Found : Campaigns','relevance = 1 and Status = done',FOUND,PEOPLE_CAMPAIGNS),
-  view('Found : Never Contacted','relevance = 1 and Status = done and Messages Sent = 0','AND({relevance} = 1, {Status} = "done", {Messages Sent} = 0)',PEOPLE_CAMPAIGNS),
+  view('Found : Never Contacted','relevance = 1 and Status = done and (Messages Sent = 0 or Messages Sent is empty). Build the OR group by hand: the filter interface does not treat a blank Messages Sent as 0 the way the formula below does.','AND({relevance} = 1, {Status} = "done", {Messages Sent} = 0)',PEOPLE_CAMPAIGNS),
   view('Signals','relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view',SIGNALS,PEOPLE_SIGNALS,'Signal At')
 ]};
 

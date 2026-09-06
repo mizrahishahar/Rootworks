@@ -1,0 +1,1619 @@
+{
+  "updatedAt": "2026-09-06T14:39:24.189Z",
+  "createdAt": "2026-09-06T14:38:25.172Z",
+  "id": "cRe0TSITWFsXVzhS",
+  "name": "Allocate inboxes in PlusVibe by tags",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Tool Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        -80
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "client",
+              "type": "string"
+            },
+            {
+              "name": "tag",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Allocate Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1120,
+        120
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "allocate-inboxes-by-tag",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "a1000000-0000-4000-8000-0000000000ff"
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        16
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Inputs.js"
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Find Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        16
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "=OR(RECORD_ID() = '{{ $json.client }}', LOWER({Client}) = LOWER('{{ $json.client }}'), LOWER(SUBSTITUTE(SUBSTITUTE({Client}, ' ', ''), '.', '')) = LOWER('{{ $json.clientSlug }}'))",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Resolve Workspace",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        16
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Resolve-Workspace.js"
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Workspace Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        16
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000007",
+      "name": "List Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        -80
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/tags/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000008",
+      "name": "List Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        -80
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/account/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000009",
+      "name": "List Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        -80
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body || []).length || ($response.body || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000a",
+      "name": "Plan Campaigns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Plan-Campaigns.js"
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000b",
+      "name": "Any Campaigns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000c",
+      "name": "Get Campaign Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        -192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000d",
+      "name": "Build Ops",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Ops.js"
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000e",
+      "name": "Any Ops?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -192
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._noop === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-00000000000f",
+      "name": "Apply Op",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        -288
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000010",
+      "name": "Prep Read Back",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Read-Back.js"
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000011",
+      "name": "Read Back Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        -192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000012",
+      "name": "Respond",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        16
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Respond.js"
+      }
+    }
+  ],
+  "connections": {
+    "Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allocate Webhook": {
+      "main": [
+        [
+          {
+            "node": "Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inputs": {
+      "main": [
+        [
+          {
+            "node": "Find Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Client": {
+      "main": [
+        [
+          {
+            "node": "Resolve Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Workspace": {
+      "main": [
+        [
+          {
+            "node": "Workspace Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workspace Found?": {
+      "main": [
+        [
+          {
+            "node": "List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags": {
+      "main": [
+        [
+          {
+            "node": "List Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Accounts": {
+      "main": [
+        [
+          {
+            "node": "List Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Plan Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Any Campaigns?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Campaigns?": {
+      "main": [
+        [
+          {
+            "node": "Get Campaign Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Campaign Accounts": {
+      "main": [
+        [
+          {
+            "node": "Build Ops",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Ops": {
+      "main": [
+        [
+          {
+            "node": "Any Ops?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Ops?": {
+      "main": [
+        [
+          {
+            "node": "Apply Op",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prep Read Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Op": {
+      "main": [
+        [
+          {
+            "node": "Prep Read Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Read Back": {
+      "main": [
+        [
+          {
+            "node": "Read Back Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Back Accounts": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "a27f3c82-f565-4e3c-8139-ce6ce1ec8161",
+  "activeVersionId": "a27f3c82-f565-4e3c-8139-ce6ce1ec8161",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-06T14:38:25.178Z",
+      "createdAt": "2026-09-06T14:38:25.178Z",
+      "role": "workflow:owner",
+      "workflowId": "cRe0TSITWFsXVzhS",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-06T14:39:24.191Z",
+    "createdAt": "2026-09-06T14:39:24.191Z",
+    "versionId": "a27f3c82-f565-4e3c-8139-ce6ce1ec8161",
+    "workflowId": "cRe0TSITWFsXVzhS",
+    "nodes": [
+      {
+        "id": "a1000000-0000-4000-8000-000000000001",
+        "name": "Tool Call",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -1120,
+          -80
+        ],
+        "parameters": {
+          "inputSource": "workflowInputs",
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "client",
+                "type": "string"
+              },
+              {
+                "name": "tag",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000002",
+        "name": "Allocate Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1120,
+          120
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "allocate-inboxes-by-tag",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "webhookId": "a1000000-0000-4000-8000-0000000000ff"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000003",
+        "name": "Inputs",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -896,
+          16
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One shape from either door: the Marvin MCP tool call, or POST /webhook/allocate-inboxes-by-tag.\nconst j = $input.first().json || {};\nconst body = j.body || {};\nconst client = String(j.client || body.client || '').trim();\nconst tag = String(j.tag || body.tag || '').trim();\n// Matches the Hub row whether the caller wrote \"Dave.io\", \"dave io\" or the record id.\nconst clientSlug = client.replace(/[\\s.]/g, '').toLowerCase();\nreturn [{ json: { client, tag, clientSlug } }];\n"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000004",
+        "name": "Find Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -672,
+          16
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "=OR(RECORD_ID() = '{{ $json.client }}', LOWER({Client}) = LOWER('{{ $json.client }}'), LOWER(SUBSTITUTE(SUBSTITUTE({Client}, ' ', ''), '.', '')) = LOWER('{{ $json.clientSlug }}'))",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000005",
+        "name": "Resolve Workspace",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -448,
+          16
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// The client's PlusVibe workspace comes from the Hub registry row, never from a hardcoded map.\nconst inp = $('Inputs').first().json;\nlet row = null;\ntry { const r = $input.first().json; if (r && r.id) row = r; } catch (e) {}\nconst f = (row && row.fields) || row || {};\nconst workspaceId = String(f['PlusVibe Workspace ID'] || '').trim();\nconst clientName = String(f['Client'] || inp.client || '');\nlet error = '';\nif (!inp.client || !inp.tag) error = 'client and tag are both required';\nelse if (!row || !row.id) error = 'no Hub client named ' + inp.client;\nelse if (!workspaceId) error = clientName + ' has no PlusVibe Workspace ID on its Hub row';\nreturn [{\n  json: {\n    ok: !error,\n    error,\n    client: clientName,\n    tag: inp.tag,\n    workspaceId,\n    clientRecId: row && row.id ? String(row.id) : '',\n  },\n}];\n"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000006",
+        "name": "Workspace Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -224,
+          16
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.ok === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000007",
+        "name": "List Tags",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          0,
+          -80
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/tags/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "executeOnce": true
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000008",
+        "name": "List Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          -80
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/account/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1200
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "executeOnce": true
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000009",
+        "name": "List Campaigns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          448,
+          -80
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/campaign/list-all",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Resolve Workspace').first().json.workspaceId }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body || []).length || ($response.body || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1200
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "executeOnce": true
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000a",
+        "name": "Plan Campaigns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          -80
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Resolve the tag, its member inboxes, and the campaigns that wear it.\n// The plan rides on every emitted item; nothing here uses workflow static data, so two\n// concurrent tool calls on different clients cannot race each other.\nconst ctx = $('Resolve Workspace').first().json;\nconst wanted = String(ctx.tag || '').toLowerCase();\n\nlet tagItems = [];\ntry { tagItems = $('List Tags').all().map(i => i && i.json).filter(Boolean); } catch (e) {}\nconst tags = [];\nfor (const t of tagItems) {\n  if (Array.isArray(t)) tags.push(...t);\n  else if (Array.isArray(t.tags)) tags.push(...t.tags);\n  else if (t && t._id) tags.push(t);\n}\nconst tagRow = tags.find(t => String(t.name || '').toLowerCase() === wanted);\nconst tagId = tagRow ? String(tagRow._id) : '';\n\nlet pages = [];\ntry { pages = $('List Accounts').all().map(i => i && i.json).filter(Boolean); } catch (e) {}\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nconst lower = (s) => String(s || '').toLowerCase();\nconst tagged = tagId ? accounts.filter(a => Array.isArray((a.payload || {}).tags) && a.payload.tags.map(String).includes(tagId)) : [];\n// The API refuses campaign edits on an account in ERROR, so it is never offered as an add.\nconst uniq = (a) => [...new Set(a)];\nconst skipped = uniq(tagged.filter(a => String(a.status || '') === 'ERROR').map(a => a.email));\nconst members = uniq(tagged.filter(a => String(a.status || '') !== 'ERROR').map(a => lower(a.email)));\nconst taggedAll = uniq(tagged.map(a => lower(a.email)));\n\nlet cpages = [];\ntry { cpages = $('List Campaigns').all().map(i => i && i.json).filter(Boolean); } catch (e) {}\nconst camps = [];\nfor (const p of cpages) {\n  if (Array.isArray(p)) camps.push(...p);\n  else if (Array.isArray(p.campaigns)) camps.push(...p.campaigns);\n  else if (p && (p.id || p._id)) camps.push(p);\n}\nconst LIVE = ['ACTIVE', 'PAUSED', 'DRAFT'];\nconst seenCamp = new Set();\nconst live = camps.filter(c => {\n  if (!LIVE.includes(String(c.status || '').toUpperCase())) return false;\n  const id = String(c.id || c._id);\n  if (seenCamp.has(id)) return false;\n  seenCamp.add(id);\n  return true;\n});\n\n// A campaign can carry tags of its own; when it does, that is the selection. PlusVibe leaves\n// this array empty in every Flowroots workspace measured so far, so the fallbacks below are\n// what actually fires, and the mode is reported back so the caller knows which one ran.\nconst byTag = tagId ? live.filter(c => Array.isArray(c.tags) && c.tags.map(String).includes(tagId)) : [];\nlet selected = byTag;\nlet mode = 'campaigns labelled with the tag';\nif (!byTag.length) {\n  if (wanted === 'gateway') {\n    selected = live.filter(c => / - Gateway$/i.test(String(c.camp_name || '')));\n    mode = 'no campaign carries the tag, so: non-completed campaigns whose name ends \" - Gateway\"';\n  } else if (wanted === 'active') {\n    selected = live.filter(c => String(c.status || '').toUpperCase() === 'ACTIVE');\n    mode = 'no campaign carries the tag, so: every ACTIVE campaign';\n  } else {\n    selected = [];\n    mode = 'no campaign carries the tag and this tag has no name-based fallback';\n  }\n}\n\nconst plan = {\n  workspaceId: ctx.workspaceId,\n  client: ctx.client,\n  tag: ctx.tag,\n  tagId,\n  tagFound: !!tagId,\n  members,\n  taggedAll,\n  skipped,\n  mode,\n  accountsSeen: accounts.length,\n  campaigns: selected.map(c => ({ id: String(c.id || c._id), name: String(c.camp_name || ''), status: String(c.status || '') })),\n};\n\nconst base = 'https://api.plusvibe.ai/api/v1/campaign/get/accounts?workspace_id=' + ctx.workspaceId + '&campaign_id=';\nif (!plan.campaigns.length) return [{ json: { _empty: true, _plan: plan } }];\nreturn plan.campaigns.map(c => ({ json: { campaign_id: c.id, name: c.name, status: c.status, url: base + c.id, _plan: plan } }));\n"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000b",
+        "name": "Any Campaigns?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          896,
+          -80
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000c",
+        "name": "Get Campaign Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          -192
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000d",
+        "name": "Build Ops",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          -192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// The diff, one operation per item. A campaign already carrying exactly the tag's members\n// produces no operations at all, which is what makes this read-only when nothing differs.\nconst camps = $('Plan Campaigns').all().map(i => i.json);\nconst plan = camps[0]._plan;\nlet res = [];\ntry { res = $('Get Campaign Accounts').all().map(i => i && i.json); } catch (e) {}\n\nconst ops = [];\nconst perCampaign = [];\ncamps.forEach((c, i) => {\n  const r = res[i] || {};\n  const st = r.statusCode;\n  const ok = st === undefined ? false : (st >= 200 && st < 300);\n  const raw = r.body === undefined ? r : r.body;\n  const cur = Array.isArray(raw) ? [...new Set(raw.map(e => String(e || '').toLowerCase()))] : [];\n  const missing = ok ? plan.members.filter(m => !cur.includes(m)) : [];\n  const extra = ok ? cur.filter(e => !plan.taggedAll.includes(e)) : [];\n  perCampaign.push({ id: c.campaign_id, name: c.name, status: c.status, read_ok: ok, before_count: cur.length, missing, extra });\n  for (const email of missing) ops.push({ campaign_id: c.campaign_id, name: c.name, op: 'add', email, url: 'https://api.plusvibe.ai/api/v1/campaign/add/account', body: { workspace_id: plan.workspaceId, campaign_id: c.campaign_id, email } });\n  for (const email of extra) ops.push({ campaign_id: c.campaign_id, name: c.name, op: 'remove', email, url: 'https://api.plusvibe.ai/api/v1/campaign/remove/account', body: { workspace_id: plan.workspaceId, campaign_id: c.campaign_id, email } });\n});\n\nconst carry = { _plan: plan, _campaigns: perCampaign };\nif (!ops.length) return [{ json: Object.assign({ _noop: true }, carry) }];\nreturn ops.map(o => ({ json: Object.assign({}, o, carry) }));\n"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000e",
+        "name": "Any Ops?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1568,
+          -192
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._noop === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-00000000000f",
+        "name": "Apply Op",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1792,
+          -288
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000010",
+        "name": "Prep Read Back",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2016,
+          -192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Pair each operation with its response, then hand one read-back call per campaign forward.\n// Reached both from Apply Op and, when the diff was empty, straight from the Any Ops? gate.\nconst camps = $('Plan Campaigns').all().map(i => i.json);\nconst plan = camps[0]._plan;\n\nlet opsIn = [];\ntry { opsIn = $('Build Ops').all().map(i => i.json).filter(o => o && !o._noop); } catch (e) {}\nlet opsRes = [];\ntry { opsRes = $('Apply Op').all().map(i => i && i.json); } catch (e) {}\n\nconst applied = opsIn.map((o, i) => {\n  const r = opsRes[i] || {};\n  const st = r.statusCode;\n  const ok = st !== undefined && st >= 200 && st < 300;\n  const raw = r.body === undefined ? r : r.body;\n  const msg = raw && (raw.message || raw.error) ? String(raw.message || raw.error) : ('HTTP ' + st);\n  return { campaign_id: o.campaign_id, op: o.op, email: o.email, ok, error: ok ? '' : msg };\n});\n\nconst base = 'https://api.plusvibe.ai/api/v1/campaign/get/accounts?workspace_id=' + plan.workspaceId + '&campaign_id=';\nreturn camps.map(c => ({ json: { campaign_id: c.campaign_id, name: c.name, url: base + c.campaign_id, _plan: plan, _applied: applied } }));\n"
+        }
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000011",
+        "name": "Read Back Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2240,
+          -192
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000012",
+        "name": "Respond",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          16
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// The single response item, for both doors. Every count here comes from the read-back, never\n// from the write responses: the API returns success while dropping accounts.\nconst ctx = $('Resolve Workspace').first().json;\nconst fail = (error) => [{ json: { ok: false, client: ctx.client, tag: ctx.tag, error, members: [], campaigns: [] } }];\nif (!ctx.ok) return fail(ctx.error);\n\nlet plan = null;\ntry { plan = $('Plan Campaigns').first().json._plan; } catch (e) {}\nif (!plan) return fail('the plan was never built');\nif (!plan.tagFound) return fail('no tag named \"' + ctx.tag + '\" in this workspace');\n\nlet prep = [];\ntry { prep = $('Prep Read Back').all().map(i => i.json); } catch (e) {}\nlet back = [];\ntry { back = $('Read Back Accounts').all().map(i => i && i.json); } catch (e) {}\nlet before = [];\ntry { before = $('Build Ops').first().json._campaigns || []; } catch (e) {}\nconst applied = prep.length ? (prep[0]._applied || []) : [];\n\nconst campaigns = plan.campaigns.map((c) => {\n  const i = prep.findIndex(p => p.campaign_id === c.id);\n  const r = i > -1 ? (back[i] || {}) : {};\n  const raw = r.body === undefined ? r : r.body;\n  const finalList = Array.isArray(raw) ? [...new Set(raw.map(e => String(e || '').toLowerCase()))] : null;\n  const mine = applied.filter(a => a.campaign_id === c.id);\n  const b = before.find(x => x.id === c.id) || {};\n  return {\n    id: c.id,\n    name: c.name,\n    status: c.status,\n    added: mine.filter(a => a.op === 'add' && a.ok).map(a => a.email),\n    removed: mine.filter(a => a.op === 'remove' && a.ok).map(a => a.email),\n    failed: mine.filter(a => !a.ok).map(a => ({ op: a.op, email: a.email, error: a.error })),\n    final_count: finalList ? finalList.length : null,\n    // True only when the read-back is exactly the tag's membership: the only real proof.\n    matches_tag: finalList ? (plan.members.every(m => finalList.includes(m)) && finalList.every(e => plan.taggedAll.includes(e))) : null,\n    read_ok: b.read_ok === undefined ? null : b.read_ok,\n  };\n});\n\nreturn [{\n  json: {\n    ok: true,\n    client: ctx.client,\n    tag: ctx.tag,\n    selection: plan.mode,\n    members: plan.members,\n    skipped_error_status: plan.skipped,\n    campaigns,\n  },\n}];\n"
+        }
+      }
+    ],
+    "connections": {
+      "Tool Call": {
+        "main": [
+          [
+            {
+              "node": "Inputs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Allocate Webhook": {
+        "main": [
+          [
+            {
+              "node": "Inputs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Inputs": {
+        "main": [
+          [
+            {
+              "node": "Find Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Client": {
+        "main": [
+          [
+            {
+              "node": "Resolve Workspace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Workspace": {
+        "main": [
+          [
+            {
+              "node": "Workspace Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Workspace Found?": {
+        "main": [
+          [
+            {
+              "node": "List Tags",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Tags": {
+        "main": [
+          [
+            {
+              "node": "List Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Accounts": {
+        "main": [
+          [
+            {
+              "node": "List Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Plan Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Any Campaigns?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Campaigns?": {
+        "main": [
+          [
+            {
+              "node": "Get Campaign Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Campaign Accounts": {
+        "main": [
+          [
+            {
+              "node": "Build Ops",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Ops": {
+        "main": [
+          [
+            {
+              "node": "Any Ops?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Ops?": {
+        "main": [
+          [
+            {
+              "node": "Apply Op",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prep Read Back",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply Op": {
+        "main": [
+          [
+            {
+              "node": "Prep Read Back",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Read Back": {
+        "main": [
+          [
+            {
+              "node": "Read Back Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Back Accounts": {
+        "main": [
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

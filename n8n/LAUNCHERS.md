@@ -14,6 +14,7 @@ Do not hand-edit; rerun the script after every pull.
 | AI-Ark-Export---Clayroots | POST https://n8n.flowroots.com/webhook/launch-aiark-contacts | Clayroots Base ID, Build name, AI-Ark contacts CSV (file), Domains Table ID, Existing Table ID, Tag | **yes - launch on Waiting** |
 | AI-Ark-Export-Callback | POST https://n8n.flowroots.com/webhook/ai-ark-export-noop |  | no |
 | Airtable-Ops-one-off | POST https://n8n.flowroots.com/webhook/get-view-meta <br> POST https://n8n.flowroots.com/webhook/add-fields-to-table <br> POST https://n8n.flowroots.com/webhook/patch-records <br> POST https://n8n.flowroots.com/webhook/create-records <br> POST https://n8n.flowroots.com/webhook/list-records |  | no |
+| Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |
 | Alta-OAuth-Callback | GET https://n8n.flowroots.com/webhook/alta-oauth-callback |  | no |
 | Alta-Ops-one-off | POST https://n8n.flowroots.com/webhook/alta-list-prospects <br> POST https://n8n.flowroots.com/webhook/alta-persons <br> POST https://n8n.flowroots.com/webhook/alta-pause-prospects |  | no |
 | Append-fields-to-table | POST https://n8n.flowroots.com/webhook/launch-domain-merge | Clayroots Base ID, Table, Key column, Fields to attach, Domain CSV (file) | **yes - launch on Waiting** |
@@ -22,6 +23,7 @@ Do not hand-edit; rerun the script after every pull.
 | Contagen---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-contagen-supersoniq | Clayroots Base ID, Build name, ContaGen contacts CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
 | Create-Client-Rootworks-Infrastructure | GET https://n8n.flowroots.com/webhook/client/onboard |  | no |
 | Create-PlusVibe-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |
+| Create-health-report-for-inboxes | POST https://n8n.flowroots.com/webhook/launch-inbox-health |  | no |
 | Deploy-View-to-Alta-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-alta |  | no |
 | Deploy-View-to-Email-Bison-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-bison-campaign |  | no |
 | Deploy-View-to-PlusVibe-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |

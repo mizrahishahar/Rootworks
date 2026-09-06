@@ -54,6 +54,12 @@ This file is what the tables ARE; what they mean lives in their own descriptions
 | ClayrootsPeopleTableID | `fldAkkVBD6fLBA9my` | singleLineText | The client's People table id (tbl...) in their ClayRoots base. Set at onboarding. |
 | ClayrootsCompaniesSharedView | `fldu7gE5tnsJsS7qc` | url | The share link of the client's Companies table (was the table description). What we send the client; they filter by campaign there. Replaces per-deploy lead-list links. |
 | ClayrootsPeopleSharedView | `fldVXKc6ToYeWNGEo` | url | The share link of the client's People table (was the table description). What we send the client; they filter by campaign there. Replaces per-deploy lead-list links. |
+| Active Mailboxes | `fldDij24muLey9zet` | number | Inboxes carrying the active tag and connected on the sender platform, at the last review. Written by Create health report for inboxes. |
+| Active Capacity | `fldThyNI1EJiflwr7` | number | Sum of the daily limits of the active mailboxes: what the client can send a day. Provider-agnostic, each inbox's own limit. Written by Create health report for inboxes. |
+| Not Active Mailboxes | `fldS4FNEeuQ1c8oRl` | number | Inboxes in the workspace without the active tag: the reserve. Written by Create health report for inboxes. |
+| Not Active Capacity | `fldk32dbGZrQcni9u` | number | Sum of the daily limits of the not-active mailboxes. Written by Create health report for inboxes. |
+| Reserve Ratio | `fldKX8pdYiCAH1u6z` | percent | Not Active Capacity divided by Active Capacity. The standard is at least 50%; below it the report says how many mailboxes short. Written by Create health report for inboxes. |
+| Last Inbox Review | `fldGcGMqCSodqQS2n` | dateTime | Last run of Create health report for inboxes for this client. |
 
 ## KB Files (`tblJAWVcCaW6TmfbC`)
 
@@ -149,7 +155,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Enrich & Qualify new lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Enrich & Qualify new lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to PlusVibe Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Enrich & Qualify new lead from Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Waterfall Contacts, Scaffold Client Base, Waterfall Contacts Batch, BounceBan Poller, Deploy View to Alta Campaign, Insert Storeleads domains to Clayroots, Sync Not Interested to DNC, Schedule Live View Deploys, Insert Hiring domains to Clayroots, Sync Email Bison Campaigns to Hub |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Enrich & Qualify new lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Enrich & Qualify new lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to PlusVibe Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Enrich & Qualify new lead from Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Waterfall Contacts, Scaffold Client Base, Waterfall Contacts Batch, BounceBan Poller, Deploy View to Alta Campaign, Insert Storeleads domains to Clayroots, Sync Not Interested to DNC, Schedule Live View Deploys, Insert Hiring domains to Clayroots, Sync Email Bison Campaigns to Hub, Create Client Rootworks Infrastructure, Deploy View to Email Bison Campaign, Create health report for inboxes, Insert Reviews domains to Clayroots |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -460,6 +466,7 @@ One row per PlusVibe sending inbox, upserted by Account ID. Mirrors Campaigns: c
 | Tags | `fldZjFfx5Nwk87pig` | singleLineText | PlusVibe tag names for this inbox, comma-separated. |
 | Domain Link | `fldyDd6rEmi9krZnd` | multipleRecordLinks |  |
 | Domain Replies (All-Time) | `fldD0coC7Xva5qRpG` | multipleLookupValues |  |
+| Drift | `fldfiWGg1Pu3XTwVm` | multilineText | Settings on this inbox that are off the provisioning standard for its provider, one per line (e.g. tracking domain set, daily limit 20). Empty = on standard. Written by Create health report for inboxes. |
 
 ## Domains (`tbltRqDRQm0YQy3tQ`)
 
@@ -478,6 +485,18 @@ One row per sending domain per client, linked from Inboxes. Rollups aggregate al
 | Inbox Count | `fldqTcJgXmMpco4dq` | count |  |
 | Tags | `fldN6oLszhN7LeXdb` | rollup |  |
 | OOO Replies (All-Time) | `fldX3AwY7fwORQs1D` | rollup |  |
+| Batch | `fldmUkA4FgyaJPljb` | singleLineText | The {client}-{n} batch tag this domain's inboxes carry on the sender platform. Written by Create health report for inboxes. |
+| Active | `fld53nz4xJsGB5Y4w` | checkbox | True when the domain's inboxes carry the active tag on the sender platform. Written by Create health report for inboxes. |
+| First 500 Replies | `fldVzrpBSdaKUFOuS` | number | Human replies (replies minus OOO) in the domain's first 500 sends, both inboxes together. Empty until the domain has sent 500. Written by Create health report for inboxes. |
+| Last 500 Replies | `fldHDXvX8rH79oLpx` | number | Human replies in the domain's most recent 500 sends, both inboxes together. Empty until the domain has sent 500. Written by Create health report for inboxes. |
+| Warmup Min | `fldGKx55p0OONEuWE` | number | Lowest 7-day warmup health score across the domain's inboxes. Written by Create health report for inboxes. |
+| Oldest Inbox Days | `fldTZgaYfFCQ40t6H` | number | Age in days of the domain's oldest inbox on the sender platform. The warmup flag needs 21+. Written by Create health report for inboxes. |
+| SURBL | `fldqbbTo08B8c8cAc` | singleSelect | Last SURBL result for the domain (multi.surbl.org via 8.8.8.8, with controls). Governs gateway tag membership only; listed does not mean burned. Written by Create health report for inboxes. - Choices: clean, listed, unknown |
+| Flags | `fldMlpuSJSa1PoMYb` | multipleSelects | The flags raised on the last review. Never landed = 0 replies on the first 500 sends. Gone quiet = 0 replies on the last 500. Warmup = score under 90 past 21 days. Listed = SURBL. Drift = a setting off the provisioning standard. Disconnected = an inbox not ACTIVE. Flags only; a kill is Shahar's decision. Written by Create health report for inboxes. - Choices: Never landed, Gone quiet, Warmup, Listed, Drift, Disconnected |
+| Flag Reason | `flddPfH5AjRU4UkYd` | multilineText | One line per flag with the exact number behind it, as shown in the Slack report. Written by Create health report for inboxes. |
+| Flagged On | `fldQAu3DdEwwlNEI5` | date | The first review that raised any flag on this domain. Set once, never overwritten; cleared by hand when the domain is cleared or killed. |
+| Killed On | `fldDWspb2uANhxcj9` | date | Set by the kill procedure in session, after forwarding is on and the inboxes are out of the sender platform. Killed is final. |
+| Last Reviewed | `fld2SeQn519iSm6PX` | dateTime | Last run of Create health report for inboxes that touched this row. |
 
 ## Credits (`tblVhx3LWFm5Ot6Jg`)
 

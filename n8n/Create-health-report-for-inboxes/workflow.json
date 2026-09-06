@@ -1,0 +1,2861 @@
+{
+  "updatedAt": "2026-09-06T14:59:11.323Z",
+  "createdAt": "2026-09-06T14:48:01.455Z",
+  "id": "ZiFFAMPpt62Amata",
+  "name": "Create health report for inboxes",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "b2000000-0000-4000-8000-000000000001",
+      "name": "Weekly Mon 07:00 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000002",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1344,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-inbox-health",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "b2000000-0000-4000-8000-0000000000ff"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000003",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1120,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000004",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000005",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000006",
+      "name": "Get PV Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        120
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "{PlusVibe Workspace ID} != ''",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000007",
+      "name": "Prep Client Loop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Client-Loop.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000008",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000009",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        224,
+        120
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000a",
+      "name": "Start Client Work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        288
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Start-Client-Work.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000b",
+      "name": "List Email Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        288
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/account/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000c",
+      "name": "List Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        288
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/tags/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000d",
+      "name": "Get Hub Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        288
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbltRqDRQm0YQy3tQ"
+        },
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain",
+            "Flagged On",
+            "Killed On"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000e",
+      "name": "Prep Stat Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        288
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Stat-Calls.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000f",
+      "name": "Account Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        288
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000010",
+      "name": "Prep SURBL Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        288
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-SURBL-Calls.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000011",
+      "name": "SURBL Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        288
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000012",
+      "name": "Compute",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        288
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Compute.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000013",
+      "name": "Any Inboxes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        288
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000014",
+      "name": "Upsert Inbox Drift",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblgdmibPyC2dRlVK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Account ID"
+          ],
+          "schema": [],
+          "value": {
+            "Account ID": "={{ $json[\"Account ID\"] }}",
+            "Drift": "={{ $json.Drift }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000015",
+      "name": "Prep Domain Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Domain-Rows.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000016",
+      "name": "Upsert Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbltRqDRQm0YQy3tQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Domain"
+          ],
+          "schema": [],
+          "value": {
+            "Domain": "={{ $json.Domain }}",
+            "Client": "={{ $json.Client }}",
+            "Batch": "={{ $json.Batch }}",
+            "Active": "={{ $json.Active }}",
+            "First 500 Replies": "={{ $json[\"First 500 Replies\"] }}",
+            "Last 500 Replies": "={{ $json[\"Last 500 Replies\"] }}",
+            "Warmup Min": "={{ $json[\"Warmup Min\"] }}",
+            "Oldest Inbox Days": "={{ $json[\"Oldest Inbox Days\"] }}",
+            "SURBL": "={{ $json.SURBL }}",
+            "Flags": "={{ $json.Flags }}",
+            "Flag Reason": "={{ $json[\"Flag Reason\"] }}",
+            "Flagged On": "={{ $json[\"Flagged On\"] }}",
+            "Last Reviewed": "={{ $json[\"Last Reviewed\"] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000017",
+      "name": "Prep Client Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Client-Row.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000018",
+      "name": "Update Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3584,
+        192
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json.id }}",
+            "Active Mailboxes": "={{ $json[\"Active Mailboxes\"] }}",
+            "Active Capacity": "={{ $json[\"Active Capacity\"] }}",
+            "Not Active Mailboxes": "={{ $json[\"Not Active Mailboxes\"] }}",
+            "Not Active Capacity": "={{ $json[\"Not Active Capacity\"] }}",
+            "Reserve Ratio": "={{ $json[\"Reserve Ratio\"] }}",
+            "Last Inbox Review": "={{ $json[\"Last Inbox Review\"] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000019",
+      "name": "Prep Gateway Ops",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Gateway-Ops.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001a",
+      "name": "Any Gateway Ops?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4032,
+        192
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._noop === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001b",
+      "name": "Bulk Assign Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4256,
+        96
+      ],
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.plusvibe.ai/api/v1/account/bulk-assign-tags",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001c",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4480,
+        288
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001d",
+      "name": "Build Slack Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Slack-Message.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001e",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -96
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.channel }}"
+        },
+        "messageType": "text",
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "webhookId": "c05374ca-3637-491f-bd28-63cc34ff6d10"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001f",
+      "name": "Prep Allocate Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Allocate-Calls.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000020",
+      "name": "Fire Allocate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        -96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 600000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000021",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000022",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -96
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Weekly Mon 07:00 IL": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get PV Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PV Clients": {
+      "main": [
+        [
+          {
+            "node": "Prep Client Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Client Loop": {
+      "main": [
+        [
+          {
+            "node": "Any Clients?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "Build Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Client Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Client Work": {
+      "main": [
+        [
+          {
+            "node": "List Email Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Email Accounts": {
+      "main": [
+        [
+          {
+            "node": "List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags": {
+      "main": [
+        [
+          {
+            "node": "Get Hub Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hub Domains": {
+      "main": [
+        [
+          {
+            "node": "Prep Stat Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Stat Calls": {
+      "main": [
+        [
+          {
+            "node": "Account Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Account Stats": {
+      "main": [
+        [
+          {
+            "node": "Prep SURBL Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep SURBL Calls": {
+      "main": [
+        [
+          {
+            "node": "SURBL Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SURBL Lookup": {
+      "main": [
+        [
+          {
+            "node": "Compute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute": {
+      "main": [
+        [
+          {
+            "node": "Any Inboxes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Inboxes?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Inbox Drift",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Inbox Drift": {
+      "main": [
+        [
+          {
+            "node": "Prep Domain Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Domain Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Domains": {
+      "main": [
+        [
+          {
+            "node": "Prep Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Client Row": {
+      "main": [
+        [
+          {
+            "node": "Update Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client": {
+      "main": [
+        [
+          {
+            "node": "Prep Gateway Ops",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Gateway Ops": {
+      "main": [
+        [
+          {
+            "node": "Any Gateway Ops?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Gateway Ops?": {
+      "main": [
+        [
+          {
+            "node": "Bulk Assign Tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bulk Assign Tags": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Slack": {
+      "main": [
+        [
+          {
+            "node": "Prep Allocate Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Allocate Calls": {
+      "main": [
+        [
+          {
+            "node": "Fire Allocate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Allocate": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Weekly Mon 07:00 IL": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "launch": {
+        "recordId": "rec6Zx9mMgNWr6j4V",
+        "trigger": "form",
+        "clientFilter": "reclCOYRBgMowJd8G",
+        "startedAt": 1788706774419
+      },
+      "results": [
+        {
+          "client": "Dave.io",
+          "isPool": false,
+          "slackChannel": "C0BF4G4M90D",
+          "inboxes": 50,
+          "domains": 25,
+          "flagged": 25,
+          "assigned": 0,
+          "unassigned": 0,
+          "surblNote": "",
+          "block": "📬 *Inbox health · Dave.io · Sun 6 Sep*\n\n*Active* · 40 mailboxes · 1000 a day\n*Not active* · 10 mailboxes · 200 a day\n*Reserve* · 20% of active · Short by 12 mailboxes\n\n🚩 *Flags* · checked on active and not active alike\n\n*_Never landed_* · 0 replies on the first 500 sends\n• daveinfra.com · active · 0 of 540\n• daveioops.com · active · 0 of 540\n\n*_Gone quiet_* · 0 replies on the last 500 sends\n• davedeploy.com · active · 0 of 500\n• daveioworks.com · active · 0 of 500\n• getdaveteam.com · active · 0 of 500\n• rundaveio.com · active · 0 of 500\n\n*_Warmup under 90_* · mailbox older than 21 days\n• davedeploy.com · active · 89.63\n• daveinfra.com · active · 89.7\n• daveiolabs.com · active · 88.65\n• godaveio.com · active · 89.1\n\n*_SURBL listed_*\n• davecloudops.com · not active\n• davedeploy.com · active\n• daveinfraops.com · not active\n• daveiocloud.com · not active\n• daveiodeploy.com · not active\n• daveiolabs.com · active\n• daveioops.com · active\n• daveopshq.com · active\n• getdaveops.com · active\n• getdaveteam.com · active\n• godaveio.com · active\n• outboundsignalhq.com · active\n• usedaveio.com · active\n\n*_Drift_* · setting off the standard\n• 30 mailboxes · active · sending gap 8, standard 11 to 15\n• 10 mailboxes · active · sending gap 20, standard 11 to 15\n• 10 mailboxes · active · tracking domain set\n• 10 mailboxes · not active · daily limit 20, standard 25\n• 10 mailboxes · not active · sending gap 20, standard 11 to 15\n• 10 mailboxes · not active · tracking domain set\n\n*_Disconnected_*\n• none",
+          "failed": []
+        }
+      ],
+      "scope": "one client (on demand)"
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "eb20dbb3-ce43-473b-9f6b-486c467bed3d",
+  "activeVersionId": "eb20dbb3-ce43-473b-9f6b-486c467bed3d",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-09-06T14:48:01.462Z",
+      "createdAt": "2026-09-06T14:48:01.462Z",
+      "role": "workflow:owner",
+      "workflowId": "ZiFFAMPpt62Amata",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-06T14:59:11.353Z",
+    "createdAt": "2026-09-06T14:59:11.353Z",
+    "versionId": "eb20dbb3-ce43-473b-9f6b-486c467bed3d",
+    "workflowId": "ZiFFAMPpt62Amata",
+    "nodes": [
+      {
+        "id": "b2000000-0000-4000-8000-000000000001",
+        "name": "Weekly Mon 07:00 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -448,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "triggerAtDay": [
+                  1
+                ],
+                "triggerAtHour": 7,
+                "triggerAtMinute": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000002",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1344,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-inbox-health",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "b2000000-0000-4000-8000-0000000000ff"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000003",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1120,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000004",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -896,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000005",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -672,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000006",
+        "name": "Get PV Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -448,
+          120
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "{PlusVibe Workspace ID} != ''",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000007",
+        "name": "Prep Client Loop",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -224,
+          120
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Every client with a PlusVibe workspace, the Flowroots pool last so its block closes the report.\nconst sd = $getWorkflowStaticData('global');\nsd.results = [];\nconst launch = sd.launch || {};\nconst cf = String(launch.clientFilter || '');\nconst all = $('Get PV Clients').all().filter(it => it.json && it.json.id);\nconst picked = cf ? all.filter(it => it.json.id === cf) : all;\nsd.scope = cf ? (picked.length ? 'one client (on demand)' : 'client filter matched no PlusVibe client') : 'all clients';\n// A loop node that receives nothing never runs, so an empty pick still has to reach the close.\nif (!picked.length) return [{ json: { _empty: true } }];\nconst rows = picked.map(it => {\n  const j = it.json; const f = j.fields || j;\n  const name = String(f['Client'] || '');\n  return {\n    clientRecId: j.id,\n    clientName: name,\n    isPool: name.toLowerCase() === 'flowroots',\n    pvWorkspace: String(f['PlusVibe Workspace ID'] || '').trim(),\n    slackChannel: String(f['Slack Channel ID'] || '').trim(),\n  };\n});\nrows.sort((a, b) => (a.isPool === b.isPool ? a.clientName.localeCompare(b.clientName) : (a.isPool ? 1 : -1)));\nreturn rows.map(r => ({ json: r }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000008",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          0,
+          120
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000009",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          224,
+          120
+        ],
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000a",
+        "name": "Start Client Work",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          288
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "return $input.all();\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000b",
+        "name": "List Email Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          672,
+          288
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/account/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1200
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000c",
+        "name": "List Tags",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          896,
+          288
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/tags/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000d",
+        "name": "Get Hub Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          288
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbltRqDRQm0YQy3tQ"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain",
+              "Flagged On",
+              "Killed On"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000e",
+        "name": "Prep Stat Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          288
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One email-stats call per (inbox, window). Eleven windows per inbox: forward from the day the\n// inbox was created at 7/14/30/60/90 days, backward from today at the same, plus all-time.\n// Windows that collapse onto the same span (a young inbox's 60- and 90-day forward window is\n// all-time) are called once; the full window map rides on the first item so nothing has to\n// recompute it downstream.\nconst cw = $('Loop Over Clients').first().json;\nconst pages = $('List Email Accounts').all().map(i => i && i.json).filter(j => j && typeof j === 'object');\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\n\nconst today = $now.setZone('Asia/Jerusalem').startOf('day');\nconst todayS = today.toFormat('yyyy-MM-dd');\nconst NS = [7, 14, 30, 60, 90];\nconst windows = {};\nconst calls = [];\nconst seen = new Set();\n\nfor (const a of accounts) {\n  const iso = String(a.timestamp_created || '');\n  let created = iso ? DateTime.fromISO(iso).setZone('Asia/Jerusalem').startOf('day') : today;\n  if (!created.isValid || created > today) created = today;\n  const createdS = created.toFormat('yyyy-MM-dd');\n  const ws = [];\n  for (const n of NS) {\n    const e = created.plus({ days: n });\n    ws.push({ key: 'f' + n, start: createdS, end: (e > today ? today : e).toFormat('yyyy-MM-dd') });\n  }\n  for (const n of NS) {\n    const s = today.minus({ days: n });\n    ws.push({ key: 'b' + n, start: (s < created ? created : s).toFormat('yyyy-MM-dd'), end: todayS });\n  }\n  ws.push({ key: 'all', start: createdS, end: todayS });\n  windows[a.id] = ws.map(w => ({ key: w.key, span: w.start + '|' + w.end }));\n  for (const w of ws) {\n    const span = w.start + '|' + w.end;\n    const id = a.id + '|' + span;\n    if (seen.has(id)) continue;\n    seen.add(id);\n    calls.push({\n      accountId: a.id,\n      span,\n      url: 'https://api.plusvibe.ai/api/v1/account/email-stats?workspace_id=' + cw.pvWorkspace +\n        '&email_acc_id=' + a.id + '&start_date=' + w.start + '&end_date=' + w.end,\n    });\n  }\n}\n\nif (!calls.length) return [{ json: { _none: true, _windows: windows } }];\nreturn calls.map((c, i) => ({ json: i === 0 ? Object.assign({ _windows: windows }, c) : c }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000f",
+        "name": "Account Stats",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1568,
+          288
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000010",
+        "name": "Prep SURBL Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1792,
+          288
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One DNS lookup per sending domain, plus the two controls, in the same pass. A resolver that\n// is being refused by SURBL answers \"clean\" for everything, and that failure is indistinguishable\n// from a healthy fleet without them: the permanent test point must come back listed and\n// google.com must come back clean, or the whole pass is worthless.\nconst pages = $('List Email Accounts').all().map(i => i && i.json).filter(Boolean);\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nconst domains = [...new Set(accounts.map(a => String(a.email || '').split('@')[1] || '').filter(Boolean).map(d => d.toLowerCase()))];\nconst q = (name) => 'https://dns.google/resolve?name=' + encodeURIComponent(name + '.multi.surbl.org') + '&type=A';\nconst calls = [\n  { kind: 'control-listed', domain: 'surbl-org-permanent-test-point.com', url: q('surbl-org-permanent-test-point.com') },\n  { kind: 'control-clean', domain: 'google.com', url: q('google.com') },\n].concat(domains.map(d => ({ kind: 'domain', domain: d, url: q(d) })));\nreturn calls.map(c => ({ json: c }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000011",
+        "name": "SURBL Lookup",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2016,
+          288
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 300
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 20000
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000012",
+        "name": "Compute",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          288
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Everything the report knows about one client, derived once: per-inbox drift, per-domain\n// verdicts, the client's capacity rollup, the gateway re-derivation and the Slack block.\n// One item per inbox goes out (Account ID + Drift, the only inbox field this machine owns);\n// the whole bundle rides on the first item so nothing downstream recomputes anything.\nconst cw = $('Loop Over Clients').first().json;\nconst clientName = String(cw.clientName || '');\nconst clientRecId = String(cw.clientRecId || '');\nconst isPool = !!cw.isPool;\nconst num = (v) => { if (typeof v === 'number') return v; const n = parseFloat(v); return isNaN(n) ? 0 : n; };\nconst nowIL = $now.setZone('Asia/Jerusalem');\nconst today = nowIL.startOf('day');\n\n// ---------- inputs ----------\nconst pages = $('List Email Accounts').all().map(i => i && i.json).filter(Boolean);\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\n\nlet tagItems = [];\ntry { tagItems = $('List Tags').all().map(i => i && i.json).filter(Boolean); } catch (e) {}\nconst tagName = {}; const tagId = {};\nfor (const t of tagItems) {\n  if (!t || !t._id) continue;\n  const n = String(t.name || t._id);\n  tagName[String(t._id)] = n;\n  tagId[n.toLowerCase()] = String(t._id);\n}\n\nlet prep = [];\ntry { prep = $('Prep Stat Calls').all().map(i => i.json); } catch (e) {}\nlet statsRes = [];\ntry { statsRes = $('Account Stats').all().map(i => i && i.json); } catch (e) {}\nconst windows = (prep[0] && prep[0]._windows) || {};\nconst bySpan = {};\nlet statFailures = 0;\nprep.forEach((p, i) => {\n  if (p._none) return;\n  const r = statsRes[i] || {};\n  const h = r.header;\n  if (!h) { statFailures++; return; }\n  // total_reply_count is ALREADY the human count: PlusVibe reports OOO separately and\n  // publishes both reply_rate and reply_rate_with_ooo. Measured live on rundaveio.com\n  // 2026-09-06: 2 replies, 10 OOO, 399 contacted, reply_rate 0.5, reply_rate_with_ooo 3.\n  // Subtracting the two produces negative reply counts and false \"gone quiet\" flags.\n  bySpan[p.accountId + '|' + p.span] = { sent: num(h.total_sent_count), human: num(h.total_reply_count), ooo: num(h.total_ooo_reply_count) };\n});\n\nlet sPrep = [];\ntry { sPrep = $('Prep SURBL Calls').all().map(i => i.json); } catch (e) {}\nlet sRes = [];\ntry { sRes = $('SURBL Lookup').all().map(i => i && i.json); } catch (e) {}\n// Status 3 is NXDOMAIN: not on the list. An A record answer is a listing. Anything else is\n// not an answer we can read, so it is unknown rather than clean.\nconst readDns = (r) => {\n  if (!r || typeof r !== 'object') return null;\n  if (Array.isArray(r.Answer) && r.Answer.length) return true;\n  if (r.Status === 3 || r.Status === 0) return false;\n  return null;\n};\nlet ctlListed = null; let ctlClean = null; const surblRaw = {};\nsPrep.forEach((p, i) => {\n  const v = readDns(sRes[i]);\n  if (p.kind === 'control-listed') ctlListed = v;\n  else if (p.kind === 'control-clean') ctlClean = v;\n  else surblRaw[p.domain] = v;\n});\nconst controlsOk = ctlListed === true && ctlClean === false;\nconst surblOf = (d) => {\n  if (!controlsOk) return 'unknown';\n  const v = surblRaw[d];\n  return v === true ? 'listed' : (v === false ? 'clean' : 'unknown');\n};\n\nlet hubDomains = [];\ntry { hubDomains = $('Get Hub Domains').all().map(i => i && i.json).filter(r => r && r.id); } catch (e) {}\nconst hubBy = {};\nfor (const r of hubDomains) {\n  const f = r.fields || r;\n  const d = String(f['Domain'] || '').toLowerCase();\n  if (d) hubBy[d] = { id: r.id, flaggedOn: String(f['Flagged On'] || '') };\n}\n\n// ---------- the provisioning standard ----------\nconst providerOf = (p) => {\n  const s = String(p || '').toUpperCase();\n  if (s.includes('GOOGLE')) return 'google';\n  if (s.includes('MICROSOFT') || s.includes('OUTLOOK') || s.includes('OFFICE')) return 'microsoft';\n  return '';\n};\nconst STANDARD = {\n  google: { daily_limit: 25, gap: [11, 15], warmup_limit: [20, 30], reply_rate: [30, 40] },\n  microsoft: { daily_limit: 3, gap: [60, 60], warmup_limit: [8, 8], reply_rate: [90, 90] },\n};\n// A signature may name the client the way ours do, \"Dave(.)io\", which is not a live domain.\nconst LIVE_DOMAIN = /\\b[a-z0-9-]+\\.(com|io|ai|co|net|org|biz|pro)\\b/i;\nconst range = (v, r) => v >= r[0] && v <= r[1];\nconst rangeText = (r) => (r[0] === r[1] ? String(r[0]) : r[0] + ' to ' + r[1]);\n\nfunction driftOf(a) {\n  const prov = providerOf(a.provider);\n  if (!prov) return [];\n  const S = STANDARD[prov];\n  const p = a.payload || {};\n  const w = p.warmup || {};\n  const adv = w.advanced || {};\n  const out = [];\n  if (num(p.daily_limit) !== S.daily_limit) out.push('daily limit ' + num(p.daily_limit) + ', standard ' + S.daily_limit);\n  if (!range(num(p.sending_gap), S.gap)) out.push('sending gap ' + num(p.sending_gap) + ', standard ' + rangeText(S.gap));\n  if (!range(num(w.limit), S.warmup_limit)) out.push('warmup limit ' + num(w.limit) + ', standard ' + rangeText(S.warmup_limit));\n  if (!range(num(w.reply_rate), S.reply_rate)) out.push('warmup reply rate ' + num(w.reply_rate) + ', standard ' + rangeText(S.reply_rate));\n  if (adv.weekday_only === true) out.push('warmup weekday only on');\n  if (adv.warm_ctd === true) out.push('warmup warm CTD on');\n  if (String(p.custom_domain || '').trim()) out.push('tracking domain set');\n  if (String(p.reply_to || '').trim()) out.push('reply-to set');\n  if (LIVE_DOMAIN.test(String(p.signature || ''))) out.push('signature carries a live domain');\n  return out;\n}\n\n// ---------- per inbox ----------\nconst inboxes = accounts.map(a => {\n  const p = a.payload || {};\n  const hs = (p.analytics && p.analytics.health_scores) || {};\n  const names = (Array.isArray(p.tags) ? p.tags : []).map(id => tagName[String(id)] || String(id));\n  const lowered = names.map(n => n.toLowerCase());\n  const created = a.timestamp_created ? DateTime.fromISO(String(a.timestamp_created)).setZone('Asia/Jerusalem') : null;\n  return {\n    id: String(a.id),\n    email: String(a.email || ''),\n    domain: (String(a.email || '').split('@')[1] || '').toLowerCase(),\n    status: String(a.status || ''),\n    provider: String(a.provider || ''),\n    dailyLimit: num(p.daily_limit),\n    warmupHealth: hs['7d_overall_warmup_health'] == null ? null : num(hs['7d_overall_warmup_health']),\n    ageDays: created && created.isValid ? Math.floor(today.diff(created.startOf('day'), 'days').days) : 0,\n    tagNames: names,\n    isActive: lowered.includes('active'),\n    hasGateway: lowered.includes('gateway'),\n    batch: names.filter(n => /^[a-z0-9.]+-\\d+$/i.test(n)).sort().join(', '),\n    drift: driftOf(a),\n  };\n});\n\n// ---------- per domain ----------\nconst FWD = ['f7', 'f14', 'f30', 'f60', 'f90', 'all'];\nconst BWD = ['b7', 'b14', 'b30', 'b60', 'b90', 'all'];\nfunction windowTotals(members, key) {\n  let sent = 0; let human = 0; let seen = 0;\n  for (const m of members) {\n    const w = (windows[m.id] || []).find(x => x.key === key);\n    if (!w) continue;\n    const s = bySpan[m.id + '|' + w.span];\n    if (!s) continue;\n    seen++; sent += s.sent; human += s.human;\n  }\n  return seen ? { sent, human } : null;\n}\nfunction firstReaching500(members, order) {\n  for (const key of order) {\n    const t = windowTotals(members, key);\n    if (t && t.sent >= 500) return t;\n  }\n  return null;\n}\n\nconst domainNames = [...new Set(inboxes.map(i => i.domain).filter(Boolean))].sort();\nconst domains = domainNames.map(d => {\n  const members = inboxes.filter(i => i.domain === d);\n  const allTime = windowTotals(members, 'all') || { sent: 0, human: 0 };\n  const first500 = firstReaching500(members, FWD);\n  const last500 = firstReaching500(members, BWD);\n  const warmupScores = members.map(m => m.warmupHealth).filter(v => v != null);\n  const warmupMin = warmupScores.length ? Math.min(...warmupScores) : null;\n  const oldestDays = members.length ? Math.max(...members.map(m => m.ageDays)) : 0;\n  const active = members.some(m => m.isActive);\n  const surbl = surblOf(d);\n  const batch = [...new Set(members.map(m => m.batch).filter(Boolean))].join(', ');\n  const disconnected = members.filter(m => m.status !== 'ACTIVE');\n  const drifting = members.filter(m => m.drift.length);\n\n  const flags = []; const reasons = [];\n  if (first500 && first500.human === 0) { flags.push('Never landed'); reasons.push('Never landed: 0 replies on the first ' + first500.sent + ' sends'); }\n  if (last500 && last500.human === 0) { flags.push('Gone quiet'); reasons.push('Gone quiet: 0 replies on last ' + last500.sent + ' sends'); }\n  if (warmupMin != null && warmupMin < 90 && oldestDays > 21) { flags.push('Warmup'); reasons.push('Warmup: ' + warmupMin + ', ' + oldestDays + ' days'); }\n  if (surbl === 'listed') { flags.push('Listed'); reasons.push('Listed: SURBL multi.surbl.org'); }\n  if (disconnected.length) {\n    flags.push('Disconnected');\n    const byStatus = {};\n    for (const m of disconnected) byStatus[m.status || 'unknown'] = (byStatus[m.status || 'unknown'] || 0) + 1;\n    for (const [s, n] of Object.entries(byStatus)) reasons.push('Disconnected: ' + n + ' inbox' + (n === 1 ? '' : 'es') + ' ' + s);\n  }\n  if (drifting.length) {\n    flags.push('Drift');\n    const bySetting = {};\n    for (const m of drifting) for (const line of m.drift) bySetting[line] = (bySetting[line] || 0) + 1;\n    for (const [line, n] of Object.entries(bySetting)) reasons.push('Drift: ' + n + ' inbox' + (n === 1 ? '' : 'es') + ' ' + line);\n  }\n  const existing = hubBy[d] || {};\n  return {\n    domain: d, active, batch, surbl, warmupMin, oldestDays,\n    sentAllTime: allTime.sent, humanAllTime: allTime.human,\n    first500, last500, flags, reasons,\n    flaggedOn: existing.flaggedOn ? existing.flaggedOn : (flags.length ? today.toFormat('yyyy-MM-dd') : ''),\n    inboxCount: members.length,\n    driftLines: drifting.reduce((acc, m) => { for (const l of m.drift) acc.push({ line: l, active: m.isActive }); return acc; }, []),\n    disconnected: disconnected.map(m => ({ email: m.email, status: m.status })),\n  };\n});\n\n// ---------- client rollup ----------\nconst activeMailboxes = inboxes.filter(i => i.isActive && i.status === 'ACTIVE');\nconst notActiveMailboxes = inboxes.filter(i => !i.isActive);\nconst activeCapacity = activeMailboxes.reduce((s, i) => s + i.dailyLimit, 0);\nconst notActiveCapacity = notActiveMailboxes.reduce((s, i) => s + i.dailyLimit, 0);\nconst reserveRatio = activeCapacity ? (notActiveCapacity / activeCapacity) : 0;\nconst avgActiveLimit = activeMailboxes.length ? (activeCapacity / activeMailboxes.length) : 0;\nconst shortCapacity = Math.max(0, (activeCapacity * 0.5) - notActiveCapacity);\nconst shortMailboxes = avgActiveLimit ? Math.ceil(shortCapacity / avgActiveLimit) : 0;\n\n// ---------- the gateway pool, re-derived ----------\n// The only PlusVibe write this machine makes: clean domains join, listed domains leave.\nconst gwId = tagId['gateway'] || '';\nconst assign = []; const unassign = [];\nif (gwId && controlsOk) {\n  for (const d of domains) {\n    const members = inboxes.filter(i => i.domain === d.domain);\n    if (d.surbl === 'clean') for (const m of members) { if (!m.hasGateway) assign.push(m.id); }\n    if (d.surbl === 'listed') for (const m of members) { if (m.hasGateway) unassign.push(m.id); }\n  }\n}\n\n// ---------- the Slack block ----------\nconst stamp = nowIL.toFormat('ccc d LLL');\nconst label = (a) => (a ? 'active' : 'not active');\nconst bullets = (lines) => (lines.length ? lines : ['• none']).join('\\n');\nconst flagged = (name) => domains.filter(d => d.flags.includes(name));\n\nconst driftAgg = {};\nfor (const d of domains) for (const x of d.driftLines) {\n  const k = x.line + '|' + (x.active ? '1' : '0');\n  driftAgg[k] = (driftAgg[k] || 0) + 1;\n}\nconst driftLines = Object.entries(driftAgg)\n  .sort((a, b) => b[1] - a[1])\n  .map(([k, n]) => { const [line, act] = k.split('|'); return '• ' + n + ' mailbox' + (n === 1 ? '' : 'es') + ' · ' + (act === '1' ? 'active' : 'not active') + ' · ' + line; });\n\nconst head = isPool\n  ? '🏦 *Pool · ' + clientName + '* · ' + inboxes.length + ' mailboxes · ' + inboxes.reduce((s, i) => s + i.dailyLimit, 0) + ' a day'\n  : '📬 *Inbox health · ' + clientName + ' · ' + stamp + '*\\n\\n' +\n    '*Active* · ' + activeMailboxes.length + ' mailboxes · ' + activeCapacity + ' a day\\n' +\n    '*Not active* · ' + notActiveMailboxes.length + ' mailboxes · ' + notActiveCapacity + ' a day\\n' +\n    '*Reserve* · ' + Math.round(reserveRatio * 100) + '% of active · ' + (shortMailboxes ? 'Short by ' + shortMailboxes + ' mailboxes' : 'OK');\n\nconst block = [\n  head,\n  '',\n  '🚩 *Flags* · checked on active and not active alike',\n  '',\n  '*_Never landed_* · 0 replies on the first 500 sends',\n  bullets(flagged('Never landed').map(d => '• ' + d.domain + ' · ' + label(d.active) + ' · 0 of ' + (d.first500 ? d.first500.sent : 0))),\n  '',\n  '*_Gone quiet_* · 0 replies on the last 500 sends',\n  bullets(flagged('Gone quiet').map(d => '• ' + d.domain + ' · ' + label(d.active) + ' · 0 of ' + (d.last500 ? d.last500.sent : 0))),\n  '',\n  '*_Warmup under 90_* · mailbox older than 21 days',\n  bullets(flagged('Warmup').map(d => '• ' + d.domain + ' · ' + label(d.active) + ' · ' + d.warmupMin)),\n  '',\n  '*_SURBL listed_*',\n  bullets(flagged('Listed').map(d => '• ' + d.domain + ' · ' + label(d.active))),\n  '',\n  '*_Drift_* · setting off the standard',\n  bullets(driftLines),\n  '',\n  '*_Disconnected_*',\n  bullets(flagged('Disconnected').reduce((acc, d) => { for (const x of d.disconnected) acc.push('• ' + d.domain + ' · ' + label(d.active) + ' · ' + x.status); return acc; }, [])),\n].join('\\n');\n\nconst bundle = {\n  clientName, clientRecId, isPool,\n  pvWorkspace: String(cw.pvWorkspace || ''),\n  gatewayTagId: gwId,\n  controlsOk,\n  surblNote: controlsOk ? '' : 'SURBL controls failed (test point listed=' + ctlListed + ', google clean=' + (ctlClean === false) + '); every domain marked unknown and the gateway tag left alone',\n  statFailures,\n  inboxes: inboxes.length,\n  domains,\n  rollup: {\n    activeMailboxes: activeMailboxes.length, activeCapacity,\n    notActiveMailboxes: notActiveMailboxes.length, notActiveCapacity,\n    reserveRatio, shortMailboxes,\n  },\n  assign, unassign,\n  block,\n};\n\nif (!inboxes.length) return [{ json: { _none: true, _b: bundle } }];\nreturn inboxes.map((i, idx) => ({\n  json: Object.assign(\n    { 'Account ID': i.id, 'Drift': i.drift.join('\\n') },\n    idx === 0 ? { _b: bundle } : {}\n  ),\n}));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000013",
+        "name": "Any Inboxes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2464,
+          288
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000014",
+        "name": "Upsert Inbox Drift",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2688,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblgdmibPyC2dRlVK"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Account ID"
+            ],
+            "schema": [],
+            "value": {
+              "Account ID": "={{ $json[\"Account ID\"] }}",
+              "Drift": "={{ $json.Drift }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000015",
+        "name": "Prep Domain Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2912,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One row per domain. Only the fields this machine owns are written; Killed On is never touched,\n// and Flagged On carries the value already on the row so a first flag date is never overwritten.\nconst b = $('Compute').first().json._b;\nif (!b.domains.length) return [{ json: { _none: true } }];\nreturn b.domains.map(d => {\n  const row = {\n    'Domain': d.domain,\n    'Client': [b.clientRecId],\n    'Batch': d.batch,\n    'Active': !!d.active,\n    'Warmup Min': d.warmupMin == null ? null : d.warmupMin,\n    'Oldest Inbox Days': d.oldestDays,\n    'SURBL': d.surbl,\n    'Flags': d.flags,\n    'Flag Reason': d.reasons.join('\\n'),\n    'Flagged On': d.flaggedOn,\n    'Last Reviewed': $now.toISO(),\n  };\n  // Empty until the domain has actually taken 500 sends: a number there would be a lie.\n  row['First 500 Replies'] = d.first500 ? d.first500.human : null;\n  row['Last 500 Replies'] = d.last500 ? d.last500.human : null;\n  return { json: row };\n});\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000016",
+        "name": "Upsert Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3136,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbltRqDRQm0YQy3tQ"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Domain"
+            ],
+            "schema": [],
+            "value": {
+              "Domain": "={{ $json.Domain }}",
+              "Client": "={{ $json.Client }}",
+              "Batch": "={{ $json.Batch }}",
+              "Active": "={{ $json.Active }}",
+              "First 500 Replies": "={{ $json[\"First 500 Replies\"] }}",
+              "Last 500 Replies": "={{ $json[\"Last 500 Replies\"] }}",
+              "Warmup Min": "={{ $json[\"Warmup Min\"] }}",
+              "Oldest Inbox Days": "={{ $json[\"Oldest Inbox Days\"] }}",
+              "SURBL": "={{ $json.SURBL }}",
+              "Flags": "={{ $json.Flags }}",
+              "Flag Reason": "={{ $json[\"Flag Reason\"] }}",
+              "Flagged On": "={{ $json[\"Flagged On\"] }}",
+              "Last Reviewed": "={{ $json[\"Last Reviewed\"] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000017",
+        "name": "Prep Client Row",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3360,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const b = $('Compute').first().json._b;\nconst r = b.rollup;\nreturn [{\n  json: {\n    id: b.clientRecId,\n    'Active Mailboxes': r.activeMailboxes,\n    'Active Capacity': r.activeCapacity,\n    'Not Active Mailboxes': r.notActiveMailboxes,\n    'Not Active Capacity': r.notActiveCapacity,\n    // A percent field stores the fraction; 0.5 renders as 50%.\n    'Reserve Ratio': r.reserveRatio,\n    'Last Inbox Review': $now.toISO(),\n  },\n}];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000018",
+        "name": "Update Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3584,
+          192
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.id }}",
+              "Active Mailboxes": "={{ $json[\"Active Mailboxes\"] }}",
+              "Active Capacity": "={{ $json[\"Active Capacity\"] }}",
+              "Not Active Mailboxes": "={{ $json[\"Not Active Mailboxes\"] }}",
+              "Not Active Capacity": "={{ $json[\"Not Active Capacity\"] }}",
+              "Reserve Ratio": "={{ $json[\"Reserve Ratio\"] }}",
+              "Last Inbox Review": "={{ $json[\"Last Inbox Review\"] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000019",
+        "name": "Prep Gateway Ops",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3808,
+          192
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// At most two bulk calls: the inboxes joining the gateway pool and the ones leaving it.\n// Nothing fires when the SURBL controls failed, when the workspace has no gateway tag, or\n// when the pool already matches the last check.\nconst b = $('Compute').first().json._b;\nconst ops = [];\nif (b.gatewayTagId && b.controlsOk) {\n  if (b.assign.length) ops.push({ action: 'ASSIGN', ids: b.assign });\n  if (b.unassign.length) ops.push({ action: 'UNASSIGN', ids: b.unassign });\n}\nif (!ops.length) return [{ json: { _noop: true } }];\nreturn ops.map(o => ({ json: { action: o.action, count: o.ids.length, body: { workspace_id: b.pvWorkspace, ids: o.ids, tag_id: b.gatewayTagId, action: o.action } } }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001a",
+        "name": "Any Gateway Ops?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4032,
+          192
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._noop === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001b",
+        "name": "Bulk Assign Tags",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4256,
+          96
+        ],
+        "parameters": {
+          "method": "PUT",
+          "url": "https://api.plusvibe.ai/api/v1/account/bulk-assign-tags",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001c",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4480,
+          288
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One accumulator entry per client, read back by the Slack post and the run log.\nconst sd = $getWorkflowStaticData('global');\nif (!Array.isArray(sd.results)) sd.results = [];\nconst cw = $('Loop Over Clients').first().json;\nlet b = null;\ntry { b = $('Compute').first().json._b; } catch (e) {}\n\nlet inboxWrites = 0;\ntry { inboxWrites = $('Upsert Inbox Drift').all().length; } catch (e) {}\nlet domainWrites = 0;\ntry { domainWrites = $('Upsert Domains').all().length; } catch (e) {}\nlet gwApplied = [];\ntry { gwApplied = $('Bulk Assign Tags').all().map(i => i && i.json); } catch (e) {}\nlet gwOps = [];\ntry { gwOps = $('Prep Gateway Ops').all().map(i => i.json).filter(o => !o._noop); } catch (e) {}\n\nconst failed = [];\nif (b && b.statFailures) failed.push(b.statFailures + ' stat call(s) failed');\nif (b && !b.controlsOk) failed.push('SURBL controls failed');\nif (b && b.inboxes > 0 && inboxWrites === 0) failed.push('inbox drift write returned nothing');\nif (b && b.domains.length > 0 && domainWrites === 0) failed.push('domain write returned nothing');\ngwOps.forEach((o, i) => {\n  const r = gwApplied[i] || {};\n  const st = r.statusCode;\n  const ok = st === undefined ? false : (st >= 200 && st < 300);\n  if (!ok) failed.push('gateway ' + o.action + ' of ' + o.count + ' inbox(es) failed');\n});\n\nsd.results.push({\n  client: cw.clientName,\n  isPool: !!cw.isPool,\n  slackChannel: String(cw.slackChannel || ''),\n  inboxes: b ? b.inboxes : 0,\n  domains: b ? b.domains.length : 0,\n  flagged: b ? b.domains.filter(d => d.flags.length).length : 0,\n  assigned: b && b.controlsOk ? b.assign.length : 0,\n  unassigned: b && b.controlsOk ? b.unassign.length : 0,\n  surblNote: b ? b.surblNote : '',\n  block: b ? b.block : '',\n  failed,\n});\nreturn [{ json: { done: true } }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001d",
+        "name": "Build Slack Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          -96
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One message for the whole estate, one block per client, the pool last.\nconst sd = $getWorkflowStaticData('global');\nconst results = (sd.results || []).filter(r => r.block);\nconst ordered = results.filter(r => !r.isPool).concat(results.filter(r => r.isPool));\nconst text = ordered.map(r => r.block).join('\\n\\n\\n');\nreturn [{ json: { channel: 'C0B8YFC5R0C', text: text || 'No PlusVibe client had any inbox to report on.' } }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001e",
+        "name": "Post to Slack",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          672,
+          -96
+        ],
+        "parameters": {
+          "authentication": "accessToken",
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.channel }}"
+          },
+          "messageType": "text",
+          "text": "={{ $json.text }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false,
+            "mrkdwn": true
+          }
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "webhookId": "c05374ca-3637-491f-bd28-63cc34ff6d10"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001f",
+        "name": "Prep Allocate Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          -96
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Tags describe the fleet; they never move a campaign's senders. So every re-derivation of the\n// gateway pool ends by asking Allocate inboxes in PlusVibe by tags to rewrite the campaigns.\nconst sd = $getWorkflowStaticData('global');\nconst results = sd.results || [];\nif (!results.length) return [{ json: { _none: true } }];\nreturn results.map(r => ({ json: { client: r.client, body: { client: r.client, tag: 'gateway' } } }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000020",
+        "name": "Fire Allocate",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          -96
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2000
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 600000
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000021",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          -96
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst launch = sd.launch || {};\nconst results = sd.results || [];\nconst totalInboxes = results.reduce((s, r) => s + (r.inboxes || 0), 0);\nconst totalDomains = results.reduce((s, r) => s + (r.domains || 0), 0);\nconst totalFlagged = results.reduce((s, r) => s + (r.flagged || 0), 0);\nconst failed = results.reduce((a, r) => a.concat((r.failed || []).map(f => r.client + ': ' + f)), []);\n\nlet slackTs = '';\ntry { const s = $('Post to Slack').first().json; slackTs = String((s.message && s.message.ts) || s.ts || ''); } catch (e) {}\nlet allocLines = [];\ntry {\n  const calls = $('Prep Allocate Calls').all().map(i => i.json).filter(c => !c._none);\n  const res = $('Fire Allocate').all().map(i => i && i.json);\n  allocLines = calls.map((c, i) => {\n    const r = res[i] || {};\n    const body = r.body === undefined ? r : r.body;\n    const n = body && Array.isArray(body.campaigns) ? body.campaigns.length : 0;\n    const changed = body && Array.isArray(body.campaigns)\n      ? body.campaigns.reduce((s, x) => s + (x.added || []).length + (x.removed || []).length, 0) : 0;\n    const ok = body && body.ok === true;\n    if (!ok) failed.push(c.client + ': gateway allocation call failed');\n    return '- **' + c.client + ':** ' + n + ' gateway campaign(s), ' + changed + ' sender change(s)';\n  });\n} catch (e) {}\n\nconst lines = results.map(r => '- **' + r.client + ':** ' + r.inboxes + ' inbox(es), ' + r.domains + ' domain(s), ' +\n  r.flagged + ' flagged, gateway +' + r.assigned + '/-' + r.unassigned + (r.surblNote ? ' (' + r.surblNote + ')' : ''));\n\nconst parts = [\n  '**' + results.length + ' client(s), ' + totalInboxes + ' inbox(es), ' + totalDomains + ' domain(s), ' + totalFlagged + ' flagged**',\n  '**Scope:** ' + (sd.scope || 'all clients'),\n  '**Slack:** ' + (slackTs ? 'posted to #flowroots-pulse (ts ' + slackTs + ')' : 'not posted'),\n].concat(lines);\nif (allocLines.length) parts.push('', '**Gateway allocation**', ...allocLines);\nif (launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no PlusVibe client)**');\nif (failed.length) parts.push('', '**Errors**', ...failed.map(f => '- ' + f));\n\nconst row = {\n  'Automation': 'Create health report for inboxes',\n  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n  'Run at': $now.toISO(),\n  'Records In': totalInboxes,\n  'Records Out': totalDomains,\n  'Errors': failed.length,\n  'Target': 'Domains',\n  'Trigger': launch.trigger || 'schedule',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  'Duration s': Math.round(($now.toMillis() - (launch.startedAt || $now.toMillis())) / 1000),\n  'Description': parts.join('\\n'),\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif (launch.clientFilter) row['Client'] = [launch.clientFilter];\nreturn [{ json: row }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000022",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1568,
+          -96
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      }
+    ],
+    "connections": {
+      "Weekly Mon 07:00 IL": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get PV Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get PV Clients": {
+        "main": [
+          [
+            {
+              "node": "Prep Client Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Client Loop": {
+        "main": [
+          [
+            {
+              "node": "Any Clients?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [
+            {
+              "node": "Build Slack Message",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Start Client Work",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Start Client Work": {
+        "main": [
+          [
+            {
+              "node": "List Email Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Email Accounts": {
+        "main": [
+          [
+            {
+              "node": "List Tags",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Tags": {
+        "main": [
+          [
+            {
+              "node": "Get Hub Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Hub Domains": {
+        "main": [
+          [
+            {
+              "node": "Prep Stat Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Stat Calls": {
+        "main": [
+          [
+            {
+              "node": "Account Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Account Stats": {
+        "main": [
+          [
+            {
+              "node": "Prep SURBL Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep SURBL Calls": {
+        "main": [
+          [
+            {
+              "node": "SURBL Lookup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SURBL Lookup": {
+        "main": [
+          [
+            {
+              "node": "Compute",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Compute": {
+        "main": [
+          [
+            {
+              "node": "Any Inboxes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Inboxes?": {
+        "main": [
+          [
+            {
+              "node": "Upsert Inbox Drift",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Inbox Drift": {
+        "main": [
+          [
+            {
+              "node": "Prep Domain Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Domain Rows": {
+        "main": [
+          [
+            {
+              "node": "Upsert Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Domains": {
+        "main": [
+          [
+            {
+              "node": "Prep Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Client Row": {
+        "main": [
+          [
+            {
+              "node": "Update Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Client": {
+        "main": [
+          [
+            {
+              "node": "Prep Gateway Ops",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Gateway Ops": {
+        "main": [
+          [
+            {
+              "node": "Any Gateway Ops?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Gateway Ops?": {
+        "main": [
+          [
+            {
+              "node": "Bulk Assign Tags",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bulk Assign Tags": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Slack Message": {
+        "main": [
+          [
+            {
+              "node": "Post to Slack",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Post to Slack": {
+        "main": [
+          [
+            {
+              "node": "Prep Allocate Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Allocate Calls": {
+        "main": [
+          [
+            {
+              "node": "Fire Allocate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Allocate": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

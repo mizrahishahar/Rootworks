@@ -99,13 +99,17 @@ for (const r of rowsArr) {
     if (D.maxRows && leads.length >= D.maxRows) { rec.skip = 'over the run cap of ' + D.maxRows + ' rows'; continue; }
     const lead = { email: String(f['Final Email'] || '').trim() };
     if (isBison) {
-      // Email Bison's lead: first_name is REQUIRED by the API (a company-inbox list cannot deploy
-      // here without one), title/company are its own field names, and custom variables are an
-      // array of {name, value} rendered as {NAME} in the sequence. State/City/Country have no
-      // lead field on Bison; when the view shows them they already ride as variables.
+      // Email Bison's lead: first_name is REQUIRED by the API. The view decides, exactly as on
+      // PlusVibe: when it shows first_name, an unusable name was already skipped above; when it
+      // does not (a company-inbox list, first name absent by design), the company name rides as
+      // first_name so the API accepts the lead and a {FIRST_NAME} in the copy reads as the company
+      // (Operator ruling 2026-09-06: sequencer semantics are absorbed here, never pushed onto the
+      // view). Title/company are Bison's own field names; custom variables are an array of
+      // {name, value} rendered as {NAME} in the sequence. State/City/Country have no lead field on
+      // Bison; when the view shows them they already ride as variables.
       const fn = NAME_OK(fnRaw) ? fnRaw : (NAME_OK(fnHe) ? fnHe : '');
-      if (!fn) { rec.skip = 'missing first name (Email Bison requires one)'; continue; }
-      lead.first_name = fn;
+      lead.first_name = fn || comp;
+      if (!fn) D.bisonNamedByCompany = (D.bisonNamedByCompany || 0) + 1;
       const ln = val(f['last_name']); if (ln) lead.last_name = ln;
       const ttl = val(f['Title']); if (ttl) lead.title = ttl;
       lead.company = comp;

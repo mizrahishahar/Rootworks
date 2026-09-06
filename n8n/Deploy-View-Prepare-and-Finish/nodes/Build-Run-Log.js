@@ -10,7 +10,10 @@
 // Only the row's real fields are returned: the write maps input straight onto the table.
 const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;
 const D = sd[dk] || { errors: ['deploy state missing'], warnings: [], rows: {}, skipCounts: {}, launchId: '', sender: 'PlusVibe', automation: '', execId: String($execution.id), wfId: '' };
-const isPV = D.sender === 'PlusVibe';
+// isPV is the EMAIL lane: Email Bison reports through the same counters (D.pv) the PlusVibe door
+// fills, so the narrative below reads the same; the sender's name comes from D.sender.
+const isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';
+const senderName = D.sender || 'PlusVibe';
 try { const r = ($('Create Lead List').first() || {}).json || {}; if (!r.id && !D.abort) D.warnings.push('Lead Lists receipt creation failed'); } catch (e) { if (!D.abort) D.warnings.push('Lead Lists receipt not created'); }
 const fmt = v => Number(v || 0).toLocaleString('en-US');
 const failed = (D.errors || []).slice();
@@ -24,19 +27,19 @@ if (isPV) {
   md.push('**Table:** ' + (D.tableName || D.table || '?') + ' (' + (D.tableId || '?') + ')');
   md.push('**View:** ' + (D.view || '?'));
   if (D.viewLink) md.push('**Link:** ' + D.viewLink);
-  md.push('**Dedupe mode:** ' + (D.dedupe || 'Strict'));
+  md.push('**Dedupe mode:** ' + (D.sender === 'Email Bison' ? 'Email Bison (patch existing leads; a lead already In Sequence elsewhere is refused by the sender)' : (D.dedupe || 'Strict')));
   if (D.campsStamped) md.push('**Campaigns links stamped:** ' + fmt(D.campsStamped) + ' (this list = filter Campaigns has the campaign)');
   const P = D.pv;
   if (P) {
     md.push('');
-    md.push('**Sent to PlusVibe**');
+    md.push('**Sent to ' + senderName + '**');
     md.push('- Sent: ' + fmt(P.sent));
     md.push('- Accepted: ' + fmt(P.uploaded));
     md.push('- Not accepted: ' + fmt((P.sent || 0) - (P.uploaded || 0)));
     if (P.skipped) md.push('   - Already in the workspace, blocked by dedupe mode "' + (D.dedupe || 'Strict') + '": ' + fmt(P.skipped));
     if (P.already) md.push('   - Already in this campaign: ' + fmt(P.already));
     if (P.duplicate) md.push('   - Same email twice in the upload: ' + fmt(P.duplicate));
-    if (P.invalid) md.push('   - PlusVibe judged the email invalid: ' + fmt(P.invalid));
+    if (P.invalid) md.push('   - ' + senderName + ' judged the email invalid' + (D.sender === 'Email Bison' ? ' (personal domains are skipped by the instance)' : '') + ': ' + fmt(P.invalid));
     if (P.overflowed) md.push('   - Over your plan limit: ' + fmt(P.overflowed));
     if (P.overwritten) md.push('   - Existing lead refreshed instead of added: ' + fmt(P.overwritten));
     if (P.remaining !== null && P.remaining !== undefined) md.push('- Leads left in plan: ' + fmt(P.remaining));
@@ -44,7 +47,7 @@ if (isPV) {
   const alreadyStamped = sc['already in campaign (Campaigns stamp)'] || 0;
   const pvDupes = (P ? Number(P.skipped || 0) + Number(P.already || 0) : 0);
   md.push('');
-  md.push('**Already present: ' + fmt(pvDupes + alreadyStamped) + '** (PlusVibe: in this campaign ' + fmt(P ? P.already : 0) + ', in the workspace ' + fmt(P ? P.skipped : 0) + ' · Campaigns stamp, caught before sending: ' + fmt(alreadyStamped) + ')');
+  md.push('**Already present: ' + fmt(pvDupes + alreadyStamped) + '** (' + senderName + ': in this campaign ' + fmt(P ? P.already : 0) + ', in the workspace ' + fmt(P ? P.skipped : 0) + ' · Campaigns stamp, caught before sending: ' + fmt(alreadyStamped) + ')');
   if (D.missing) { md.push(''); md.push('- Sent but not found in the campaign afterwards: ' + fmt(D.missing)); }
   const vm = D.varMisses || {};
   const vmKeys = Object.keys(vm).sort((a, b) => vm[b] - vm[a]);

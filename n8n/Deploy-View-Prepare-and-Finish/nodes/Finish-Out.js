@@ -12,7 +12,7 @@ return [{ json: {
   launchId: D.launchId || '',
   campaign: D.campName || D.target || '',
   recordsIn: D.rowsTotal || 0,
-  recordsOut: (D.sender === 'PlusVibe' ? (D.deployed || 0) : (D.landed || 0)),
+  recordsOut: ((D.sender === 'PlusVibe' || D.sender === 'Email Bison') ? (D.deployed || 0) : (D.landed || 0)),
   errors: (D.errors || []).length,
   warnings: (D.warnings || []).length
 } }];

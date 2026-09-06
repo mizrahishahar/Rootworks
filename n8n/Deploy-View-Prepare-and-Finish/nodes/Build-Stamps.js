@@ -8,7 +8,8 @@ const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.i
 const call = $('Route Mode').first().json;
 const D = call.state;
 sd[dk] = D;
-const isPV = D.sender === 'PlusVibe';
+// isPV is the EMAIL lane: Email Bison confirms membership by read-back into inCamp exactly as PlusVibe does.
+const isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';
 if (D.abort) { D.campsStamped = 0; return [{ json: { _none: true } }]; }
 const patches = [];
 let deployed = 0, missing = 0, stamped = 0;

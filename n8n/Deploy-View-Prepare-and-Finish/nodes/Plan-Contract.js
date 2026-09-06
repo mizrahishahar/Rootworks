@@ -19,7 +19,9 @@
 const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];
 const shape = () => ({ ok: !D.abort, crBase: D.crBase || 'appMISSING', tableId: D.tableId || '', mirrorTableId: D.mirrorTableId || 'tblMISSING', target: D.target || '', view: D.viewId || D.view || '', dncTableId: D.dncTableId || '' });
 if (D.abort) { return [{ json: shape() }]; }
-const isPV = D.sender === 'PlusVibe';
+// isPV is the EMAIL lane: PlusVibe and Email Bison share identity (Final Email + first name +
+// company), the standard lead fields and the write-back column check; only Alta differs.
+const isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';
 // The machine fields, by group as the register declares them (ruling 2026-09-02). Each name must
 // exist on the register, or the push is wrong.
 const MACHINE_GROUPS = {

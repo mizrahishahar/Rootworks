@@ -50,8 +50,10 @@ if (!D.abort && !D.clientId) { D.abort = 'no client link'; D.errors.push('launch
 if (!D.abort && !D.table) { D.abort = 'no Table'; D.errors.push('launch row has no Table (People or Companies); nothing was sent'); }
 if (!D.abort && !D.view) { D.abort = 'no View'; D.errors.push('launch row has no View; nothing was sent'); }
 if (!D.abort) {
-  const ok = isPV ? /^[0-9a-f]{24}$/i.test(D.target) : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(D.target);
-  if (!ok) { D.abort = 'invalid Target'; D.errors.push('Target "' + D.target + '" is not ' + (isPV ? 'a plausible PlusVibe campaign id (24 hex)' : 'an Alta campaign UUID')); }
+  // Email Bison campaign ids are plain integers (e.g. 601); the door proves the id exists by GET.
+  const isBison = call.sender === 'Email Bison';
+  const ok = isPV ? /^[0-9a-f]{24}$/i.test(D.target) : (isBison ? /^[0-9]{1,10}$/.test(D.target) : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(D.target));
+  if (!ok) { D.abort = 'invalid Target'; D.errors.push('Target "' + D.target + '" is not ' + (isPV ? 'a plausible PlusVibe campaign id (24 hex)' : (isBison ? 'an Email Bison campaign id (integer)' : 'an Alta campaign UUID'))); }
 }
 sd[dk] = D;
 return [{ json: { clientId: D.clientId || 'recMISSING' } }];

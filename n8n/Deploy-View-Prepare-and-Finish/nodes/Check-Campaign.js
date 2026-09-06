@@ -16,6 +16,9 @@ if (!D.abort) {
     D.hubCampaignRid = hit.id || '';
     D.campName = String(f['Campaign'] || D.target);
     const seq = String((f['Sequencer'] && f['Sequencer'].name) || f['Sequencer'] || '');
+    // Email Bison: like PlusVibe, the campaign's existence is proven by the door's own GET, so a
+    // missing Hub row only warns; a Hub row sequenced by someone else is a wrong Target, refused.
+    if (D.sender === 'Email Bison' && seq && seq !== 'Email Bison') { D.abort = 'not an Email Bison campaign'; D.errors.push('campaign "' + D.campName + '" is sequenced by ' + seq + ', not Email Bison'); }
     if (D.sender === 'Alta') {
       if (seq && seq !== 'Alta') { D.abort = 'not an Alta campaign'; D.errors.push('campaign "' + D.campName + '" is sequenced by ' + seq + ', not Alta'); }
       D.pullInUrl = String(f['Pull-in URL'] || '').trim();

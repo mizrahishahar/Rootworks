@@ -1,5 +1,10 @@
 {
+  "updatedAt": "2026-09-06T08:35:58.588Z",
+  "createdAt": "2026-09-02T22:08:34.723Z",
+  "id": "VfjJGNlykzuZok2T",
   "name": "Deploy View Prepare and Finish",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "id": "dvpf-00-trigger",
@@ -1473,5 +1478,1503 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "VfjJGNlykzuZok2T"
+  "staticData": {
+    "global": {}
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "baabb747-317e-4e36-bf08-081ae60cd74e",
+  "activeVersionId": "baabb747-317e-4e36-bf08-081ae60cd74e",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-02T22:08:34.729Z",
+      "createdAt": "2026-09-02T22:08:34.729Z",
+      "role": "workflow:owner",
+      "workflowId": "VfjJGNlykzuZok2T",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-06T08:35:58.596Z",
+    "createdAt": "2026-09-06T08:35:58.596Z",
+    "versionId": "baabb747-317e-4e36-bf08-081ae60cd74e",
+    "workflowId": "VfjJGNlykzuZok2T",
+    "nodes": [
+      {
+        "id": "dvpf-00-trigger",
+        "name": "Deploy Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -1400,
+          200
+        ],
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "notes": "One item from a deploy door: {mode, sender, execId, wfId, automation, recordId} for prepare, {mode, sender, execId, wfId, automation, state} for finish. Awaited by both callers, with the error left to travel: a sub-workflow carries no Error Logger and fails into the run that was actually doing the work."
+      },
+      {
+        "id": "dvpf-01-route",
+        "name": "Route Mode",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1200,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// The one entry. Two modes, one machine, the Waterfall Contacts Batch pattern (Operator ruling\n// 2026-09-03, who refused three sub-workflows for this):\n//   prepare  turns a launch row into a resolved, DNC-filtered, capped, merge-shaped payload,\n//            and hands the caller everything it needs to send.\n//   finish   takes that payload back with the send results on it, stamps the source rows,\n//            writes the Lead Lists receipt and writes the run's Hub row.\n// The caller owns the send and nothing else. Both deploy doors call this; they differ only in how\n// they push, which is the one thing that cannot be shared.\n// A sub-workflow carries no Error Logger (logging standard, 2026-09-02): every refusal here is\n// either a named abort riding the state, or a throw that fails the caller, whose own crash is what\n// gets the Failed row. The contract is checked before anything is read or written.\nconst raw = $input.first().json || {};\nconst inp = Object.assign({}, raw);\nconst mode = String(inp.mode || '').trim().toLowerCase();\nconst who = 'Deploy View Prepare and Finish';\nif (mode !== 'prepare' && mode !== 'finish') throw new Error(who + ' was called with mode \"' + String(inp.mode || '') + '\"; only \"prepare\" and \"finish\" exist.');\nconst sender = String(inp.sender || '').trim();\nif (sender !== 'PlusVibe' && sender !== 'Alta' && sender !== 'Email Bison') throw new Error(who + ' (' + mode + ') was called with sender \"' + sender + '\"; only \"PlusVibe\", \"Alta\" and \"Email Bison\" exist.');\nif (!String(inp.execId || '').trim()) throw new Error(who + ' (' + mode + ') was called without execId; the Hub row is keyed by the calling execution, never by this one.');\nif (!String(inp.automation || '').trim()) throw new Error(who + ' (' + mode + ') was called without automation; the Hub row names the door that ran, never this helper.');\nif (mode === 'prepare' && !/^rec[A-Za-z0-9]{14}$/.test(String(inp.recordId || ''))) throw new Error(who + ' (prepare) was called without a launch row id. Nothing was read.');\nif (mode === 'finish' && (!inp.state || typeof inp.state !== 'object')) throw new Error(who + ' (finish) was called without the state prepare returned. Nothing was written.');\ninp.mode = mode;\ninp.sender = sender;\ninp.execId = String(inp.execId);\ninp.wfId = String(inp.wfId || '');\ninp.recordId = String(inp.recordId || '');\nreturn [{ json: inp }];\n"
+        }
+      },
+      {
+        "id": "dvpf-02-mode",
+        "name": "Which Mode?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -1000,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "wm1",
+                "leftValue": "={{ $json.mode }}",
+                "rightValue": "prepare",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-10-readlaunch",
+        "name": "Read Launch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -800,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-11-stamprunning",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -600,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Execution ID": "={{ $('Route Mode').first().json.execId }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $('Route Mode').first().json.wfId }}/executions/{{ $('Route Mode').first().json.execId }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "Claims the launch row for this run on the CALLER's execution id, which is what finish upserts on. It never gates: a launch id that resolves to nothing must reach Init Deploy so the refusal is named on a row instead of crashing nameless."
+      },
+      {
+        "id": "dvpf-12-init",
+        "name": "Init Deploy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -400,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Init Deploy: the launch row into the run's state. One launch = one view into one campaign:\n// Client link, Table (People or Companies, by name, required), View (id or exact name, required),\n// Target (the sequencer's campaign id), Dedupe Mode (PlusVibe only), Max Rows.\n// No defaults (Operator ruling 2026-09-02): a launch row that leaves Table or View blank is\n// refused here, before anything is read or sent.\n// Max Rows is optional and blank means unlimited: the most rows this run may enrol, applied in\n// Build Rows to the rows that survive every other check. The Airtable feed sets it per sequencer;\n// a hand-launched deploy leaves it blank unless the Operator wants a slice.\n// The launch row is read from Read Launch Row by name, never from $input: Stamp Running sits\n// between them and hands on its own item (or its error item, when there is no row to stamp).\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst call = $('Route Mode').first().json;\nlet r = {}; try { r = ($('Read Launch Row').first() || {}).json || {}; } catch (e) {}\nconst f = r.fields || r;\nconst cid = Array.isArray(f['Client']) ? f['Client'][0] : null;\nconst isPV = call.sender === 'PlusVibe';\nconst D = {\n  sender: call.sender, automation: String(call.automation || ''),\n  execId: String(call.execId), wfId: String(call.wfId || ''),\n  launchId: String(r.id || ''),\n  clientId: (cid && typeof cid === 'object') ? String(cid.id || '') : String(cid || ''),\n  table: String((f['Table'] && f['Table'].name) || f['Table'] || '').trim(), tableId: '', tableName: '',\n  view: String(f['View'] || '').trim(), viewId: '', viewType: '',\n  target: String(f['Target'] || '').trim(),\n  dedupe: String((f['Dedupe Mode'] && f['Dedupe Mode'].name) || f['Dedupe Mode'] || 'Strict').trim() || 'Strict',\n  maxRows: Math.max(0, Math.floor(Number(f['Max Rows']) || 0)),\n  // The launch row's own Trigger is kept and written back unchanged: the Airtable feed stamps\n  // \"schedule\" on the rows it creates, and a hand launch is \"form\". The door never overrides it.\n  trigger: String((f['Trigger'] && f['Trigger'].name) || f['Trigger'] || '').trim() || 'form',\n  clientName: '', ws: '', crBase: '', share: '', regTableId: '',\n  campName: '', hubCampaignRid: '', pullInUrl: '',\n  dncTableId: '', mirrorTableId: '', stampMirrorRid: '', shareViewLink: '', hasDeployError: false,\n  linkedinCol: '', plan: { varCols: [], rideCols: [] }, requiredCore: [], needFirstName: true,\n  rows: {}, varMisses: {}, skipCounts: {}, rowsTotal: 0,\n  emailToRow: {}, urlToRow: {}, inCamp: {}, freshProspects: {},\n  uploadedNew: 0, deployed: 0, landed: 0, pushed: 0, missing: 0, campsStamped: 0,\n  pausedTitle: 0, pausedUrl: 0, pausedNoData: 0, pausedNames: [], campaignProspects: 0,\n  rbFailed: false, ready: false,\n  errors: [], warnings: [], abort: null,\n  startedAt: Date.now(), runAt: $now.toISO()\n};\nif (!D.launchId) { D.abort = 'launch row not found'; D.errors.push('launch row not found (recordId missing or invalid)'); }\n// Stamp Running never gates, so a real Airtable failure there would be silent. It is not: a launch\n// row that exists but could not be claimed leaves finish upserting a NEW row on this execution id\n// instead of closing the launch row, and that has to be readable on the row it does write.\nif (D.launchId) {\n  try { const s = ($('Stamp Running').first() || {}).json || {}; if (s.error) D.errors.push('could not stamp the launch row Running: ' + JSON.stringify(s.error).slice(0, 200) + '; this run logs to a new row instead of closing the launch row'); } catch (e) {}\n}\nif (!D.abort && !D.clientId) { D.abort = 'no client link'; D.errors.push('launch row has no Client link'); }\nif (!D.abort && !D.table) { D.abort = 'no Table'; D.errors.push('launch row has no Table (People or Companies); nothing was sent'); }\nif (!D.abort && !D.view) { D.abort = 'no View'; D.errors.push('launch row has no View; nothing was sent'); }\nif (!D.abort) {\n  // Email Bison campaign ids are plain integers (e.g. 601); the door proves the id exists by GET.\n  const isBison = call.sender === 'Email Bison';\n  const ok = isPV ? /^[0-9a-f]{24}$/i.test(D.target) : (isBison ? /^[0-9]{1,10}$/.test(D.target) : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(D.target));\n  if (!ok) { D.abort = 'invalid Target'; D.errors.push('Target \"' + D.target + '\" is not ' + (isPV ? 'a plausible PlusVibe campaign id (24 hex)' : (isBison ? 'an Email Bison campaign id (integer)' : 'an Alta campaign UUID'))); }\n}\nsd[dk] = D;\nreturn [{ json: { clientId: D.clientId || 'recMISSING' } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-13-getclient",
+        "name": "Get Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -200,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.clientId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-14-checkclient",
+        "name": "Check Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Check Client: the registry row into the run's state. The ClayRoots base is the address of the\n// table the view lives on; nothing about a client is hardcoded anywhere in this machine. The\n// PlusVibe lane also needs the workspace the campaign lives in; the Alta lane does not, its\n// address is the campaign's own Pull-in URL.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nif (!D.abort) {\n  const r = ($input.first() || {}).json || {};\n  const f = r.fields || r;\n  D.clientName = String(f['Client name'] || f['Client'] || '').trim();\n  D.ws = String(f['PlusVibe Workspace ID'] || '').trim();\n  D.crBase = String(f['Clayroots Base ID'] || '').trim();\n  // The registry carries the client's table ids (ClayrootsPeopleTableID / ClayrootsCompaniesTableID);\n  // Plan Base reads the launch's table by that id first, by name on the base schema when absent.\n  const tl = String(D.table || '').trim().toLowerCase();\n  D.regTableId = String((tl === 'companies' ? f['ClayrootsCompaniesTableID'] : (tl === 'people' ? f['ClayrootsPeopleTableID'] : '')) || '').trim();\n  // Shared-base link, used to build a deep link to the exact deployed view on the receipt.\n  D.share = String(f['Clayroots shareable link'] || f['Clayroots Shareable Link'] || '').trim().replace(/\\/+$/, '');\n  if (D.sender === 'PlusVibe') {\n    if (!D.ws || !/^app[A-Za-z0-9]{14}$/.test(D.crBase)) { D.abort = 'client not deployable'; D.errors.push('client missing PlusVibe Workspace ID or Clayroots Base ID'); }\n  } else if (!/^app[A-Za-z0-9]{14}$/.test(D.crBase)) {\n    D.abort = 'no ClayRoots base'; D.errors.push('client \"' + (D.clientName || D.clientId) + '\" has no valid Clayroots Base ID');\n  }\n}\nreturn [{ json: { abort: !!D.abort, target: D.target || '' } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-15-hubcamp",
+        "name": "Find Hub Campaign",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          200,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "={Campaign ID} = '{{ $json.target }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-16-checkcamp",
+        "name": "Check Campaign",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          400,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Check Campaign: the Hub Campaigns row for the target, the one place both doors agree the\n// campaign is described. It carries the campaign's name (the receipt is named by it), the Hub\n// row the receipt links to, and, on the Alta lane, the Pull-in URL: the audience webhook Alta\n// hands out per campaign, which no API exposes, so it is operator-pasted state on the row.\n// Alta refuses without it. PlusVibe only warns on a missing Hub row, exactly as before: its\n// campaign is proven to exist by the workspace listing the door itself does before sending.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nif (!D.abort) {\n  const rows = $input.all().map(i => i.json).filter(r => r && (r.id || r.fields));\n  const hit = rows[0];\n  if (!hit) {\n    if (D.sender === 'Alta') { D.abort = 'campaign not in Hub'; D.errors.push('no Campaigns row with Campaign ID ' + D.target + '; sync or create it first'); }\n    else { D.campName = D.target; D.warnings.push('no Hub Campaigns row for ' + D.target + '; receipt created without campaign link'); }\n  } else {\n    const f = hit.fields || hit;\n    D.hubCampaignRid = hit.id || '';\n    D.campName = String(f['Campaign'] || D.target);\n    const seq = String((f['Sequencer'] && f['Sequencer'].name) || f['Sequencer'] || '');\n    // Email Bison: like PlusVibe, the campaign's existence is proven by the door's own GET, so a\n    // missing Hub row only warns; a Hub row sequenced by someone else is a wrong Target, refused.\n    if (D.sender === 'Email Bison' && seq && seq !== 'Email Bison') { D.abort = 'not an Email Bison campaign'; D.errors.push('campaign \"' + D.campName + '\" is sequenced by ' + seq + ', not Email Bison'); }\n    if (D.sender === 'Alta') {\n      if (seq && seq !== 'Alta') { D.abort = 'not an Alta campaign'; D.errors.push('campaign \"' + D.campName + '\" is sequenced by ' + seq + ', not Alta'); }\n      D.pullInUrl = String(f['Pull-in URL'] || '').trim();\n      if (!D.abort && !/^https:\\/\\/api\\.altahq\\.com\\/audience\\/webhook\\/[0-9a-f-]+\\/pull-in-prospect$/i.test(D.pullInUrl)) {\n        D.abort = 'no Pull-in URL'; D.errors.push('campaign \"' + D.campName + '\" has no valid Pull-in URL on its Campaigns row; paste the audience webhook from Alta');\n      }\n    }\n  }\n}\nreturn [{ json: { abort: !!D.abort, crBase: D.crBase || '', target: D.target || '', metaUrl: 'https://api.airtable.com/v0/meta/bases/' + (D.crBase || 'missing') + '/tables' } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-17-validlaunch",
+        "name": "Valid Launch?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          600,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "vl1",
+                "leftValue": "={{ $json.abort ? 'no' : 'yes' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-18-schema",
+        "name": "Get Base Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          800,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.metaUrl }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-19-planbase",
+        "name": "Plan Base",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1000,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Plan Base: the client base's schema into the run's plan. Resolves, in one read:\n//   the table the launch named (the registry's id first, the name on the schema second),\n//   the view (by id or exact name; ids are rename-proof and Campaigns.Live View ID holds ids),\n//   the DNC table (by name; absent = no deploy-time DNC filtering, and the run log says so),\n//   the campaigns mirror table (Campaign ID + Sequencer, no Final Email, the signature the\n//     sequencer syncs use),\n//   the client-facing share link from the table description (the receipt's List URL; the API\n//     cannot mint share links, so it is pasted there at setup),\n//   and the table's field names, which Plan Contract turns into the merge contract.\n// Any view the launch row names deploys (Operator ruling 2026-09-02): the old gate that accepted\n// only \"... : Campaigns\" views is gone.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\n// Every return carries the addresses the nodes downstream read off this node's output.\nconst shape = (extra) => Object.assign({ ok: false, viewUrl: '', crBase: D.crBase || 'appMISSING', tableId: D.tableId || '', dncTableId: D.dncTableId || '', mirrorTableId: D.mirrorTableId || 'tblMISSING', target: D.target || '' }, extra || {});\nif (D.abort) { return [{ json: shape() }]; }\nlet tables = [];\ntry { const j = ($input.first() || {}).json || {}; tables = Array.isArray(j.tables) ? j.tables : []; } catch (e) {}\nif (!tables.length) {\n  let j = {}; try { j = ($input.first() || {}).json || {}; } catch (e) {}\n  D.abort = 'could not read base schema';\n  D.errors.push('could not read base schema for ' + D.crBase + (j.error ? ': ' + JSON.stringify(j.error).slice(0, 150) : ''));\n  return [{ json: shape() }];\n}\nconst want = String(D.table || '').trim();\nlet t = D.regTableId ? tables.find(x => x.id === D.regTableId) : null;\nif (!t && D.regTableId) D.warnings.push('registry ' + want + ' table id ' + D.regTableId + ' is not in base ' + D.crBase + '; resolved by name instead');\nif (!t) t = want ? tables.find(x => String(x.name || '').trim().toLowerCase() === want.toLowerCase()) : null;\nif (!t) {\n  D.abort = 'table not found';\n  D.errors.push('Base ' + D.crBase + ' has no ' + (want || '(blank)') + ' table. Scaffold the base first. Nothing was spent or written.');\n  return [{ json: shape() }];\n}\nD.tableId = t.id; D.tableName = t.name || t.id;\n// The client-facing share link lives in the table description (\"Campaigns view:\n// https://airtable.com/shr...\"), pasted at setup.\nconst m = String(t.description || '').match(/https:\\/\\/airtable\\.com\\/(?:app[A-Za-z0-9]{14}\\/)?shr[A-Za-z0-9]+/);\nD.shareViewLink = m ? m[0] : '';\nif (!D.shareViewLink) D.warnings.push('table \"' + D.tableName + '\" description carries no share link; receipt written without a client link');\nconst v = (t.views || []).find(x => x.id === D.view || String(x.name || '').trim() === D.view);\nif (!v) {\n  D.abort = 'view not found';\n  D.errors.push('view \"' + D.view + '\" is not on table \"' + D.tableName + '\" in base ' + D.crBase + '; nothing was sent');\n  return [{ json: shape() }];\n}\nD.viewId = v.id; D.viewType = v.type || '';\nconst dncT = tables.find(x => String(x.name).toLowerCase() === 'dnc');\nD.dncTableId = dncT ? dncT.id : '';\nif (!D.dncTableId) D.warnings.push('no DNC table in base; DNC domains were not filtered at deploy time');\nconst mirT = tables.find(x => { const ns = new Set((x.fields || []).map(f => f.name)); return !ns.has('Final Email') && ns.has('Campaign ID') && ns.has('Sequencer'); });\nD.mirrorTableId = mirT ? mirT.id : '';\nif (!D.mirrorTableId) D.warnings.push('no campaigns mirror table in base (Campaign ID + Sequencer, no Final Email); Campaigns links not stamped');\nconst fields = t.fields || [];\nD.fieldsById = {}; const names = new Set();\nfor (const f of fields) { D.fieldsById[f.id] = f.name; names.add(f.name); }\nD.fieldNames = Array.from(names);\nD.hasDeployError = names.has('Deploy Error');\n// The lead's LinkedIn URL column: `LinkedIn URL` on a register-shaped table; `Social` only on a\n// legacy table that has no `LinkedIn URL`. Never both, never guessed.\nD.linkedinCol = names.has('LinkedIn URL') ? 'LinkedIn URL' : (names.has('Social') ? 'Social' : '');\n// The view's visible field ids are the merge contract; only a grid view has them.\nconst viewUrl = ((v.type || 'grid') === 'grid') ? ('https://api.airtable.com/v0/meta/bases/' + D.crBase + '/views/' + v.id + '?include=visibleFieldIds') : '';\nreturn [{ json: shape({ ok: true, viewUrl }) }];\n"
+        }
+      },
+      {
+        "id": "dvpf-20-baseok",
+        "name": "Base OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1200,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "bo1",
+                "leftValue": "={{ $json.ok ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-21-viewmeta",
+        "name": "Get View Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1400,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.viewUrl || 'https://api.airtable.com/v0/meta/bases/none/views/none' }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-22-plancontract",
+        "name": "Plan Contract",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Plan Contract: THE RULE. The view's visible columns are the merge contract: every visible\n// column is a variable and a row with an empty one is skipped. Three exceptions, in order:\n// MACHINE columns are never read and never sent (the register's machine fields: the email lane,\n// the Campaigns link and the sync's fields, the relevance and identity formulas, the contact\n// provenance, the contact-pull stamps; taken from the field register the push inlines as REGISTER\n// at the @@register line, every name checked against it so the list cannot drift); IDENTITY\n// columns become the lead itself, never a variable; IGNORE columns ride along when filled and\n// never block. A column on the table that is not on the register is the Operator's and deploys\n// as a variable like any other visible column.\n// The two lanes differ only in what identity is and in which columns never block: PlusVibe's\n// identity is the email plus a first name and a company, and it also enforces the standard lead\n// fields (State, City, Country) when the view shows them; Alta's identity is the LinkedIn URL\n// plus a company, and the name rides along because Alta resolves the person from the URL.\n// PlusVibe also refuses here, before a single lead is sent, when the source table lacks a column\n// this door writes back: a client base is set up once, by the scaffold, and no working machine\n// creates a column (Operator ruling 2026-09-02). The throw fails this sub-workflow, and with it\n// the door that called it, which is where the Failed row belongs.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client's rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule.\"}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped the OR's second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client's rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty.\"},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Signals\",\"filter\":{\"words\":\"relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view\",\"formula\":\"AND({relevance} = 1, {Signals} != BLANK())\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Signals\",\"Signal At\",\"Build Date\"],\"sort\":{\"field\":\"Signal At\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"ContaGen\":\"blueLight2\",\"Supersoniq\":\"purpleLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst shape = () => ({ ok: !D.abort, crBase: D.crBase || 'appMISSING', tableId: D.tableId || '', mirrorTableId: D.mirrorTableId || 'tblMISSING', target: D.target || '', view: D.viewId || D.view || '', dncTableId: D.dncTableId || '' });\nif (D.abort) { return [{ json: shape() }]; }\n// isPV is the EMAIL lane: PlusVibe and Email Bison share identity (Final Email + first name +\n// company), the standard lead fields and the write-back column check; only Alta differs.\nconst isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';\n// The machine fields, by group as the register declares them (ruling 2026-09-02). Each name must\n// exist on the register, or the push is wrong.\nconst MACHINE_GROUPS = {\n  lane: ['MV P0', 'P1 (Trykitt)', 'MV P1', 'P2 (LeadMagic)', 'MV P2', 'P3 (Prospeo)', 'MV P3', 'BB', 'Final Email', 'Email Source', 'Status'],\n  campaign: ['Campaigns', 'Messages Sent', 'Last Contacted', 'Campaign Status', 'Bounce Reason', 'Synced At', 'Deploy Error'],\n  formulas: ['manually_approved', 'relevance', 'linkedin_name_match', 'Build Date'],\n  provenance: ['Contact Key', 'Contact Source', 'Source ID'],\n  pull: ['Contacts Pulled At', 'Contacts Count', 'Contact Sources']\n};\nconst regNames = new Set(); for (const T of (REGISTER.tables || [])) for (const f of (T.fields || [])) regNames.add(f.name);\nconst MACHINE = new Set();\nfor (const g of Object.keys(MACHINE_GROUPS)) for (const n of MACHINE_GROUPS[g]) { if (!regNames.has(n)) throw new Error('Plan Contract: the field register has no machine field \"' + n + '\" (' + g + '); fix the register or this list'); MACHINE.add(n); }\n// PlusVibe's write-back columns must already exist on the source table.\nif (isPV) {\n  const want = String(D.tableName || D.table || '').trim().toLowerCase();\n  const T = REGISTER.tables.find(x => String(x.name).toLowerCase() === want) || REGISTER.tables.find(x => x.name === 'People');\n  const NEEDS = ['Deploy Error'].concat(D.mirrorTableId ? ['Campaigns'] : []).map(n => { const f = T.fields.find(x => x.name === n); if (!f) throw new Error('Plan Contract: the register has no field \"' + n + '\" on ' + T.name); return f.name; });\n  const have = new Set(D.fieldNames || []);\n  const missing = NEEDS.filter(n => !have.has(n));\n  if (missing.length) {\n    const msg = 'Table \"' + (D.tableName || D.tableId) + '\" (' + D.tableId + ') in base ' + D.crBase + ' is missing the columns ' + D.automation + ' writes: ' + missing.join(', ') + '. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.';\n    sd[dk] = null;\n    throw new Error(msg);\n  }\n}\nconst IGNORE_PV = new Set(['last_name', 'Title', 'Social', 'Phone', 'MX Provider', 'MX provider', 'MX', 'Seniority', 'Department', 'Existing In Role', 'ICP Reason', 'Description', 'Industry Groups', 'Employees', 'Revenue Range', 'Keywords', 'Company Status', 'Company City', 'Company State', 'Phones', 'Public Emails', 'Social URLs', 'Email Pattern', 'Signal Detail', 'detected_at', 'LinkedIn URL']);\nconst IGNORE_ALTA = new Set(['last_name', 'Title', 'Social', 'Phone', 'MX Provider', 'MX provider', 'MX', 'LinkedIn URL', 'City', 'State', 'State Full', 'Country', 'Zip', 'Street', 'Seniority', 'Department', 'Existing In Role', 'ICP Reason', 'Description', 'Industry Groups', 'Employees', 'Revenue Range', 'Score', 'Keywords', 'Company Status', 'Start Date', 'Company City', 'Company State', 'Phones', 'Public Emails', 'Social URLs', 'Redirect Domain', 'Email Pattern', 'Signal Detail', 'detected_at']);\nconst IDENTITY_PV = new Set(['Final Email', 'first_name', 'first_name_he', 'company_clean', 'Company']);\nconst IDENTITY_ALTA = new Set(['first_name', 'Company', 'company_clean']);\nconst CORE_LEAD = new Set(['State', 'City', 'Country']);\nconst IGNORE = isPV ? IGNORE_PV : IGNORE_ALTA;\nconst IDENTITY = isPV ? IDENTITY_PV : IDENTITY_ALTA;\nconst snake = k => String(k).replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase();\nlet vm = {};\ntry { vm = ($input.first() || {}).json || {}; } catch (e) {}\nconst visible = Array.isArray(vm.visibleFieldIds) ? vm.visibleFieldIds : null;\nconst varCols = []; const rideCols = []; const requiredCore = [];\nlet needFirstName = isPV;\nif (visible) {\n  needFirstName = false;\n  for (const fid of visible) {\n    const name = D.fieldsById[fid]; if (!name) continue;\n    if (name === 'first_name' || name === 'first_name_he') needFirstName = true;\n    if (MACHINE.has(name) || IDENTITY.has(name)) continue;\n    if (IGNORE.has(name) || /^job\\s/i.test(String(name))) {\n      // Alta reads its own identity off two of these; they never ride as variables there.\n      if (!isPV && (name === 'LinkedIn URL' || name === 'last_name')) continue;\n      rideCols.push({ name: name, key: snake(name) });\n      continue;\n    }\n    if (isPV && CORE_LEAD.has(name)) { requiredCore.push(name); continue; }\n    varCols.push({ name: name, key: snake(name) });\n  }\n} else {\n  let why = 'view metadata unavailable';\n  if (D.viewType && D.viewType !== 'grid') why = 'view \"' + D.view + '\" is type ' + D.viewType + ', not grid';\n  else if (vm && vm.error) why = 'view metadata call failed: ' + JSON.stringify(vm.error).slice(0, 150);\n  D.warnings.push(why + '; visibility unknown, so only identity fields are enforced and no custom variables are sent');\n}\nD.plan = { varCols, rideCols };\nD.requiredCore = requiredCore;\nD.needFirstName = needFirstName;\nif (isPV && !needFirstName && visible) D.warnings.push('view \"' + D.view + '\" does not show first_name; the first name is not enforced and leads deploy without one');\nif (!D.hasDeployError) D.warnings.push('table has no Deploy Error field; skip reasons are not written to rows');\nD.fieldsById = null; D.fieldNames = null;\nreturn [{ json: shape() }];\n"
+        },
+        "notes": "The view's visible columns are the merge variables. Also the write-back column check on the PlusVibe lane: a missing Deploy Error or Campaigns column throws here, before a single lead is sent, and the throw fails the door that called this."
+      },
+      {
+        "id": "dvpf-23-findmirror",
+        "name": "Find Mirror Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1800,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Base').first().json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Plan Base').first().json.mirrorTableId }}"
+          },
+          "filterByFormula": "={Campaign ID} = '{{ $('Plan Base').first().json.target }}'",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-24-resolvemirror",
+        "name": "Resolve Mirror",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2000,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Resolve Mirror: the campaign's mirror row in the client base, resolved BEFORE anything is sent,\n// because it is both the stamp target and the stamp-gate (Operator ruling 2026-08-28: a row whose\n// Campaigns links already carry this campaign's mirror row never re-enters the campaign, on top of\n// whatever the sequencer's own dedupe would say). No mirror row yet, on the first deploy into a\n// campaign, resolves to '' and gates nothing until the next node creates it.\n// A failed lookup must never create: a duplicate mirror row would split the links.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nD.stampMirrorRid = '';\nlet rid = '', err = '';\nfor (const it of $input.all()) {\n  const j = it.json || {};\n  if (j.error) { if (!err) err = JSON.stringify(j.error).slice(0, 150); }\n  else if (j.id && !rid) rid = j.id;\n}\nif (err) D.warnings.push('mirror row lookup failed: ' + err + '; Campaigns not stamped');\nD.stampMirrorRid = rid || '';\nconst need = !D.abort && !!D.mirrorTableId && !rid && !err;\nreturn [{ json: { needMirror: need, mirrorTableId: D.mirrorTableId || 'tblMISSING', crBase: D.crBase || 'appMISSING', campName: D.campName || D.target || '', target: D.target || '', sequencer: D.sender } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-25-needmirror",
+        "name": "Need Mirror Row?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2200,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "nm1",
+                "leftValue": "={{ $json.needMirror }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-26-createmirror",
+        "name": "Create Mirror Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2400,
+          -140
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.crBase }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.mirrorTableId }}"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $json.campName }}",
+              "Campaign ID": "={{ $json.target }}",
+              "Sequencer": "={{ $json.sequencer }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-27-collectmirror",
+        "name": "Collect Mirror",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2600,
+          -140
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Mirror: the just-created mirror row's id becomes the stamp target. The deployment\n// standard normally creates this row at campaign build, so getting here at all is worth a line.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst j = ($input.first() || {}).json || {};\nif (j.id) { D.stampMirrorRid = j.id; D.warnings.push('mirror row created for campaign \"' + (D.campName || D.target || '?') + '\" (the deployment standard normally creates it at campaign build)'); }\nelse { D.stampMirrorRid = ''; D.warnings.push('mirror row create failed: ' + JSON.stringify(j.error || j).slice(0, 150) + '; Campaigns links not stamped this run'); }\nreturn [{ json: { mirrorRid: D.stampMirrorRid || '' } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-28-readview",
+        "name": "Read View Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2800,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $('Plan Base').first().json.crBase }}/{{ $('Plan Base').first().json.tableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({view: $('Plan Contract').first().json.view, pageSize: 100}) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-29-collectview",
+        "name": "Collect View",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3000,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect View: the paginated view read into the run state, and the one question the DNC branch\n// asks. Rows land on the state so the DNC read can sit between the view and Build Rows without\n// breaking the row flow.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst rows = [];\nfor (const it of $input.all()) {\n  const j = it.json || {};\n  if (Array.isArray(j.records)) rows.push(...j.records);\n  else if (j.id && j.fields) rows.push(j);\n  else if (j.error) D.errors.push('view read: ' + JSON.stringify(j.error).slice(0, 200));\n}\nD.viewRows = rows;\nreturn [{ json: { hasDnc: !!D.dncTableId } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-30-hasdnc",
+        "name": "Has DNC?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3200,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "hd1",
+                "leftValue": "={{ $json.hasDnc ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-31-readdnc",
+        "name": "Read DNC",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3400,
+          -140
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $('Plan Base').first().json.crBase }}/{{ $('Plan Base').first().json.dncTableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "{\"pageSize\":100,\"fields\":[\"Domain\"]}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "The deploy-time DNC read, on both doors: domains the client has said never to touch are dropped here, before anything is sent, on top of whatever any other layer does."
+      },
+      {
+        "id": "dvpf-32-buildrows",
+        "name": "Build Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3600,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Rows: the view's rows into the payload the caller sends, one shaping for both doors.\n// The order of the gates is the doctrine and does not vary by sender:\n//   identity, then DNC, then the stamp-gate, then every required variable, then the run cap.\n// The view owns dedupe (Operator ruling 2026-09-02): a live view filters on Sequencers not\n// containing this door's sender, and this machine never gates on that. The one dedupe here is\n// the Campaigns stamp, which catches a row the view somehow offered again before anything is sent.\n// DNC is read from the client base's DNC table at deploy time, on both doors.\n// Max Rows is applied LAST, so the cap counts only rows that would really have been sent; the\n// surplus is a named skip, never a silent drop, and the view offers it again on the next run.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\n// isPV is the EMAIL lane: PlusVibe and Email Bison run the same gates (Final Email identity, DNC,\n// stamp-gate, first name, company, required variables, run cap) and queue 200-lead chunks; only\n// the lead object and the send flags differ, branched on isBison below.\nconst isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';\nconst isBison = D.sender === 'Email Bison';\nif (D.abort) { return [{ json: { ready: false, abort: true } }]; }\nconst rowsArr = D.viewRows || [];\nD.rowsTotal = rowsArr.length;\nif (!rowsArr.length) {\n  D.abort = isPV ? 'view empty or not found' : 'view empty';\n  D.errors.push(isPV ? ('view empty or not found: \"' + (D.view || '') + '\"; nothing was sent') : ('view \"' + D.view + '\" returned no rows; nothing was sent'));\n  D.viewRows = null;\n  return [{ json: { ready: false, abort: true } }];\n}\nconst dnc = {};\nif (D.dncTableId) {\n  try {\n    for (const it of $('Read DNC').all()) {\n      const j = it.json || {};\n      const recs = Array.isArray(j.records) ? j.records : [];\n      for (const r of recs) { const d = String((r.fields || {})['Domain'] || '').toLowerCase().trim(); if (d) dnc[d] = 1; }\n    }\n  } catch (e) {}\n}\n// The one reader for every field. A register-shaped People table carries the company facts\n// (Domain, Company, Country, State, City, Employees, Industry Groups, MX Provider, Tag, Signals)\n// as lookups through the Companies link, so Airtable returns arrays ([\"California\"]); legacy\n// tables carry plain text. An array yields its first element, an object its value or name, never\n// \"[object Object]\" and never a joined list (ruling 2026-09-02).\nconst val = v => { if (v === null || v === undefined) return ''; if (Array.isArray(v)) return v.length ? val(v[0]) : ''; if (typeof v === 'string') return v.trim(); if (typeof v === 'number' || typeof v === 'boolean') return String(v); if (typeof v === 'object') { if (typeof v.value === 'string') return v.value.trim(); if (typeof v.name === 'string') return v.name.trim(); } return ''; };\n// A usable first name starts with a letter and has at least two letters, in any language.\nconst NAME_OK = (s) => { const v = String(s || '').trim(); if (!v) return false; if (v.indexOf('�') >= 0) return false; if (!/^\\p{L}/u.test(v)) return false; return (v.match(/\\p{L}/gu) || []).length >= 2; };\nconst normUrl = u => String(u || '').toLowerCase().replace(/^https?:\\/\\//, '').replace(/^www\\./, '').replace(/\\/+$/, '').split('?')[0];\nconst linkIds = v => (Array.isArray(v) ? v : []).map(c => (c && typeof c === 'object') ? String(c.id || '') : String(c || '')).filter(Boolean);\nconst emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/;\nconst plan = D.plan || { varCols: [], rideCols: [] };\nconst requiredCore = D.requiredCore || [];\nconst needFirstName = D.needFirstName !== false;\n// customFields accepts ONLY defined Alta prospect-field keys and 400s the whole prospect on an\n// unknown one (proven 2026-09-01: one bad key rejected all 260). Keys that are really Alta system\n// fields ship top-level under Alta's name; every other var key must exist as a defined prospect\n// field, created once per account as part of campaign setup.\nconst ALTA_SYSKEY = { title: 'jobTitle', seniority: 'seniority', city: 'city', state: 'state', country: 'country', description: 'description' };\nconst ALTA_DEFINED = ['job_needs', 'mechanical_work', 'workload', 'real_company_name', 'open_infrastructure_positions'];\nD.rows = {}; D.emailToRow = {}; D.urlToRow = {}; D.varMisses = {};\nconst leads = []; const pushes = [];\nfor (const r of rowsArr) {\n  const f = r.fields || {};\n  const rec = { skip: null, camps: linkIds(f['Campaigns']) };\n  D.rows[r.id] = rec;\n  let dom = '';\n  if (isPV) {\n    const email = String(f['Final Email'] || '').trim();\n    rec.email = email.toLowerCase();\n    if (!email) { rec.skip = 'missing Final Email'; continue; }\n    if (!emailRe.test(email)) { rec.skip = 'invalid email syntax'; continue; }\n    dom = (val(f['Domain']) || email.split('@')[1] || '').toLowerCase().trim();\n  } else {\n    const li = val(f['LinkedIn URL']);\n    if (!/^https?:\\/\\//i.test(li)) { rec.skip = 'missing LinkedIn URL'; continue; }\n    rec.url = normUrl(li);\n    rec.linkedin = li;\n    dom = String(val(f['Domain']) || '').toLowerCase().trim();\n  }\n  if (dom && dnc[dom]) { rec.skip = 'DNC: ' + dom; continue; }\n  // The stamp-gate: already linked to this campaign's mirror row = already enrolled here once.\n  if (D.stampMirrorRid && rec.camps.indexOf(D.stampMirrorRid) >= 0) { rec.skip = 'already in campaign (Campaigns stamp)'; continue; }\n  const fnRaw = val(f['first_name']);\n  const fnHe = val(f['first_name_he']);\n  if (isPV && needFirstName) {\n    // On a company-inbox list the first name is absent by design; the view decides by showing\n    // the column or not. When it is shown, an unusable name is a skip, not a nameless send.\n    if (!fnRaw && !fnHe) { rec.skip = 'missing first name'; continue; }\n    if (!NAME_OK(fnRaw) && !NAME_OK(fnHe)) { rec.skip = 'unusable first name: ' + String(fnRaw || fnHe).slice(0, 40); continue; }\n  }\n  if (!isPV && D.urlToRow[rec.url]) { rec.skip = 'duplicate LinkedIn URL in view (row ' + D.urlToRow[rec.url] + ' already queued)'; continue; }\n  const comp = val(f['company_clean']) || val(f['Company']);\n  if (!comp) { rec.skip = 'missing company name'; continue; }\n  // Visible standard lead fields must be filled too (PlusVibe only; Alta never blocks on them).\n  let coreMiss = '';\n  for (const c of requiredCore) { if (!val(f[c])) { coreMiss = c; break; } }\n  if (coreMiss) { D.varMisses[coreMiss] = (D.varMisses[coreMiss] || 0) + 1; rec.skip = 'missing ' + coreMiss; continue; }\n  const cv = {}; const missVars = [];\n  for (const col of plan.varCols) { const v = val(f[col.name]); if (v) cv[col.key] = v.slice(0, isPV ? 2000 : 4000); else missVars.push(col.name); }\n  if (missVars.length) { for (const m of missVars) { D.varMisses[m] = (D.varMisses[m] || 0) + 1; } rec.skip = 'missing ' + missVars.join(', ').slice(0, 120); continue; }\n  // Convention (never-block) columns ride along when visible and filled, never skip a row.\n  for (const col of (plan.rideCols || [])) { const v = val(f[col.name]); if (v && cv[col.key] === undefined) cv[col.key] = v.slice(0, isPV ? 2000 : 4000); }\n  if (isPV) {\n    if (D.maxRows && leads.length >= D.maxRows) { rec.skip = 'over the run cap of ' + D.maxRows + ' rows'; continue; }\n    const lead = { email: String(f['Final Email'] || '').trim() };\n    if (isBison) {\n      // Email Bison's lead: first_name is REQUIRED by the API (a company-inbox list cannot deploy\n      // here without one), title/company are its own field names, and custom variables are an\n      // array of {name, value} rendered as {NAME} in the sequence. State/City/Country have no\n      // lead field on Bison; when the view shows them they already ride as variables.\n      const fn = NAME_OK(fnRaw) ? fnRaw : (NAME_OK(fnHe) ? fnHe : '');\n      if (!fn) { rec.skip = 'missing first name (Email Bison requires one)'; continue; }\n      lead.first_name = fn;\n      const ln = val(f['last_name']); if (ln) lead.last_name = ln;\n      const ttl = val(f['Title']); if (ttl) lead.title = ttl;\n      lead.company = comp;\n      const cvArr = Object.keys(cv).map(k => ({ name: k, value: cv[k] }));\n      if (cvArr.length) lead.custom_variables = cvArr;\n    } else {\n      // State carries the full state name (Clean Fields writes it there); State Full is never read.\n      const core = { first_name: NAME_OK(fnRaw) ? fnRaw : '', last_name: val(f['last_name']), company_name: comp, state: val(f['State']), city: val(f['City']), country: val(f['Country']), job_title: val(f['Title']) };\n      const soc = D.linkedinCol ? val(f[D.linkedinCol]) : '';\n      if (/^https?:\\/\\//i.test(soc)) core.linkedin_person_url = soc;\n      for (const k of Object.keys(core)) { if (core[k]) lead[k] = core[k]; }\n      if (Object.keys(cv).length) lead.custom_variables = cv;\n    }\n    D.emailToRow[rec.email] = r.id;\n    leads.push(lead);\n  } else {\n    if (D.maxRows && pushes.length >= D.maxRows) { rec.skip = 'over the run cap of ' + D.maxRows + ' rows'; continue; }\n    // Vars ride twice: extraInfoData is Alta's display blob; customFields populate the DEFINED\n    // prospect fields, the only place sequence templates render from (proven 2026-09-01: values\n    // visible on the card but blank in the copy until the defined field carries them).\n    const body = { company: comp, linkedinUrl: rec.linkedin, extraInfoData: cv };\n    const custom = {};\n    for (const k of Object.keys(cv)) {\n      if (ALTA_SYSKEY[k]) { body[ALTA_SYSKEY[k]] = cv[k]; continue; }\n      if (ALTA_DEFINED.indexOf(k) >= 0) custom[k] = cv[k];\n    }\n    if (Object.keys(custom).length) body.customFields = custom;\n    const fn = fnRaw || fnHe;\n    if (fn) body.firstName = fn;\n    const ln = val(f['last_name']); if (ln) body.lastName = ln;\n    const web = val(f['Domain']); if (web) body.companyWebsite = /^https?:\\/\\//i.test(web) ? web : 'https://' + web;\n    const email = val(f['Final Email']); if (email) body.email = email;\n    D.urlToRow[rec.url] = r.id;\n    pushes.push({ recordId: r.id, enroll_body: body, campaign_url: D.pullInUrl });\n  }\n}\nD.viewRows = null;\nconst skipCounts = {};\nfor (const id of Object.keys(D.rows)) { const s = D.rows[id].skip; if (s) { const key = s.indexOf('DNC:') === 0 ? 'DNC' : s; skipCounts[key] = (skipCounts[key] || 0) + 1; } }\nD.skipCounts = skipCounts;\nif (isPV) {\n  const chunks = [];\n  for (let i = 0; i < leads.length; i += 200) chunks.push(leads.slice(i, i + 200));\n  D.send = { queue: chunks, idx: 0, attempts: 0 };\n  if (isBison) {\n    // Bison has no dedupe modes: \"patch\" keeps an existing lead's other variables, and attach-leads\n    // refuses a lead already In Sequence elsewhere unless allow_parallel_sending is set (it is not).\n    D.flags = { existing_lead_behavior: 'patch' };\n  } else {\n    const flagMap = { 'Standard': { skip_lead_in_active_pause_camp: true }, 'Strict': { skip_if_in_workspace: true }, 'Active-only': { skip_lead_for_active_only_camp: true }, 'None': {} };\n    D.flags = Object.assign({ is_overwrite: true }, flagMap[D.dedupe] || flagMap['Strict']);\n  }\n  D.ready = chunks.length > 0;\n} else {\n  D.pushes = pushes;\n  D.ready = pushes.length > 0;\n}\nreturn [{ json: { ready: D.ready, abort: false } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-33-prepareout",
+        "name": "Prepare Out",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3800,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Prepare Out: everything the caller needs, on one item. The state travels as DATA from here on,\n// never as static data across the call boundary: the door carries it through its send lane and\n// hands it straight back to finish. Two runs died at an Alta readback because workflow static data\n// does not survive a Wait resume (2026-08-31 and 2026-09-01); an item does.\n// The slot this run used in THIS machine's static data is deleted, not nulled: every prepare would\n// otherwise leave a key behind forever.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\ndelete sd[dk];\n// isPV is the EMAIL lane (PlusVibe and Email Bison both queue chunks); the first chunk's request\n// body is shaped per sender below.\nconst isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';\nconst isBison = D.sender === 'Email Bison';\nconst out = {\n  ok: !D.abort,\n  ready: !D.abort && !!D.ready,\n  abort: D.abort || '',\n  rowsTotal: D.rowsTotal || 0,\n  queued: isPV ? ((D.send && D.send.queue) ? D.send.queue.reduce((n, c) => n + (c ? c.length : 0), 0) : 0) : (D.pushes || []).length,\n  ws: D.ws || '', target: D.target || '', campName: D.campName || '', launchId: D.launchId || '',\n  state: D\n};\nif (isPV) {\n  const q = (D.send && D.send.queue) || [];\n  out.body = q.length\n    ? (isBison ? Object.assign({ leads: q[0] }, D.flags || {}) : Object.assign({ workspace_id: D.ws, campaign_id: D.target, leads: q[0] }, D.flags || {}))\n    : null;\n} else {\n  out.pushes = D.pushes || [];\n  D.pushes = null;\n}\nreturn [{ json: out }];\n"
+        }
+      },
+      {
+        "id": "dvpf-40-buildstamps",
+        "name": "Build Stamps",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -800,
+          460
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Stamps: the source rows get the truth of this run written back onto them. Confirmed\n// members get this campaign's mirror row unioned into their Campaigns links, never a replacement;\n// everything else gets its reason in Deploy Error. That stamp is the door's own dedupe for every\n// future run, which is why it is written even when nothing was sent.\n// The state arrives as data from the caller and is put on this machine's static data for the rest\n// of the finish lane; Build Run Log deletes the slot when it closes the row.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst call = $('Route Mode').first().json;\nconst D = call.state;\nsd[dk] = D;\n// isPV is the EMAIL lane: Email Bison confirms membership by read-back into inCamp exactly as PlusVibe does.\nconst isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';\nif (D.abort) { D.campsStamped = 0; return [{ json: { _none: true } }]; }\nconst patches = [];\nlet deployed = 0, missing = 0, stamped = 0;\nconst missingIdx = [];\nfor (const rid of Object.keys(D.rows || {})) {\n  const r = D.rows[rid];\n  const fields = {};\n  let member = false;\n  if (isPV) {\n    let v = '';\n    if (r.skip) v = r.skip;\n    else if (D.rbFailed) continue;\n    else if (r.email && D.inCamp[r.email]) { v = ''; deployed++; member = true; }\n    else { v = 'not in campaign after deploy (dedupe-skipped or PV-dropped)'; missing++; missingIdx.push(patches.length); }\n    fields['Deploy Error'] = v;\n  } else {\n    if (D.hasDeployError) fields['Deploy Error'] = r.skip || '';\n    member = !!r.landed;\n  }\n  if (member && D.stampMirrorRid) {\n    const set = {}; for (const c of (r.camps || [])) set[c] = 1; set[D.stampMirrorRid] = 1;\n    fields['Campaigns'] = Object.keys(set); stamped++;\n  }\n  if (Object.keys(fields).length) patches.push({ id: rid, fields });\n}\nif (isPV) {\n  // PlusVibe reports dedupe blocks as counts only, never per email. When every sent-but-absent row\n  // is accounted for by those counts, all of them were dedupe and the stamp can say so; any\n  // mismatch keeps the honest combined wording, because a chunk failure also lands rows here.\n  const dedupeTotal = D.pv ? (Number(D.pv.skipped || 0) + Number(D.pv.already || 0)) : 0;\n  if (missing > 0 && missing === dedupeTotal) {\n    const lbl = 'blocked by dedupe mode \"' + (D.dedupe || 'Strict') + '\" (already in the workspace or campaign)';\n    for (const i of missingIdx) patches[i].fields['Deploy Error'] = lbl;\n  }\n  D.deployed = deployed; D.missing = missing;\n  // Recomputed at the end, because a row can pick up a skip after the send (rejected by the\n  // sequencer's validation, paused by a post-landing gate).\n  const skipCounts = {};\n  for (const id of Object.keys(D.rows || {})) { const s = D.rows[id].skip; if (s) { const key = s.indexOf('DNC:') === 0 ? 'DNC' : s; skipCounts[key] = (skipCounts[key] || 0) + 1; } }\n  D.skipCounts = skipCounts;\n  if (deployed && !stamped && !D.rbFailed) D.warnings.push('deployed leads were not stamped with a Campaigns link (no mirror row resolved)');\n  D.inCamp = {}; D.emailToRow = {};\n} else {\n  if (D.landed && !stamped) D.warnings.push('landed prospects were not stamped with a Campaigns link (no mirror row)');\n}\nD.campsStamped = stamped;\nconst out = [];\nfor (let i = 0; i < patches.length; i += 10) out.push({ json: { crBase: D.crBase, tableId: D.tableId, body: { records: patches.slice(i, i + 10), typecast: true } } });\nif (!out.length) return [{ json: { _none: true } }];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "dvpf-41-anystamps",
+        "name": "Any Stamps?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -600,
+          460
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "as1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "dvpf-42-patchrows",
+        "name": "Patch Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -400,
+          360
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.tableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-43-receipt",
+        "name": "Build Receipt",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -200,
+          460
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Receipt: the Lead Lists row, one per view into one campaign, refreshed by every run of the\n// door (a daily feed hits the same row forever, zero new rows). List URL is the client-safe share\n// link parsed from the table description; View Link is the internal deep link to the exact\n// selector view that deployed, our debugging trail. Deployed is the confirmed member count.\n// The stamp writes are collected here too, so a failed PATCH lands in the run's error list.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\ntry { if ($('Patch Rows').isExecuted) { for (const it of $('Patch Rows').all()) { const j = it.json || {}; if (j.error) D.errors.push('stamp write: ' + JSON.stringify(j.error).slice(0, 200)); } } } catch (e) {}\nif (D.abort) { return [{ json: { _none: true, Name: '', Campaign: [], ViewLink: '', InternalLink: '', Deployed: 0 } }]; }\n// The receipt is named by the CAMPAIGN on the PlusVibe lane, because that name is what clients\n// filter the shared Campaigns view by; the Alta lane names it by the view it drank from. Both\n// names are load-bearing for an existing row: the upsert matches on Name plus List URL.\nconst isEmailLane = (D.sender === 'PlusVibe' || D.sender === 'Email Bison');\nD.receiptName = isEmailLane\n  ? (D.campName || D.target || ((D.tableName || D.tableId || 'table') + ' - ' + (D.view || 'view')))\n  : ((D.tableName || D.tableId || 'table') + ' - ' + (D.view || 'view'));\nD.viewLink = D.shareViewLink || '';\nif (!D.viewLink) D.warnings.push('share link unresolved; receipt written without a client link');\nlet internalLink = '';\nconst stem = D.share || D.shareViewLink || '';\nif (stem && D.tableId && D.viewId) internalLink = stem + '/' + D.tableId + '/' + D.viewId;\nconst deployed = isEmailLane ? Number(D.deployed || 0) : Number(D.landed || 0);\nreturn [{ json: { Name: D.receiptName, Campaign: D.hubCampaignRid ? [D.hubCampaignRid] : [], ViewLink: D.viewLink, InternalLink: internalLink, Deployed: deployed } }];\n"
+        }
+      },
+      {
+        "id": "dvpf-43b-hasreceipt",
+        "name": "Have Receipt?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -100,
+          460
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "hr1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "A refused launch writes no Lead Lists receipt: an empty Name and List URL would upsert a junk row and then own it forever."
+      },
+      {
+        "id": "dvpf-44-leadlist",
+        "name": "Create Lead List",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          0,
+          460
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblpy5Qt0j6TyDhqF"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Name",
+              "List URL"
+            ],
+            "schema": [],
+            "value": {
+              "Name": "={{ $json.Name }}",
+              "Campaign": "={{ $json.Campaign }}",
+              "List URL": "={{ $json.ViewLink }}",
+              "View Link": "={{ $json.InternalLink }}",
+              "Deployed": "={{ $json.Deployed }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dvpf-45-buildlog",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          200,
+          460
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Run Log: the run's one Hub row, upserted on the CALLER's Execution ID, which is the launch\n// row Stamp Running already claimed. One row per run, never two (the Alta lane used to create a\n// second row beside the launch row it also updated).\n// Status is computed, never a literal, and each lane keeps the verdict it was given: PlusVibe\n// reads Succeeded unless something failed; Alta calls a refusal Failed and counts an auto-pause\n// as an error. The Description is the narrative a human reads at a glance, and the duplicate\n// count in it is a MIRROR, never a gate: the view owns dedupe, and this line is how a view that\n// stopped excluding what it already sent shows up on day one instead of quietly spending the\n// whole daily allowance re-offering the same people.\n// Only the row's real fields are returned: the write maps input straight onto the table.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst D = sd[dk] || { errors: ['deploy state missing'], warnings: [], rows: {}, skipCounts: {}, launchId: '', sender: 'PlusVibe', automation: '', execId: String($execution.id), wfId: '' };\n// isPV is the EMAIL lane: Email Bison reports through the same counters (D.pv) the PlusVibe door\n// fills, so the narrative below reads the same; the sender's name comes from D.sender.\nconst isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';\nconst senderName = D.sender || 'PlusVibe';\ntry { const r = ($('Create Lead List').first() || {}).json || {}; if (!r.id && !D.abort) D.warnings.push('Lead Lists receipt creation failed'); } catch (e) { if (!D.abort) D.warnings.push('Lead Lists receipt not created'); }\nconst fmt = v => Number(v || 0).toLocaleString('en-US');\nconst failed = (D.errors || []).slice();\nconst sc = D.skipCounts || {};\nconst skipTotal = Object.keys(sc).reduce((s, k) => s + sc[k], 0);\nconst md = [];\nif (isPV) {\n  md.push('**Deployed ' + fmt(D.deployed || 0) + ' of ' + fmt(D.rowsTotal || 0) + ' view rows to ' + (D.campName || '?') + '**');\n  md.push('');\n  md.push('**Campaign:** ' + (D.campName || '?') + ' (' + (D.target || '?') + ')');\n  md.push('**Table:** ' + (D.tableName || D.table || '?') + ' (' + (D.tableId || '?') + ')');\n  md.push('**View:** ' + (D.view || '?'));\n  if (D.viewLink) md.push('**Link:** ' + D.viewLink);\n  md.push('**Dedupe mode:** ' + (D.sender === 'Email Bison' ? 'Email Bison (patch existing leads; a lead already In Sequence elsewhere is refused by the sender)' : (D.dedupe || 'Strict')));\n  if (D.campsStamped) md.push('**Campaigns links stamped:** ' + fmt(D.campsStamped) + ' (this list = filter Campaigns has the campaign)');\n  const P = D.pv;\n  if (P) {\n    md.push('');\n    md.push('**Sent to ' + senderName + '**');\n    md.push('- Sent: ' + fmt(P.sent));\n    md.push('- Accepted: ' + fmt(P.uploaded));\n    md.push('- Not accepted: ' + fmt((P.sent || 0) - (P.uploaded || 0)));\n    if (P.skipped) md.push('   - Already in the workspace, blocked by dedupe mode \"' + (D.dedupe || 'Strict') + '\": ' + fmt(P.skipped));\n    if (P.already) md.push('   - Already in this campaign: ' + fmt(P.already));\n    if (P.duplicate) md.push('   - Same email twice in the upload: ' + fmt(P.duplicate));\n    if (P.invalid) md.push('   - ' + senderName + ' judged the email invalid' + (D.sender === 'Email Bison' ? ' (personal domains are skipped by the instance)' : '') + ': ' + fmt(P.invalid));\n    if (P.overflowed) md.push('   - Over your plan limit: ' + fmt(P.overflowed));\n    if (P.overwritten) md.push('   - Existing lead refreshed instead of added: ' + fmt(P.overwritten));\n    if (P.remaining !== null && P.remaining !== undefined) md.push('- Leads left in plan: ' + fmt(P.remaining));\n  }\n  const alreadyStamped = sc['already in campaign (Campaigns stamp)'] || 0;\n  const pvDupes = (P ? Number(P.skipped || 0) + Number(P.already || 0) : 0);\n  md.push('');\n  md.push('**Already present: ' + fmt(pvDupes + alreadyStamped) + '** (' + senderName + ': in this campaign ' + fmt(P ? P.already : 0) + ', in the workspace ' + fmt(P ? P.skipped : 0) + ' · Campaigns stamp, caught before sending: ' + fmt(alreadyStamped) + ')');\n  if (D.missing) { md.push(''); md.push('- Sent but not found in the campaign afterwards: ' + fmt(D.missing)); }\n  const vm = D.varMisses || {};\n  const vmKeys = Object.keys(vm).sort((a, b) => vm[b] - vm[a]);\n  if (vmKeys.length) {\n    md.push('');\n    md.push('**Not sent: a required column was empty**');\n    md.push('These rows never left Airtable. Fill the column or hide it from the view.');\n    for (const k of vmKeys) md.push('- ' + k + ' was empty on ' + fmt(vm[k]) + ' row' + (vm[k] === 1 ? '' : 's'));\n  }\n  if (skipTotal) {\n    md.push('');\n    md.push('**Not sent: other reasons (' + fmt(skipTotal) + ')**');\n    for (const k of Object.keys(sc)) md.push('- ' + k + ': ' + fmt(sc[k]));\n  }\n  if (D.receiptName) { md.push(''); md.push('**Lead list receipt:** ' + D.receiptName); }\n} else {\n  md.push('**Landed ' + fmt(D.landed) + ' of ' + fmt(D.rowsTotal) + ' view rows in ' + (D.campName || D.target || '?') + '**');\n  md.push('');\n  md.push('**Campaign:** ' + (D.campName || '?') + ' (' + (D.target || '?') + ') · **View:** ' + (D.view || '?') + ' on ' + (D.tableName || D.table || '?') + ' (' + (D.tableId || '?') + ')');\n  md.push('');\n  md.push('**Funnel**');\n  md.push('- **View rows:** ' + fmt(D.rowsTotal));\n  if (skipTotal) { md.push('- **Skipped before push (' + fmt(skipTotal) + '):**'); for (const k of Object.keys(sc)) md.push('   - ' + k + ': ' + fmt(sc[k])); }\n  md.push('- **Pushed:** ' + fmt(D.pushed));\n  md.push('- **Landed (readback):** ' + fmt(D.landed));\n  if (D.missing) md.push('- **Pushed but not in the campaign:** ' + fmt(D.missing));\n  const pz = (D.pausedTitle || 0) + (D.pausedUrl || 0) + (D.pausedNoData || 0);\n  if (pz) { md.push('- **Auto-paused after landing:** ' + fmt(pz) + ' (title rule ' + fmt(D.pausedTitle) + ' · URL mismatch ' + fmt(D.pausedUrl) + ' · no person data ' + fmt(D.pausedNoData) + ')'); for (const n of (D.pausedNames || [])) md.push('   - ' + n); }\n  md.push('- **Campaigns links stamped:** ' + fmt(D.campsStamped));\n  // Alta's pull-in NEVER reports a duplicate: it answers 200 {\"message\":\"Prospect uploaded\n  // successfully\"} whether the person is new or already a member. So the count is what we can see\n  // by values: rows the Campaigns stamp caught before pushing, plus rows the readback found\n  // already in the campaign from before this run started, which is Alta silently absorbing a push.\n  const stampDupes = sc['already in campaign (Campaigns stamp)'] || 0;\n  let healed = 0; for (const id of Object.keys(D.rows || {})) if (D.rows[id] && D.rows[id].healed) healed++;\n  md.push('- **Already present:** ' + fmt(stampDupes + healed) + ' (Campaigns stamp, caught before pushing ' + fmt(stampDupes) + ' · pushed but already a member before this run ' + fmt(healed) + '). Alta never reports a duplicate itself.');\n  if (D.receiptName) { md.push(''); md.push('**Lead list receipt:** ' + D.receiptName); }\n}\nif ((D.warnings || []).length) { md.push(''); md.push('**Warnings (' + D.warnings.length + ')**'); for (const w of D.warnings) md.push('- ' + w); }\nif (failed.length) { md.push(''); md.push('**FAILED (' + failed.length + ')**'); for (const e of failed) md.push('- ' + e); }\nconst pz = (D.pausedTitle || 0) + (D.pausedUrl || 0) + (D.pausedNoData || 0);\nconst status = isPV\n  ? (failed.length ? 'Succeeded with errors' : 'Succeeded')\n  : (D.abort ? 'Failed' : ((failed.length || pz || D.missing) ? 'Succeeded with errors' : 'Succeeded'));\nconst errors = isPV ? failed.length : (failed.length + (pz ? 1 : 0));\nconst durS = Math.round((Date.now() - (D.startedAt || Date.now())) / 1000);\nD.finalStatus = status;\nD.finalDescription = md.join('\\n');\nconst row = {\n  'Status': status,\n  'Trigger': D.trigger || 'form',\n  'Run at': D.runAt || new Date().toISOString(),\n  'Duration s': durS,\n  'Records In': D.rowsTotal || 0,\n  'Records Out': (isPV ? (D.deployed || 0) : (D.landed || 0)),\n  'Errors': errors,\n  'Execution ID': String(D.execId || $execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + (D.wfId || $workflow.id) + '/executions/' + String(D.execId || $execution.id),\n  'Description': D.finalDescription.slice(0, 95000)\n};\n// On a launch row, Automation and Target are LAUNCH PARAMETERS the feed or the Operator wrote, and\n// the upsert must not overwrite them: Target holds the campaign id this run was told to deploy\n// into, and a run that rewrote it as a description destroyed the record of what it was asked to do\n// (caught live, 2026-09-03). Only a run with no launch row of its own fills them in.\nif (!D.launchId) {\n  row['Automation'] = D.automation || '';\n  row['Target'] = (D.tableName || D.table || '') + ' (' + (D.tableId || '') + ') -> ' + (D.campName || D.target || '');\n}\nreturn [{ json: row }];\n"
+        }
+      },
+      {
+        "id": "dvpf-46-logrun",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          400,
+          460
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": [],
+            "value": {}
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "notes": "The loud log write: no onError override, so a failed row write crashes this sub-workflow, which crashes the door, which is the run the Error Logger names."
+      },
+      {
+        "id": "dvpf-47-finishout",
+        "name": "Finish Out",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          600,
+          460
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Finish Out: the receipt back to the door, and the end of this run's slot in static data.\n// The door does nothing with it but end; the row is already written, and it is the record.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst D = sd[dk] || {};\ndelete sd[dk];\nlet rowId = '';\ntry { const r = ($input.first() || {}).json || {}; rowId = r.id || ''; } catch (e) {}\nreturn [{ json: {\n  ok: true,\n  status: D.finalStatus || '',\n  rowId: rowId,\n  launchId: D.launchId || '',\n  campaign: D.campName || D.target || '',\n  recordsIn: D.rowsTotal || 0,\n  recordsOut: ((D.sender === 'PlusVibe' || D.sender === 'Email Bison') ? (D.deployed || 0) : (D.landed || 0)),\n  errors: (D.errors || []).length,\n  warnings: (D.warnings || []).length\n} }];\n"
+        }
+      }
+    ],
+    "connections": {
+      "Deploy Trigger": {
+        "main": [
+          [
+            {
+              "node": "Route Mode",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Mode": {
+        "main": [
+          [
+            {
+              "node": "Which Mode?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Which Mode?": {
+        "main": [
+          [
+            {
+              "node": "Read Launch Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Stamps",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Launch Row": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Init Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Deploy": {
+        "main": [
+          [
+            {
+              "node": "Get Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Client": {
+        "main": [
+          [
+            {
+              "node": "Check Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Client": {
+        "main": [
+          [
+            {
+              "node": "Find Hub Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Hub Campaign": {
+        "main": [
+          [
+            {
+              "node": "Check Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Campaign": {
+        "main": [
+          [
+            {
+              "node": "Valid Launch?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valid Launch?": {
+        "main": [
+          [
+            {
+              "node": "Get Base Schema",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prepare Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Base Schema": {
+        "main": [
+          [
+            {
+              "node": "Plan Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Base": {
+        "main": [
+          [
+            {
+              "node": "Base OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Base OK?": {
+        "main": [
+          [
+            {
+              "node": "Get View Meta",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prepare Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get View Meta": {
+        "main": [
+          [
+            {
+              "node": "Plan Contract",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Contract": {
+        "main": [
+          [
+            {
+              "node": "Find Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Resolve Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Mirror": {
+        "main": [
+          [
+            {
+              "node": "Need Mirror Row?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Need Mirror Row?": {
+        "main": [
+          [
+            {
+              "node": "Create Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Read View Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Mirror Row": {
+        "main": [
+          [
+            {
+              "node": "Collect Mirror",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Mirror": {
+        "main": [
+          [
+            {
+              "node": "Read View Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read View Rows": {
+        "main": [
+          [
+            {
+              "node": "Collect View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect View": {
+        "main": [
+          [
+            {
+              "node": "Has DNC?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has DNC?": {
+        "main": [
+          [
+            {
+              "node": "Read DNC",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read DNC": {
+        "main": [
+          [
+            {
+              "node": "Build Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Rows": {
+        "main": [
+          [
+            {
+              "node": "Prepare Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Stamps": {
+        "main": [
+          [
+            {
+              "node": "Any Stamps?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Stamps?": {
+        "main": [
+          [
+            {
+              "node": "Patch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Receipt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Patch Rows": {
+        "main": [
+          [
+            {
+              "node": "Build Receipt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Receipt": {
+        "main": [
+          [
+            {
+              "node": "Have Receipt?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Have Receipt?": {
+        "main": [
+          [
+            {
+              "node": "Create Lead List",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Lead List": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Run": {
+        "main": [
+          [
+            {
+              "node": "Finish Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

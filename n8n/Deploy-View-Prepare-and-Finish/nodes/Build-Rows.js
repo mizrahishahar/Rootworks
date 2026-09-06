@@ -8,7 +8,11 @@
 // Max Rows is applied LAST, so the cap counts only rows that would really have been sent; the
 // surplus is a named skip, never a silent drop, and the view offers it again on the next run.
 const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];
-const isPV = D.sender === 'PlusVibe';
+// isPV is the EMAIL lane: PlusVibe and Email Bison run the same gates (Final Email identity, DNC,
+// stamp-gate, first name, company, required variables, run cap) and queue 200-lead chunks; only
+// the lead object and the send flags differ, branched on isBison below.
+const isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';
+const isBison = D.sender === 'Email Bison';
 if (D.abort) { return [{ json: { ready: false, abort: true } }]; }
 const rowsArr = D.viewRows || [];
 D.rowsTotal = rowsArr.length;
@@ -94,12 +98,27 @@ for (const r of rowsArr) {
   if (isPV) {
     if (D.maxRows && leads.length >= D.maxRows) { rec.skip = 'over the run cap of ' + D.maxRows + ' rows'; continue; }
     const lead = { email: String(f['Final Email'] || '').trim() };
-    // State carries the full state name (Clean Fields writes it there); State Full is never read.
-    const core = { first_name: NAME_OK(fnRaw) ? fnRaw : '', last_name: val(f['last_name']), company_name: comp, state: val(f['State']), city: val(f['City']), country: val(f['Country']), job_title: val(f['Title']) };
-    const soc = D.linkedinCol ? val(f[D.linkedinCol]) : '';
-    if (/^https?:\/\//i.test(soc)) core.linkedin_person_url = soc;
-    for (const k of Object.keys(core)) { if (core[k]) lead[k] = core[k]; }
-    if (Object.keys(cv).length) lead.custom_variables = cv;
+    if (isBison) {
+      // Email Bison's lead: first_name is REQUIRED by the API (a company-inbox list cannot deploy
+      // here without one), title/company are its own field names, and custom variables are an
+      // array of {name, value} rendered as {NAME} in the sequence. State/City/Country have no
+      // lead field on Bison; when the view shows them they already ride as variables.
+      const fn = NAME_OK(fnRaw) ? fnRaw : (NAME_OK(fnHe) ? fnHe : '');
+      if (!fn) { rec.skip = 'missing first name (Email Bison requires one)'; continue; }
+      lead.first_name = fn;
+      const ln = val(f['last_name']); if (ln) lead.last_name = ln;
+      const ttl = val(f['Title']); if (ttl) lead.title = ttl;
+      lead.company = comp;
+      const cvArr = Object.keys(cv).map(k => ({ name: k, value: cv[k] }));
+      if (cvArr.length) lead.custom_variables = cvArr;
+    } else {
+      // State carries the full state name (Clean Fields writes it there); State Full is never read.
+      const core = { first_name: NAME_OK(fnRaw) ? fnRaw : '', last_name: val(f['last_name']), company_name: comp, state: val(f['State']), city: val(f['City']), country: val(f['Country']), job_title: val(f['Title']) };
+      const soc = D.linkedinCol ? val(f[D.linkedinCol]) : '';
+      if (/^https?:\/\//i.test(soc)) core.linkedin_person_url = soc;
+      for (const k of Object.keys(core)) { if (core[k]) lead[k] = core[k]; }
+      if (Object.keys(cv).length) lead.custom_variables = cv;
+    }
     D.emailToRow[rec.email] = r.id;
     leads.push(lead);
   } else {
@@ -131,8 +150,14 @@ if (isPV) {
   const chunks = [];
   for (let i = 0; i < leads.length; i += 200) chunks.push(leads.slice(i, i + 200));
   D.send = { queue: chunks, idx: 0, attempts: 0 };
-  const flagMap = { 'Standard': { skip_lead_in_active_pause_camp: true }, 'Strict': { skip_if_in_workspace: true }, 'Active-only': { skip_lead_for_active_only_camp: true }, 'None': {} };
-  D.flags = Object.assign({ is_overwrite: true }, flagMap[D.dedupe] || flagMap['Strict']);
+  if (isBison) {
+    // Bison has no dedupe modes: "patch" keeps an existing lead's other variables, and attach-leads
+    // refuses a lead already In Sequence elsewhere unless allow_parallel_sending is set (it is not).
+    D.flags = { existing_lead_behavior: 'patch' };
+  } else {
+    const flagMap = { 'Standard': { skip_lead_in_active_pause_camp: true }, 'Strict': { skip_if_in_workspace: true }, 'Active-only': { skip_lead_for_active_only_camp: true }, 'None': {} };
+    D.flags = Object.assign({ is_overwrite: true }, flagMap[D.dedupe] || flagMap['Strict']);
+  }
   D.ready = chunks.length > 0;
 } else {
   D.pushes = pushes;

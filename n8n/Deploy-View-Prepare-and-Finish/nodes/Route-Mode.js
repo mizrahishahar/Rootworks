@@ -15,7 +15,7 @@ const mode = String(inp.mode || '').trim().toLowerCase();
 const who = 'Deploy View Prepare and Finish';
 if (mode !== 'prepare' && mode !== 'finish') throw new Error(who + ' was called with mode "' + String(inp.mode || '') + '"; only "prepare" and "finish" exist.');
 const sender = String(inp.sender || '').trim();
-if (sender !== 'PlusVibe' && sender !== 'Alta') throw new Error(who + ' (' + mode + ') was called with sender "' + sender + '"; only "PlusVibe" and "Alta" exist.');
+if (sender !== 'PlusVibe' && sender !== 'Alta' && sender !== 'Email Bison') throw new Error(who + ' (' + mode + ') was called with sender "' + sender + '"; only "PlusVibe", "Alta" and "Email Bison" exist.');
 if (!String(inp.execId || '').trim()) throw new Error(who + ' (' + mode + ') was called without execId; the Hub row is keyed by the calling execution, never by this one.');
 if (!String(inp.automation || '').trim()) throw new Error(who + ' (' + mode + ') was called without automation; the Hub row names the door that ran, never this helper.');
 if (mode === 'prepare' && !/^rec[A-Za-z0-9]{14}$/.test(String(inp.recordId || ''))) throw new Error(who + ' (prepare) was called without a launch row id. Nothing was read.');

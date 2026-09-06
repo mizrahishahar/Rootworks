@@ -9,7 +9,8 @@ if (D.abort) { return [{ json: { _none: true, Name: '', Campaign: [], ViewLink: 
 // The receipt is named by the CAMPAIGN on the PlusVibe lane, because that name is what clients
 // filter the shared Campaigns view by; the Alta lane names it by the view it drank from. Both
 // names are load-bearing for an existing row: the upsert matches on Name plus List URL.
-D.receiptName = (D.sender === 'PlusVibe')
+const isEmailLane = (D.sender === 'PlusVibe' || D.sender === 'Email Bison');
+D.receiptName = isEmailLane
   ? (D.campName || D.target || ((D.tableName || D.tableId || 'table') + ' - ' + (D.view || 'view')))
   : ((D.tableName || D.tableId || 'table') + ' - ' + (D.view || 'view'));
 D.viewLink = D.shareViewLink || '';
@@ -17,5 +18,5 @@ if (!D.viewLink) D.warnings.push('share link unresolved; receipt written without
 let internalLink = '';
 const stem = D.share || D.shareViewLink || '';
 if (stem && D.tableId && D.viewId) internalLink = stem + '/' + D.tableId + '/' + D.viewId;
-const deployed = (D.sender === 'PlusVibe') ? Number(D.deployed || 0) : Number(D.landed || 0);
+const deployed = isEmailLane ? Number(D.deployed || 0) : Number(D.landed || 0);
 return [{ json: { Name: D.receiptName, Campaign: D.hubCampaignRid ? [D.hubCampaignRid] : [], ViewLink: D.viewLink, InternalLink: internalLink, Deployed: deployed } }];

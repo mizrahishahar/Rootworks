@@ -1,0 +1,1749 @@
+{
+  "updatedAt": "2026-09-06T08:38:48.166Z",
+  "createdAt": "2026-09-06T08:38:48.166Z",
+  "id": "RRxvIy173248hAfA",
+  "name": "Deploy View to Email Bison Campaign",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "ebd-00-webhook",
+      "name": "Deploy Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1600,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deploy-view-to-bison-campaign",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "5b1f7c2e-8d3a-4b6e-9a1c-2f4e6d8a0b13",
+      "notes": "The door's ONLY entry (ruling 2026-09-03). Schedule Live View Deploys creates the launch row and POSTs {recordId} here, so a scheduled deploy and a hand launch are the same run."
+    },
+    {
+      "id": "ebd-01-open",
+      "name": "Open Deploy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1400,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Open-Deploy.js"
+      }
+    },
+    {
+      "id": "ebd-02-prepare",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        200
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VfjJGNlykzuZok2T",
+          "cachedResultName": "Deploy View Prepare and Finish"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "Mode prepare, awaited, error left to travel: resolves the launch row into client, base, campaign, mirror row, table, view and the field contract, drops DNC domains, applies the run cap and hands back the leads shaped for Email Bison. A failure inside it fails this run, which is the run the Error Logger names."
+    },
+    {
+      "id": "ebd-03-loadstate",
+      "name": "Load State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1000,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Load-State.js"
+      }
+    },
+    {
+      "id": "ebd-04-getcamp",
+      "name": "Get Bison Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -800,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://send.nochileads.com/api/campaigns/' + $json.target }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "DuoDiv's instance, hardcoded (ruling 2026-09-06). Credential: the Email Bison DuoDiv header auth (Authorization: Bearer <token>), attached in the UI."
+    },
+    {
+      "id": "ebd-05-checkcamp",
+      "name": "Check Bison Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Check-Bison-Campaign.js"
+      }
+    },
+    {
+      "id": "ebd-06-ready",
+      "name": "Ready to Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lr1",
+              "leftValue": "={{ $json.ready ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "No leads to send is not a failure: a refused launch and a view where every row was skipped both go straight to the close, which stamps the rows and writes the row."
+    },
+    {
+      "id": "ebd-07-pace",
+      "name": "Send Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        100
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "9c2d4e6f-1a3b-4c5d-8e7f-0a1b2c3d4e5f"
+    },
+    {
+      "id": "ebd-08-route",
+      "name": "Route Call?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rc1",
+              "leftValue": "={{ $json.kind || 'create' }}",
+              "rightValue": "attach",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Email Bison takes leads in two calls: create-or-update (returns ids), then attach-leads into the campaign. The item's kind says which call is next; both collectors feed Send Done?."
+    },
+    {
+      "id": "ebd-09-create",
+      "name": "Bison Create Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://send.nochileads.com/api/leads/create-or-update/multiple",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "200 leads to a request (Bison allows 500), existing_lead_behavior patch so a lead's other variables survive. Personal domains are dropped silently by the instance; Collect Create names them by comparing what came back with what was sent."
+    },
+    {
+      "id": "ebd-10-collectcreate",
+      "name": "Collect Create",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Create.js"
+      }
+    },
+    {
+      "id": "ebd-11-attach",
+      "name": "Bison Attach Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://send.nochileads.com/api/campaigns/' + $json.target + '/leads/attach-leads' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "allow_parallel_sending stays false: a lead already In Sequence in another campaign is refused by Bison, which is the instance's own dedupe."
+    },
+    {
+      "id": "ebd-12-collectattach",
+      "name": "Collect Attach",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Attach.js"
+      }
+    },
+    {
+      "id": "ebd-13-senddone",
+      "name": "Send Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ebd-14-progress",
+      "name": "Stamp Progress",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        -160
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json._lid }}",
+            "Status": "Running",
+            "Description": "={{ $json._prog }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Writes live upload progress onto the launch row after every chunk. A SIDE branch of Collect Attach: it must never sit between Collect Attach and Send Done?, its Airtable output would destroy the loop state.",
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "ebd-15-initrb",
+      "name": "Init Readback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Readback.js"
+      }
+    },
+    {
+      "id": "ebd-16-anyread",
+      "name": "Any to Read?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1000,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ar1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "more",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Nothing created this run = nothing to read back; straight to the close."
+    },
+    {
+      "id": "ebd-17-rbpace",
+      "name": "RB Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "7e5a3c1b-9f2d-4e8a-b6c4-1d0f2a3b4c5d"
+    },
+    {
+      "id": "ebd-18-getlead",
+      "name": "Bison Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1400,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://send.nochileads.com/api/leads/' + $json.lead_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Read-back by id, one lead per call, paced: Bison lists are 15 to a page with no page-size control, so walking the campaign is never the proof."
+    },
+    {
+      "id": "ebd-19-collectrb",
+      "name": "Collect RB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-RB.js"
+      }
+    },
+    {
+      "id": "ebd-20-rbdone",
+      "name": "RB Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1800,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rd1",
+              "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ebd-90-close",
+      "name": "Close Deploy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Close-Deploy.js"
+      }
+    },
+    {
+      "id": "ebd-91-finish",
+      "name": "Finish",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2200,
+        200
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VfjJGNlykzuZok2T",
+          "cachedResultName": "Deploy View Prepare and Finish"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "Mode finish, awaited, error left to travel: stamps Deploy Error and the Campaigns links on the source rows, writes the Lead Lists receipt and writes this run's Hub row, upserted on this execution's id. A failed log write crashes it, and with it this run."
+    }
+  ],
+  "connections": {
+    "Deploy Webhook": {
+      "main": [
+        [
+          {
+            "node": "Open Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Deploy": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Load State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load State": {
+      "main": [
+        [
+          {
+            "node": "Get Bison Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bison Campaign": {
+      "main": [
+        [
+          {
+            "node": "Check Bison Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Bison Campaign": {
+      "main": [
+        [
+          {
+            "node": "Ready to Send?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to Send?": {
+      "main": [
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Pace": {
+      "main": [
+        [
+          {
+            "node": "Route Call?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Call?": {
+      "main": [
+        [
+          {
+            "node": "Bison Attach Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Bison Create Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bison Create Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Create": {
+      "main": [
+        [
+          {
+            "node": "Send Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bison Attach Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Attach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Attach": {
+      "main": [
+        [
+          {
+            "node": "Send Done?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stamp Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Done?": {
+      "main": [
+        [
+          {
+            "node": "Init Readback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Readback": {
+      "main": [
+        [
+          {
+            "node": "Any to Read?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any to Read?": {
+      "main": [
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Pace": {
+      "main": [
+        [
+          {
+            "node": "Bison Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bison Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Collect RB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect RB": {
+      "main": [
+        [
+          {
+            "node": "RB Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Done?": {
+      "main": [
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Deploy": {
+      "main": [
+        [
+          {
+            "node": "Finish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "a50b0c33-d27b-4991-b887-ce724e606371",
+  "activeVersionId": "a50b0c33-d27b-4991-b887-ce724e606371",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-06T08:38:48.190Z",
+      "createdAt": "2026-09-06T08:38:48.190Z",
+      "role": "workflow:owner",
+      "workflowId": "RRxvIy173248hAfA",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-06T08:38:48.205Z",
+    "createdAt": "2026-09-06T08:38:48.205Z",
+    "versionId": "a50b0c33-d27b-4991-b887-ce724e606371",
+    "workflowId": "RRxvIy173248hAfA",
+    "nodes": [
+      {
+        "id": "ebd-00-webhook",
+        "name": "Deploy Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1600,
+          200
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "deploy-view-to-bison-campaign",
+          "responseMode": "onReceived"
+        },
+        "webhookId": "5b1f7c2e-8d3a-4b6e-9a1c-2f4e6d8a0b13",
+        "notes": "The door's ONLY entry (ruling 2026-09-03). Schedule Live View Deploys creates the launch row and POSTs {recordId} here, so a scheduled deploy and a hand launch are the same run."
+      },
+      {
+        "id": "ebd-01-open",
+        "name": "Open Deploy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1400,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Open Deploy: the door's one entry, and the only place it names itself. The webhook is the ONLY\n// way in (Operator ruling 2026-09-03): Schedule Live View Deploys creates the launch row and fires\n// this webhook, so a scheduled deploy and a hand launch are the same run.\n// Email Bison is hardcoded to DuoDiv's instance (Operator ruling 2026-09-06): the base URL sits on\n// the HTTP nodes and the token on their credential; no registry field names either.\nconst b = ($input.first() || {}).json || {};\nconst recordId = String((b.body && b.body.recordId) || (b.query && b.query.recordId) || b.recordId || '').trim();\nreturn [{ json: {\n  mode: 'prepare',\n  sender: 'Email Bison',\n  automation: 'Deploy View to Email Bison Campaign',\n  execId: String($execution.id),\n  wfId: String($workflow.id),\n  recordId: recordId || 'recMISSING'\n} }];\n"
+        }
+      },
+      {
+        "id": "ebd-02-prepare",
+        "name": "Prepare",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          -1200,
+          200
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "VfjJGNlykzuZok2T",
+            "cachedResultName": "Deploy View Prepare and Finish"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "notes": "Mode prepare, awaited, error left to travel: resolves the launch row into client, base, campaign, mirror row, table, view and the field contract, drops DNC domains, applies the run cap and hands back the leads shaped for Email Bison. A failure inside it fails this run, which is the run the Error Logger names."
+      },
+      {
+        "id": "ebd-03-loadstate",
+        "name": "Load State",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1000,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Load State: what prepare resolved becomes this run's state. It lives in static data for the\n// length of the send lane only, because the chunk loop's Wait is seconds long and keeps the\n// execution in memory; Close Deploy takes it back off and hands it to finish as data.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst p = ($input.first() || {}).json || {};\nconst D = p.state || {};\nsd[dk] = D;\nreturn [{ json: { target: D.target || '', ready: !!p.ready, abort: !!D.abort, body: p.body || null } }];\n"
+        }
+      },
+      {
+        "id": "ebd-04-getcamp",
+        "name": "Get Bison Campaign",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -800,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ 'https://send.nochileads.com/api/campaigns/' + $json.target }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1cjIE7eXqZZ4r1Pm",
+            "name": "Email Bison DuoDiv"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "DuoDiv's instance, hardcoded (ruling 2026-09-06). Credential: the Email Bison DuoDiv header auth (Authorization: Bearer <token>), attached in the UI."
+      },
+      {
+        "id": "ebd-05-checkcamp",
+        "name": "Check Bison Campaign",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -600,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Check Bison Campaign: the target must exist on the instance, proven by GET /api/campaigns/{id},\n// before a single lead is created. The Hub row is only the description of a campaign, not proof\n// that it is there. The name Bison itself carries wins for the run log and the receipt, and the\n// campaign's status is kept: attach-leads on an ACTIVE campaign is cached and synced every five\n// minutes on Bison's side, so the read-back has to wait that out before it may call a lead missing.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst p = $('Load State').first().json;\nif (!D.abort) {\n  const j = ($input.first() || {}).json || {};\n  const hasWrap = Object.prototype.hasOwnProperty.call(j, 'body');\n  const rb = hasWrap ? j.body : j;\n  const status = Number(j.statusCode || 0);\n  const c = rb && rb.data && typeof rb.data === 'object' ? rb.data : null;\n  if (j.error && !hasWrap && !status) {\n    D.abort = 'campaign check failed'; D.errors.push('GET campaign ' + D.target + ' errored before a response: ' + String(j.error).slice(0, 200) + '; nothing was sent');\n  } else if (status === 404 || !c || String(c.id) !== String(D.target)) {\n    D.abort = 'campaign not found'; D.errors.push('campaign ' + D.target + ' not found on the Email Bison instance (HTTP ' + (status || '?') + '); nothing was sent');\n  } else if (status && (status < 200 || status >= 300)) {\n    D.abort = 'campaign check failed'; D.errors.push('GET campaign ' + D.target + ' answered HTTP ' + status + ': ' + JSON.stringify(rb).slice(0, 200) + '; nothing was sent');\n  } else {\n    D.campName = c.name || D.campName || D.target;\n    D.bisonStatus = String(c.status || '');\n    D.bisonActive = D.bisonStatus === 'active';\n    if (D.bisonStatus === 'archived') { D.abort = 'campaign archived'; D.errors.push('campaign \"' + D.campName + '\" is archived on Email Bison; nothing was sent'); }\n  }\n}\nconst ready = !D.abort && !!p.ready;\nreturn [{ json: { kind: 'create', ready: ready, abort: !!D.abort, body: ready ? p.body : null, wait: 0, target: D.target || '' } }];\n"
+        }
+      },
+      {
+        "id": "ebd-06-ready",
+        "name": "Ready to Send?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -400,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "lr1",
+                "leftValue": "={{ $json.ready ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "No leads to send is not a failure: a refused launch and a view where every row was skipped both go straight to the close, which stamps the rows and writes the row."
+      },
+      {
+        "id": "ebd-07-pace",
+        "name": "Send Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          -200,
+          100
+        ],
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "webhookId": "9c2d4e6f-1a3b-4c5d-8e7f-0a1b2c3d4e5f"
+      },
+      {
+        "id": "ebd-08-route",
+        "name": "Route Call?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          0,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "rc1",
+                "leftValue": "={{ $json.kind || 'create' }}",
+                "rightValue": "attach",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "Email Bison takes leads in two calls: create-or-update (returns ids), then attach-leads into the campaign. The item's kind says which call is next; both collectors feed Send Done?."
+      },
+      {
+        "id": "ebd-09-create",
+        "name": "Bison Create Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          200,
+          200
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://send.nochileads.com/api/leads/create-or-update/multiple",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1cjIE7eXqZZ4r1Pm",
+            "name": "Email Bison DuoDiv"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "200 leads to a request (Bison allows 500), existing_lead_behavior patch so a lead's other variables survive. Personal domains are dropped silently by the instance; Collect Create names them by comparing what came back with what was sent."
+      },
+      {
+        "id": "ebd-10-collectcreate",
+        "name": "Collect Create",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          400,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Create: the response of one create-or-update chunk. Bison returns every lead it now\n// holds for the chunk, with ids; a lead it dropped (a personal domain, an address it judged\n// invalid) is simply absent, so the emails that came back are compared with the emails sent and\n// the rest are skipped by name. The ids go to Attach as the next call of the loop; nothing here\n// advances the queue, Collect Attach does that once the chunk is really in the campaign.\n// Counters ride in D.pv on purpose: the shared Build Run Log reads them for every email sender.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk]; const S = D.send;\nconst j = ($input.first() || {}).json || {};\nconst hasWrap = Object.prototype.hasOwnProperty.call(j, 'body');\nconst rb = hasWrap ? j.body : j;\nconst status = Number(j.statusCode || 0);\nD.pv = D.pv || { sent: 0, uploaded: 0, duplicate: 0, already: 0, invalid: 0, skipped: 0, overwritten: 0, overflowed: 0, remaining: null };\nD.bisonIds = D.bisonIds || [];\nconst P = D.pv;\nconst cur = S.queue[S.idx] || [];\nconst mkCreate = (chunk) => Object.assign({ leads: chunk }, D.flags || {});\nconst out = (o) => [{ json: Object.assign({ target: D.target || '' }, o) }];\nconst advance = () => {\n  if (S.idx < S.queue.length) S.queue[S.idx] = null;\n  S.idx++; S.attempts = 0;\n  if (S.idx < S.queue.length && S.queue[S.idx]) return out({ kind: 'create', body: mkCreate(S.queue[S.idx]), wait: 2 });\n  return out({ done: true, wait: 0 });\n};\nconst skipRow = (email, why) => { const rid = D.emailToRow[String(email || '').toLowerCase()]; if (rid && D.rows[rid] && !D.rows[rid].skip) D.rows[rid].skip = why; };\nif (j.error && !hasWrap && !status) {\n  // The HTTP node itself errored (no request went out). Retry the same chunk, capped.\n  S.attempts++;\n  if (S.attempts <= 3 && cur.length) return out({ kind: 'create', body: mkCreate(cur), wait: Math.pow(2, S.attempts) });\n  D.errors.push('create chunk ' + (S.idx + 1) + '/' + S.queue.length + ' node error: ' + String(j.error).slice(0, 200));\n  for (const l of cur) skipRow(l.email, 'create call failed');\n  return advance();\n}\nconst arr = rb && Array.isArray(rb.data) ? rb.data : null;\nif (status >= 200 && status < 300 && arr) {\n  S.attempts = 0;\n  P.sent += cur.length;\n  const back = {};\n  for (const l of arr) { const e = String(l.email || '').toLowerCase().trim(); if (e && l.id) back[e] = l.id; }\n  const ids = [];\n  for (const l of cur) {\n    const e = String(l.email || '').toLowerCase().trim();\n    if (back[e]) { ids.push(back[e]); D.bisonIds.push({ id: back[e], email: e }); }\n    else { P.invalid++; skipRow(e, 'skipped by Email Bison at create (personal domain or invalid address)'); }\n  }\n  D.pendingIds = ids;\n  if (!ids.length) return advance();\n  return out({ kind: 'attach', body: { lead_ids: ids, allow_parallel_sending: false }, wait: 2 });\n}\n// Laravel-style validation: 422 with errors keyed \"leads.<index>.<field>\". Drop those rows, resend the rest.\nif (status === 422 && rb && rb.errors && typeof rb.errors === 'object') {\n  const bad = {};\n  for (const k of Object.keys(rb.errors)) { const m = /^leads\\.(\\d+)\\./.exec(k); if (m) bad[Number(m[1])] = String((rb.errors[k] || [])[0] || k).slice(0, 120); }\n  const idxs = Object.keys(bad);\n  if (idxs.length) {\n    const keep = [];\n    cur.forEach((l, i) => {\n      if (bad[i] !== undefined) { D.errors.push('lead rejected by Email Bison validation, dropped: ' + (l.email || ('index ' + i)) + ' (' + bad[i] + ')'); skipRow(l.email, 'rejected by Email Bison validation'); }\n      else keep.push(l);\n    });\n    if (keep.length) { S.queue[S.idx] = keep; return out({ kind: 'create', body: mkCreate(keep), wait: 2 }); }\n    return advance();\n  }\n}\nconst bs = JSON.stringify(rb || {}).toLowerCase();\nif ((status === 413 || status === 400) && cur.length > 25 && /too large|payload|entity|body size|request size/.test(bs)) {\n  const half = Math.ceil(cur.length / 2);\n  const a = cur.slice(0, half), b = cur.slice(half);\n  S.queue.splice(S.idx, 1, a, b);\n  return out({ kind: 'create', body: mkCreate(a), wait: 2 });\n}\nS.attempts++;\nif (S.attempts <= 3 && cur.length) {\n  let w = Math.pow(2, S.attempts);\n  const h = j.headers || {}; const ra = Number(h['retry-after'] || h['Retry-After'] || 0); if (ra > 0) w = Math.max(w, Math.min(ra, 120));\n  return out({ kind: 'create', body: mkCreate(cur), wait: w });\n}\nD.errors.push('create chunk ' + (S.idx + 1) + '/' + S.queue.length + ' failed after 3 retries (status ' + (status || '?') + '): ' + JSON.stringify(rb).slice(0, 200));\nfor (const l of cur) skipRow(l.email, 'create call failed');\nreturn advance();\n"
+        }
+      },
+      {
+        "id": "ebd-11-attach",
+        "name": "Bison Attach Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          200,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ 'https://send.nochileads.com/api/campaigns/' + $json.target + '/leads/attach-leads' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1cjIE7eXqZZ4r1Pm",
+            "name": "Email Bison DuoDiv"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "allow_parallel_sending stays false: a lead already In Sequence in another campaign is refused by Bison, which is the instance's own dedupe."
+      },
+      {
+        "id": "ebd-12-collectattach",
+        "name": "Collect Attach",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          400,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Attach: the response of attach-leads for the chunk Collect Create just created. A 200\n// with success:true means the campaign accepted the ids (on an active campaign Bison caches them\n// and syncs within five minutes; the read-back waits for that). Attach is the step that advances\n// the queue: the next item is the next chunk's create body, or done.\n// Live progress is written to the launch row after every chunk (Stamp Progress hangs off this\n// output as a SIDE branch; it must never sit between this node and Send Done?).\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk]; const S = D.send;\nconst j = ($input.first() || {}).json || {};\nconst hasWrap = Object.prototype.hasOwnProperty.call(j, 'body');\nconst rb = hasWrap ? j.body : j;\nconst status = Number(j.statusCode || 0);\nconst P = D.pv || (D.pv = { sent: 0, uploaded: 0, duplicate: 0, already: 0, invalid: 0, skipped: 0, overwritten: 0, overflowed: 0, remaining: null });\nconst ids = D.pendingIds || [];\nconst fmt = v => Number(v || 0).toLocaleString('en-US');\nconst mkCreate = (chunk) => Object.assign({ leads: chunk }, D.flags || {});\nconst emit = (o) => {\n  const total = S.queue.length || 1; const doneChunks = Math.min(S.idx, total);\n  const lines = ['**Uploading to ' + (D.campName || '?') + '**', '', '- Chunk ' + fmt(doneChunks) + ' of ' + fmt(total), '- Sent so far: ' + fmt(P.sent), '- Accepted so far: ' + fmt(P.uploaded)];\n  if (P.invalid) lines.push('- Skipped by Email Bison at create (personal domain or invalid): ' + fmt(P.invalid));\n  lines.push('', 'Read-back and the full report follow once uploading finishes.');\n  return [{ json: Object.assign({ _lid: D.launchId || '', _prog: lines.join('\\n'), target: D.target || '' }, o) }];\n};\nconst advance = () => {\n  D.pendingIds = [];\n  if (S.idx < S.queue.length) S.queue[S.idx] = null;\n  S.idx++; S.attempts = 0;\n  if (S.idx < S.queue.length && S.queue[S.idx]) return emit({ kind: 'create', body: mkCreate(S.queue[S.idx]), wait: 2 });\n  return emit({ done: true, wait: 0 });\n};\nconst retryOrGiveUp = (why) => {\n  S.attempts++;\n  if (S.attempts <= 3 && ids.length) {\n    let w = Math.pow(2, S.attempts);\n    const h = j.headers || {}; const ra = Number(h['retry-after'] || h['Retry-After'] || 0); if (ra > 0) w = Math.max(w, Math.min(ra, 120));\n    return emit({ kind: 'attach', body: { lead_ids: ids, allow_parallel_sending: false }, wait: w });\n  }\n  D.errors.push('attach-leads for chunk ' + (S.idx + 1) + '/' + S.queue.length + ' failed after 3 retries: ' + why);\n  // The leads exist on Bison but never reached the campaign; the read-back will find them missing\n  // and the stamp says so per row. Nothing is counted as accepted.\n  return advance();\n};\nif (j.error && !hasWrap && !status) return retryOrGiveUp('node error: ' + String(j.error).slice(0, 200));\nconst ok = status >= 200 && status < 300 && rb && rb.data && rb.data.success !== false;\nif (ok) { P.uploaded += ids.length; D.uploadedNew += ids.length; return advance(); }\nreturn retryOrGiveUp('HTTP ' + (status || '?') + ' ' + JSON.stringify(rb).slice(0, 200));\n"
+        }
+      },
+      {
+        "id": "ebd-13-senddone",
+        "name": "Send Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          600,
+          100
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "sd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "ebd-14-progress",
+        "name": "Stamp Progress",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          600,
+          -160
+        ],
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [],
+            "value": {
+              "id": "={{ $json._lid }}",
+              "Status": "Running",
+              "Description": "={{ $json._prog }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Writes live upload progress onto the launch row after every chunk. A SIDE branch of Collect Attach: it must never sit between Collect Attach and Send Done?, its Airtable output would destroy the loop state.",
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "ebd-15-initrb",
+        "name": "Init Readback",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          800,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Init Readback: the proof pass. Every id created this run is read back one by one from\n// GET /api/leads/{id}, and a lead counts as deployed only when its lead_campaign_data names this\n// campaign. Bison caches attach-leads on an ACTIVE campaign and syncs every five minutes, so on an\n// active campaign the first read waits 320 seconds; a paused or draft campaign attaches at once.\n// Bison lists are 15 to a page with no page-size control, which is why the read-back is by id and\n// never a walk of the campaign.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst ids = D.bisonIds || [];\nD.rb = { idx: 0, attempts: 0 };\nif (!ids.length) return [{ json: { done: true, wait: 0 } }];\nreturn [{ json: { lead_id: ids[0].id, wait: D.bisonActive ? 320 : 5 } }];\n"
+        }
+      },
+      {
+        "id": "ebd-16-anyread",
+        "name": "Any to Read?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1000,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ar1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "more",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "Nothing created this run = nothing to read back; straight to the close."
+      },
+      {
+        "id": "ebd-17-rbpace",
+        "name": "RB Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1200,
+          200
+        ],
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "webhookId": "7e5a3c1b-9f2d-4e8a-b6c4-1d0f2a3b4c5d"
+      },
+      {
+        "id": "ebd-18-getlead",
+        "name": "Bison Get Lead",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1400,
+          200
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ 'https://send.nochileads.com/api/leads/' + $json.lead_id }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1cjIE7eXqZZ4r1Pm",
+            "name": "Email Bison DuoDiv"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "Read-back by id, one lead per call, paced: Bison lists are 15 to a page with no page-size control, so walking the campaign is never the proof."
+      },
+      {
+        "id": "ebd-19-collectrb",
+        "name": "Collect RB",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect RB: one lead read back. Membership = lead_campaign_data contains this campaign's id.\n// A non-2xx answer is retried with backoff (Retry-After honoured) up to five times, then the\n// read-back is marked failed and the unconfirmed rows stay unstamped, exactly as on PlusVibe.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk]; const R = D.rb;\nconst ids = D.bisonIds || [];\nconst j = ($input.first() || {}).json || {};\nconst hasWrap = Object.prototype.hasOwnProperty.call(j, 'body');\nconst body = hasWrap ? j.body : j;\nconst status = Number(j.statusCode || 0);\nconst emit = o => [{ json: o }];\nconst next = () => {\n  R.idx++; R.attempts = 0;\n  if (R.idx < ids.length) return emit({ lead_id: ids[R.idx].id, wait: 1 });\n  return emit({ done: true, wait: 0 });\n};\nconst lead = body && body.data && typeof body.data === 'object' ? body.data : null;\nif ((status && (status < 200 || status >= 300)) || !lead || (j.error && !hasWrap && !status)) {\n  R.attempts++;\n  if (R.attempts <= 5) {\n    let w = Math.pow(2, R.attempts);\n    const h = j.headers || {}; const ra = Number(h['retry-after'] || h['Retry-After'] || 0); if (ra > 0) w = Math.max(w, Math.min(ra, 120));\n    return emit({ lead_id: ids[R.idx].id, wait: w });\n  }\n  D.rbFailed = true;\n  D.errors.push('read-back failed at lead ' + (R.idx + 1) + '/' + ids.length + ' (id ' + ids[R.idx].id + ') after 5 retries (status ' + (status || '?') + '); unconfirmed rows left unstamped');\n  return emit({ done: true, wait: 0 });\n}\nconst want = String(D.target);\nconst camps = Array.isArray(lead.lead_campaign_data) ? lead.lead_campaign_data : [];\nconst member = camps.some(c => c && String(c.campaign_id) === want);\nconst e = String(lead.email || ids[R.idx].email || '').toLowerCase().trim();\nif (member && e) D.inCamp[e] = 1;\nreturn next();\n"
+        }
+      },
+      {
+        "id": "ebd-20-rbdone",
+        "name": "RB Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1800,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "rd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "ebd-90-close",
+        "name": "Close Deploy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2000,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Close Deploy: the send lane is over; everything it learned goes back to the shared machine,\n// which stamps the source rows, writes the receipt and writes the run's Hub row. The state leaves\n// static data here so nothing of this run is left behind in the workflow.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;\nconst D = sd[dk] || { errors: ['deploy state missing'], warnings: [], rows: {}, skipCounts: {}, launchId: '', sender: 'Email Bison' };\ndelete sd[dk];\nD.bisonIds = null; D.pendingIds = null;\nreturn [{ json: {\n  mode: 'finish',\n  sender: 'Email Bison',\n  automation: 'Deploy View to Email Bison Campaign',\n  execId: String($execution.id),\n  wfId: String($workflow.id),\n  state: D\n} }];\n"
+        }
+      },
+      {
+        "id": "ebd-91-finish",
+        "name": "Finish",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          2200,
+          200
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "VfjJGNlykzuZok2T",
+            "cachedResultName": "Deploy View Prepare and Finish"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "notes": "Mode finish, awaited, error left to travel: stamps Deploy Error and the Campaigns links on the source rows, writes the Lead Lists receipt and writes this run's Hub row, upserted on this execution's id. A failed log write crashes it, and with it this run."
+      }
+    ],
+    "connections": {
+      "Deploy Webhook": {
+        "main": [
+          [
+            {
+              "node": "Open Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Open Deploy": {
+        "main": [
+          [
+            {
+              "node": "Prepare",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare": {
+        "main": [
+          [
+            {
+              "node": "Load State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Load State": {
+        "main": [
+          [
+            {
+              "node": "Get Bison Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Bison Campaign": {
+        "main": [
+          [
+            {
+              "node": "Check Bison Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Bison Campaign": {
+        "main": [
+          [
+            {
+              "node": "Ready to Send?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ready to Send?": {
+        "main": [
+          [
+            {
+              "node": "Send Pace",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Pace": {
+        "main": [
+          [
+            {
+              "node": "Route Call?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Call?": {
+        "main": [
+          [
+            {
+              "node": "Bison Attach Leads",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Bison Create Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bison Create Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Create",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Create": {
+        "main": [
+          [
+            {
+              "node": "Send Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bison Attach Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Attach",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Attach": {
+        "main": [
+          [
+            {
+              "node": "Send Done?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Stamp Progress",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Done?": {
+        "main": [
+          [
+            {
+              "node": "Init Readback",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Send Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Readback": {
+        "main": [
+          [
+            {
+              "node": "Any to Read?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any to Read?": {
+        "main": [
+          [
+            {
+              "node": "RB Pace",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RB Pace": {
+        "main": [
+          [
+            {
+              "node": "Bison Get Lead",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bison Get Lead": {
+        "main": [
+          [
+            {
+              "node": "Collect RB",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect RB": {
+        "main": [
+          [
+            {
+              "node": "RB Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RB Done?": {
+        "main": [
+          [
+            {
+              "node": "Close Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "RB Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Close Deploy": {
+        "main": [
+          [
+            {
+              "node": "Finish",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

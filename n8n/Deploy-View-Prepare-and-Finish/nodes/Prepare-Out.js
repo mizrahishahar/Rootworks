@@ -6,7 +6,10 @@
 // otherwise leave a key behind forever.
 const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];
 delete sd[dk];
-const isPV = D.sender === 'PlusVibe';
+// isPV is the EMAIL lane (PlusVibe and Email Bison both queue chunks); the first chunk's request
+// body is shaped per sender below.
+const isPV = D.sender === 'PlusVibe' || D.sender === 'Email Bison';
+const isBison = D.sender === 'Email Bison';
 const out = {
   ok: !D.abort,
   ready: !D.abort && !!D.ready,
@@ -18,7 +21,9 @@ const out = {
 };
 if (isPV) {
   const q = (D.send && D.send.queue) || [];
-  out.body = q.length ? Object.assign({ workspace_id: D.ws, campaign_id: D.target, leads: q[0] }, D.flags || {}) : null;
+  out.body = q.length
+    ? (isBison ? Object.assign({ leads: q[0] }, D.flags || {}) : Object.assign({ workspace_id: D.ws, campaign_id: D.target, leads: q[0] }, D.flags || {}))
+    : null;
 } else {
   out.pushes = D.pushes || [];
   D.pushes = null;

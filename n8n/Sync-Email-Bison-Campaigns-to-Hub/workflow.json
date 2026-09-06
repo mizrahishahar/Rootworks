@@ -1,0 +1,1484 @@
+{
+  "updatedAt": "2026-09-06T08:45:53.162Z",
+  "createdAt": "2026-09-06T08:45:53.162Z",
+  "id": "CLkKhLzNvwelxxbC",
+  "name": "Sync Email Bison Campaigns to Hub",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a9831e54-992a-4aca-a8b9-c88590166dd1",
+      "name": "Every 12h (07+19)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            },
+            {
+              "triggerAtHour": 19
+            }
+          ]
+        }
+      },
+      "notes": "IL wall clock, 07:00 and 19:00, same slots as the PlusVibe sync."
+    },
+    {
+      "id": "482ccfcb-c94e-47d7-a8c1-9f500199549b",
+      "name": "Get Bison Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        0
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={Client} = \"DuoDiv\"",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Hardcoded to the DuoDiv registry row (Operator ruling 2026-09-06)."
+    },
+    {
+      "id": "05458fee-51bc-4971-95e4-bb9951d80ccb",
+      "name": "Init Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Results.js"
+      }
+    },
+    {
+      "id": "cd4c3f99-f595-44bd-b923-6a1e747fce9b",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        420
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fef784c4-1cd3-4853-b41b-9d18cc069711",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "0edd96a1-307b-46f6-b6c5-900cb608d1ff",
+      "name": "Parse Client",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Parse-Client.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "de6d2a7c-c28d-409f-9971-46cda18d4ccd",
+      "name": "Bison List Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        -160
+      ],
+      "parameters": {
+        "url": "https://send.nochileads.com/api/campaigns",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "page",
+                    "value": "={{ ($response.body.meta && $response.body.meta.current_page ? $response.body.meta.current_page : 1) + 1 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.links && $response.body.links.next) }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 300
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "GET /api/campaigns on DuoDiv's instance, 15 to a page, every page (links.next empty ends it). The list already carries sent, contacted, unique replies, bounced, interested and status; no stats endpoint needed."
+    },
+    {
+      "id": "f90d991f-c711-4196-b096-163ccb942756",
+      "name": "Format Campaign Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Campaign-Rows.js"
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "dec2773a-9cb3-42fe-aa81-ef580c58e67f",
+      "name": "Has Campaign?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        840,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json['Campaign ID'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4e2f3ef1-9272-4199-b816-afae0ef789a8",
+      "name": "Upsert Campaigns",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1060,
+        -256
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Campaign ID"
+          ],
+          "schema": [],
+          "value": {
+            "Campaign": "={{ $json.Campaign }}",
+            "Campaign ID": "={{ $json['Campaign ID'] }}",
+            "Client": "={{ $json.Client }}",
+            "Sequencer": "={{ $json.Sequencer }}",
+            "Channel": "={{ $json.Channel }}",
+            "Status": "={{ $json.Status }}",
+            "Leads": "={{ $json.Leads }}",
+            "Contacted": "={{ $json.Contacted }}",
+            "Completed": "={{ $json.Completed }}",
+            "Messages Sent": "={{ $json['Messages Sent'] }}",
+            "Replies": "={{ $json.Replies }}",
+            "Positive Replies (PV)": "={{ $json['Positive Replies (PV)'] }}",
+            "Bounced": "={{ $json.Bounced }}",
+            "Last Sent": "={{ $json['Last Sent'] }}",
+            "Created": "={{ $json.Created }}",
+            "Last Synced": "={{ $json['Last Synced'] }}",
+            "Opens": "={{ $json.Opens }}",
+            "Unique Opens": "={{ $json['Unique Opens'] }}",
+            "Open Tracking": "={{ $json['Open Tracking'] }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0630e8c5-0221-42ff-a4c3-085b04fa35ca",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5cb32090-7175-4c15-97b7-56ace853e078",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -40,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "71394e88-e0d1-4ff0-bfae-14c77c824587",
+      "name": "Fire Add-on",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1500,
+        -160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.flowroots.com/webhook/addon-bisonsync-{{ $('Parse Client').first().json.clientSlug }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recordId",
+              "value": "={{ $('Parse Client').first().json.clientRecId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Per-client add-on hook, addon-bisonsync-{slug}; nothing listens for DuoDiv today, a 404 here is not an error.",
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "b326bff5-4cfb-4458-bccb-695c5cc3cec2",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1504,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-sync-bison-campaigns",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "e9c3a5d7-4f1b-4c8e-a0d2-7b3f5e9c1d43"
+    },
+    {
+      "id": "799b7e44-3411-4d0e-add0-9066ed575f72",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1280,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a59bd228-1748-4e52-af80-90ffc35a1fe1",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1056,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "8684f04c-ced2-4d08-b6b4-2065927e9770",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -832,
+        120
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "50364889-9d01-4315-b071-1a086677348b",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Init Results": {
+      "main": [
+        [
+          {
+            "node": "Any Clients?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Client": {
+      "main": [
+        [
+          {
+            "node": "Bison List Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Campaign Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Campaign?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Campaign?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 12h (07+19)": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Fire Add-on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Add-on": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get Bison Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bison Clients": {
+      "main": [
+        [
+          {
+            "node": "Init Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bison List Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Format Campaign Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Every 12h (07+19)": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "launch": {
+        "recordId": "recLiKnE3XRvv1nBu",
+        "trigger": "form",
+        "clientFilter": "rec1L9Lx63ZmjUd0I",
+        "startedAt": 1788684467087
+      },
+      "runStartedAt": 1788684467317,
+      "pvSyncResults": [
+        {
+          "client": "DuoDiv",
+          "clientRecId": "rec1L9Lx63ZmjUd0I",
+          "campaigns": 17,
+          "written": 17,
+          "sent": 44805,
+          "replies": 1196,
+          "positives": 122,
+          "ok": true
+        }
+      ],
+      "clientMap": {
+        "rec1L9Lx63ZmjUd0I": {
+          "name": "DuoDiv"
+        }
+      },
+      "syncScope": "one client (on demand)"
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "93649dc9-ed9a-4c93-bfab-d12d357cc753",
+  "activeVersionId": "93649dc9-ed9a-4c93-bfab-d12d357cc753",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-09-06T08:45:53.166Z",
+      "createdAt": "2026-09-06T08:45:53.166Z",
+      "role": "workflow:owner",
+      "workflowId": "CLkKhLzNvwelxxbC",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-06T08:45:53.168Z",
+    "createdAt": "2026-09-06T08:45:53.168Z",
+    "versionId": "93649dc9-ed9a-4c93-bfab-d12d357cc753",
+    "workflowId": "CLkKhLzNvwelxxbC",
+    "nodes": [
+      {
+        "id": "a9831e54-992a-4aca-a8b9-c88590166dd1",
+        "name": "Every 12h (07+19)",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -608,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 7
+              },
+              {
+                "triggerAtHour": 19
+              }
+            ]
+          }
+        },
+        "notes": "IL wall clock, 07:00 and 19:00, same slots as the PlusVibe sync."
+      },
+      {
+        "id": "482ccfcb-c94e-47d7-a8c1-9f500199549b",
+        "name": "Get Bison Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -384,
+          0
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "={Client} = \"DuoDiv\"",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Hardcoded to the DuoDiv registry row (Operator ruling 2026-09-06)."
+      },
+      {
+        "id": "05458fee-51bc-4971-95e4-bb9951d80ccb",
+        "name": "Init Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -200,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nsd.pvSyncResults=[];\nsd.clientMap={};\n// The Email Bison lane is hardcoded to DuoDiv (Operator ruling 2026-09-06): Get Bison Clients\n// returns that one registry row. A launched run with a Client on its launch row that is not DuoDiv\n// matches nobody and is a named skip, not an error.\nconst cf=String((sd.launch||{}).clientFilter||'');\nconst all=$input.all().filter(it=>it.json&&it.json.id);\nconst picked=cf?all.filter(it=>it.json.id===cf):all;\nsd.syncScope=cf?(picked.length?'one client (on demand)':'client filter matched no Email Bison client'):'all Email Bison clients';\nfor(const it of picked){ const r=it.json||{}; const f=r.fields||r; sd.clientMap[r.id]={name:f['Client']||''}; }\n// Nothing to loop over: emit one placeholder so the Any Clients? gate can route straight to the run log.\nif(!picked.length) return [{ json: { _empty:true } }];\nreturn picked;\n"
+        }
+      },
+      {
+        "id": "cd4c3f99-f595-44bd-b923-6a1e747fce9b",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          180,
+          420
+        ],
+        "parameters": {
+          "jsCode": "let results=[]; let rs=0; let launch={}; let scope='all Email Bison clients';\ntry{ const sd=$getWorkflowStaticData('global'); results=sd.pvSyncResults||[]; rs=sd.runStartedAt||0; launch=sd.launch||{}; scope=sd.syncScope||scope; }catch(e){}\nconst failed=results.filter(r=>!r.ok);\nconst totalIn=results.reduce((s,r)=>s+(r.campaigns||0),0);\nconst totalOut=results.reduce((s,r)=>s+(r.written||0),0);\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst lines=results.map(r=> '- **'+r.client+':** '+nf(r.campaigns)+' campaigns · '+nf(r.sent)+' sent · '+nf(r.replies)+' replies · '+nf(r.positives)+' interested'+(r.ok?'':' (FAILED)'));\nconst errCount=failed.length;\nconst parts=['**'+results.length+' client(s), '+failed.length+' failed**','**Scope:** '+scope];\nif(lines.length) parts.push('**Clients**\\n'+lines.join('\\n'));\nif(failed.length) parts.push('**FAILED ('+failed.length+')**\\n'+failed.map(r=>'- '+r.client+': campaigns seen but none written').join('\\n'));\nif(launch.clientFilter && !results.length) parts.push('**Skipped (1, client filter matched no Email Bison client)**');\nconst desc=parts.join('\\n\\n');\nconst row={\n 'Automation':'Sync Email Bison Campaigns to Hub',\n 'Status': errCount>0 ? 'Succeeded with errors' : 'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': totalIn,\n 'Records Out': totalOut,\n 'Errors': errCount,\n 'Target': 'Campaigns',\n 'Trigger': launch.trigger||'schedule',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': desc\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif(launch.clientFilter) row['Client']=[launch.clientFilter];\nreturn [{ json: row }];\n"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "fef784c4-1cd3-4853-b41b-9d18cc069711",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          400,
+          420
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "0edd96a1-307b-46f6-b6c5-900cb608d1ff",
+        "name": "Parse Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          180,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const r=$input.first().json||{};\nconst f=r.fields||r;\nconst clientRecId=r.id||'';\nconst clientName=f['Client']||'';\nconst clientSlug=String(clientName).toLowerCase().replace(/[^a-z0-9]/g,'');\nreturn [{ json: { clientRecId, clientName, clientSlug } }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "de6d2a7c-c28d-409f-9971-46cda18d4ccd",
+        "name": "Bison List Campaigns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          400,
+          -160
+        ],
+        "parameters": {
+          "url": "https://send.nochileads.com/api/campaigns",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "page",
+                      "value": "={{ ($response.body.meta && $response.body.meta.current_page ? $response.body.meta.current_page : 1) + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.links && $response.body.links.next) }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 300
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1cjIE7eXqZZ4r1Pm",
+            "name": "Email Bison DuoDiv"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "notes": "GET /api/campaigns on DuoDiv's instance, 15 to a page, every page (links.next empty ends it). The list already carries sent, contacted, unique replies, bounced, interested and status; no stats endpoint needed."
+      },
+      {
+        "id": "f90d991f-c711-4196-b096-163ccb942756",
+        "name": "Format Campaign Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          620,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Format Campaign Rows: every page of GET /api/campaigns into Hub Campaigns rows, upserted on\n// Campaign ID. Bison's list already carries the client-facing numbers. Field by field:\n//   Leads = total_leads · Contacted = total_leads_contacted · Messages Sent = emails_sent\n//   Replies = unique_replies · Positive Replies (PV) = interested (the sequencer's own count)\n//   Bounced = bounced · Opens/Unique Opens = opened/unique_opens · Open Tracking = open_tracking\n//   Completed = total_leads x completion_percentage (Bison has no finished-leads count)\n//   Last Sent is not on Bison's list and stays blank.\nconst clientRecId=$('Parse Client').first().json.clientRecId||'';\nconst STATUS={ active:'ACTIVE', paused:'PAUSED', completed:'COMPLETED', draft:'DRAFT', archived:'STOPPED', stopped:'STOPPED' };\nconst raw=[];\nfor(const it of $input.all()){\n  const j=it.json||{};\n  const arr=Array.isArray(j)?j:(Array.isArray(j.data)?j.data:[]);\n  for(const c of arr){ if(c&&c.id) raw.push(c); }\n}\nif(!raw.length) return [{ json: { _keepAlive:true } }];\nconst num=(v)=>{ const n=Number(v); return Number.isFinite(n)?n:0; };\nreturn raw.map(c=>({ json: {\n  'Campaign': c.name||String(c.id),\n  'Campaign ID': String(c.id),\n  'Client': clientRecId?[clientRecId]:[],\n  'Sequencer':'Email Bison',\n  'Channel':'Email',\n  'Status': STATUS[String(c.status||'').toLowerCase()]||'',\n  'Leads': num(c.total_leads),\n  'Contacted': num(c.total_leads_contacted),\n  'Completed': Math.round(num(c.total_leads)*num(c.completion_percentage)/100),\n  'Messages Sent': num(c.emails_sent),\n  'Replies': num(c.unique_replies),\n  'Positive Replies (PV)': num(c.interested),\n  'Bounced': num(c.bounced),\n  'Opens': num(c.opened),\n  'Unique Opens': num(c.unique_opens),\n  'Open Tracking': !!c.open_tracking,\n  'Last Sent': '',\n  'Created': c.created_at||'',\n  'Last Synced': $now.toISO()\n}}));\n"
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "dec2773a-9cb3-42fe-aa81-ef580c58e67f",
+        "name": "Has Campaign?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          840,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json['Campaign ID'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "4e2f3ef1-9272-4199-b816-afae0ef789a8",
+        "name": "Upsert Campaigns",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1060,
+          -256
+        ],
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "Campaign ID"
+            ],
+            "schema": [],
+            "value": {
+              "Campaign": "={{ $json.Campaign }}",
+              "Campaign ID": "={{ $json['Campaign ID'] }}",
+              "Client": "={{ $json.Client }}",
+              "Sequencer": "={{ $json.Sequencer }}",
+              "Channel": "={{ $json.Channel }}",
+              "Status": "={{ $json.Status }}",
+              "Leads": "={{ $json.Leads }}",
+              "Contacted": "={{ $json.Contacted }}",
+              "Completed": "={{ $json.Completed }}",
+              "Messages Sent": "={{ $json['Messages Sent'] }}",
+              "Replies": "={{ $json.Replies }}",
+              "Positive Replies (PV)": "={{ $json['Positive Replies (PV)'] }}",
+              "Bounced": "={{ $json.Bounced }}",
+              "Last Sent": "={{ $json['Last Sent'] }}",
+              "Created": "={{ $json.Created }}",
+              "Last Synced": "={{ $json['Last Synced'] }}",
+              "Opens": "={{ $json.Opens }}",
+              "Unique Opens": "={{ $json['Unique Opens'] }}",
+              "Open Tracking": "={{ $json['Open Tracking'] }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0630e8c5-0221-42ff-a4c3-085b04fa35ca",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1280,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "const sd=$getWorkflowStaticData('global');\nif(!Array.isArray(sd.pvSyncResults)) sd.pvSyncResults=[];\nlet clientRecId='', clientName='';\ntry{ const p=$('Parse Client').first().json; clientRecId=p.clientRecId||''; clientName=p.clientName||''; }catch(e){}\nlet rows=[]; try{ rows=$('Format Campaign Rows').all().map(i=>i.json).filter(r=>r&&r['Campaign ID']); }catch(e){}\nlet upserted=[]; try{ upserted=$('Upsert Campaigns').all().map(i=>i.json); }catch(e){}\nconst seen=rows.length;\nconst written=upserted.length;\nconst sent=rows.reduce((s,r)=>s+(r['Messages Sent']||0),0);\nconst replies=rows.reduce((s,r)=>s+(r['Replies']||0),0);\nconst positives=rows.reduce((s,r)=>s+(r['Positive Replies (PV)']||0),0);\nconst ok=!(seen>0 && written===0);\nsd.pvSyncResults.push({client:clientName||'(unknown)', clientRecId, campaigns:seen, written, sent, replies, positives, ok});\nreturn [{ json: { client:clientName||'', ok } }];"
+        },
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "5cb32090-7175-4c15-97b7-56ace853e078",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -40,
+          0
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "71394e88-e0d1-4ff0-bfae-14c77c824587",
+        "name": "Fire Add-on",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1500,
+          -160
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "=https://n8n.flowroots.com/webhook/addon-bisonsync-{{ $('Parse Client').first().json.clientSlug }}",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "recordId",
+                "value": "={{ $('Parse Client').first().json.clientRecId }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "notes": "Per-client add-on hook, addon-bisonsync-{slug}; nothing listens for DuoDiv today, a 404 here is not an error.",
+        "onError": "continueRegularOutput",
+        "executeOnce": true
+      },
+      {
+        "id": "b326bff5-4cfb-4458-bccb-695c5cc3cec2",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1504,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-sync-bison-campaigns",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "e9c3a5d7-4f1b-4c8e-a0d2-7b3f5e9c1d43"
+      },
+      {
+        "id": "799b7e44-3411-4d0e-add0-9066ed575f72",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1280,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "a59bd228-1748-4e52-af80-90ffc35a1fe1",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1056,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "8684f04c-ced2-4d08-b6b4-2065927e9770",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -832,
+          120
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd=$getWorkflowStaticData('global');\nlet launch=null;\ntry{ const r=$('Fetch Launch Record').first().json; if(r&&r.id) launch=r; }catch(e){}\nconst f=(launch&&launch.fields)||launch||{};\nconst cl=Array.isArray(f.Client)&&f.Client.length?f.Client[0]:'';\nconst clientFilter=(cl&&typeof cl==='object')?String(cl.id||''):String(cl||'');\nsd.launch={ recordId: launch?String(launch.id):'', trigger: launch?'form':'schedule', clientFilter, startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "50364889-9d01-4315-b071-1a086677348b",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -240,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Init Results": {
+        "main": [
+          [
+            {
+              "node": "Any Clients?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Client": {
+        "main": [
+          [
+            {
+              "node": "Bison List Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Campaign Rows": {
+        "main": [
+          [
+            {
+              "node": "Has Campaign?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Campaign?": {
+        "main": [
+          [
+            {
+              "node": "Upsert Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Parse Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Every 12h (07+19)": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Fire Add-on",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Add-on": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get Bison Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Bison Clients": {
+        "main": [
+          [
+            {
+              "node": "Init Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bison List Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Format Campaign Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

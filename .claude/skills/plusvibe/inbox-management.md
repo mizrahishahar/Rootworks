@@ -1,20 +1,20 @@
-Teaches: the tag standard that names the sending pools, why inbox deliverability is a black box and how to react when it breaks, the SURBL check behind the gateway pool, and why tags describe the fleet while campaigns still carry their own sender lists.
+Teaches: the tag standard that names the sending pools, the SURBL check behind the gateway pool, why tags describe the fleet while campaigns still carry their own sender lists, and the API traps. The rules for capacity, provisioning, flags and kills live in the `inbox-management` skill; this file is the platform mechanics it runs on.
 
-# Inbox management
+# Inbox management on PlusVibe
 
-Inboxes are the sending fleet. Tags are how we **describe** that fleet: which inboxes are live, which are clean, which wave they came from. They are the map, and the map is a standard.
+Inboxes are the sending fleet. Tags are how we **describe** that fleet: which inboxes are live, which are clean, which batch they came from. They are the map, and the map is a standard.
 
-They are not the wiring. A campaign holds its own explicit list of accounts, and no tag operation changes it (see below). So the tags are what you read to decide, and the campaign sender lists are what you write to act. Keeping the two in agreement is the job.
+They are not the wiring. A campaign holds its own explicit list of accounts, and no tag operation changes it (see below). So the tags are what you read to decide, and the campaign sender lists are what you write to act. Keeping the two in agreement is the job, and the MCP tool `allocate_inboxes_by_tag` does it.
 
 ## The tag standard
 
-A tag names a pool with a meaning. The first three nest inside each other; the language tags cut across them:
+A tag names a pool with a meaning:
 
 | Tag                                | Meaning                                                                         | Relation                       |
 | ---------------------------------- | ------------------------------------------------------------------------------- | ------------------------------ |
-| `active`                           | The current live sender pool. Every production campaign's full set              | the root pool                  |
-| `gateway`                          | The deliverability-clean subset that gateway campaigns send from                | strict subset of `active`      |
-| `{clientname}-{x}` (e.g. `dave-2`) | Rotation label: which provisioning wave an inbox came from, numbered per client, kept for history and rotation moves | subsets of `active` or retired |
+| `active`                           | What sends right now. Every production campaign's full set              | the root pool                  |
+| `gateway`                          | The SURBL-clean set of the client's domains, active or not. Gateway campaigns send from `active ∩ gateway` | crosses `active` |
+| `{clientname}-{x}` (e.g. `dave-2`) | Batch label: which purchase or allocation an inbox came from, numbered per client, kept for history | subsets of the workspace |
 | `English` / `Hebrew` | **Only when a client sends in more than one language.** The language an inbox sends in. An inbox belongs to exactly one | crosses `active`, does not nest in it |
 | `internal` | The one sanctioned **campaign** label, for campaigns that are ours rather than a client's. Carries no inboxes | not a sender pool |
 
@@ -30,11 +30,12 @@ Names are lowercase, always: `dave-1`, not `Dave-1`. The language tags are the e
 
 Rules that keep it coherent:
 
-- Every subset stays a subset: an inbox leaving `active` leaves `gateway` in the same move.
-- A rotation is a tag reassignment **plus** a hand-rewrite of every live campaign's sender list. The tags alone do nothing (see below).
+- A change to `active` is a tag move **plus** a rewrite of every live campaign's sender list, through `allocate_inboxes_by_tag`. The tags alone do nothing (see below).
+- `gateway` is re-derived by the health report from SURBL every week; it is never edited by hand.
 - Retired or single-purpose tags are deleted, not left around; a tag with no meaning attracts wrong attachments.
 - One namespace, two jobs, so never let a campaign label look like a sender pool. `internal` is the only campaign label we keep.
 - Tag names mean the same thing in every workspace. The convention travels; the members are per client.
+- The tag description on the platform is the living log of the last change: what moved, when, why.
 
 ## Tags never move senders. Campaigns hold their own list.
 
@@ -45,20 +46,18 @@ So read `camp_count` on a tag correctly: it is how many campaigns **wear the tag
 What this means in practice:
 
 - Tag work is **safe** around live sends. Create, rename, reassign, empty, delete: no campaign loses or gains a sender.
-- Tag work is also **inert**. A rotation is not done when the tags are right. Every live campaign's sender list must be rewritten by hand, one at a time, and read back.
+- Tag work is also **inert**. A change is not done when the tags are right. Every live campaign's sender list must be rewritten and read back. `allocate_inboxes_by_tag` does exactly that for one tag on one client and returns the diff.
 - Do not trust an inbox's `cmps` array as a campaign membership record; it goes stale and reads empty for accounts that are demonstrably in four live campaigns.
 
-Rewriting a campaign's senders: `set_campaign_email_accounts` **merges, it never replaces**, so removals go one at a time through `remove_campaign_email_account`, then `get_campaign_email_accounts` to confirm the exact set.
+Rewriting a campaign's senders by hand: `set_campaign_email_accounts` **merges, it never replaces** (confirmed again 2026-09-06), so removals go one at a time through `remove_campaign_email_account`, then `get_campaign_email_accounts` to confirm the exact set. Accounts in status ERROR reject campaign edits with "Email not found"; reconnect first.
 
-**The failure this prevents.** Dave.io rotated on 2026-08-17: tags were reassigned correctly, and five of six live campaigns were repointed by hand. The sixth was missed and kept sending from the rested `dave-1` wave. Nobody noticed because the tags looked right. When you rotate, the proof is the campaign read-back, never the tag counts.
+**The failure this prevents.** Dave.io rotated on 2026-08-17: tags were reassigned correctly, and five of six live campaigns were repointed by hand. The sixth was missed and kept sending from the rested `dave-1` wave. Nobody noticed because the tags looked right. When you move tags, the proof is the campaign read-back, never the tag counts.
 
-## Inbox deliverability is a black box
+## What the platform can and cannot tell you
 
-**Nothing tells you where the mail landed.** There is no placement score, no API field, no dashboard that separates the inbox from the promotions tab from spam. Receivers do not report it and the sender cannot see it. Every check available to us, SURBL included, is a narrow proxy on one axis; passing all of them is not evidence that mail is landing, and a healthy-looking inbox object is not evidence of anything at all.
+**Nothing tells you where the mail landed.** There is no placement score, no API field, no dashboard that separates the inbox from the promotions tab from spam. Every check available to us, SURBL included, is a narrow proxy on one axis. `7d_overall_warmup_health` is PlusVibe's blended warmup score and PlusVibe does not document what it computes; we use it as the warmup flag threshold because on Dave's fleet it separated the collapsed domains from the working ones, not because we know what it measures.
 
-So the posture is not measurement. It is two things:
-
-**1. Hold the practices, always.** They are already the standard, and they exist because they are the only lever that is actually ours:
+The practices that are ours to hold, always:
 
 - Limits live on the inbox, never the campaign, and the inbox limit is the rest mechanism. Never raise it to buy capacity; shorten or lengthen the sending window instead.
 - Warmup stays on. Ramp slowly and leave it alone.
@@ -66,29 +65,14 @@ So the posture is not measurement. It is two things:
 - The gateway fence (`send_seg_email: 0`) on, and gateway campaigns sending only from clean domains.
 - Two markets never share a pool without their windows compared in one converted timezone.
 
-**2. Watch the numbers and react fast when one is horribly off.** The instrument is the copywriter's diagnosis ladder in `cold-email-copywriter/diagnosis.md`, and infrastructure is its top rung: it gates every row below it, so no campaign-level verdict means anything until this row reads clean.
+**Replies are the signal, not bounces.** A bounce only catches the crude failures; a domain can bounce at zero and still be filed to spam on every send. The only thing that proves mail reached a human is a human answering. So the per-domain read is genuine replies over sends, per domain, both mailboxes together. Counting rules:
 
-**Replies are the signal, not bounces.** A bounce only catches the crude failures, a dead domain or an outright block. A domain can bounce at zero and still be filed straight to spam on every send; the only thing that proves mail reached a human is a human answering. So the per-domain read is **genuine replies**, and bounce is the second column, not the first.
-
-| Signal | Level | Healthy | Worrying | Broken | Judge from |
-|---|---|---|---|---|---|
-| Genuine replies vs siblings | per domain | in line | lagging | silent while siblings reply | 500+ sends per domain |
-| Genuine replies per domain | per domain | 0.5%+ | | under 0.5% | 500+ sends per domain |
-| Bounce rate | per domain | in line | lagging | 80%+ of the sender's sends | 500+ sends per domain |
-| Bounce rate | workspace | under 3% | | 3%+ | any volume |
-
-**500 sends is the floor for a domain verdict, and 0.5% genuine is the bar.** Below 500 there is no read, keep sending. At 500 that bar is two or three real humans, so count the replies themselves rather than staring at a percentage: a domain that has taken 500 sends and produced no human answer is the suspect, whatever its bounce rate says.
-
-Counting rules, the copywriter's and ours both:
-
-- **OOO and auto-replies are not replies.** Neither are unsubscribe requests fired by a filter. Count humans.
+- **OOO and auto-replies are not replies.** Neither are unsubscribe requests fired by a filter. `total_reply_count` on the email-stats endpoint already excludes OOO (measured 2026-09-06 on rundaveio.com: 2 replies, 10 OOO, `reply_rate` 0.5 vs `reply_rate_with_ooo` 3). Never subtract `total_ooo_reply_count` from it; that goes negative.
 - Replies are unique people, not messages.
-- A rate without its volume is noise. One reply in forty proves nothing in either direction.
+- A rate without its volume is noise. 500 sends is the floor before a domain says anything.
 - Opens never drive a verdict: unmeasured unless tracking was on, inflated by scanners even then.
 
-The sibling comparison is the whole trick: the same copy, the same list, the same window, split by domain. One domain silent while its siblings answer is that domain not landing. All of them silent together is not an inbox problem, it is the row below, and the ladder says which.
-
-**Locate, then swap.** Per-domain splits say whether the break is one domain, one provisioning wave, or the pool. **The reaction is almost always to switch the inboxes, not to nurse them.** A dead domain is replaced fast; it costs more to keep sending through it than a new one costs to buy. Do not run an investigation into a black box: there is no diagnosis waiting at the end of it, and every day spent looking is a day of sends burned. The swap itself is a rotation, so it is the full move, tags plus a hand-rewrite of every live campaign's sender list, read back one at a time.
+The flags that turn these numbers into a weekly read, and what happens after, are the `inbox-management` skill. Nothing here decides a kill.
 
 ## SURBL, and the gateway pool
 
@@ -96,29 +80,29 @@ One narrow check on one axis, cheap and binary. It catches a real and fatal cond
 
 **What SURBL is:** a DNS-based reputation blocklist of domains that have appeared in spam. Mail receivers query it during filtering; when a sending domain (or a domain in the body's links) is listed, deliverability drops hard regardless of how healthy the inbox itself looks. Listing happens to a DOMAIN, not an inbox, so one listed domain taints every inbox on it.
 
-**How to check:** query DNS for `{domain}.multi.surbl.org`. No record (NXDOMAIN) = clean; an A record resolving (127.0.0.x) = listed, and the last octet encodes which internal list. `127.0.0.64` is ABUSE and is what our domains come back as. Check the SENDING domain of every inbox in the fleet; a spot-check is not an audit, the whole fleet is checked in one pass. The whole estate is only ~130 unique domains (inbox counts are much larger; domains are what SURBL lists), so a full pass takes one command:
+**How to check:** query DNS for `{domain}.multi.surbl.org`. No record (NXDOMAIN) = clean; an A record resolving (127.0.0.x) = listed, and the last octet encodes which internal list. `127.0.0.64` is ABUSE and is what our domains come back as. Check the SENDING domain of every inbox in the fleet; a spot-check is not an audit, the whole fleet is checked in one pass. One `dig +noall +answer` call takes many names at once:
 
 ```bash
-for d in domain-a.com domain-b.com; do r=$(host -t A "$d.multi.surbl.org" 2>&1); case "$r" in *"has address"*) echo "LISTED  $d  ${r##* }";; *) echo "clean   $d";; esac; done
+dig +noall +answer @8.8.8.8 domain-a.com.multi.surbl.org domain-b.com.multi.surbl.org surbl-org-permanent-test-point.com.multi.surbl.org google.com.multi.surbl.org
 ```
 
 **Always run controls in the same pass.** A resolver that is being refused by SURBL can answer positively for everything, and a wall of identical hits looks exactly like a real mass listing. `surbl-org-permanent-test-point.com` must come back listed (127.0.0.254) and `google.com` / `microsoft.com` must come back clean. If the controls are wrong, the results are worthless.
 
-**Query 8.8.8.8 explicitly; the default resolver lies in the dangerous direction.** Measured 2026-08-25: the machine's own resolver and 1.1.1.1 both fail SURBL, and the failure reads as **clean**, not as an error. A full pass came back "clean" on seven domains that are in fact ABUSE-listed, and only the control caught it. 8.8.8.8 and 9.9.9.9 answer correctly; 1.1.1.1 returns SERVFAIL. Append the resolver to every lookup:
-
-```bash
-for d in domain-a.com surbl-org-permanent-test-point.com google.com; do r=$(host -t A "$d.multi.surbl.org" 8.8.8.8 2>&1); case "$r" in *"has address"*) echo "LISTED  $d  ${r##* }";; *SERVFAIL*) echo "SERVFAIL $d";; *) echo "clean    $d";; esac; done
-```
+**Query 8.8.8.8 explicitly; the default resolver lies in the dangerous direction.** Measured 2026-08-25: the machine's own resolver and 1.1.1.1 both fail SURBL, and the failure reads as **clean**, not as an error. 8.8.8.8 and 9.9.9.9 answer correctly; 1.1.1.1 returns SERVFAIL. The health report uses Google's DNS-over-HTTPS endpoint for the same reason.
 
 **A clearance tag is not a gateway pool.** Piper's `info-ok` marks .info inboxes that earned a genuine reply and were cleared for reuse. Every single one of its domains is SURBL-listed. Reputation-with-us and reputation-with-receivers are different axes; never map one onto the other.
 
-**Where the fleet stood on 2026-08-23** (clean domains within each client's `active`): Dave.io 7 of 20 · Adelante 2 of 23 · Piper AI 4 of 20 · Move PLNR 3 of 7. Adelante's entire English sending pool, all 20 `adelante-2` domains, is listed. Treat this as the baseline to re-measure against, not as a fact that stays true.
+**A listing is not a burn.** Adelante's whole English pool is listed and produces. Dave's placement test A scored listed domains higher than clean ones. The listing governs `gateway` membership only.
 
-**What the result governs:** the `gateway` tag holds only inboxes whose domains came back clean. When a check turns up a newly listed domain, its inboxes leave `gateway` (and the gateway campaigns' sender lists with it); when a domain delists or new clean domains arrive, they can join. The gateway pool is a living output of the last check, never a fixed roster.
+**Where the fleet stood on 2026-09-06** (clean domains): Dave.io 7 of 15 kept · Adelante 2 of 23 · Piper AI 4 of 20 · Move PLNR 3 of 7. Treat this as the baseline to re-measure against, not as a fact that stays true; the health report re-measures every Monday.
 
 ## The API traps specific to this work
 
 - **`set_campaign_email_accounts` merges; it does not replace.** A "swap" through it leaves the old accounts attached. Real removals go through `remove_campaign_email_account`, then a read-back.
-- **`update_email_account` is a full overwrite, not a patch.** Any field omitted is wiped: it has erased a signature, a last name, and all tags in one call. Never use it for a partial edit; `bulk_assign_tags` is the safe path for tag work.
+- **`update_email_account` is a full overwrite, not a patch.** Any field omitted is wiped: it has erased a signature, a last name, and all tags in one call. Never use it for a partial edit; `bulk_update_email_accounts` and `bulk_assign_tags` are the safe paths.
 - **Rampup fields do not persist while slow-rampup is off.** `rampup_daily_limit` / `rampup_daily_inc` are ignored by the API when `is_slow_rampup` is no; mismatched values there are cosmetic, not a defect to fix.
+- **`custom_domain` (the tracking domain) cannot be cleared by the API.** No update call carries it. A provider export writes it on import; only the UI removes it.
+- **Deleted accounts come back with their old ids, tags and campaign memberships** when a provider re-exports them, and they land in whichever workspace the provider's integration is bound to, not the one they left. Read back after every import.
+- **`bulk_reconnect_email_accounts` holds only when the provider side is paid and live.** On 2026-09-06 forty reconnects flipped to ACTIVE and fell back to ERROR within a minute because the provider had suspended the accounts for a failed renewal. Fix the provider first, reconnect second.
+- **`move_email_accounts_to_workspace`** works within one organisation and carries tags across as foreign ids. Unassign the source workspace's tags before moving back.
 - Inbox limits, warmup, and health read through `list_email_accounts` / `check_email_account_health` / `get_warmup_stats`; the campaign daily limit stays high on purpose, the inbox is where limits live (see the deployment standard).

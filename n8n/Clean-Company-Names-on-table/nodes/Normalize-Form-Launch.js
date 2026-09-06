@@ -1,3 +1,3 @@
 const f = $input.first().json;
 const pick = (o, k) => (o[k] === undefined || o[k] === null ? '' : String(o[k]).trim());
-return [{ json: { baseId: pick(f, 'Clayroots Base ID'), table: pick(f, 'Table'), launchRecordId: '', triggerKind: 'form' } }];
+return [{ json: { baseId: pick(f, 'Clayroots Base ID'), tableId: pick(f, 'Table ID'), launchRecordId: '', triggerKind: 'form' } }];

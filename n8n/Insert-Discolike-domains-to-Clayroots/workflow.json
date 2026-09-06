@@ -1,6 +1,10 @@
 {
+  "updatedAt": "2026-09-02T20:20:54.074Z",
+  "createdAt": "2026-09-01T22:29:57.704Z",
+  "id": "w9Mi3fwVt3G43Ug5",
   "name": "Insert Discolike domains to Clayroots",
-  "active": false,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -584,8 +588,617 @@
     }
   },
   "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
     "executionOrder": "v1",
-    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+    "binaryMode": "separate"
   },
-  "id": "w9Mi3fwVt3G43Ug5"
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
+  "activeVersionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-01T22:29:57.713Z",
+      "createdAt": "2026-09-01T22:29:57.713Z",
+      "role": "workflow:owner",
+      "workflowId": "w9Mi3fwVt3G43Ug5",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-02T20:20:54.076Z",
+    "createdAt": "2026-09-02T20:20:54.076Z",
+    "versionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
+    "workflowId": "w9Mi3fwVt3G43Ug5",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-insert-discolike-domains",
+          "options": {}
+        },
+        "id": "a1b2c3d4-0001-4000-8000-000000000001",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "insert-discolike-domains"
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "a1b2c3d4-0002-4000-8000-000000000002",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          220,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.fields.Client[0] }}",
+          "options": {}
+        },
+        "id": "a1b2c3d4-0003-4000-8000-000000000003",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row is the whole contract. Client link resolves the base,\n// Query ID names the saved DiscoLike query, Tag is stamped on every row landed.\n// Any missing piece stops the run here, before a single paid call.\n//\n// The contacts pull this door fires afterwards is NOT hardcoded (ruled 2026-09-02). Tiers,\n// Departments and Max companies are read off this same launch row and handed to Waterfall\n// Contacts by Fire Contacts, so what the Operator asked for on the row is what the contacts\n// pull does. Blank on the row means today's behaviour: the full waterfall, no department\n// filter, a 5,000-company cap. Tiers falls back to the older Sources multi-select while launch\n// rows still carry it, exactly as Waterfall Contacts' own Launch Params does.\nconst rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst clientRecId=((f['Client']||[])[0])||'';\nconst queryId=((f['Query ID']||'')+'').trim();\nconst tag=((f['Tag']||'')+'').trim();\nif(!clientRecId){ throw new Error('Launch record '+rec.id+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on launch record '+rec.id+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryId)){ throw new Error('Query ID \"'+queryId+'\" is not a saved DiscoLike query id (uuid). Save the query in DiscoLike first. Nothing was pulled.'); }\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst FULL='ContaGen -> Supersoniq -> AI-Ark';\nconst tiers=((f['Tiers']||'')+'').trim();\nconst srcRaw=arr(f['Sources']).map(s=>String(s).trim()).filter(Boolean);\nconst departments=arr(f['Departments']).map(s=>String(s).trim()).filter(Boolean);\nconst roles=arr(f['Roles']).map(s=>String(s).trim()).filter(Boolean);\nconst maxRaw=Math.floor(Number(f['Max companies'])||0);\nreturn [{ json: {\n  base: base,\n  clientRecId: clientRecId,\n  queryId: queryId,\n  tag: tag,\n  contactsTiers: tiers||(srcRaw.length?'':FULL),\n  contactsSources: srcRaw,\n  contactsDepartments: departments,\n  contactsRoles: roles,\n  contactsMaxCompanies: maxRaw>0?maxRaw:5000,\n  _launchRecordId: rec.id,\n  startedAt: new Date().toISOString()\n} }];\n"
+        },
+        "id": "a1b2c3d4-0004-4000-8000-000000000004",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json._launchRecordId }}",
+              "Status": "Running",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "a1b2c3d4-0005-4000-8000-000000000005",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://api.discolike.com/v1/discover",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "inclusion_query_id",
+                "value": "={{ $('Launch Params').first().json.queryId }}"
+              },
+              {
+                "name": "max_records",
+                "value": "500"
+              },
+              {
+                "name": "min_digital_footprint",
+                "value": "0"
+              },
+              {
+                "name": "offset",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "offset",
+                      "value": "={{ $pageCount * 500 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 500 }}",
+                "limitPagesFetched": false,
+                "requestInterval": 4500
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "id": "a1b2c3d4-0008-4000-8000-000000000008",
+        "name": "DiscoLike Discover",
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          0
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Format Companies: one DiscoLike discover profile in, one Companies row out, in the\n// register's shape. Employees accepts both a band (\"51-200\") and a number. Rows with no domain\n// are counted and dropped; duplicate domains within the pull collapse to one. Nothing here\n// reads the base: the column check, the open-field rule, DNC, Clean Fields, Domain Source and\n// Tag belong to the helper (Insert domains to Clayroots), which gets its contract as _meta on\n// the first row. _stats rides on the first row for the log; the helper strips every \"_\" key.\nconst p=$('Launch Params').first().json;\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==null?'':String(a));\nconst kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);\nconst keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0 };\nfor(const it of $input.all()){\n  const c=it.json||{}; if(!Object.keys(c).length) continue; stats.pulled++;\n  const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }\n  if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);\n  const addr=c.address||{};\n  out.push({ json: {\n    'Domain': d,\n    'Company': String(c.name||'').trim(),\n    'Description': String(c.description||''),\n    'Industry Groups': kv(c.industry_groups),\n    'Business Model': kv(c.business_model),\n    'Employees': band(c.employees),\n    'Revenue Range': String(c.revenue_range||''),\n    'Keywords': keys(c.keywords),\n    'Country': String(addr.country||''), 'State': String(addr.state||''), 'City': String(addr.city||''),\n    'Street': String(addr.street||''), 'Zip': String(addr.zip||''),\n    'Phones': join(c.phones), 'Public Emails': join(c.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(c.social_urls),\n    'MX Provider': String(c.mx_provider||''), 'Redirect Domain': String(c.redirect_domain||'')\n  } });\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nout[0].json._meta={ base:p.base, clientRecId:p.clientRecId, tag:p.tag||'', domainSource:'DiscoLike', allowNew:true };\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "a1b2c3d4-0009-4000-8000-000000000009",
+        "name": "Format Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          0
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json['Domain'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a1b2c3d4-0010-4000-8000-000000000010",
+        "name": "Any Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "NEG4Cs7wPOwQkpnQ",
+            "cachedResultName": "Insert domains to Clayroots"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "a1b2c3d4-0011-4000-8000-000000000011",
+        "name": "Insert Domains",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1760,
+          -120
+        ],
+        "notes": "The landing helper: column check, open fields, DNC, Clean Fields, upsert on Domain (Domain Source on create only, Tag on every row). Counters come back. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.upserted || 0 }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a1b2c3d4-0012-4000-8000-000000000012",
+        "name": "Landed Any?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1980,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Fire Contacts: one item in Waterfall Contacts' event shape (Event Row reads the launch-row\n// keys), so the companies just landed get their people at once. Table Companies and View\n// \"Not Sourced\" are structural, this door always sources what it just landed. Everything else\n// comes off THIS door's own launch row (Launch Params read it): Tiers, Departments, Roles and\n// Max companies pass straight through, so the Operator's row is what the contacts pull obeys.\n// Blank on the row means the full waterfall, no department filter, no role filter and a\n// 5,000-company cap, which is what this door always did before 2026-09-02.\n// Waterfall Contacts writes its own run-log row.\nconst p=$('Launch Params').first().json;\nconst out={ Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', 'Max companies': p.contactsMaxCompanies, Departments: p.contactsDepartments||[], Roles: p.contactsRoles||[], Tag: p.tag||'' };\nif(p.contactsTiers) out.Tiers=p.contactsTiers;\nif((p.contactsSources||[]).length) out.Sources=p.contactsSources;\nreturn [{ json: out }];\n"
+        },
+        "id": "a1b2c3d4-0013-4000-8000-000000000013",
+        "name": "Fire Contacts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "PLTNYqqoYfrt9ypd",
+            "cachedResultName": "Waterfall Contacts"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        },
+        "id": "a1b2c3d4-0016-4000-8000-000000000016",
+        "name": "Waterfall Contacts",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          2420,
+          -240
+        ],
+        "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Log: one row per run on the launch row, status computed from the helper's failed[],\n// skips separated from errors, Client attached (a launched run serves exactly one client).\n// The funnel is the pull's own counts plus the helper's counters (Insert domains to Clayroots).\nconst p=$('Launch Params').first().json;\nlet stats={ pulled:0, no_domain:0, duplicate:0 };\ntry{ const f=$('Format Companies').first().json||{}; if(f._stats) stats=f._stats; }catch(e){}\nlet h=null; try{ h=$('Insert Domains').first().json||null; }catch(e){}\nlet fired=false; try{ fired=$('Fire Contacts').all().length>0; }catch(e){}\nconst n=(v)=>Number(v)||0;\nconst failed=(h&&Array.isArray(h.failed))?h.failed.slice():[];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst tableName=(h&&h.tableName)||'Companies';\nconst lines=[\n  '**'+stats.pulled+' companies pulled, '+n(h&&h.upserted)+' landed on '+tableName+'**',\n  '',\n  '**Source:** DiscoLike saved query '+p.queryId,\n  '**Tag:** '+(p.tag||'none'),\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+stats.pulled,\n  '- **Handed to the helper:** '+n(h&&h.in),\n  '- **Landed (record id returned):** '+n(h&&h.upserted)+' ('+n(h&&h.newDomains)+' new, '+n(h&&h.existingDomains)+' already held)',\n  '- **With public emails:** '+n(h&&h.withEmails)\n];\nif(h&&Array.isArray(h.createdColumns)&&h.createdColumns.length) lines.push('- **Columns created (open fields):** '+h.createdColumns.join(', '));\nif(h&&Array.isArray(h.droppedKeys)&&h.droppedKeys.length) lines.push('- **Keys dropped:** '+h.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?'Waterfall Contacts fired on view \"Not Sourced\" (all three sources, Max companies 5000); it writes its own row':'not fired, nothing landed'));\nconst skips=[];\nif(stats.no_domain) skips.push(stats.no_domain+' no domain');\nif(stats.duplicate) skips.push(stats.duplicate+' duplicate domain in the pull');\nif(h&&n(h.dnc)) skips.push(n(h.dnc)+' on the DNC table');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(failed.length){ const byReason={}; for(const f of failed){ byReason[f.reason]=(byReason[f.reason]||0)+1; } lines.push('', '**Failures ('+failed.length+')**'); for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r); }\nconst log={\n  'Automation':'Insert Discolike domains to Clayroots',\n  'Status': failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Errors': failed.length,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+((h&&h.tableId)||'')+')',\n  'Records In': stats.pulled,\n  'Records Out': n(h&&h.upserted),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
+        },
+        "id": "a1b2c3d4-0014-4000-8000-000000000014",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "a1b2c3d4-0015-4000-8000-000000000015",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2860,
+          0
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "DiscoLike Discover",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DiscoLike Discover": {
+        "main": [
+          [
+            {
+              "node": "Format Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Companies": {
+        "main": [
+          [
+            {
+              "node": "Any Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Companies?": {
+        "main": [
+          [
+            {
+              "node": "Insert Domains",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert Domains": {
+        "main": [
+          [
+            {
+              "node": "Landed Any?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Landed Any?": {
+        "main": [
+          [
+            {
+              "node": "Fire Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Contacts": {
+        "main": [
+          [
+            {
+              "node": "Waterfall Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Waterfall Contacts": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

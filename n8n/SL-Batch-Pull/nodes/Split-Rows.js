@@ -1,8 +1,5 @@
-// Split Rows: one item per Companies row for the helper (Insert domains to Clayroots), with
-// the helper's contract as _meta on the first row. allowNew is off: the parent's preflight
-// already checked the columns and created any open field once for the run.
-const inp = $('Batch Input').first().json;
+// 2026-08-12 Operator ruling, applied at the write boundary: company_clean is retired (the cleaned
+// name is already written into Company by Process Batch), and 'Contact Source' replaces 'Source'
+// for record provenance. 'Email Source' (tier) is owned by the verification lane.
 const rows = $('Process Batch').first().json.rows || [];
-const out = rows.map(r => ({ json: r }));
-if (out.length) out[0].json._meta = { base: inp.baseId, clientRecId: inp.clientRecId || '', tag: inp.tag || '', domainSource: 'Storeleads', allowNew: false };
-return out;
+return rows.map(r => { const j = { ...r }; delete j.company_clean; if(Object.prototype.hasOwnProperty.call(j,'Source')){ if(j['Contact Source']===undefined) j['Contact Source']=j.Source; delete j.Source; } return { json: j }; });

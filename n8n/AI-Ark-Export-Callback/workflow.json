@@ -1,5 +1,10 @@
 {
+  "updatedAt": "2026-09-02T14:16:50.024Z",
+  "createdAt": "2026-09-01T23:50:58.048Z",
+  "id": "X2mZAQgCihH9MNpf",
   "name": "AI-Ark Export Callback",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -16,7 +21,8 @@
         0,
         0
       ],
-      "notes": "AI-Ark's Export People with Email endpoint refuses a request without an HTTPS webhook; Waterfall Contacts Batch submits every export with this door (plus ?run=<parent execution id>). Answers 200 on receipt, then records the call: the ark pass reads the data table for its track ids instead of polling statistics per export (ruled 2026-09-02)."
+      "notes": "AI-Ark's Export People with Email endpoint refuses a request without an HTTPS webhook; Waterfall Contacts Batch submits every export with this door (plus ?run=<parent execution id>). Answers 200 on receipt, then records the call: the ark pass reads the data table for its track ids instead of polling statistics per export (ruled 2026-09-02).",
+      "webhookId": "a9b93747-c063-4e11-bdfe-57c542125887"
     },
     {
       "parameters": {
@@ -105,5 +111,133 @@
     "executionOrder": "v1",
     "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
   },
-  "id": "X2mZAQgCihH9MNpf"
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "5055b7c1-7725-4010-975e-75bc8d9ac85a",
+  "activeVersionId": "5055b7c1-7725-4010-975e-75bc8d9ac85a",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-01T23:50:58.052Z",
+      "createdAt": "2026-09-01T23:50:58.052Z",
+      "role": "workflow:owner",
+      "workflowId": "X2mZAQgCihH9MNpf",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-02T14:16:50.025Z",
+    "createdAt": "2026-09-02T14:16:50.025Z",
+    "versionId": "5055b7c1-7725-4010-975e-75bc8d9ac85a",
+    "workflowId": "X2mZAQgCihH9MNpf",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "ai-ark-export-noop",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "id": "b7c1d2e3-0001-4000-8000-000000000001",
+        "name": "Export Callback",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "notes": "AI-Ark's Export People with Email endpoint refuses a request without an HTTPS webhook; Waterfall Contacts Batch submits every export with this door (plus ?run=<parent execution id>). Answers 200 on receipt, then records the call: the ark pass reads the data table for its track ids instead of polling statistics per export (ruled 2026-09-02).",
+        "webhookId": "a9b93747-c063-4e11-bdfe-57c542125887"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Record Callback: AI-Ark's completion call for one export -> one data table row keyed by track\n// id (Store Callback upserts it: DONE can land before the submitter recorded anything, so never\n// update-only). The payload is read leniently (trackId / track_id / id, state / status,\n// statistics.found and .total when present, nested under data or not) and kept whole in payload,\n// so the first live call shows the true shape; found and total are -1 when the payload carries no\n// statistics, and the ark pass then reads them once from the statistics endpoint. run is the ?run=\n// query the submitter put on the webhook URL (the parent execution id), a convenience for reading\n// a run's rows by hand. A call without a track id is still stored, under noid-<time>, never dropped.\nconst j=$input.first().json||{};\nconst body=(j.body&&typeof j.body==='object')?j.body:{};\nconst q=(j.query&&typeof j.query==='object')?j.query:{};\nconst d=(body.data&&typeof body.data==='object')?body.data:body;\nconst trackId=String(d.trackId||d.track_id||d.id||body.trackId||'').trim();\nconst state=String(d.state||d.status||body.state||'').toUpperCase();\nconst stats=(d.statistics&&typeof d.statistics==='object')?d.statistics:((body.statistics&&typeof body.statistics==='object')?body.statistics:null);\nconst num=(v)=>(v===null||v===undefined||v===''||!isFinite(Number(v)))?-1:Number(v);\nconst receivedAt=new Date().toISOString();\nreturn [{ json: {\n  trackId: trackId||('noid-'+receivedAt),\n  state: state,\n  found: stats?num(stats.found):-1,\n  total: stats?num(stats.total):-1,\n  run: String(q.run||'').trim(),\n  receivedAt: receivedAt,\n  payload: JSON.stringify(body).slice(0,4000)\n} }];\n"
+        },
+        "id": "b7c1d2e3-0002-4000-8000-000000000002",
+        "name": "Record Callback",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "row",
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "PYw0JjF0o7FLmaPw"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "trackId",
+                "condition": "eq",
+                "keyValue": "={{ $json.trackId }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "trackId": "={{ $json.trackId }}",
+              "state": "={{ $json.state }}",
+              "found": "={{ $json.found }}",
+              "total": "={{ $json.total }}",
+              "run": "={{ $json.run }}",
+              "receivedAt": "={{ $json.receivedAt }}",
+              "payload": "={{ $json.payload }}"
+            }
+          },
+          "options": {}
+        },
+        "id": "b7c1d2e3-0003-4000-8000-000000000003",
+        "name": "Store Callback",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          440,
+          0
+        ],
+        "notes": "Upsert on trackId, never update-only: a DONE webhook can land before the submitter recorded anything, and the row must exist either way. Data table ai_ark_callbacks (id PYw0JjF0o7FLmaPw; columns trackId string, state string, found number, total number, run string, receivedAt string, payload string), created by the Operator 2026-09-02."
+      }
+    ],
+    "connections": {
+      "Export Callback": {
+        "main": [
+          [
+            {
+              "node": "Record Callback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Callback": {
+        "main": [
+          [
+            {
+              "node": "Store Callback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

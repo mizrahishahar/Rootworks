@@ -1,7 +1,10 @@
 {
+  "updatedAt": "2026-09-02T20:21:33.860Z",
+  "createdAt": "2026-07-28T07:05:08.068Z",
   "id": "UYGZblamekkSgat4",
   "name": "Insert Storeleads domains to Clayroots",
   "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -735,5 +738,780 @@
     "availableInMCP": true,
     "binaryMode": "separate",
     "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
-  }
+  },
+  "staticData": {
+    "global": {
+      "slBatchState": {
+        "cap": 15,
+        "qIndex": 1,
+        "cursor": "",
+        "batchNum": 1,
+        "retried": false,
+        "remaining": 0,
+        "totals": {
+          "pulled": 50,
+          "inserted": 15,
+          "withEmails": 15,
+          "skipped": 0
+        }
+      }
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": {},
+  "versionId": "b220f958-52ce-46c9-8569-71f62506a450",
+  "activeVersionId": "b220f958-52ce-46c9-8569-71f62506a450",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-28T07:05:08.114Z",
+      "createdAt": "2026-07-28T07:05:08.114Z",
+      "role": "workflow:owner",
+      "workflowId": "UYGZblamekkSgat4",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-02T20:21:33.862Z",
+    "createdAt": "2026-09-02T20:21:33.862Z",
+    "versionId": "b220f958-52ce-46c9-8569-71f62506a450",
+    "workflowId": "UYGZblamekkSgat4",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-insert-storeleads-domains",
+          "options": {}
+        },
+        "id": "257a3487-4dd8-4f18-b789-5e350142369f",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "6f104dbd-e70f-4b91-8a37-a2da6262dd14"
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "1164a5cf-f8e6-40c5-826e-6c3974a46155",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          220,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ $json.fields.Client[0] }}",
+          "options": {}
+        },
+        "id": "9222bce0-ef43-461d-bf01-94b204639d6a",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row is the whole contract. Client link resolves the base, the\n// Storeleads filter fields on the row shape the pull, Max companies is the spend cap, Tag is\n// stamped on every row landed. Any missing piece stops the run here, before a single paid call.\n//\n// The contacts pull this door fires afterwards is NOT hardcoded (ruled 2026-09-02). Tiers,\n// Departments and Roles are read off this same launch row and handed to Waterfall Contacts by\n// Fire Contacts, and Max companies serves as its cap too: the row's own spend cap bounds both\n// what this door lands and what the contacts pull then works. Blank means today's behaviour,\n// the full waterfall with no department or role filter. Tiers falls back to the older Sources\n// multi-select while launch rows still carry it.\nconst rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst clientRecId=((f['Client']||[])[0])||'';\nconst tag=((f['Tag']||'')+'').trim();\nconst maxCompanies=parseInt(f['Max companies'],10);\nif(!clientRecId){ throw new Error('Launch record '+rec.id+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on launch record '+rec.id+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!Number.isFinite(maxCompanies)||maxCompanies<1){ throw new Error('Launch record '+rec.id+' has no Max companies. It is the Storeleads spend cap and is required. Nothing was pulled.'); }\nconst list=(v)=>Array.isArray(v)?v.map(x=>String(x).trim()).filter(Boolean):((v==null||v==='')?[]:String(v).split(',').map(s=>s.trim()).filter(Boolean));\nconst text=(v)=>(v==null?'':String(v)).trim();\nconst visits=f['Min monthly visits'];\nreturn [{ json: {\n  base: base,\n  clientRecId: clientRecId,\n  tag: tag,\n  country: list(f['Country']),\n  platforms: list(f['Platforms']),\n  plan: list(f['Plan']),\n  monthlyRevenue: list(f['Monthly revenue']),\n  employees: list(f['Employees']),\n  productCount: list(f['Product count']),\n  storeAge: list(f['Store age']),\n  minMonthlyVisits: (visits==null||visits==='')?null:Number(visits),\n  category: text(f['Category']),\n  technologies: text(f['Technologies']),\n  mustHaveAppIds: text(f['Must-have app IDs']),\n  maxCompanies: maxCompanies,\n  contactsTiers: text(f['Tiers'])||(list(f['Sources']).length?'':'ContaGen -> Supersoniq -> AI-Ark'),\n  contactsSources: list(f['Sources']),\n  contactsDepartments: list(f['Departments']),\n  contactsRoles: list(f['Roles']),\n  contactsMaxCompanies: maxCompanies,\n  _launchRecordId: rec.id,\n  startedAt: new Date().toISOString()\n} }];\n"
+        },
+        "id": "20bc72fa-2486-4412-bd8c-3cdf623545b7",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json._launchRecordId }}",
+              "Status": "Running",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "b1c13de2-0b24-4fde-9529-26d55374a947",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build SL Query: the launch row's filters become one Storeleads pull query per provider x\n// country. Max companies (already validated by Launch Params) is the spend cap the loop\n// enforces; the batch pulls only what is still short of it.\nconst lp = $('Launch Params').first().json;\nconst CMAP = {'United States':'US','United Kingdom':'GB','Canada':'CA','Australia':'AU','Ireland':'IE','Israel':'IL','Germany':'DE','France':'FR','Netherlands':'NL','usa':'US','us':'US','uk':'GB','england':'GB'};\nconst asArr=(v)=>{ if(v===undefined||v===null||v==='')return[]; if(Array.isArray(v))return v.map(x=>String(x).trim()).filter(Boolean); return String(v).split(',').map(s=>s.trim()).filter(Boolean); };\nconst toCode=(x)=>{ const s=String(x).trim(); if(CMAP[s])return CMAP[s]; if(CMAP[s.toLowerCase()])return CMAP[s.toLowerCase()]; if(/^[A-Za-z]{2}$/.test(s))return s.toUpperCase(); return ''; };\nconst ccList = Array.from(new Set(asArr(lp.country).map(toCode).filter(Boolean)));\nconst ALLOWED = ['shopify','woocommerce','bigcommerce','wix','squarespace','magento'];\nlet selP = asArr(lp.platforms).map(s=>String(s).toLowerCase()).filter(s=>ALLOWED.includes(s));\nconst planTicked = asArr(lp.plan).includes('Shopify Plus');\nif (planTicked) selP = ['shopify'];\nconst providers = selP.length ? Array.from(new Set(selP)) : ['all'];\nconst maxCompanies = parseInt(lp.maxCompanies, 10);\nif (!Number.isFinite(maxCompanies) || maxCompanies < 1) { throw new Error('Max companies is missing or not a positive number. It is the Storeleads spend cap. Nothing was pulled.'); }\nconst baseFilters = { 'f:state': 'Active' };\nif (planTicked) baseFilters['f:plan'] = 'Shopify Plus';\nconst envelope=(ticked, ORDER, MAP)=>{ const s=ticked.filter(b=>MAP[b]); if(!s.length) return [null,null]; const idxs=s.map(b=>ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); return [MAP[ORDER[idxs[0]]][0], MAP[ORDER[idxs[idxs.length-1]]][1]]; };\nconst REV_ORDER=['Under $10k','$10k-50k','$50k-100k','$100k-500k','$500k-1M','$1M+'];\nconst REV={'Under $10k':[null,1000000],'$10k-50k':[1000000,5000000],'$50k-100k':[5000000,10000000],'$100k-500k':[10000000,50000000],'$500k-1M':[50000000,100000000],'$1M+':[100000000,null]};\nconst rev=envelope(asArr(lp.monthlyRevenue),REV_ORDER,REV);\nif(rev[0]!=null)baseFilters['f:ermin']=String(rev[0]); if(rev[1]!=null)baseFilters['f:ermax']=String(rev[1]);\nconst EMP_ORDER=['1-10','11-50','51-200','200+'];\nconst EMP={'1-10':[1,10],'11-50':[11,50],'51-200':[51,200],'200+':[200,null]};\nconst emp=envelope(asArr(lp.employees),EMP_ORDER,EMP);\nif(emp[0]!=null)baseFilters['f:empcmin']=String(emp[0]); if(emp[1]!=null)baseFilters['f:empcmax']=String(emp[1]);\nconst PC_ORDER=['1-50','51-500','500+'];\nconst PC={'1-50':[1,50],'51-500':[51,500],'500+':[500,null]};\nconst pc=envelope(asArr(lp.productCount),PC_ORDER,PC);\nif(pc[0]!=null)baseFilters['f:pcmin']=String(pc[0]); if(pc[1]!=null)baseFilters['f:pcmax']=String(pc[1]);\nconst iso=(d)=>d.toISOString().slice(0,19)+'Z';\nconst now=new Date();\nconst yearsAgo=(y)=>{ const d=new Date(now.getTime()); d.setUTCFullYear(d.getUTCFullYear()-y); return d; };\nconst AGE_ORDER=['Under 1 year','1-3 years','3+ years'];\nconst AGE={'Under 1 year':[0,1],'1-3 years':[1,3],'3+ years':[3,null]};\nconst ageTicked=asArr(lp.storeAge).filter(b=>AGE[b]);\nif(ageTicked.length){ const aidx=ageTicked.map(b=>AGE_ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); const minAge=AGE[AGE_ORDER[aidx[0]]][0]; const maxAge=AGE[AGE_ORDER[aidx[aidx.length-1]]][1]; if(maxAge!=null)baseFilters['f:cratmin']=iso(yearsAgo(maxAge)); if(minAge>0)baseFilters['f:cratmax']=iso(yearsAgo(minAge)); }\nconst minVisits = parseInt(lp.minMonthlyVisits, 10);\nif (Number.isFinite(minVisits) && minVisits > 0) baseFilters['f:evmin'] = String(minVisits);\nconst catList = asArr(lp.category);\nif (catList.length) { baseFilters['f:cat'] = catList.join(','); baseFilters['f:cat:op'] = 'or'; }\nconst techList = asArr(lp.technologies);\nif (techList.length) { baseFilters['f:tech'] = techList.join(','); baseFilters['f:tech:op'] = 'and'; }\nconst appIds = asArr(lp.mustHaveAppIds);\nif (appIds.length) { baseFilters['f:an']=appIds.join(','); baseFilters['f:an:op']='and'; }\nconst fields = 'name,tld1,merchant_name,title,description,categories,country_code,city,administrative_area_level_1,estimated_sales,employee_count,rank,platform,state,plan,created_at,product_count,monthly_app_spend,apps,technologies,trustpilot,last_platform,last_platform_change_at,features,contact_info';\nconst cList = ccList.length ? ccList : [null];\nconst out=[];\nfor(const prov of providers){ for(const cc of cList){ const f = Object.assign({}, baseFilters); if(cc) f['f:cc']=cc; const pullQuery = Object.assign({}, f, { page_size: 50, sort: 'rank', fields }); out.push({ json: { _provider: prov, _country: cc||'ALL', countryCode: cc||'', _ccList: ccList, pullQuery, maxCompanies, providerCount: providers.length, countryCount: cList.length } }); } }\nreturn out;\n"
+        },
+        "id": "d8fc2cb9-773c-4db3-9228-f508aceefe57",
+        "name": "Build SL Query",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Preflight: the helper's rows-less call (Insert domains to Clayroots), before the first\n// metered Storeleads page. One item carrying only _meta, with keys = the row keys Process Batch\n// (SL Batch Pull) writes: the helper's Check Columns refuses when the landing fields or the\n// Storeleads declared extras are missing on Companies (they are register fields, never created\n// here: scaffold the base with Extras = Storeleads), and creates any open key once for the run.\n// The batches then call the same helper with rows and allowNew off.\nconst p=$('Launch Params').first().json;\nconst KEYS=['Domain','Company','Description','Industry Groups','Employees','Country','State','City','Public Emails','public_emails_clean','MX Provider','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Features'];\nreturn [{ json: { _meta: { base: p.base, clientRecId: p.clientRecId, tag: p.tag||'', domainSource: 'Storeleads', allowNew: true, keys: KEYS } } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c13",
+        "name": "Preflight",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "NEG4Cs7wPOwQkpnQ",
+            "cachedResultName": "Insert domains to Clayroots"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c14",
+        "name": "Check Base",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1540,
+          0
+        ],
+        "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. The batches call the same helper with rows. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Init Loop State: one static-data record carries the batch loop. Counters only; rows never\n// cross the sub-workflow boundary. kept is the spend meter (rows prepared for the write,\n// what the cap counts); upserted is what actually landed (record ids returned by the helper).\nconst qs = $('Build SL Query').all().map(i => ({ provider: i.json._provider, pullQuery: i.json.pullQuery }));\nconst cap = Number($('Build SL Query').first().json.maxCompanies);\nif (!Number.isFinite(cap) || cap < 1) throw new Error('Loop cap missing: Max companies did not reach the loop. Nothing was pulled.');\nconst sd = $getWorkflowStaticData('global');\nsd.slBatchState = { cap, qIndex: 0, cursor: '', batchNum: 0, retried: false, remaining: cap, totals: { pulled: 0, kept: 0, upserted: 0, withEmails: 0, failed: 0, skipped: 0, inactive: 0, duplicate: 0, dnc: 0 }, failReasons: [] };\nreturn [{ json: { action: 'continue', qIndex: 0, cursor: '', remaining: cap, queries: qs } }];\n"
+        },
+        "id": "43a55df7-156f-4fc5-b85e-14feefec66c6",
+        "name": "Init Loop State",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "3r2DqbY2IAapeehX",
+            "cachedResultName": "SL Batch Pull"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "pullQuery": "={{ $('Init Loop State').first().json.queries[$json.qIndex].pullQuery }}",
+              "provider": "={{ $('Init Loop State').first().json.queries[$json.qIndex].provider }}",
+              "cursor": "={{ $json.cursor }}",
+              "baseId": "={{ $('Launch Params').first().json.base }}",
+              "clientRecId": "={{ $('Launch Params').first().json.clientRecId }}",
+              "batchPages": 10,
+              "remaining": "={{ $json.remaining }}",
+              "tag": "={{ $('Launch Params').first().json.tag || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "25d933db-ff6f-47f6-8c51-20076e0a9f9f",
+        "name": "Pull Batch",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1980,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Loop Control: reads one batch summary, adds it to the running totals, and decides the next\n// move: continue (next cursor or next query), retry once after Storeleads error pages, or\n// done. A second round of error pages on the same cursor fails loud. Hard cap: 500 batches.\nconst res = $input.first().json;\nconst sd = $getWorkflowStaticData('global');\nconst st = sd.slBatchState;\nif (!st) throw new Error('Loop state missing: Init Loop State did not run');\nconst queries = $('Init Loop State').first().json.queries || [];\nst.batchNum = (st.batchNum || 0) + 1;\nif (st.batchNum > 500) throw new Error('Storeleads batch loop hit the hard cap of 500 batches. Totals so far: pulled ' + st.totals.pulled + ', kept ' + st.totals.kept + ', upserted ' + st.totals.upserted + '. Last cursor: \"' + st.cursor + '\" (query ' + (st.qIndex + 1) + '/' + queries.length + ').');\nif (res.errorPages && res.errorPages > 0) {\n  if (st.retried) {\n    throw new Error('Storeleads returned error pages twice for cursor \"' + st.cursor + '\" (provider ' + ((queries[st.qIndex] || {}).provider || '?') + ', query ' + (st.qIndex + 1) + '/' + queries.length + '). Totals so far: pulled ' + st.totals.pulled + ', kept ' + st.totals.kept + ', upserted ' + st.totals.upserted + '.');\n  }\n  st.retried = true;\n  return [{ json: { action: 'retry', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }];\n}\nst.retried = false;\nconst n = (k) => Number(res[k]) || 0;\nst.totals.pulled += n('pulled');\nst.totals.kept += n('kept');\nst.totals.upserted += n('upserted');\nst.totals.withEmails += n('withEmails');\nst.totals.failed += n('failed');\nst.totals.skipped += n('skipped');\nst.totals.inactive += n('inactive');\nst.totals.duplicate += n('duplicate');\nst.totals.dnc = (st.totals.dnc || 0) + n('dnc');\nst.failReasons = Array.isArray(st.failReasons) ? st.failReasons : [];\nfor (const x of (Array.isArray(res.failReasons) ? res.failReasons : [])) { if (st.failReasons.length < 5) st.failReasons.push(String(x)); }\nst.remaining = Math.max(0, st.cap - st.totals.kept);\nif (res.has_next_page && st.remaining > 0 && res.next_cursor) {\n  st.cursor = String(res.next_cursor);\n  return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }];\n}\nst.qIndex += 1;\nst.cursor = '';\nif (st.qIndex < queries.length && st.remaining > 0) {\n  return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: '', remaining: st.remaining } }];\n}\nreturn [{ json: Object.assign({ action: 'done' }, st.totals) }];\n"
+        },
+        "id": "93a8b3fc-a379-43d5-9d90-3b69a2093a63",
+        "name": "Loop Control",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.action }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "continue"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a23778fb-8e90-42c1-8ac3-279e3a1791dd",
+        "name": "Filter Continue",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          2420,
+          -200
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.action }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "retry"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "42c69e9c-6627-4f6a-9ed1-e772c30fbfcd",
+        "name": "Filter Retry",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          2420,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "amount": 30
+        },
+        "id": "8c53eba3-58ed-4a9b-a8e8-be33913daebb",
+        "name": "Wait 30s",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2640,
+          0
+        ],
+        "webhookId": "4b45af9f-7433-4825-b9ea-49973532c662"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.action }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "done"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "2a04ee19-a448-44f4-86d8-b11e6212ac4f",
+        "name": "Filter Done",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          2420,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.upserted || 0 }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c15",
+        "name": "Landed Any?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Fire Contacts: one item in Waterfall Contacts' event shape (Event Row reads the launch-row\n// keys), so the companies just landed get their people at once. Table Companies and View\n// \"Not Sourced\" are structural, this door always sources what it just landed. Everything else\n// comes off THIS door's own launch row (Launch Params read it): Tiers, Departments, Roles and\n// Max companies pass straight through, the row's Max companies serving as the contacts cap too.\n// Blank on the row means the full waterfall, no department filter, no role filter, which is what\n// this door always did before 2026-09-02. Waterfall Contacts writes its own run-log row.\nconst p=$('Launch Params').first().json;\nconst out={ Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', 'Max companies': p.contactsMaxCompanies, Departments: p.contactsDepartments||[], Roles: p.contactsRoles||[], Tag: p.tag||'' };\nif(p.contactsTiers) out.Tiers=p.contactsTiers;\nif((p.contactsSources||[]).length) out.Sources=p.contactsSources;\nreturn [{ json: out }];\n"
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c16",
+        "name": "Fire Contacts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          320
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "PLTNYqqoYfrt9ypd",
+            "cachedResultName": "Waterfall Contacts"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c17",
+        "name": "Waterfall Contacts",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          3080,
+          320
+        ],
+        "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Log: one row per run on the launch row, status computed from failed[], skips\n// separated from errors, Client attached (a launched run serves exactly one client).\n// Records Out is what the helper's upserts returned record ids for, never the pre-write count.\n// The table, the columns created and the keys dropped come from the preflight call (Check\n// Base); the batch totals from the loop state.\nconst p=$('Launch Params').first().json;\nlet cfg={}; try{ cfg=$('Check Base').first().json||{}; }catch(e){}\nconst sd=$getWorkflowStaticData('global');\nconst st=(sd.slBatchState)||{};\nconst t=Object.assign({ pulled:0, kept:0, upserted:0, withEmails:0, failed:0, skipped:0, inactive:0, duplicate:0, dnc:0 }, st.totals||{});\nconst failed=[];\nfor(const r of (st.failReasons||[])) failed.push({ name:'upsert', reason:String(r).slice(0,120) });\nconst errors=Number(t.failed)||0;\nif(errors>failed.length) failed.push({ name:'upsert', reason:(errors-failed.length)+' more rows returned no record id' });\nlet fired=false; try{ fired=$('Fire Contacts').all().length>0; }catch(e){}\nlet queries=[]; try{ queries=$('Build SL Query').all().map(i=>i.json||{}); }catch(e){}\nconst providers=Array.from(new Set(queries.map(q=>q._provider).filter(Boolean)));\nconst countries=Array.from(new Set(queries.map(q=>q._country).filter(Boolean)));\nconst SKIP=new Set(['page_size','sort','fields','f:cc']);\nconst filters=Object.entries((queries[0]||{}).pullQuery||{}).filter(([k])=>!SKIP.has(k)).map(([k,v])=>k+'='+v).join(', ');\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst tableName=cfg.tableName||'Companies';\nconst lines=[\n  '**'+fmt(t.pulled)+' stores pulled, '+fmt(t.upserted)+' landed on '+tableName+'**',\n  '',\n  '**Source:** Storeleads, providers '+(providers.join(', ')||'all')+', countries '+(countries.join(', ')||'ALL')+', cap '+fmt(st.cap||p.maxCompanies),\n  '**Filters:** '+(filters||'none'),\n  '**Tag:** '+(p.tag||'none'),\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+fmt(t.pulled),\n  '- **Kept (active, unique domain, under the cap):** '+fmt(t.kept),\n  '- **Landed (record id returned):** '+fmt(t.upserted),\n  '- **With public emails:** '+fmt(t.withEmails),\n  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails))\n];\nif(Array.isArray(cfg.createdColumns)&&cfg.createdColumns.length) lines.push('- **Columns created (open fields):** '+cfg.createdColumns.join(', '));\nif(Array.isArray(cfg.droppedKeys)&&cfg.droppedKeys.length) lines.push('- **Keys dropped:** '+cfg.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?'Waterfall Contacts fired on view \"Not Sourced\" (all three sources, Max companies 5000); it writes its own row':'not fired, nothing landed'));\nconst skips=[]; if(t.skipped) skips.push(fmt(t.skipped)+' empty domain'); if(t.inactive) skips.push(fmt(t.inactive)+' inactive store'); if(t.duplicate) skips.push(fmt(t.duplicate)+' duplicate domain in the pull'); if(t.dnc) skips.push(fmt(t.dnc)+' on the DNC table');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(failed.length){ lines.push('', '**Failures**'); for(const f of failed.slice(0,10)) lines.push('- '+f.name+': '+f.reason); }\nconst log={\n  'Automation':'Insert Storeleads domains to Clayroots',\n  'Status': errors?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Errors': errors,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+(cfg.tableId||'')+')',\n  'Records In': t.pulled,\n  'Records Out': t.upserted,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
+        },
+        "id": "bbe8a542-faf7-4180-a63f-6e9df1732721",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3300,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "92c010f9-0049-4458-8d0f-a064eeaadbc0",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3520,
+          200
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Build SL Query",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build SL Query": {
+        "main": [
+          [
+            {
+              "node": "Preflight",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Preflight": {
+        "main": [
+          [
+            {
+              "node": "Check Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Base": {
+        "main": [
+          [
+            {
+              "node": "Init Loop State",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Loop State": {
+        "main": [
+          [
+            {
+              "node": "Pull Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Batch": {
+        "main": [
+          [
+            {
+              "node": "Loop Control",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Control": {
+        "main": [
+          [
+            {
+              "node": "Filter Continue",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Filter Retry",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Filter Done",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Continue": {
+        "main": [
+          [
+            {
+              "node": "Pull Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Retry": {
+        "main": [
+          [
+            {
+              "node": "Wait 30s",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait 30s": {
+        "main": [
+          [
+            {
+              "node": "Pull Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Done": {
+        "main": [
+          [
+            {
+              "node": "Landed Any?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Landed Any?": {
+        "main": [
+          [
+            {
+              "node": "Fire Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Contacts": {
+        "main": [
+          [
+            {
+              "node": "Waterfall Contacts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Waterfall Contacts": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

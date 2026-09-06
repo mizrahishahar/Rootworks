@@ -1,4 +1,4 @@
-const cfg = $('Check Columns').first().json;
+const cfg = $('Check Tag Column').first().json;
 const inp = $('Resolve Inputs').first().json;
 const s = $getWorkflowStaticData('global');
 s.stt = s.stt || {};
@@ -17,7 +17,8 @@ const fields = {
   'Status': 'Succeeded',
   'Description': description,
   'Run at': inp.startedAt,
-  'Target': cfg.tableName + ' (' + cfg.tableId + ')',
+  'Target': cfg.tableName,
+  'Table ID': cfg.tableId,
   'Tag': cfg.tag,
   'Duration s': duration,
   'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,

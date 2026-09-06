@@ -1,4 +1,4 @@
-const cfg = $('Check Columns').first().json;
+const cfg = $('Detect Company Columns').first().json;
 const s = $getWorkflowStaticData('global');
 s.ccn = s.ccn || {};
 if (!s.ccn[$execution.id]) { s.ccn[$execution.id] = { scanned: 0, changed: 0, unchanged: 0, blank: 0, quarantined: 0, pipe: 0, dash: 0, legal: 0, symbol: 0, pages: 0, batches: 0 }; }

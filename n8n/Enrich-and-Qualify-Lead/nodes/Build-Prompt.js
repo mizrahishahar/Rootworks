@@ -1,8 +1,7 @@
 // Enrich and Qualify Lead, step 1: the one copy of the qualification prompt.
 // Passthrough helper on the Clean Fields model: one item in, one item out, no run-log row of its own;
-// the caller's row carries the outcome. Callers: Enrich & Qualify new lead from PlusVibe, Enrich & Qualify
-// new lead from Alta, Enrich & Qualify new lead from Booking (all three renamed 2026-09-03 from "Handle New
-// Lead from X" / "Handle New Booking"). The helper reads the rubric, reads what the client's base already holds about the
+// the caller's row carries the outcome. Callers: Handle New Lead from PlusVibe, Handle New Lead from Alta,
+// Handle New Booking. The helper reads the rubric, reads what the client's base already holds about the
 // replier (ruling 2026-09-02: the intake reads before it pays), enriches live only when the base has no row,
 // judges and hands the verdict back. It writes nothing: the caller stamps its own CRM row with the field
 // names it always used.

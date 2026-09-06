@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T00:04:33.591Z",
+  "updatedAt": "2026-09-02T13:48:48.264Z",
   "createdAt": "2026-07-28T19:43:20.788Z",
   "id": "wOkccv1wDzBSO99d",
   "name": "Append fields to table",
@@ -1667,8 +1667,8 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "f94e05fa-8317-4eb2-b6c4-affae1e3387d",
-  "activeVersionId": "f94e05fa-8317-4eb2-b6c4-affae1e3387d",
+  "versionId": "6d504249-acdb-4721-a30f-19c9f9d08995",
+  "activeVersionId": "6d504249-acdb-4721-a30f-19c9f9d08995",
   "triggerCount": 2,
   "shared": [
     {
@@ -1680,9 +1680,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-08-12T00:04:33.594Z",
-    "createdAt": "2026-08-12T00:04:33.594Z",
-    "versionId": "f94e05fa-8317-4eb2-b6c4-affae1e3387d",
+    "updatedAt": "2026-09-02T13:48:48.267Z",
+    "createdAt": "2026-09-02T13:48:48.267Z",
+    "versionId": "6d504249-acdb-4721-a30f-19c9f9d08995",
     "workflowId": "wOkccv1wDzBSO99d",
     "nodes": [
       {
@@ -1763,7 +1763,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst att=(f['Attachment']&&f['Attachment'][0])||null;\nif(!att||!att.url){ throw new Error('Launch guard: launch record '+rec.id+' has no CSV file in the Attachment field. Nothing was written.'); }\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table ID': ((f['Table ID']||f['Target']||'')+'').trim(),\n  'Key column': ((f['Key Column']||'Domain')+'').trim(),\n  'Fields to attach': ((f['Fields to Attach']||'')+'').trim(),\n  _attachmentUrl: att.url,\n  _launchRecordId: rec.id,\n  submittedAt: new Date().toISOString()\n} }];"
+          "jsCode": "// Launch Params: the launch row is the contract. Client resolves the base, Table names People\n// or Companies (blank = People), Key Column and Fields to Attach shape the merge, Attachment is\n// the CSV. Tag and the Client id ride along for the Companies path, where the helper stamps\n// the Tag on every row landed.\nconst rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst att=(f['Attachment']&&f['Attachment'][0])||null;\nif(!att||!att.url){ throw new Error('Launch guard: launch record '+rec.id+' has no CSV file in the Attachment field. Nothing was written.'); }\nreturn [{ json: {\n  'Clayroots Base ID': ((cf['Clayroots Base ID']||'')+'').trim(),\n  'Table': (((f['Table']&&f['Table'].name)||f['Table']||'')+'').trim(),\n  'Key column': ((f['Key Column']||'Domain')+'').trim(),\n  'Fields to attach': ((f['Fields to Attach']||'')+'').trim(),\n  'Tag': ((f['Tag']||'')+'').trim(),\n  _clientRecId: ((f['Client']||[])[0])||'',\n  _attachmentUrl: att.url,\n  _launchRecordId: rec.id,\n  submittedAt: new Date().toISOString()\n} }];\n"
         },
         "id": "d1f36e1e-035e-496d-9677-a5cae512f601",
         "name": "Launch Params",
@@ -1868,7 +1868,7 @@
       {
         "parameters": {
           "formTitle": "Field Merge — attach CSV columns by key",
-          "formDescription": "Upload a CSV keyed by Domain or Final Email with any extra columns. Every non-key column is stamped onto all rows of the target table sharing the key value. Additive only: no inserts, no deletes, missing fields auto-created as text. Final Email merges are refused on *Domains* tables.",
+          "formDescription": "Upload a CSV keyed by Domain or Final Email with any extra columns. Every non-key column is stamped onto all rows of the target table sharing the key value. Additive only: no inserts, no deletes. Every CSV column must already exist on the table: a missing one refuses the run before any write (the scaffold or the Operator adds columns, never this door). Final Email merges are refused on *Domains* tables.",
           "formFields": {
             "values": [
               {
@@ -1877,9 +1877,8 @@
                 "requiredField": true
               },
               {
-                "fieldLabel": "Table ID",
-                "placeholder": "tblXXXXXXXXXXXXXX — the target table in that base",
-                "requiredField": true
+                "fieldLabel": "Table",
+                "placeholder": "People or Companies, blank = People"
               },
               {
                 "fieldLabel": "Key column",
@@ -1950,7 +1949,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const p=$('Merge Launch').first().json;\nconst baseId=String(p['Clayroots Base ID']||'').trim();\nconst tableId=String(p['Table ID']||'').trim();\nconst keyName=(String(p['Key column']||p['Key Column']||'Domain').trim())||'Domain';\nconst fieldsRaw=String(p['Fields to attach']||p['Fields to Attach']||'').trim();\n// Allowed keys must be unique per row in the target table. Contact Key is the ContaGen/Supersoniq\n// upsert key (first+last+domain), so it is row-unique on contacts tables.\nconst ALLOWED_KEYS=['Domain','Final Email','Contact Key'];\nif(!ALLOWED_KEYS.includes(keyName)){ throw new Error('Key guard: Key column \"'+keyName+'\" is not one of '+ALLOWED_KEYS.join(' / ')+'. Nothing was written.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(baseId)){ throw new Error('Head guard: Clayroots Base ID \"'+baseId+'\" is not a valid Airtable base id (appXXXXXXXXXXXXXX). Nothing was written.'); }\nif(!/^tbl[A-Za-z0-9]{14}$/.test(tableId)){ throw new Error('Head guard: Table ID \"'+tableId+'\" is not a valid Airtable table id (tblXXXXXXXXXXXXXX). Nothing was written.'); }\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&Object.keys(r).length>0);\nif(rows.length===0){ throw new Error('Head guard: the uploaded CSV parsed to zero data rows. Nothing was written.'); }\nconst headers=Object.keys(rows[0]);\nlet keyHeader=headers.find(h=>h.trim()===keyName);\nlet headerNote='';\nif(!keyHeader){ keyHeader=headers.find(h=>h.trim().toLowerCase()===keyName.toLowerCase()); if(keyHeader){ headerNote='case-variant header \"'+keyHeader+'\" accepted as '+keyName; } }\nif(!keyHeader){ throw new Error('Head guard: no \"'+keyName+'\" column in the CSV. Headers found: '+headers.join(', ')+'. Nothing was written.'); }\nlet attrCols=headers.filter(h=>h!==keyHeader);\nif(attrCols.length===0){ throw new Error('Head guard: the CSV has only the '+keyName+' column and no attribute columns to merge. Headers found: '+headers.join(', ')+'. Nothing was written.'); }\nlet fieldsRequested=[]; let fieldsSkipped=[];\nif(fieldsRaw){\n  fieldsRequested=fieldsRaw.split(',').map(s=>s.trim()).filter(s=>s.length>0);\n  if(fieldsRequested.length===0){ throw new Error('Head guard: Fields to attach was set but parsed to zero field names. Nothing was written.'); }\n  const byExact=new Set(attrCols);\n  const byLower={}; for(const c of attrCols){ byLower[c.toLowerCase()]=c; }\n  const picked=[];\n  for(const want of fieldsRequested){ if(byExact.has(want)){ picked.push(want); } else if(byLower[want.toLowerCase()]){ picked.push(byLower[want.toLowerCase()]); } else { fieldsSkipped.push(want); } }\n  const uniq=[...new Set(picked)];\n  if(uniq.length===0){ throw new Error('Head guard: none of the requested Fields to attach ('+fieldsRequested.join(', ')+') exist as CSV columns. CSV attribute columns: '+attrCols.join(', ')+'. Nothing was written.'); }\n  attrCols=uniq;\n}\nconst flat=v=>{ if(v===null||v===undefined) return ''; if(Array.isArray(v)) return v.map(x=>String(x)).join(', '); if(typeof v==='object') return JSON.stringify(v); return String(v); };\nconst lookup={};\nlet dupKeys=0;\nfor(const r of rows){ const k=flat(r[keyHeader]).trim().toLowerCase(); if(!k) continue; if(lookup[k]) dupKeys++; const attrs={}; for(const c of attrCols){ attrs[c]=flat(r[c]).trim(); } lookup[k]=attrs; }\nconst distinctKeys=Object.keys(lookup).length;\nif(distinctKeys===0){ throw new Error('Head guard: every CSV row has an empty '+keyName+' value. Nothing was written.'); }\nreturn [{ json: { baseId, tableId, keyName, fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];"
+          "jsCode": "const p=$('Merge Launch').first().json;\nconst baseId=String(p['Clayroots Base ID']||'').trim();\n// The launch names its table (People or Companies, blank = People); Resolve Table turns it into the id.\nconst table=String(p['Table']||'').trim()||'People';\nconst keyName=(String(p['Key column']||p['Key Column']||'Domain').trim())||'Domain';\nconst fieldsRaw=String(p['Fields to attach']||p['Fields to Attach']||'').trim();\n// Allowed keys must be unique per row in the target table. Contact Key is the ContaGen/Supersoniq\n// upsert key (first+last+domain), so it is row-unique on contacts tables.\nconst ALLOWED_KEYS=['Domain','Final Email','Contact Key'];\nif(!ALLOWED_KEYS.includes(keyName)){ throw new Error('Key guard: Key column \"'+keyName+'\" is not one of '+ALLOWED_KEYS.join(' / ')+'. Nothing was written.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(baseId)){ throw new Error('Head guard: Clayroots Base ID \"'+baseId+'\" is not a valid Airtable base id (appXXXXXXXXXXXXXX). Nothing was written.'); }\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&Object.keys(r).length>0);\nif(rows.length===0){ throw new Error('Head guard: the uploaded CSV parsed to zero data rows. Nothing was written.'); }\nconst headers=Object.keys(rows[0]);\nlet keyHeader=headers.find(h=>h.trim()===keyName);\nlet headerNote='';\nif(!keyHeader){ keyHeader=headers.find(h=>h.trim().toLowerCase()===keyName.toLowerCase()); if(keyHeader){ headerNote='case-variant header \"'+keyHeader+'\" accepted as '+keyName; } }\nif(!keyHeader){ throw new Error('Head guard: no \"'+keyName+'\" column in the CSV. Headers found: '+headers.join(', ')+'. Nothing was written.'); }\nlet attrCols=headers.filter(h=>h!==keyHeader);\nif(attrCols.length===0){ throw new Error('Head guard: the CSV has only the '+keyName+' column and no attribute columns to merge. Headers found: '+headers.join(', ')+'. Nothing was written.'); }\nlet fieldsRequested=[]; let fieldsSkipped=[];\nif(fieldsRaw){\n  fieldsRequested=fieldsRaw.split(',').map(s=>s.trim()).filter(s=>s.length>0);\n  if(fieldsRequested.length===0){ throw new Error('Head guard: Fields to attach was set but parsed to zero field names. Nothing was written.'); }\n  const byExact=new Set(attrCols);\n  const byLower={}; for(const c of attrCols){ byLower[c.toLowerCase()]=c; }\n  const picked=[];\n  for(const want of fieldsRequested){ if(byExact.has(want)){ picked.push(want); } else if(byLower[want.toLowerCase()]){ picked.push(byLower[want.toLowerCase()]); } else { fieldsSkipped.push(want); } }\n  const uniq=[...new Set(picked)];\n  if(uniq.length===0){ throw new Error('Head guard: none of the requested Fields to attach ('+fieldsRequested.join(', ')+') exist as CSV columns. CSV attribute columns: '+attrCols.join(', ')+'. Nothing was written.'); }\n  attrCols=uniq;\n}\nconst flat=v=>{ if(v===null||v===undefined) return ''; if(Array.isArray(v)) return v.map(x=>String(x)).join(', '); if(typeof v==='object') return JSON.stringify(v); return String(v); };\nconst lookup={};\nlet dupKeys=0;\nfor(const r of rows){ const k=flat(r[keyHeader]).trim().toLowerCase(); if(!k) continue; if(lookup[k]) dupKeys++; const attrs={}; for(const c of attrCols){ attrs[c]=flat(r[c]).trim(); } lookup[k]=attrs; }\nconst distinctKeys=Object.keys(lookup).length;\nif(distinctKeys===0){ throw new Error('Head guard: every CSV row has an empty '+keyName+' value. Nothing was written.'); }\nreturn [{ json: { baseId, table, keyName, tag: String(p['Tag']||'').trim(), clientRecId: String(p._clientRecId||'').trim(), fieldsRequested, fieldsSkipped, launchRecordId: p._launchRecordId||'', launchedVia: p._launchRecordId ? 'record' : 'form', startedAt: p.submittedAt||new Date().toISOString(), csvRows: rows.length, distinctKeys, dupKeys, keyHeader, headerNote, attrCols, lookup } }];\n"
         },
         "id": "9b0297ea-4574-4a64-9947-35253bf4faec",
         "name": "Validate & Build Lookup",
@@ -1986,7 +1985,20 @@
       },
       {
         "parameters": {
-          "jsCode": "const v=$('Validate & Build Lookup').first().json;\nconst tables=($input.first().json.tables)||[];\nconst table=tables.find(t=>t.id===v.tableId);\nif(!table){ throw new Error('Head guard: table '+v.tableId+' does not exist in base '+v.baseId+'. Tables there: '+tables.map(t=>t.id+' ('+t.name+')').join(', ')+'. Nothing was written.'); }\nif(v.keyName==='Final Email' && /domains/i.test(table.name)){ throw new Error('Key guard: Final Email merges target contact-shaped tables only, and \"'+table.name+'\" is a Domains table (domains tables carry Final Email from the public-emails waterfall, but their rows are companies, not contacts). Nothing was written.'); }\nconst fieldNames=(table.fields||[]).map(f=>f.name);\nif(!fieldNames.includes(v.keyName)){ throw new Error('Head guard: table \"'+table.name+'\" ('+v.tableId+') has no field named exactly \"'+v.keyName+'\". Fields: '+fieldNames.join(', ')+'. Nothing was written.'); }\n// Airtable field names are case-insensitive: map CSV columns onto existing fields case-insensitively so a case-variant header fills the existing column instead of colliding on create.\nconst byLower={}; for(const n of fieldNames){ byLower[n.toLowerCase()]=n; }\nconst renames={}; const canonical=[]; const notes=[];\nfor(const c of v.attrCols){\n  if(fieldNames.includes(c)){ canonical.push(c); continue; }\n  const hit=byLower[c.toLowerCase()];\n  if(hit){ renames[c]=hit; canonical.push(hit); notes.push('CSV column \"'+c+'\" mapped to existing field \"'+hit+'\"'); }\n  else { canonical.push(c); }\n}\nconst seen={}; const dupes=[];\nfor(const c of canonical){ if(seen[c]) dupes.push(c); seen[c]=true; }\nif(dupes.length){ throw new Error('Head guard: multiple CSV columns map to the same table field after case-insensitive matching: '+[...new Set(dupes)].join(', ')+'. Rename the CSV columns so each targets one field. Nothing was written.'); }\nlet lookup=v.lookup;\nif(Object.keys(renames).length){\n  const renamed={};\n  for(const k of Object.keys(lookup)){ const attrs=lookup[k]; const out={}; for(const c of Object.keys(attrs)){ out[renames[c]||c]=attrs[c]; } renamed[k]=out; }\n  lookup=renamed;\n}\nconst missingFields=canonical.filter(c=>!fieldNames.includes(c));\nconst headerNote=[v.headerNote, notes.join('; ')].filter(Boolean).join(' • ');\nreturn [{ json: Object.assign({}, v, { tableName: table.name, attrCols: canonical, lookup, missingFields, headerNote }) }];"
+          "jsCode": "// Resolve Table: the launch names the table (People or Companies, blank = People); its id comes\n// from the base meta Fetch Table Schema just read, never from the Hub (ClayRoots Standard, law 3).\n// Nothing here creates a table or a field.\nconst v=$('Validate & Build Lookup').first().json;\nconst resp=$input.first().json||{};\nconst tables=Array.isArray(resp.tables)?resp.tables:null;\nif(!tables){ throw new Error('Could not read the table list for base '+v.baseId+': '+JSON.stringify(resp).slice(0,200)+'. Nothing was written.'); }\nconst want=String(v.table||'People').trim();\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()===want.toLowerCase());\nif(!t){ throw new Error('Base '+v.baseId+' has no '+want+' table. Scaffold the base first. Nothing was spent or written.'); }\nreturn [{ json: Object.assign({}, v, { tableId:t.id, tableName:t.name }) }];\n"
+        },
+        "id": "7c1e5b2a-0007-4a5e-9d31-resolvetable7",
+        "name": "Resolve Table",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1216,
+          512
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const v=$('Resolve Table').first().json;\nconst tables=($('Fetch Table Schema').first().json.tables)||[];\nconst table=tables.find(t=>t.id===v.tableId);\nif(!table){ throw new Error('Head guard: table '+v.tableName+' ('+v.tableId+') does not exist in base '+v.baseId+'. Tables there: '+tables.map(t=>t.id+' ('+t.name+')').join(', ')+'. Nothing was written.'); }\nif(v.keyName==='Final Email' && /domains/i.test(table.name)){ throw new Error('Key guard: Final Email merges target contact-shaped tables only, and \"'+table.name+'\" is a Domains table (domains tables carry Final Email from the public-emails waterfall, but their rows are companies, not contacts). Nothing was written.'); }\nconst fieldNames=(table.fields||[]).map(f=>f.name);\nif(!fieldNames.includes(v.keyName)){ throw new Error('Head guard: table \"'+table.name+'\" ('+v.tableId+') has no field named exactly \"'+v.keyName+'\". Fields: '+fieldNames.join(', ')+'. Nothing was written.'); }\n// Airtable field names are case-insensitive: map CSV columns onto existing fields case-insensitively so a case-variant header fills the existing column. A column the table does not carry is Check Columns' refusal, next.\nconst byLower={}; for(const n of fieldNames){ byLower[n.toLowerCase()]=n; }\nconst renames={}; const canonical=[]; const notes=[];\nfor(const c of v.attrCols){\n  if(fieldNames.includes(c)){ canonical.push(c); continue; }\n  const hit=byLower[c.toLowerCase()];\n  if(hit){ renames[c]=hit; canonical.push(hit); notes.push('CSV column \"'+c+'\" mapped to existing field \"'+hit+'\"'); }\n  else { canonical.push(c); }\n}\nconst seen={}; const dupes=[];\nfor(const c of canonical){ if(seen[c]) dupes.push(c); seen[c]=true; }\nif(dupes.length){ throw new Error('Head guard: multiple CSV columns map to the same table field after case-insensitive matching: '+[...new Set(dupes)].join(', ')+'. Rename the CSV columns so each targets one field. Nothing was written.'); }\nlet lookup=v.lookup;\nif(Object.keys(renames).length){\n  const renamed={};\n  for(const k of Object.keys(lookup)){ const attrs=lookup[k]; const out={}; for(const c of Object.keys(attrs)){ out[renames[c]||c]=attrs[c]; } renamed[k]=out; }\n  lookup=renamed;\n}\nconst headerNote=[v.headerNote, notes.join('; ')].filter(Boolean).join(' • ');\nreturn [{ json: Object.assign({}, v, { tableName: table.name, fieldNames, attrCols: canonical, lookup, headerNote }) }];\n"
         },
         "id": "ca0c9846-c420-4c1d-8e1c-dbcd6cd6233c",
         "name": "Guard Schema",
@@ -1994,124 +2006,6 @@
         "typeVersion": 2,
         "position": [
           1328,
-          672
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "leftValue": "={{ $json.missingFields.length }}",
-                "operator": {
-                  "type": "number",
-                  "operation": "gt"
-                },
-                "rightValue": 0
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "fe501b95-1f09-40e5-b10b-c03ce4060726",
-        "name": "Fields Missing?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          1552,
-          672
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "const g=$input.first().json;\nreturn g.missingFields.map(n=>({ json: { name: n } }));"
-        },
-        "id": "b7258e4f-e951-483b-b031-3c90b6605358",
-        "name": "Split Missing Fields",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          1760,
-          560
-        ]
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Guard Schema').first().json.baseId }}/tables/{{ $('Guard Schema').first().json.tableId }}/fields",
-          "authentication": "predefinedCredentialType",
-          "nodeCredentialType": "airtableTokenApi",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({ name: $json.name, type: \"singleLineText\" }) }}",
-          "options": {}
-        },
-        "id": "f276c2bf-3f0c-48aa-afe1-de6e569b6748",
-        "name": "Create Field",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          1984,
-          560
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Guard Schema').first().json.baseId }}/tables",
-          "authentication": "predefinedCredentialType",
-          "nodeCredentialType": "airtableTokenApi",
-          "options": {}
-        },
-        "id": "dffdeb2b-49eb-49e4-a27a-2e7b748b791f",
-        "name": "Refetch Schema",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.4,
-        "position": [
-          2208,
-          560
-        ],
-        "executeOnce": true,
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "jsCode": "const g=$('Guard Schema').first().json;\nconst tables=($input.first().json.tables)||[];\nconst table=tables.find(t=>t.id===g.tableId);\nconst names=((table&&table.fields)||[]).map(f=>f.name);\nconst still=g.attrCols.filter(c=>!names.includes(c));\nif(still.length>0){ throw new Error('Field creation failed: these CSV columns are still missing on the table after create: '+still.join(', ')+'. No row was modified.'); }\nreturn [{ json: { fieldsVerified: true, created: g.missingFields } }];"
-        },
-        "id": "498fa8d6-09f1-48d9-bb8c-40db34b51af4",
-        "name": "Verify Fields",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          2432,
-          560
-        ]
-      },
-      {
-        "parameters": {},
-        "id": "051bc43a-1e54-4061-a4de-3f9a52aab138",
-        "name": "Fields Ready",
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          2640,
           672
         ]
       },
@@ -2208,7 +2102,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const g=$('Guard Schema').first().json;\nconst items=$input.all();\nconst zero=items.length===1 && items[0].json && items[0].json._zeroMatch===true;\nlet rowsMatched=0, rowsUpdated=0, writeFailures=0, tableRowsScanned=0;\nif(zero){ tableRowsScanned=items[0].json._tableRowsScanned||0; }\nelse {\n  const failed=items.filter(i=>i.json&&i.json.error);\n  writeFailures=failed.length;\n  rowsMatched=items.length;\n  rowsUpdated=items.length-writeFailures;\n  if(rowsUpdated===0){ throw new Error('All '+items.length+' row updates failed. First error: '+JSON.stringify(failed[0]&&failed[0].json.error)); }\n  tableRowsScanned=$('Get Table Rows').all().length;\n}\nconst matched={};\nif(!zero){ for(const it of $('Get Table Rows').all()){ const f=it.json.fields||{}; const k=String(f[g.keyName]||'').trim().toLowerCase(); if(k&&g.lookup[k]) matched[k]=true; } }\nconst unmatched=Object.keys(g.lookup).filter(k=>!matched[k]);\nreturn [{ json: { baseId: g.baseId, tableId: g.tableId, tableName: g.tableName, keyName: g.keyName, fieldsRequested: g.fieldsRequested||[], fieldsSkipped: g.fieldsSkipped||[], launchedVia: g.launchedVia, startedAt: g.startedAt, headerNote: g.headerNote, csvRows: g.csvRows, distinctKeys: g.distinctKeys, dupKeys: g.dupKeys, fieldsAppended: g.attrCols, fieldsCreated: g.missingFields, tableRowsScanned, rowsMatched, rowsUpdated, writeFailures, unmatchedCount: unmatched.length, unmatchedSample: unmatched.slice(0, 20), zeroMatch: zero } }];"
+          "jsCode": "const g=$('Guard Schema').first().json;\nconst items=$input.all();\nconst zero=items.length===1 && items[0].json && items[0].json._zeroMatch===true;\nlet rowsMatched=0, rowsUpdated=0, writeFailures=0, tableRowsScanned=0;\nif(zero){ tableRowsScanned=items[0].json._tableRowsScanned||0; }\nelse {\n  const failed=items.filter(i=>i.json&&i.json.error);\n  writeFailures=failed.length;\n  rowsMatched=items.length;\n  rowsUpdated=items.length-writeFailures;\n  if(rowsUpdated===0){ throw new Error('All '+items.length+' row updates failed. First error: '+JSON.stringify(failed[0]&&failed[0].json.error)); }\n  tableRowsScanned=$('Get Table Rows').all().length;\n}\nconst matched={};\nif(!zero){ for(const it of $('Get Table Rows').all()){ const f=it.json.fields||{}; const k=String(f[g.keyName]||'').trim().toLowerCase(); if(k&&g.lookup[k]) matched[k]=true; } }\nconst unmatched=Object.keys(g.lookup).filter(k=>!matched[k]);\nreturn [{ json: { baseId: g.baseId, tableId: g.tableId, tableName: g.tableName, keyName: g.keyName, fieldsRequested: g.fieldsRequested||[], fieldsSkipped: g.fieldsSkipped||[], launchedVia: g.launchedVia, startedAt: g.startedAt, headerNote: g.headerNote, csvRows: g.csvRows, distinctKeys: g.distinctKeys, dupKeys: g.dupKeys, fieldsAppended: g.attrCols, tableRowsScanned, rowsMatched, rowsUpdated, writeFailures, unmatchedCount: unmatched.length, unmatchedSample: unmatched.slice(0, 20), zeroMatch: zero } }];\n"
         },
         "id": "b6519733-be37-4987-a784-87f50b349968",
         "name": "Collect Results",
@@ -2233,7 +2127,7 @@
             "mode": "id",
             "value": "tblK0nCoNVvFf5SPa"
           },
-          "filterByFormula": "={Clayroots Base ID} = '{{ $('Guard Schema').first().json.baseId }}'",
+          "filterByFormula": "={Clayroots Base ID} = '{{ $('Resolve Table').first().json.baseId }}'",
           "returnAll": false,
           "limit": 1,
           "options": {}
@@ -2258,7 +2152,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const s=$('Collect Results').first().json;\nlet clientRec=[];\ntry{ const lc=$('Fetch Launch Record').first().json.fields.Client; if(Array.isArray(lc)&&lc.length&&lc[0]) clientRec=[lc[0]]; }catch(e){}\nif(!clientRec.length){ try{ const rc=$('Resolve Client').first().json; if(rc&&rc.id) clientRec=[rc.id]; }catch(e){} }\nlet dur=0;\ntry{ if(s.startedAt) dur=Math.max(0, Math.round(($now.toMillis()-new Date(s.startedAt).getTime())/1000)); }catch(e){}\nconst status=s.writeFailures ? 'Succeeded with errors' : 'Succeeded';\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst parts=[];\nparts.push('**'+fmt(s.rowsUpdated)+' rows updated of '+fmt(s.csvRows)+' CSV rows**');\nparts.push('**Fields**\\n- **Key:** '+s.keyName+'\\n- **Requested:** '+((s.fieldsRequested&&s.fieldsRequested.length) ? s.fieldsRequested.join(', ')+(s.fieldsSkipped.length ? ' (skipped, not in CSV: '+s.fieldsSkipped.join(', ')+')' : '') : 'all non-key CSV columns')+'\\n- **Appended:** '+s.fieldsAppended.join(', ')+'\\n- **Created:** '+(s.fieldsCreated.length ? s.fieldsCreated.join(', ') : 'none'));\nparts.push('**Rows**\\n- **CSV rows:** '+fmt(s.csvRows)+'\\n- **Distinct CSV keys:** '+fmt(s.distinctKeys)+'\\n- **Duplicate keys in CSV:** '+fmt(s.dupKeys)+'\\n- **Table rows scanned:** '+fmt(s.tableRowsScanned)+'\\n- **Matched:** '+fmt(s.rowsMatched)+'\\n- **Updated:** '+fmt(s.rowsUpdated)+'\\n- **Write failures:** '+fmt(s.writeFailures)+'\\n- **Unmatched CSV keys:** '+fmt(s.unmatchedCount)+(s.unmatchedSample.length ? ' (e.g. '+s.unmatchedSample.join(', ')+')' : ''));\nparts.push('**Launched via:** '+s.launchedVia+(s.headerNote ? ' · '+s.headerNote : ''));\nconst desc=parts.join('\\n\\n');\nconst out={\n  'Automation': 'Append fields to table',\n  'Status': status,\n  'Trigger': 'form',\n  'Run at': $now.toISO(),\n  'Client': clientRec,\n  'Target': s.tableName+' ('+s.tableId+')',\n  'Table ID': s.tableId,\n  'Key Column': s.keyName,\n  'Records In': s.csvRows,\n  'Records Out': s.rowsUpdated,\n  'Errors': s.writeFailures,\n  'Duration s': dur,\n  'Description': desc,\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id)\n};\nif(!clientRec.length){ delete out['Client']; }\nreturn [{ json: out }];"
+          "jsCode": "// Build Log: one row per run, two shapes. On People the update-only merge (Collect Results);\n// on Companies the landing through the helper (Insert domains to Clayroots), whose counters\n// carry what landed, the columns created, the keys dropped, the DNC skips and the failures.\nlet s=null; try{ s=$('Collect Results').first().json||null; }catch(e){}\nlet h=null; try{ h=$('Insert Domains').first().json||null; }catch(e){}\nconst v=$('Resolve Table').first().json;\nlet clientRec=[];\ntry{ const lc=$('Fetch Launch Record').first().json.fields.Client; if(Array.isArray(lc)&&lc.length&&lc[0]) clientRec=[lc[0]]; }catch(e){}\nif(!clientRec.length){ try{ const rc=$('Resolve Client').first().json; if(rc&&rc.id) clientRec=[rc.id]; }catch(e){} }\nlet dur=0;\ntry{ if(v.startedAt) dur=Math.max(0, Math.round(($now.toMillis()-new Date(v.startedAt).getTime())/1000)); }catch(e){}\nconst fmt=x=>Number(x||0).toLocaleString('en-US');\nconst n=(x)=>Number(x)||0;\nconst parts=[]; let status, recordsOut, errors, target;\nif(h){\n  const failed=Array.isArray(h.failed)?h.failed:[];\n  errors=failed.length; status=errors?'Succeeded with errors':'Succeeded'; recordsOut=n(h.upserted); target=(h.tableName||v.tableName)+' ('+(h.tableId||v.tableId)+')';\n  parts.push('**'+fmt(h.upserted)+' companies landed on '+(h.tableName||'Companies')+' from '+fmt(v.csvRows)+' CSV rows**');\n  parts.push('**Fields**\\n- **Key:** Domain\\n- **Requested:** '+((v.fieldsRequested&&v.fieldsRequested.length) ? v.fieldsRequested.join(', ')+((v.fieldsSkipped||[]).length ? ' (skipped, not in CSV: '+v.fieldsSkipped.join(', ')+')' : '') : 'all non-key CSV columns')+'\\n- **Written:** '+((h.writableKeys||[]).join(', ')||'Domain')+(Array.isArray(h.createdColumns)&&h.createdColumns.length?'\\n- **Columns created (open fields):** '+h.createdColumns.join(', '):'')+(Array.isArray(h.droppedKeys)&&h.droppedKeys.length?'\\n- **Keys dropped:** '+h.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '):''));\n  parts.push('**Rows**\\n- **CSV rows:** '+fmt(v.csvRows)+'\\n- **Distinct domains:** '+fmt(v.distinctKeys)+'\\n- **Duplicate keys in CSV:** '+fmt(v.dupKeys)+'\\n- **Landed (record id returned):** '+fmt(h.upserted)+' ('+fmt(h.newDomains)+' new, '+fmt(h.existingDomains)+' already held)\\n- **Domain Source on new rows:** CSV'+(v.tag?'\\n- **Tag:** '+v.tag:''));\n  const skips=[]; if(n(h.noDomain)) skips.push(fmt(h.noDomain)+' no domain'); if(n(h.dnc)) skips.push(fmt(h.dnc)+' on the DNC table');\n  if(skips.length) parts.push('**Skipped ('+skips.join(', ')+')**');\n  if(failed.length){ const byReason={}; for(const f of failed){ byReason[f.reason]=(byReason[f.reason]||0)+1; } parts.push('**Failures ('+failed.length+')**\\n'+Object.entries(byReason).slice(0,10).map(([r,c])=>'- '+c+' x '+r).join('\\n')); }\n  parts.push('**Launched via:** '+v.launchedVia+(v.headerNote ? ' · '+v.headerNote : ''));\n} else {\n  if(!s){ throw new Error('Build Log: neither the People merge nor the Companies landing produced a result.'); }\n  errors=n(s.writeFailures); status=errors?'Succeeded with errors':'Succeeded'; recordsOut=n(s.rowsUpdated); target=s.tableName+' ('+s.tableId+')';\n  parts.push('**'+fmt(s.rowsUpdated)+' rows updated of '+fmt(s.csvRows)+' CSV rows**');\n  parts.push('**Fields**\\n- **Key:** '+s.keyName+'\\n- **Requested:** '+((s.fieldsRequested&&s.fieldsRequested.length) ? s.fieldsRequested.join(', ')+(s.fieldsSkipped.length ? ' (skipped, not in CSV: '+s.fieldsSkipped.join(', ')+')' : '') : 'all non-key CSV columns')+'\\n- **Appended:** '+s.fieldsAppended.join(', '));\n  parts.push('**Rows**\\n- **CSV rows:** '+fmt(s.csvRows)+'\\n- **Distinct CSV keys:** '+fmt(s.distinctKeys)+'\\n- **Duplicate keys in CSV:** '+fmt(s.dupKeys)+'\\n- **Table rows scanned:** '+fmt(s.tableRowsScanned)+'\\n- **Matched:** '+fmt(s.rowsMatched)+'\\n- **Updated:** '+fmt(s.rowsUpdated)+'\\n- **Write failures:** '+fmt(s.writeFailures)+'\\n- **Unmatched CSV keys:** '+fmt(s.unmatchedCount)+(s.unmatchedSample.length ? ' (e.g. '+s.unmatchedSample.join(', ')+')' : ''));\n  parts.push('**Launched via:** '+s.launchedVia+(s.headerNote ? ' · '+s.headerNote : ''));\n}\nconst out={\n  'Automation': 'Append fields to table',\n  'Status': status,\n  'Trigger': 'form',\n  'Run at': $now.toISO(),\n  'Client': clientRec,\n  'Target': target,\n  'Key Column': v.keyName,\n  'Records In': v.csvRows,\n  'Records Out': recordsOut,\n  'Errors': errors,\n  'Duration s': dur,\n  'Description': parts.join('\\n\\n'),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id)\n};\nif(!clientRec.length){ delete out['Client']; }\nreturn [{ json: out }];\n"
         },
         "id": "e31bd6af-2eef-40df-8888-8430d6907d54",
         "name": "Build Log",
@@ -3055,6 +2949,96 @@
           },
           "options": {}
         }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Check Columns: every column this run writes must already exist on the target table (Operator\n// ruling 2026-09-02: a client base is set up once, by the scaffold; no working machine creates a\n// column, and Append fields never creates one from a CSV header). The list is the launch's own:\n// the CSV attribute columns, narrowed by Fields to attach, as Guard Schema mapped them onto the\n// table's names. Diffs by exact name against the schema Guard Schema already read and refuses\n// before a single row is touched.\nconst g=$('Guard Schema').first().json;\nconst have=new Set(g.fieldNames||[]);\nconst missing=(g.attrCols||[]).filter(c=>!have.has(c));\nif(missing.length){ throw new Error('Table \"'+g.tableName+'\" ('+g.tableId+') in base '+g.baseId+' is missing the columns Append fields to table writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.'); }\nreturn [{ json: { tableId: g.tableId, tableName: g.tableName, keyName: g.keyName, fieldsAppended: g.attrCols } }];\n"
+        },
+        "id": "fe501b95-1f09-40e5-b10b-c03ce4060726",
+        "name": "Check Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1552,
+          672
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "k1",
+                "leftValue": "={{ String($json.tableName || '').trim().toLowerCase() }}",
+                "rightValue": "companies",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "7c1e5b2a-0008-4a5e-9d31-companiespth",
+        "name": "Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1216,
+          352
+        ],
+        "notes": "The split (ruled 2026-09-02): on Companies the CSV lands through Insert domains to Clayroots (open fields created, allowNew on); on People the update-only merge below keeps its own path and creates nothing."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Format CSV Rows: the Companies path (Operator ruling 2026-09-02). A client's own list lands\n// on Companies through the helper (Insert domains to Clayroots): one row per distinct CSV\n// domain with the attribute columns Validate & Build Lookup kept, the helper's contract as\n// _meta on the first row with Domain Source = CSV and allowNew on, so a CSV column the register\n// lacks becomes an open field (a column on Companies plus its lookup on People), a blacklisted\n// column is dropped and counted, a register column must already exist. The key is Domain here:\n// Final Email and Contact Key are People keys and stay on the update-only path.\nconst v=$('Resolve Table').first().json;\nif(v.keyName!=='Domain'){ throw new Error('On Companies the key is Domain: Append fields lands the list through Insert domains to Clayroots, which upserts on Domain. Key column \"'+v.keyName+'\" is a People key. Nothing was written.'); }\nconst lookup=v.lookup||{};\nconst out=Object.keys(lookup).map(d=>({ json: Object.assign({ Domain: d }, lookup[d]) }));\nif(!out.length){ throw new Error('Head guard: the CSV carries no domain to land. Nothing was written.'); }\nout[0].json._meta={ base: v.baseId, clientRecId: v.clientRecId||'', tag: v.tag||'', domainSource: 'CSV', allowNew: true };\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "7c1e5b2a-0009-4a5e-9d31-formatcsvrow",
+        "name": "Format CSV Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1440,
+          192
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "NEG4Cs7wPOwQkpnQ",
+            "cachedResultName": "Insert domains to Clayroots"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "7c1e5b2a-0010-4a5e-9d31-insertdomain",
+        "name": "Insert Domains",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1664,
+          192
+        ],
+        "notes": "The landing helper: column check, open fields, DNC, Clean Fields, upsert on Domain (Domain Source = CSV on create only, Tag on every row). Counters come back. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
       }
     ],
     "connections": {
@@ -3183,6 +3167,35 @@
         "main": [
           [
             {
+              "node": "Resolve Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Table": {
+        "main": [
+          [
+            {
+              "node": "Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Companies?": {
+        "main": [
+          [
+            {
+              "node": "Format CSV Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
               "node": "Guard Schema",
               "type": "main",
               "index": 0
@@ -3190,84 +3203,22 @@
           ]
         ]
       },
-      "Guard Schema": {
+      "Format CSV Rows": {
         "main": [
           [
             {
-              "node": "Fields Missing?",
+              "node": "Insert Domains",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Fields Missing?": {
+      "Insert Domains": {
         "main": [
           [
             {
-              "node": "Split Missing Fields",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Fields Ready",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Split Missing Fields": {
-        "main": [
-          [
-            {
-              "node": "Create Field",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Create Field": {
-        "main": [
-          [
-            {
-              "node": "Refetch Schema",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Refetch Schema": {
-        "main": [
-          [
-            {
-              "node": "Verify Fields",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Verify Fields": {
-        "main": [
-          [
-            {
-              "node": "Fields Ready",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Fields Ready": {
-        "main": [
-          [
-            {
-              "node": "Get Table Rows",
+              "node": "Resolve Client",
               "type": "main",
               "index": 0
             }
@@ -3352,6 +3303,28 @@
           [
             {
               "node": "Update Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Guard Schema": {
+        "main": [
+          [
+            {
+              "node": "Check Columns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Columns": {
+        "main": [
+          [
+            {
+              "node": "Get Table Rows",
               "type": "main",
               "index": 0
             }

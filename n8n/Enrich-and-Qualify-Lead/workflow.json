@@ -1,9 +1,15 @@
 {
+  "updatedAt": "2026-09-02T19:12:08.493Z",
+  "createdAt": "2026-09-02T14:07:46.266Z",
+  "id": "37SAEENLGXb3MFku",
   "name": "Enrich and Qualify Lead",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000001",
       "name": "Lead In",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
@@ -11,22 +17,10 @@
       "position": [
         0,
         0
-      ],
-      "parameters": {
-        "inputSource": "passthrough"
-      }
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000002",
-      "name": "Find Qual Prompt",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        224,
-        0
-      ],
       "parameters": {
-        "resource": "record",
         "operation": "search",
         "base": {
           "__rl": true,
@@ -38,29 +32,29 @@
           "mode": "id",
           "value": "tblJAWVcCaW6TmfbC"
         },
+        "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $('Lead In').first().json.client_name }}\", ARRAYJOIN({Client})))",
         "returnAll": false,
         "limit": 1,
-        "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $('Lead In').first().json.client_name }}\", ARRAYJOIN({Client})))",
         "options": {}
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000002",
+      "name": "Find Qual Prompt",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000009",
-      "name": "Has Base?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        448,
-        0
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -84,19 +78,18 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "0a1b2c3d-0003-4000-8000-000000000009",
+      "name": "Has Base?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000010",
-      "name": "List Base Tables",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        672,
-        -160
-      ],
       "parameters": {
-        "method": "GET",
         "url": "={{ 'https://api.airtable.com/v0/meta/bases/' + String($('Lead In').first().json.clayroots_base || '').trim() + '/tables' }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
@@ -109,16 +102,27 @@
           "timeout": 30000
         }
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000010",
+      "name": "List Base Tables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        -160
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Base-Tables.js"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000011",
       "name": "Resolve Base Tables",
       "type": "n8n-nodes-base.code",
@@ -126,26 +130,15 @@
       "position": [
         896,
         -160
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Resolve-Base-Tables.js"
-      }
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000012",
-      "name": "Tables Ready?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1120,
-        -160
-      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose",
+            "typeValidation": "strict",
             "version": 2
           },
           "conditions": [
@@ -163,19 +156,18 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "0a1b2c3d-0003-4000-8000-000000000012",
+      "name": "Tables Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -160
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000013",
-      "name": "Find Person",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1344,
-        -160
-      ],
       "parameters": {
-        "method": "GET",
         "url": "={{ $json.peopleUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
@@ -188,16 +180,27 @@
           "timeout": 30000
         }
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000013",
+      "name": "Find Person",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -160
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Pick-Person.js"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000014",
       "name": "Pick Person",
       "type": "n8n-nodes-base.code",
@@ -205,20 +208,9 @@
       "position": [
         1568,
         -160
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Pick-Person.js"
-      }
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000015",
-      "name": "Person Found?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1792,
-        -160
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -242,19 +234,18 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "0a1b2c3d-0003-4000-8000-000000000015",
+      "name": "Person Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        -160
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000016",
-      "name": "Find Company",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        2016,
-        -160
-      ],
       "parameters": {
-        "method": "GET",
         "url": "={{ $json.companyUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
@@ -267,16 +258,27 @@
           "timeout": 30000
         }
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000016",
+      "name": "Find Company",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        -160
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Base-Facts.js"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000017",
       "name": "Base Facts",
       "type": "n8n-nodes-base.code",
@@ -284,20 +286,9 @@
       "position": [
         2240,
         -160
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Base-Facts.js"
-      }
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000003",
-      "name": "DiscoLike BizData",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        2016,
-        160
-      ],
       "parameters": {
         "url": "={{ 'https://api.discolike.com/v1/bizdata?domain=' + encodeURIComponent($('Lead In').first().json.enrich_domain || '') }}",
         "authentication": "genericCredentialType",
@@ -311,16 +302,27 @@
           "timeout": 30000
         }
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000003",
+      "name": "DiscoLike BizData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        160
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "jreseZ3JAhJNgkk0",
           "name": "Discolike API"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Prompt.js"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000004",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
@@ -328,20 +330,9 @@
       "position": [
         2464,
         0
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Build-Prompt.js"
-      }
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000005",
-      "name": "Qualify Lead",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        2688,
-        0
-      ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.promptText }}",
@@ -349,17 +340,17 @@
         "options": {
           "systemMessage": "={{ $json.systemPrompt }}"
         }
-      }
+      },
+      "id": "0a1b2c3d-0003-4000-8000-000000000005",
+      "name": "Qualify Lead",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2688,
+        0
+      ]
     },
     {
-      "id": "0a1b2c3d-0003-4000-8000-000000000006",
-      "name": "GPT 5.1 Qualifier",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        2704,
-        224
-      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -375,6 +366,14 @@
           "reasoningEffort": "medium"
         }
       },
+      "id": "0a1b2c3d-0003-4000-8000-000000000006",
+      "name": "GPT 5.1 Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2704,
+        224
+      ],
       "credentials": {
         "openAiApi": {
           "id": "9P7fOmZxpETeDhu8",
@@ -383,6 +382,9 @@
       }
     },
     {
+      "parameters": {
+        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000007",
       "name": "Parse Qualification",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
@@ -390,12 +392,12 @@
       "position": [
         2832,
         224
-      ],
-      "parameters": {
-        "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
-      }
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "@@file:nodes/Flatten-Verdict.js"
+      },
       "id": "0a1b2c3d-0003-4000-8000-000000000008",
       "name": "Flatten Verdict",
       "type": "n8n-nodes-base.code",
@@ -403,10 +405,7 @@
       "position": [
         3040,
         0
-      ],
-      "parameters": {
-        "jsCode": "@@file:nodes/Flatten-Verdict.js"
-      }
+      ]
     }
   ],
   "connections": {
@@ -609,11 +608,640 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
   "staticData": null,
   "meta": null,
-  "pinData": null,
-  "tags": [],
-  "id": "37SAEENLGXb3MFku"
+  "pinData": {},
+  "versionId": "dff7745f-1ec1-47f2-ad81-24e1bdb3e6a0",
+  "activeVersionId": "dd8bd9d8-63be-4937-904f-059f2777a628",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-02T14:07:46.274Z",
+      "createdAt": "2026-09-02T14:07:46.274Z",
+      "role": "workflow:owner",
+      "workflowId": "37SAEENLGXb3MFku",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-02T14:07:46.278Z",
+    "createdAt": "2026-09-02T14:07:46.278Z",
+    "versionId": "dd8bd9d8-63be-4937-904f-059f2777a628",
+    "workflowId": "37SAEENLGXb3MFku",
+    "nodes": [
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000001",
+        "name": "Lead In",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "inputSource": "passthrough"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000002",
+        "name": "Find Qual Prompt",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblJAWVcCaW6TmfbC"
+          },
+          "returnAll": false,
+          "limit": 1,
+          "filterByFormula": "=AND({Type} = \"qualification-prompt\", FIND(\"{{ $('Lead In').first().json.client_name }}\", ARRAYJOIN({Client})))",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000009",
+        "name": "Has Base?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "hb1",
+                "leftValue": "={{ !!(String($('Lead In').first().json.clayroots_base || '').trim() && String($('Lead In').first().json.clayroots_people_table || '').trim() && String($('Lead In').first().json.clayroots_companies_table || '').trim() && (String($('Lead In').first().json.lead_email || '').trim() || String($('Lead In').first().json.linkedin_url || '').trim())) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000010",
+        "name": "List Base Tables",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          672,
+          -160
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ 'https://api.airtable.com/v0/meta/bases/' + String($('Lead In').first().json.clayroots_base || '').trim() + '/tables' }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000011",
+        "name": "Resolve Base Tables",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Enrich and Qualify Lead, base step 1: the client's People and Companies tables, resolved by the registry's\n// table ids (Clients.ClayrootsPeopleTableID fldAkkVBD6fLBA9my and Clients.ClayrootsCompaniesTableID\n// fldHhhOlD6RSzYi3p, passed by the caller as clayroots_people_table / clayroots_companies_table), looked up in\n// the base meta for their field spellings, and the one People search that covers the whole resolve order at\n// once. Never by table name: a client's People table is whatever the registry says it is (Adelante's is\n// \"USA DTC - Contacts\"). Nothing here throws: an intake must never crash on a base that is off the standard;\n// it reports `ready: false` with the reason and the run keeps today's DiscoLike path.\n//\n// Resolve order (Operator ruling 2026-09-02), the replier against the People table:\n//   1. Final Email equals the reply email     2. Email equals it (both sides lowercased)\n//   3. Contact Key equals first+last+the email's domain, built the way Waterfall Contacts Batch builds it\n//   4. LinkedIn URL equals the lead's (lowercased, trailing slash stripped): the Alta reply without an email\n// The formula ORs the keys so one call fetches every candidate; Pick Person applies the precedence.\nconst lead = $('Lead In').first().json || {};\nconst s = (v) => String(v == null ? '' : v).trim();\nconst base = s(lead.clayroots_base);\nconst peopleId = s(lead.clayroots_people_table);\nconst companiesId = s(lead.clayroots_companies_table);\nconst email = s(lead.lead_email).toLowerCase();\nconst emailDomain = email.includes('@') ? email.split('@')[1] : '';\nconst linkedinKey = s(lead.linkedin_url).toLowerCase().replace(/\\/+$/, '');\nconst r = $input.first().json || {};\nconst body = (r.body !== undefined) ? r.body : r;\nconst tables = (body && Array.isArray(body.tables)) ? body.tables : null;\n\nconst out = { base, email, emailDomain, contactKey: '', linkedinKey, ready: false, reason: '', peopleTableId: '', peopleTableName: '', companiesTableId: '', companiesTableName: '', peopleFields: {}, companiesFields: {}, matchOrder: [], peopleUrl: '' };\nif (!peopleId) { out.reason = 'client registry has no ClayrootsPeopleTableID'; return [{ json: out }]; }\nif (!companiesId) { out.reason = 'client registry has no ClayrootsCompaniesTableID'; return [{ json: out }]; }\nif (!tables) { out.reason = 'could not read the table list for base ' + base + ': ' + JSON.stringify(body).slice(0, 160); return [{ json: out }]; }\n\nconst byId = (id) => tables.find((x) => String(x.id || '') === id);\nconst people = byId(peopleId);\nconst companies = byId(companiesId);\nif (!people) { out.reason = 'registry People table ' + peopleId + ' is not in base ' + base; return [{ json: out }]; }\nif (!companies) { out.reason = 'registry Companies table ' + companiesId + ' is not in base ' + base; return [{ json: out }]; }\n\n// Field names as the base actually spells them (case-insensitive), so a formula never names a missing column (422).\nconst actual = (t, wanted) => { const f = (t.fields || []).find((x) => String(x.name || '').trim().toLowerCase() === wanted.toLowerCase()); return f ? f.name : ''; };\nconst PEOPLE_KEYS = ['Name', 'first_name', 'last_name', 'Title', 'Seniority', 'Department', 'Email', 'Final Email', 'Contact Key', 'LinkedIn URL', 'Phone', 'Domain', 'Company', 'Companies', 'Tag', 'Signals', 'Signal At', 'Campaigns', 'Status', 'Description', 'Industry Groups', 'Employees', 'Revenue Range', 'Country', 'State', 'City', 'Social URLs', 'Phones'];\nconst COMPANY_KEYS = ['Domain', 'Company', 'Description', 'Industry Groups', 'Employees', 'Revenue Range', 'Country', 'State', 'City', 'Tag', 'Signals', 'Signal At', 'Campaigns', 'Social URLs', 'Phones', 'Business Model', 'Keywords'];\nfor (const k of PEOPLE_KEYS) { const a = actual(people, k); if (a) out.peopleFields[k] = a; }\nfor (const k of COMPANY_KEYS) { const a = actual(companies, k); if (a) out.companiesFields[k] = a; }\nout.peopleTableId = people.id; out.peopleTableName = people.name;\nout.companiesTableId = companies.id; out.companiesTableName = companies.name;\n\n// Contact Key, the Waterfall Contacts Batch recipe: cleaned first + cleaned last, lowercased, + domain, no separators.\nconst cleanFirst = (f) => { if (!f) return ''; let n = String(f).split(',')[0].trim().split(/\\s+/)[0] || ''; return n.replace(/[^A-Za-z\\-']/g, ''); };\nconst cleanLast = (f) => { if (!f) return ''; return String(f).split(',')[0].trim().split(/\\s+/).join(' ').replace(/[^A-Za-z\\-'\\s]/g, '').trim(); };\nconst first = cleanFirst(lead.first_name), last = cleanLast(lead.last_name);\nif (first && emailDomain) out.contactKey = (first.toLowerCase() + last.toLowerCase() + emailDomain).trim();\n\nconst q = (v) => '\"' + String(v).replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"') + '\"';\nconst parts = [];\nif (email && out.peopleFields['Final Email']) { parts.push('LOWER({' + out.peopleFields['Final Email'] + '}) = ' + q(email)); out.matchOrder.push('Final Email'); }\nif (email && out.peopleFields['Email']) { parts.push('LOWER({' + out.peopleFields['Email'] + '}) = ' + q(email)); out.matchOrder.push('Email'); }\nif (out.contactKey && out.peopleFields['Contact Key']) { parts.push('LOWER({' + out.peopleFields['Contact Key'] + '}) = ' + q(out.contactKey)); out.matchOrder.push('Contact Key'); }\nif (linkedinKey && out.peopleFields['LinkedIn URL']) { parts.push('LOWER(REGEX_REPLACE({' + out.peopleFields['LinkedIn URL'] + '} & \"\", \"/+$\", \"\")) = ' + q(linkedinKey)); out.matchOrder.push('LinkedIn URL'); }\nif (!parts.length) { out.reason = 'People table ' + people.name + ' carries none of Final Email / Email / Contact Key / LinkedIn URL, or the lead has neither an email nor a LinkedIn URL'; return [{ json: out }]; }\nconst formula = parts.length === 1 ? parts[0] : 'OR(' + parts.join(', ') + ')';\nout.peopleUrl = 'https://api.airtable.com/v0/' + base + '/' + people.id + '?maxRecords=10&filterByFormula=' + encodeURIComponent(formula);\nout.ready = true;\nreturn [{ json: out }];\n"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000012",
+        "name": "Tables Ready?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "tr1",
+                "leftValue": "={{ !!$json.ready }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000013",
+        "name": "Find Person",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1344,
+          -160
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.peopleUrl }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000014",
+        "name": "Pick Person",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Enrich and Qualify Lead, base step 2: the one People row that is the replier, by the resolve order\n// (Final Email, then Email, then Contact Key, then LinkedIn URL), out of the candidates the single search returned.\n// Also plans the Companies read: the row's Companies link when it has one, else the row's Domain, so the\n// company facts come from the base and never from a paid call. Not found = `person_found: false`, and the\n// run keeps today's DiscoLike path.\nconst cfg = $('Resolve Base Tables').first().json || {};\nconst r = $input.first().json || {};\nconst body = (r.body !== undefined) ? r.body : r;\nconst records = (body && Array.isArray(body.records)) ? body.records : [];\nconst pf = cfg.peopleFields || {};\nconst lower = (v) => String(v == null ? '' : (Array.isArray(v) ? v[0] : v)).trim().toLowerCase();\nconst fieldOf = (rec, key) => { const f = (rec && rec.fields) || {}; const a = pf[key]; return a ? f[a] : undefined; };\n\nlet hit = null, match = '';\nconst email = cfg.email || '', key = cfg.contactKey || '';\nif (email && pf['Final Email']) { hit = records.find((x) => lower(fieldOf(x, 'Final Email')) === email) || null; if (hit) match = 'Final Email'; }\nif (!hit && email && pf['Email']) { hit = records.find((x) => lower(fieldOf(x, 'Email')) === email) || null; if (hit) match = 'Email'; }\nif (!hit && key && pf['Contact Key']) { hit = records.find((x) => lower(fieldOf(x, 'Contact Key')) === key) || null; if (hit) match = 'Contact Key'; }\nconst li = cfg.linkedinKey || '';\nif (!hit && li && pf['LinkedIn URL']) { hit = records.find((x) => lower(fieldOf(x, 'LinkedIn URL')).replace(/\\/+$/, '') === li) || null; if (hit) match = 'LinkedIn URL'; }\n\nconst out = Object.assign({}, cfg, { person_found: !!hit, base_match: match, personRecordId: hit ? hit.id : '', personFields: hit ? (hit.fields || {}) : {}, companyLinkId: '', companyUrl: '', candidates: records.length, reason: '' });\nif (!hit) {\n  out.reason = records.length ? (records.length + ' candidate row(s) but none matched the resolve order') : (body && body.error ? 'People search failed: ' + JSON.stringify(body.error).slice(0, 160) : 'no People row matched ' + [email, key, li].filter(Boolean).join(' / '));\n  return [{ json: out }];\n}\n\nconst links = fieldOf(hit, 'Companies');\nif (Array.isArray(links) && links.length) out.companyLinkId = String(links[0] && links[0].id ? links[0].id : links[0]);\nconst q = (v) => '\"' + String(v).replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"') + '\"';\nlet formula = 'FALSE()';\nconst cf = cfg.companiesFields || {};\nif (out.companyLinkId) formula = 'RECORD_ID() = ' + q(out.companyLinkId);\nelse if (cf['Domain']) { const d = lower(fieldOf(hit, 'Domain')) || cfg.emailDomain || ''; if (d) formula = 'LOWER({' + cf['Domain'] + '}) = ' + q(d); }\nout.companyUrl = 'https://api.airtable.com/v0/' + cfg.base + '/' + cfg.companiesTableId + '?maxRecords=1&filterByFormula=' + encodeURIComponent(formula);\nreturn [{ json: out }];\n"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000015",
+        "name": "Person Found?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1792,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pf1",
+                "leftValue": "={{ !!$json.person_found }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000016",
+        "name": "Find Company",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2016,
+          -160
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.companyUrl }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000017",
+        "name": "Base Facts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          -160
+        ],
+        "parameters": {
+          "jsCode": "// Enrich and Qualify Lead, base step 3: the person facts from the People row and the company facts from its\n// Companies row (the People lookups when the link is missing), and a bizdata object in the DiscoLike shape\n// (name, domain, description, industry_groups, employees, revenue_range, address, social_urls, phones), so\n// Build Prompt, the callers' Prospects writes and the Slack cards read the same keys whichever source filled them.\nconst pick = $('Pick Person').first().json || {};\nconst r = $input.first().json || {};\nconst body = (r.body !== undefined) ? r.body : r;\nconst crec = (body && Array.isArray(body.records) && body.records.length) ? body.records[0] : null;\nconst pf = pick.peopleFields || {}, cf = pick.companiesFields || {};\nconst P = pick.personFields || {}, C = (crec && crec.fields) || {};\nconst one = (v) => { if (v == null) return ''; if (Array.isArray(v)) return v.length ? String(v[0] == null ? '' : (v[0] && v[0].name ? v[0].name : v[0])).trim() : ''; if (typeof v === 'object') return String(v.name || v.value || '').trim(); return String(v).trim(); };\nconst all = (v) => { if (v == null) return []; if (!Array.isArray(v)) return one(v) ? [one(v)] : []; return v.map((x) => (x && typeof x === 'object') ? String(x.id || x.name || '') : String(x)).filter(Boolean); };\nconst person = (k) => (pf[k] ? P[pf[k]] : undefined);\nconst company = (k) => { const a = cf[k]; if (a && C[a] != null) return C[a]; return person(k); };\nconst list = (v) => String(v == null ? '' : v).split(/,\\s*/).map((x) => x.trim()).filter(Boolean);\n\nconst personOut = {\n  record_id: pick.personRecordId || '', name: one(person('Name')),\n  title: one(person('Title')), seniority: one(person('Seniority')), department: one(person('Department')),\n  linkedin_url: one(person('LinkedIn URL')), phone: one(person('Phone')),\n  email: one(person('Email')), final_email: one(person('Final Email')), status: one(person('Status')),\n  domain: one(person('Domain')), company: one(person('Company')), tag: one(person('Tag')),\n  signals: all(person('Signals')), signal_at: one(person('Signal At')), campaigns: all(person('Campaigns'))\n};\nconst companyOut = {\n  record_id: crec ? crec.id : '', domain: one(company('Domain')), company: one(company('Company')),\n  description: one(company('Description')), industry_groups: one(company('Industry Groups')),\n  employees: one(company('Employees')), revenue_range: one(company('Revenue Range')),\n  country: one(company('Country')), state: one(company('State')), city: one(company('City')),\n  tag: one(company('Tag')), signals: all(company('Signals')), signal_at: one(company('Signal At')), campaigns: all(company('Campaigns')),\n  social_urls: list(one(company('Social URLs'))), phones: list(one(company('Phones')))\n};\nconst bizdata = {\n  name: companyOut.company, domain: companyOut.domain, description: companyOut.description,\n  industry_groups: companyOut.industry_groups, employees: companyOut.employees, revenue_range: companyOut.revenue_range,\n  address: { country: companyOut.country, state: companyOut.state, city: companyOut.city },\n  social_urls: companyOut.social_urls, phones: companyOut.phones,\n  _source: 'client base' + (crec ? ' (Companies row ' + crec.id + ')' : ' (People lookups, no Companies row)')\n};\nreturn [{ json: {\n  base_found: true, base_match: pick.base_match || '', base_source: \"From the client's People table\",\n  base_people_record_id: pick.personRecordId || '', base_company_record_id: crec ? crec.id : '',\n  base_people_table_id: pick.peopleTableId || '', base_companies_table_id: pick.companiesTableId || '',\n  person: personOut, company: companyOut, bizdata\n} }];\n"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000003",
+        "name": "DiscoLike BizData",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2016,
+          160
+        ],
+        "parameters": {
+          "url": "={{ 'https://api.discolike.com/v1/bizdata?domain=' + encodeURIComponent($('Lead In').first().json.enrich_domain || '') }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "jreseZ3JAhJNgkk0",
+            "name": "Discolike API"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000004",
+        "name": "Build Prompt",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Enrich and Qualify Lead, step 1: the one copy of the qualification prompt.\n// Passthrough helper on the Clean Fields model: one item in, one item out, no run-log row of its own;\n// the caller's row carries the outcome. Callers: Handle New Lead from PlusVibe, Handle New Lead from Alta,\n// Handle New Booking. The helper reads the rubric, reads what the client's base already holds about the\n// replier (ruling 2026-09-02: the intake reads before it pays), enriches live only when the base has no row,\n// judges and hands the verdict back. It writes nothing: the caller stamps its own CRM row with the field\n// names it always used.\n//\n// INPUT CONTRACT, the passthrough item (field: who supplies it):\n//   client_name             required. The Clients row's Client name; resolves the KB qualification-prompt row.\n//                           PlusVibe/Alta: Client Vars.clientName. Booking: Resolve Client.clientName.\n//   clayroots_base          the Clients row's Clayroots Base ID ('' when the client has none). With a lead_email or a\n//                           linkedin_url it opens the base read: People by Final Email, then Email, then Contact Key,\n//                           then LinkedIn URL; the row's Companies link for the company facts. PlusVibe: Client Vars.clayrootsBase.\n//                           Alta: Get Client Row 'Clayroots Base ID'. Booking: Resolve Client.clayrootsBase.\n//   clayroots_people_table, clayroots_companies_table\n//                           the Clients row's ClayrootsPeopleTableID (fldAkkVBD6fLBA9my) and ClayrootsCompaniesTableID\n//                           (fldHhhOlD6RSzYi3p), '' when unset. The base read resolves both tables by these ids, never\n//                           by name; without both it skips the base and goes to DiscoLike, with the reason on base_reason.\n//                           PlusVibe: Find Client Row. Alta: Get Client Row. Booking: Resolve Client.clayrootsPeopleTable /\n//                           clayrootsCompaniesTable.\n//   system_prompt_fallback  optional. Rubric used when the KB has no row for the client. PlusVibe/Alta pass the\n//                           legacy Clients field 'Qualification Prompt'. Empty too: a generic one-line rubric.\n//   first_name, last_name, job_title, company_name, lead_email, linkedin_url\n//                           the lead as the caller normalized it (Normalize / Alta Normalize / Normalize Booking + Attribution).\n//   domain                  the company domain the caller resolved ('' when unknown).\n//   enrich_domain           the domain DiscoLike is asked about; '' for freemail, then bizdata stays {}.\n//   is_freemail             boolean; drives the EMAIL TYPE line.\n//   city, state, country_code\n//                           optional; LOCATION is written only when one is present (the booking door has none).\n//   source_line             optional; written as 'SOURCE: ...'. Alta: 'Alta (linkedin reply)'.\n//   company_context         optional; a caller-formatted block with its own header, inserted verbatim.\n//                           Alta: the enrichment fields Alta sent with the reply.\n//   context                 required; the caller-formatted event block, inserted verbatim: what happened and the\n//                           thread, history or booking notes the judge must read.\n//                           PlusVibe: latest reply + recent exchange. Alta: latest reply. Booking: the booking,\n//                           the attribution line, prior history on the prospect row, the booking notes.\n//   situation_ask           optional; what situation_summary must state. Default: the reply wording below.\n//                           Booking: 'what the booking signals and what they want from the call'.\n// Everything else on the item rides through untouched.\n//\n// OUTPUT, added to the same item by Flatten Verdict: qualification_status (strong|medium|weak|out_of_icp|''),\n// qualification_label (the CRM QualificationStatus value), verdict_label, verdict_line, verdict_reason, brief,\n// brief_plain, brief_md (the brief ends with the source line: \"From the client's People table\" or \"Not in the\n// base, enriched live\"), situation_summary, recommended_action, timezone, phone (the base's Phone when held,\n// else the qualifier's), company_name (the qualifier's canonical name when it returns one, else the input, else\n// the base's Company), job_title and linkedin_url (the input's, filled from the base when empty), bizdata (the\n// DiscoLike shape: from the base when the row was found, else DiscoLike JSON, {} when none), kb_found,\n// base_found, base_match (Final Email | Email | Contact Key), base_source, base_reason, base_person, base_company,\n// base_people_record_id, base_company_record_id.\n\nconst lead = $('Lead In').first().json || {};\nconst s = (v) => String(v == null ? '' : v).trim();\n\n// The rubric: the client's KB qualification-prompt row, else the caller's fallback, else a generic line.\nlet kb = '';\ntry { const r = $('Find Qual Prompt').first().json || {}; const f = r.fields || r; kb = String(f['Content'] || '').replace(/\\\\([_*[\\]`#|>~-])/g, '$1').trim(); } catch (e) { kb = ''; }\nconst kbFound = !!kb;\nconst systemPrompt = kb || s(lead.system_prompt_fallback) || ('You qualify inbound leads for ' + (s(lead.client_name) || 'the client') + ', a B2B company. Decide whether the lead is a fit and return the structured JSON asked for.');\n\n// What the base holds: Base Facts ran only when the People row was found (every other leg went to DiscoLike).\nlet base = null;\ntry { const b = $('Base Facts').first().json; if (b && b.base_found) base = b; } catch (e) { base = null; }\nlet baseReason = '';\nif (!base) {\n  if (!s(lead.clayroots_base)) baseReason = 'client has no Clayroots base on its registry row';\n  else if (!s(lead.clayroots_people_table)) baseReason = 'client registry has no ClayrootsPeopleTableID';\n  else if (!s(lead.clayroots_companies_table)) baseReason = 'client registry has no ClayrootsCompaniesTableID';\n  else if (!s(lead.lead_email) && !s(lead.linkedin_url)) baseReason = 'no reply email or LinkedIn URL to resolve against the base';\n  else {\n    try { const t = $('Resolve Base Tables').first().json || {}; if (!t.ready) baseReason = t.reason || 'base tables not resolved'; } catch (e) { baseReason = 'base tables not read'; }\n    if (!baseReason) { try { baseReason = ($('Pick Person').first().json || {}).reason || 'no People row matched'; } catch (e) { baseReason = 'no People row matched'; } }\n  }\n}\nconst person = base ? (base.person || {}) : {};\nconst company = base ? (base.company || {}) : {};\n\n// Firmographics: the base's Companies row when the replier was found; else DiscoLike bizdata for the enrich\n// domain; {} when there was no domain to ask about or nothing came back.\nlet biz = {};\nif (base) biz = base.bizdata || {};\nelse if (s(lead.enrich_domain)) { try { const b = $('DiscoLike BizData').first().json; if (b && typeof b === 'object' && !Array.isArray(b)) biz = b; } catch (e) { biz = {}; } }\n\nconst jobTitle = s(lead.job_title) || s(person.title);\nconst linkedin = s(lead.linkedin_url) || s(person.linkedin_url);\nconst companyName = s(lead.company_name) || s(company.company) || s(person.company);\nconst name = (s(lead.first_name) + ' ' + s(lead.last_name)).trim() || s(person.name);\nconst contact = s(lead.lead_email) || linkedin;\nconst emailType = lead.is_freemail\n  ? 'PERSONAL/FREEMAIL, the domain is the email provider, NOT the company; web-search the real company + phone'\n  : (s(lead.lead_email) ? 'business domain' : 'no email, LinkedIn lead');\nconst location = [s(lead.city), s(lead.state), s(lead.country_code)].filter(Boolean).join(', ') || (base ? [s(company.city), s(company.state), s(company.country)].filter(Boolean).join(', ') : '');\nconst situationAsk = s(lead.situation_ask) || 'what the prospect signaled and what they want next, interpreting the latest reply in context of our last message. Resolve vague replies like \"sure\"/\"yes\"/\"ok\" into the actual thing they agreed to or asked for (e.g. \"Said yes to a quick walkthrough video\" or \"Asked us to send more on how it works before a call\")';\n\nconst head = ['LEAD: ' + [name, jobTitle || 'title unknown', companyName || s(lead.domain) || 'company unknown', contact].join(' | ')];\nif (s(lead.source_line)) head.push('SOURCE: ' + s(lead.source_line));\nhead.push('EMAIL TYPE: ' + emailType);\nif (location) head.push('LOCATION: ' + location);\nhead.push('DOMAIN: ' + (s(lead.domain) || s(company.domain)));\nif (linkedin) head.push('LINKEDIN: ' + linkedin);\n\nconst parts = [head.join('\\n')];\nif (base) {\n  const sigCount = Array.isArray(company.signals) ? company.signals.length : 0;\n  const campCount = Array.isArray(person.campaigns) ? person.campaigns.length : 0;\n  parts.push('PERSON (from the client\\'s People table, matched on ' + (base.base_match || 'the base') + '; this is our own list data, trust it over guesses):\\n' + [\n    'title: ' + (s(person.title) || 'unknown'), 'seniority: ' + (s(person.seniority) || 'unknown'), 'department: ' + (s(person.department) || 'unknown'),\n    'linkedin: ' + (s(person.linkedin_url) || 'none'), 'phone: ' + (s(person.phone) || 'none'),\n    'email status: ' + (s(person.status) || 'unknown'), 'list tag: ' + (s(person.tag) || s(company.tag) || 'none'),\n    'signals: ' + (sigCount ? sigCount + ' intent signal(s)' + (s(company.signal_at) ? ', latest ' + s(company.signal_at) : '') : 'none'),\n    'campaigns: ' + (campCount ? campCount + ' campaign(s) on our side' : 'none recorded')\n  ].join(' | '));\n}\nif (s(lead.company_context)) parts.push(s(lead.company_context));\nparts.push((base ? 'COMPANY FIRMOGRAPHICS (from the client\\'s Companies table):\\n' : 'COMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\\n') + JSON.stringify(biz));\nif (s(lead.context)) parts.push(s(lead.context));\nparts.push('Run the qualification. Output structured JSON. \"situation_summary\": ONE plain-English line (max 140 chars) stating ' + situationAsk + '. \"verdict_reason\": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor. Never paste the raw reply or notes verbatim; no names, signatures, or URLs.');\n\nreturn [{ json: {\n  systemPrompt, kbFound, promptText: parts.join('\\n\\n'), bizdata: biz,\n  baseFound: !!base, baseMatch: base ? (base.base_match || '') : '',\n  baseSource: base ? \"From the client's People table\" : 'Not in the base, enriched live',\n  baseReason, basePerson: person, baseCompany: company,\n  basePeopleRecordId: base ? (base.base_people_record_id || '') : '', baseCompanyRecordId: base ? (base.base_company_record_id || '') : ''\n}, pairedItem: { item: 0 } }];\n"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000005",
+        "name": "Qualify Lead",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          2688,
+          0
+        ],
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.promptText }}",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "={{ $json.systemPrompt }}"
+          }
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000006",
+        "name": "GPT 5.1 Qualifier",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          2704,
+          224
+        ],
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-5.1"
+          },
+          "builtInTools": {
+            "webSearch": {
+              "searchContextSize": "medium"
+            }
+          },
+          "options": {
+            "reasoningEffort": "medium"
+          }
+        },
+        "credentials": {
+          "openAiApi": {
+            "id": "9P7fOmZxpETeDhu8",
+            "name": "OpenAI"
+          }
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000007",
+        "name": "Parse Qualification",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          2832,
+          224
+        ],
+        "parameters": {
+          "jsonSchemaExample": "{\"company_name\":\"Acme Corp\",\"timezone\":\"ET\",\"qualification_status\":\"strong\",\"phone\":\"+16475551234\",\"slack_brief_markdown\":\":white_check_mark: ...\",\"situation_summary\":\"Asked us to send more on how it works before a call\",\"verdict_reason\":\"US B2B SaaS, demo motion, LTV well above $5K\",\"recommended_action\":\"Book a call\"}"
+        }
+      },
+      {
+        "id": "0a1b2c3d-0003-4000-8000-000000000008",
+        "name": "Flatten Verdict",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3040,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Enrich and Qualify Lead, step 2: the verdict, cleaned once, in one shape, merged onto the passthrough item.\n// The label maps are the one copy of what every caller used to carry: qualification_label is the CRM\n// QualificationStatus value, verdict_label the human line the briefs open with. brief_md is the\n// Qualification Brief markdown (bold first line, bullets) the callers used to format themselves.\n// The brief's last line names the source (ruling 2026-09-02): \"From the client's People table\" when the\n// replier was resolved in the base, \"Not in the base, enriched live\" when DiscoLike ran.\nconst stripCite = (t) => String(t || '').replace(/[-]/g, '').replace(/cite(turn\\d+\\w+?\\d+)+/gi, '').replace(/turn\\d+(?:view|search|news|image|video|product|ref)\\d+/gi, '').replace(/cite/gi, '').replace(/ {2,}/g, ' ').trim();\nconst stripEmoji = (t) => String(t || '').replace(/:[a-z0-9_+-]+:/gi, '').replace(/[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{2190}-\\u{21FF}\\u{2300}-\\u{23FF}\\u{FE0F}\\u{200D}]/gu, '').replace(/ {2,}/g, ' ').trim();\nconst s = (v) => String(v == null ? '' : v).trim();\n\nconst lead = $('Lead In').first().json || {};\nconst built = $('Build Prompt').first().json || {};\nconst q = ($input.first().json || {}).output || {};\nconst person = built.basePerson || {};\nconst company = built.baseCompany || {};\nconst sourceLine = built.baseSource || 'Not in the base, enriched live';\n\nconst status = String(q.qualification_status || '');\nconst qualificationLabel = ({ strong: 'Qualified', medium: 'Needs Review', weak: 'Needs Review', out_of_icp: 'Disqualified' })[status] || 'Needs Review';\nconst verdictLabel = ({ strong: 'Qualified', medium: 'Qualified (medium confidence)', weak: 'Qualified (weak fit)', out_of_icp: 'Not qualified' })[status] || 'Needs review';\nconst verdictReason = stripEmoji(stripCite(q.verdict_reason || '')).slice(0, 200);\nconst verdictLine = verdictLabel + ': ' + (verdictReason || 'see brief');\nconst briefBody = stripCite(q.slack_brief_markdown || '').slice(0, 2700);\nconst brief = (briefBody ? briefBody + '\\n' : '') + sourceLine;\nconst briefPlain = (verdictLine + '\\n\\n' + stripEmoji(brief)).slice(0, 2800);\nconst briefLines = briefPlain.split('\\n').map((x) => x.trim()).filter(Boolean);\nconst briefMd = briefLines.length ? ['**' + briefLines[0] + '**', ''].concat(briefLines.slice(1).map((l) => '- ' + l)).join('\\n') : '';\nconst qualifierPhone = stripCite(q.phone || '').replace(/[^\\d+]/g, '').trim();\nconst phone = s(person.phone) || qualifierPhone;\n\nreturn [{ json: Object.assign({}, lead, {\n  qualification_status: status,\n  qualification_label: qualificationLabel,\n  verdict_label: verdictLabel,\n  verdict_line: verdictLine,\n  verdict_reason: verdictReason,\n  brief: brief,\n  brief_plain: briefPlain,\n  brief_md: briefMd,\n  situation_summary: stripCite(q.situation_summary || '').slice(0, 200),\n  recommended_action: stripCite(q.recommended_action || '').slice(0, 300),\n  timezone: String(q.timezone || ''),\n  phone: phone,\n  company_name: String(q.company_name || lead.company_name || company.company || person.company || ''),\n  job_title: s(lead.job_title) || s(person.title),\n  linkedin_url: s(lead.linkedin_url) || s(person.linkedin_url),\n  bizdata: built.bizdata || {},\n  kb_found: !!built.kbFound,\n  base_found: !!built.baseFound,\n  base_match: built.baseMatch || '',\n  base_source: sourceLine,\n  base_reason: built.baseReason || '',\n  base_person: person,\n  base_company: company,\n  base_people_record_id: built.basePeopleRecordId || '',\n  base_company_record_id: built.baseCompanyRecordId || ''\n}), pairedItem: { item: 0 } }];\n"
+        }
+      }
+    ],
+    "connections": {
+      "Lead In": {
+        "main": [
+          [
+            {
+              "node": "Find Qual Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Qual Prompt": {
+        "main": [
+          [
+            {
+              "node": "Has Base?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Base?": {
+        "main": [
+          [
+            {
+              "node": "List Base Tables",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "DiscoLike BizData",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Base Tables": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base Tables",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base Tables": {
+        "main": [
+          [
+            {
+              "node": "Tables Ready?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tables Ready?": {
+        "main": [
+          [
+            {
+              "node": "Find Person",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "DiscoLike BizData",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Person": {
+        "main": [
+          [
+            {
+              "node": "Pick Person",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pick Person": {
+        "main": [
+          [
+            {
+              "node": "Person Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Person Found?": {
+        "main": [
+          [
+            {
+              "node": "Find Company",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "DiscoLike BizData",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Company": {
+        "main": [
+          [
+            {
+              "node": "Base Facts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Base Facts": {
+        "main": [
+          [
+            {
+              "node": "Build Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DiscoLike BizData": {
+        "main": [
+          [
+            {
+              "node": "Build Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Prompt": {
+        "main": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GPT 5.1 Qualifier": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Qualification": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Qualify Lead",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Qualify Lead": {
+        "main": [
+          [
+            {
+              "node": "Flatten Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
 }

@@ -1,9 +1,8 @@
 {
-  "updatedAt": "2026-08-22T21:05:14.765Z",
+  "updatedAt": "2026-09-03T12:05:43.902Z",
   "createdAt": "2026-06-09T21:52:24.054Z",
   "id": "34diYOZ5uKmUN75b",
   "name": "Handle another meeting for flowroots",
-  "description": "Cal.com additional-meeting booking -> Airtable CRM. Match/create Flowroots Prospect by email domain/name, create Meetings row (Title/Date/Participants/MeetingLink, Company linked), set PipelineStatus=Scheduled Call + contextNotes. Logs run.",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -432,38 +431,23 @@
     "builderVariant": "mcp",
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "pinData": {},
-  "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-  "activeVersionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-  "versionCounter": 17,
+  "versionId": "310c10fc-5de7-4f30-b6d3-3979fd995381",
+  "activeVersionId": "310c10fc-5de7-4f30-b6d3-3979fd995381",
   "triggerCount": 1,
-  "sourceWorkflowId": null,
   "shared": [
     {
       "updatedAt": "2026-06-09T21:52:24.058Z",
       "createdAt": "2026-06-09T21:52:24.058Z",
       "role": "workflow:owner",
       "workflowId": "34diYOZ5uKmUN75b",
-      "projectId": "pyoZAgnc0vv0Gq9W",
-      "project": {
-        "updatedAt": "2026-06-09T20:31:42.148Z",
-        "createdAt": "2026-06-09T20:29:57.588Z",
-        "id": "pyoZAgnc0vv0Gq9W",
-        "name": "Shahar Mizrahi <shahar@flowroots.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
+      "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-08-22T21:05:14.789Z",
-    "createdAt": "2026-08-22T21:05:14.789Z",
-    "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
+    "updatedAt": "2026-09-03T12:05:43.912Z",
+    "createdAt": "2026-09-03T12:05:43.912Z",
+    "versionId": "310c10fc-5de7-4f30-b6d3-3979fd995381",
     "workflowId": "34diYOZ5uKmUN75b",
     "nodes": [
       {
@@ -497,7 +481,7 @@
       },
       {
         "parameters": {
-          "jsCode": "let v={};\ntry{v=$('Extract & normalize').first().json||{};}catch(e){}\nlet existed=false, prospectId='';\ntry{const r=$('Resolve Prospect').first().json; existed=!!r.existed; prospectId=r.prospect_id||'';}catch(e){}\nlet meetingId='';\ntry{meetingId=$('Create Meeting').first().json.id||'';}catch(e){}\nlet statusWritten=false;\ntry{const u=$('Set Scheduled Call').first().json; if(u&&u.id){statusWritten=true;}}catch(e){}\nconst who=((v.firstName||'')+' '+(v.lastName||'')).trim();\nconst prospectUrl=prospectId?('https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/'+prospectId):'';\nconst desc=[\n'Handle Another Meeting run (Cal.com booking -> Airtable CRM)',\n'- Meeting: '+(v.title||'(untitled)')+' at '+(v.startTime||'(unknown time)'),\n'- Attendee: '+(who?who+' ':'')+'<'+(v.email||'')+'>'+(v.domain?' ('+v.domain+')':''),\n'- Prospect: '+(existed?'matched existing row':'created new row')+(prospectUrl?' '+prospectUrl:''),\n'- Meetings row: '+(meetingId?'created ('+meetingId+') with Title/Date/Participants/MeetingLink, linked to Company':'not created'),\n'- Pipeline: '+(statusWritten?'PipelineStatus set to Scheduled Call, contextNotes updated':'not written'),\n'- Booking UID: '+(v.bookingUid||'(none)')+(v.meetingUrl?' | video: '+v.meetingUrl:''),\n(v.notes?'- Booking notes: '+String(v.notes).slice(0,300):'- Booking notes: (none)')\n].join('\\n');\nreturn [{json:{\n 'Automation':'Handle Another Meeting',\n 'Client': ['recl27rmyOlVg7fxb'],\n 'Status':'Succeeded',\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Errors': 0,\n 'Target': v.title||v.email||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': desc\n}}];"
+          "jsCode": "// Build Run Log: this booking's row on the Hub Automations table.\n// Status is computed, never a literal (the logging standard, and the pattern Sync Meeting\n// Summaries to Vault already uses): the same three facts the Description narrates are counted\n// into failed[], Errors = failed.length, and a booking whose Meetings row never landed logs\n// \"Succeeded with errors\" instead of green. Resolve Prospect always returns a row, matched or\n// created, so a missing prospect id is a failure here, not the no-match skip it is in the\n// summaries sync.\nlet v={};\ntry{v=$('Extract & normalize').first().json||{};}catch(e){}\nlet existed=false, prospectId='';\ntry{const r=$('Resolve Prospect').first().json; existed=!!r.existed; prospectId=r.prospect_id||'';}catch(e){}\nlet meetingId='';\ntry{meetingId=$('Create Meeting').first().json.id||'';}catch(e){}\nlet statusWritten=false;\ntry{const u=$('Set Scheduled Call').first().json; if(u&&u.id){statusWritten=true;}}catch(e){}\nconst failed=[];\nif(!prospectId) failed.push('prospect row neither matched nor created');\nif(!meetingId) failed.push('meeting row not created');\nif(prospectId&&!statusWritten) failed.push('prospect status not written (PipelineStatus, contextNotes)');\nconst status=failed.length?'Succeeded with errors':'Succeeded';\nconst who=((v.firstName||'')+' '+(v.lastName||'')).trim();\nconst prospectUrl=prospectId?('https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/'+prospectId):'';\nlet desc=[\n'Handle Another Meeting run (Cal.com booking -> Airtable CRM)',\n'- Meeting: '+(v.title||'(untitled)')+' at '+(v.startTime||'(unknown time)'),\n'- Attendee: '+(who?who+' ':'')+'<'+(v.email||'')+'>'+(v.domain?' ('+v.domain+')':''),\n'- Prospect: '+(prospectId?((existed?'matched existing row':'created new row')+(prospectUrl?' '+prospectUrl:'')):'NOT resolved'),\n'- Meetings row: '+(meetingId?'created ('+meetingId+') with Title/Date/Participants/MeetingLink, linked to Company':'not created'),\n'- Pipeline: '+(statusWritten?'PipelineStatus set to Scheduled Call, contextNotes updated':'not written'),\n'- Booking UID: '+(v.bookingUid||'(none)')+(v.meetingUrl?' | video: '+v.meetingUrl:''),\n(v.notes?'- Booking notes: '+String(v.notes).slice(0,300):'- Booking notes: (none)')\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:{\n 'Automation':'Handle Another Meeting',\n 'Client': ['recl27rmyOlVg7fxb'],\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Errors': failed.length,\n 'Target': v.title||v.email||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': desc\n}}];\n"
         },
         "id": "7c222448-125f-46f9-ac6d-709a9ac78695",
         "name": "Build Run Log",
@@ -883,40 +867,7 @@
     "authors": "Shahar Mizrahi",
     "name": null,
     "description": null,
-    "autosaved": false,
-    "workflowPublishHistory": [
-      {
-        "createdAt": "2026-08-22T21:05:14.970Z",
-        "id": 1661,
-        "workflowId": "34diYOZ5uKmUN75b",
-        "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:05:35.898Z",
-        "id": 1673,
-        "workflowId": "34diYOZ5uKmUN75b",
-        "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-        "event": "activated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:05:14.926Z",
-        "id": 1660,
-        "workflowId": "34diYOZ5uKmUN75b",
-        "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      },
-      {
-        "createdAt": "2026-08-22T21:05:35.539Z",
-        "id": 1672,
-        "workflowId": "34diYOZ5uKmUN75b",
-        "versionId": "049b5f83-5489-4b35-b3df-410dbaffc281",
-        "event": "deactivated",
-        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
-      }
-    ]
-  }
+    "autosaved": false
+  },
+  "tags": []
 }

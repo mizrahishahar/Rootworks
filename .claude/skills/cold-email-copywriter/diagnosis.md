@@ -1,58 +1,67 @@
-Teaches: how to read outbound numbers at the right level, tell an infrastructure problem from a list problem from a copy problem, and judge campaign copy variant by variant.
+Teaches: how to judge a campaign, meaning the message and the offer as they landed on this batch of people. When a campaign earns a verdict, what the verdict is, and how "good" is measured once the easy rules run out.
 
 # Diagnosis
 
-The numbers exist to feed the next iteration. Every read ends in a verdict, a named cause, and what changes next.
+A campaign is judged on one thing: did the message and the offer earn positive replies from these people. Nothing here is about domains, inboxes or lists.
+
+**This file applies only once infrastructure and list are known clean.** Infrastructure is the inbox-management skill's job: its weekly health report flags the domains, and a client carrying open flags on the domains a campaign sends from has no campaign verdict yet, only an infrastructure one. The list is the list-building skill's job: a campaign whose people are the wrong people is a list verdict, read from the negatives verbatim ("wrong person", "we already use X"). When both are clean, everything below is about copy and offer.
 
 ## Where the numbers live
 
-**The Hub Campaigns table is the first stop, always.** One row per campaign: Contacted, Replies, Positive Replies (CRM, our count of real linked prospects) beside the sequencer's own count, Reply Rate, Positive Rate, Bounce Rate, Last Sent, and the full Campaign Copy on the same row. The quick check is three moves: filter to the client, rank by what you care about, read the copy of winners and losers side by side. Deeper cuts (per variant, per domain, per inbox) come from the sending platform; the platform skill knows how.
+**The Hub Campaigns table is the first stop, always.** One row per campaign: Contacted, Messages Sent, Replies, Positive Replies (CRM), Last Sent, and the full Campaign Copy on the same row. Filter to the client, rank by positives, read the copy of winners and losers side by side. Per-variant numbers come from the sending platform in session.
 
-## Counting honestly
+## Counting
 
-- A rate without its volume is noise. One reply in forty proves nothing in either direction.
-- Genuine replies only: OOO and auto-replies are not replies. Replies are unique people, not messages.
-- Opens never drive a verdict. They are unmeasured unless tracking was on, and inflated by scanners even then.
-- Trust CRM positive counts over sequencer labels, and verify a surprising number by reading the actual replies.
+- Positive replies are the stick. A positive is a linked Prospects row, our count, never the platform's label.
+- Contacted is the denominator, never sends and never leads loaded.
+- OOO and auto-replies are not replies. Opens never drive a verdict.
+- A rate without its volume is noise.
 
-## Judge at the right level
+## The rule
 
-This is the discipline that prevents wrong verdicts. Infrastructure and lists are properties of the whole sending operation, judged across every campaign at **workspace** volume. A single **campaign** earns judgment only after those are clean and only at its own volume floor. The KPIs, in the order they gate each other:
+| Moment | Read | Verdict |
+|---|---|---|
+| Launch | Leads loaded | 1,000 per campaign, never more. The deploy door refuses a view over 1,000 |
+| 1,000 sends | Positive replies | 0 = kill. 1 or more = scale to 3,000 |
+| 3,000 sends | Positive replies per 1,000 contacted, per variant | Judge, below |
 
-| Level | Signal | Healthy | Worrying | Broken | Judge from |
+Before 1,000 sends there is no read. Between 1,000 and 3,000 there is no read either; the campaign is scaling, and the only thing to do is feed it. A campaign killed at 1,000 is killed as an angle on this segment, and the next campaign on the segment runs a different angle.
+
+## Judging at 3,000
+
+At 3,000 there is no absolute number that says good. There are three relative reads, and a verdict needs all three.
+
+**1. Against the client's own campaigns.** The stick is positive replies per 1,000 contacted. The benchmark is the median of this client's campaigns that reached 3,000. The first campaign to reach 3,000 sets the bar for the ones after it.
+
+| This campaign vs the median | Verdict |
+|---|---|
+| Above | Double down: same segment, same angle, more list, and the winning variant becomes the next campaign's base |
+| At par | Keep running to the end of the segment. Nothing to copy, nothing to kill |
+| Under half | Kill the angle, unless one variant alone is above the median, in which case that variant is the next campaign |
+
+**2. Against what a positive is worth.** A positive is worth the client's fee per call times the share of positives that book. A campaign earns its sends while positives per 1,000 contacted, times that value, exceeds what 1,000 sends cost the client in infrastructure and our time. The numbers come from the client's registry row and the Hub, never from memory. A campaign at par on read 1 can still be worth doubling down on if one positive is worth enough, and a campaign above par can still not be worth it if the client's economics are thin.
+
+**3. Against the TAM left.** How many people fitting this segment remain uncontacted, read from the client's ClayRoots view count. A winner with no TAM left is finished, not scaled: the next move is a sibling segment with the same angle. A loser on a segment with a large TAM is a copy problem worth one more angle before the segment is abandoned.
+
+Only one of the three reads can decide alone: no positives at all past 3,000 is a kill whatever the economics.
+
+## Judging the variants
+
+The platform draws variations independently per step, so a variant is never a locked track. Real angle tests are one campaign per angle, and a variant read is a subject-line or opener read, not an angle read.
+
+Pull per-variant numbers from the platform, put each variant's copy beside its numbers, and explain the gap in craft terms: which opener earned the read, which outcome resonated, which proof was proximate, which CTA collected. A verdict about a variant names the line responsible, not just the rate. Winning variants propagate into the next campaign as its base; dying variants are killed, not rewritten.
+
+Present it in this shape, real tables, never inside code fences: a heading naming the campaign and its contacted count, then the variant table, then three labeled lines.
+
+| Variant | Angle | Contacted | Positive | Per 1,000 | Verdict |
 |---|---|---|---|---|---|
-| Workspace · infrastructure | Bounce rate | under 3% | | 3%+ | any volume |
-| Workspace · infrastructure | Domain vs siblings | in line | lagging | silent, or 80%+ sender bounces | 500+ sends per domain |
-| Workspace · list | Genuine reply rate | 2%+ | 1 to 2% | under 1% | 2k+ sent across its campaigns |
-| Campaign · copy & offer | Positive rate (per contacted) | 0.5%+ | 0.15 to 0.5% | under 0.15% | **3k contacted, this campaign** |
-| Inbox | Positives that book | 30%+ | 20 to 30% | under 20% | positives exist |
-
-**Copy may be blamed only from the fourth row down**: the campaign has 3k+ contacted AND every row above it reads healthy. Below the floor: keep sending or widen the window, no verdict. Rows failing above it: that row is the verdict, and the copy was never given its chance.
-
-What each level's break means:
-
-- **Infrastructure broken:** mail is not landing; no other number means anything. Locate by per-domain bounce splits and sibling comparison. A dead domain is replaced fast; it costs more than a new one.
-- **List broken:** mail lands, the people are wrong. Read the negatives verbatim ("wrong person" = resegment, "we already use X" = saturation, go where X is not) and profile who the positives actually are; they describe the ICP that resonates, which may not be the ICP targeted.
-- **Campaign broken:** finally the copy and the offer. Our own reference points: winners run 2 to 3.5% positive on tight small lists, 0.5 to 0.8% on broad ones, and a broad list at 0.5% with volume out-produces a tight list at 2%.
-- **Inbox broken:** positives exist and calls do not; speed, slots, and the ask are the suspects, the campaign is not. The inbox skill owns it.
-
-## Judging campaign copy
-
-When the question is the copy itself, the unit of judgment is the variant, and the platform draws variations independently per step, so a variant is never a locked track: real angle tests need one campaign per angle, and a variant read is an angle read.
-
-The read: pull per-variant numbers from the platform, then put each variant's copy beside its numbers and explain the gap in craft terms: which opener earned the read, which outcome resonated, which proof was proximate, which CTA collected. A verdict about a variant names the line responsible, not just the rate. Winning angles propagate into new campaigns; dying variants are killed, not rewritten.
-
-Present a copy judgment in this shape (real tables, never inside code fences): a heading naming the campaign and its contacted count, then the variant table, then three labeled lines.
-
-| Variant | Angle | Sent | Reply | Positive | Verdict |
-|---|---|---|---|---|---|
-| A | intro-to-founder | ... | ... | ... | winner, propagate |
+| A | intro-to-founder | ... | ... | ... | base for next |
 | B | pain-first | ... | ... | ... | kill |
 
 **What the winner did:** one short paragraph, naming lines.
 **What the loser did:** one short paragraph, naming lines.
-**Next campaign:** the angle it runs and why.
+**Next campaign:** the segment, the angle, and which of the three reads decided it.
 
 ## What a verdict becomes
 
-One of a few moves, each named with its evidence: build a different list, fix or replace infrastructure, kill and relaunch on a new angle, sharpen the offer (the strongest lever of all, see `offers.md`), or work the replies harder. A new targeting decision always pairs with new copy; the old words were written for the old reader.
+One of four moves, each named with its evidence: kill the angle and relaunch the segment on a new one; double down with more list on the same angle; move the angle to a sibling segment because the TAM ran out; sharpen the offer, the strongest lever of all, see `offers.md`. A new segment always gets new copy; the old words were written for the old reader.

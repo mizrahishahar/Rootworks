@@ -21,7 +21,7 @@ A campaign is judged on one thing: did the message and the offer earn positive r
 
 | Moment | Read | Verdict |
 |---|---|---|
-| Launch | Leads loaded | 1,000 per campaign, never more. The deploy door refuses a view over 1,000 |
+| Launch | Leads loaded | 1,000 per campaign, never more |
 | 1,000 sends | Positive replies | 0 = kill. 1 or more = scale to 3,000 |
 | 3,000 sends | Positive replies per 1,000 contacted, per variant | Judge, below |
 

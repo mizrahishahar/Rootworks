@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Rootworks field register compiler.
-// Compiles REGISTER.md at the repo root from the one field register,
-// n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js: per table, every field
-// with its type, options
-// (select choices with their colors), and kind, the declared extras groups, the views (filter,
-// fields, sort), then the On People rule and the palettes.
-// Generated from the register; never hand-edited. The way SCHEMA.md is compiled from the Hub.
+// Compiles the client-bases half of SCHEMA.md (below the @@register-section marker) from the one
+// field register, n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js: per
+// table, every field with its type, options (select choices with their colors), and kind, the
+// declared extras groups, the views (filter, fields, sort), then the On People rule and the
+// palettes. Generated from the register; never hand-edited. hub-pull.js writes the Hub half and
+// calls this for the rest, so `node scripts/hub-pull.js` refreshes both; this script alone
+// refreshes only the register half.
 //
 // Also the loader the other scripts share: loadRegister() evaluates the register file in a
 // sandbox (it is an n8n Code node, so it ends with a top-level return) and hands back its data.
@@ -91,13 +92,20 @@ function onPeople(reg) {
   return { on, off, lookups, groups };
 }
 
+// The client-bases half of SCHEMA.md. The Hub half is written by hub-pull.js above the marker;
+// this section follows it. Folded into SCHEMA.md on 2026-09-08 (was a separate REGISTER.md at the
+// root): one compiled truth of the database, both halves, one file.
+const SECTION_MARKER = '<!-- @@register-section: everything below is compiled by scripts/register.js -->';
+
 function compile(reg) {
   const rel = path.relative(ROOT, REGISTER_PATH);
   const lines = [
-    '# Field register',
+    SECTION_MARKER,
+    '',
+    '# Client bases - field register',
     '',
     `Compiled from \`${rel}\` by \`scripts/register.js\`. Do not hand-edit.`,
-    'This file is what every client base\'s tables ARE; why they exist lives in Flowroots/Operations/Field Standard.md and List Building 2.0.md.',
+    'This half of the file is what every client base\'s tables ARE; why they exist lives in Flowroots/Operations/Field Standard.md and List Building 2.0.md.',
     'Core fields are born at the scaffold. Declared extras are created only by their owner machine. Anything else on a base is the Operator\'s.',
     'Views are declared per table as data (filter, fields, sort); the Operator makes them in the base from this spec.',
     '',
@@ -141,15 +149,24 @@ function compile(reg) {
   return lines.join('\n');
 }
 
-module.exports = { REGISTER_PATH, loadRegister, airtableType, extrasFor };
+// Write the register section into SCHEMA.md, keeping whatever hub-pull.js wrote above the marker.
+function writeSection(reg) {
+  const file = path.join(ROOT, 'SCHEMA.md');
+  const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const cut = current.indexOf(SECTION_MARKER);
+  const head = (cut > -1 ? current.slice(0, cut) : current).replace(/\s+$/, '') + '\n\n';
+  fs.writeFileSync(file, head + compile(reg));
+}
+
+module.exports = { REGISTER_PATH, SECTION_MARKER, loadRegister, airtableType, extrasFor, compile, writeSection };
 
 if (require.main === module) {
   try {
     const reg = loadRegister();
-    fs.writeFileSync(path.join(ROOT, 'REGISTER.md'), compile(reg));
+    writeSection(reg);
     const fields = reg.tables.reduce((n, t) => n + t.fields.length, 0);
     const views = reg.tables.reduce((n, t) => n + (t.views || []).length, 0);
     const per = reg.tables.map((t) => `${t.name} ${t.fields.length}`).join(', ');
-    console.log(`${reg.tables.length} tables, ${fields} fields (${per}), ${views} views, ${(reg.extras || []).length} extras groups -> REGISTER.md`);
+    console.log(`${reg.tables.length} tables, ${fields} fields (${per}), ${views} views, ${(reg.extras || []).length} extras groups -> SCHEMA.md (client bases section)`);
   } catch (e) { console.error(e.message); process.exit(1); }
 }

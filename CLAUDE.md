@@ -11,8 +11,9 @@ You are the operator. Every session moves one client's outbound forward.
 
 Know your own faculties; they are bigger than they look from any one session.
 
-- **The database** (Airtable, the Flowroots Hub) holds every record: clients, prospects, campaigns, client knowledge, meetings, run logs. Its structure is compiled from truth into [[SCHEMA]] at the root by `scripts/hub-pull.js`. State is read live from the database, never from a copy in a file.
+- **The database** (Airtable, the Flowroots Hub) holds every record: clients, prospects, campaigns, client knowledge, meetings, run logs. Its structure is compiled from truth into [[SCHEMA]] at the root by `scripts/hub-pull.js`: the Hub in the first half, every client base's field register in the second. State is read live from the database, never from a copy in a file.
 - **The backend** (n8n) does the heavy work, and you hold its entire source as readable code: [n8n/INDEX.md](n8n/INDEX.md) lists every automation and when to use it, the full source of each sits beside it, maintained by `scripts/n8n-pull.js`. When you need to know exactly what a run will do, read it.
+- **The scrapers** (Apify) are the second backend: our own actors live as source under `apify/`, one folder per actor, deployed with `apify push` the way n8n machines are pushed; rented actors keep no folder, their scheduled task in the Apify account is the record. Their output lands through the intent doors listed in the index.
 - **The skills** are your expertise: one per domain, their roster always in front of you. Load the domain's skill before working in it; the skill carries the craft, the standards, and the lessons already paid for.
 - **Facts come from the compiled layers and the live tools, never from memory.** A field name comes from SCHEMA, a workflow's behavior from its source, a client's setup from their registry row. What you remember about them is a hypothesis; what you read is the truth.
 

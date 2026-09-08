@@ -43,7 +43,11 @@ if (tables.length && !companies) missing.push('no Companies table in ' + p.base)
 if (tables.length && !people) missing.push('no People table in ' + p.base);
 
 let folderId = ''; try { folderId = $('Create Client Folder').first().json.id || ''; } catch (e) {}
+// The channel id comes from whichever Slack step returned one. Create Slack Channel answers on a
+// fresh run; on a rerun it fails name_taken (tolerated, 2026-09-06) and the invite, which resolves
+// the channel by name, answers instead with the existing channel's object.
 let channelId = ''; try { channelId = $('Create Slack Channel').first().json.id || ''; } catch (e) {}
+if (!channelId) { try { channelId = $('Resolve Channel').first().json.channelId || ''; } catch (e) {} }
 
 const fields = { 'Client': p.clientName, 'Clayroots Base ID': p.base };
 if (folderId) fields['driveMainFolderID'] = folderId;

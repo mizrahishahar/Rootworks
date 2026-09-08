@@ -30,6 +30,13 @@
 //                        (a non-empty query_name or a Source naming DiscoLike, or Storeleads columns). Dry by default, same undo log
 //   --signal <t=v>       map a legacy intent table to a Signals mirror row: "<legacy table name>=<rec id or mirror Name>" (repeatable)
 //   --limit <n>          read at most n rows per legacy table; with --link-live also link and backfill at most n live rows each
+//   --carry-custom       THE DEFAULT (ruled 2026-09-06: custom columns are let in, never blocked). Every data-bearing
+//                        custom column (a legacy column no map and no ruling names) is created on the target and carried;
+//                        legacy formulas whose referenced columns all land there are recreated. The only thing that keeps
+//                        a column out is a named ruling in BASE_ACCEPTED_DROP_COLS for that base: a blacklist, per base
+//   --no-carry-custom    the old behaviour: a data-bearing custom column blocks --apply by name instead of being carried
+//   --custom-to <a=T>    where a custom column lands: "Vendors=Companies,Persona=People" (default: People for a Contacts
+//                        table, Companies for a Domains table). Company facts on a contacts table belong on Companies
 //   --allow-loss         apply even when data-bearing keys would be dropped, a Campaigns id is unresolved, or a signal is unresolved
 //   --dump-plan          also write every planned create and update to -plan.jsonl
 //   --undo <file>        reverse a previous --apply run (dry by default; add --apply to execute)
@@ -66,7 +73,7 @@ const INVALID_SAMPLE_CAP = 60;
 function die(msg) { console.error(`error: ${msg}`); process.exit(1); }
 
 function parseArgs(argv) {
-  const o = { base: '', apply: false, tables: null, linkLive: false, signal: {}, limit: 0, allowLoss: false, dumpPlan: false, undo: '', out: '', help: false };
+  const o = { base: '', apply: false, tables: null, linkLive: false, signal: {}, limit: 0, allowLoss: false, dumpPlan: false, undo: '', out: '', help: false, carryCustom: true, customTo: {} };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => { const v = argv[++i]; if (v === undefined) die(`${a} needs a value`); return v; };
@@ -80,6 +87,11 @@ function parseArgs(argv) {
       o.signal[v.slice(0, eq).trim()] = v.slice(eq + 1).trim();
     }
     else if (a === '--limit') o.limit = Math.max(0, Number(next()) || 0);
+    else if (a === '--carry-custom') o.carryCustom = true;
+    else if (a === '--no-carry-custom') o.carryCustom = false;
+    else if (a === '--custom-to') {
+      for (const pair of next().split(',')) { const eq = pair.indexOf('='); if (eq < 1) die('--custom-to expects "Column=Companies|People,..."'); const t = pair.slice(eq + 1).trim(); if (t !== 'Companies' && t !== 'People') die(`--custom-to: "${t}" is not Companies or People`); o.customTo[pair.slice(0, eq).trim()] = t; }
+    }
     else if (a === '--allow-loss') o.allowLoss = true;
     else if (a === '--dump-plan') o.dumpPlan = true;
     else if (a === '--undo') o.undo = next();
@@ -402,24 +414,33 @@ const NEVER_WRITE = { Companies: new Set(['Build Date', 'People', 'Contacts Pull
 // Ruled out of the register 2026-09-02: a non-empty legacy value in these columns is left behind on purpose.
 // Counted under acceptedDrops, never a data-bearing drop that blocks apply. On person rows the company facts
 // are accepted too: they arrive by lookup now (the company row may still take them as gap-fill).
-const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit',
-  // Added 2026-09-03 from the Flowroots base. Named here so the report counts them instead of
-  // letting them vanish unmentioned, since no map reads them.
+//
+// THE REGISTER'S LIST ONLY. A ruling about one client's column goes in BASE_ACCEPTED_DROP_COLS under
+// that client's base id, never here. Paid for on 2026-09-02: "Vendors" was ruled a frozen segment
+// label on the Flowroots base and put on this list; the same name on Dave's "B2B Tech 11-50 US -
+// Contacts" was real per-company data feeding the Tech formula ({{tech}} in every pitch-led
+// campaign), and the ruling swallowed it silently, 5,497 companies' worth. Restored by
+// scripts/restore-dave-vendors.js on 2026-09-06.
+const ACCEPTED_DROP_COLS = ['State Full', 'segment', 'query_name', 'ingested_at', 'Update Date', 'Start Date', 'Score', 'Similarity', 'company_clean', 'Run ID', 'Build Date', 'Connections', 'Seniority Rank', 'Verified', 'batch_id', 'icp_fit'];
+// Per-client rulings, keyed by base id. A name listed for one base means nothing on any other base.
+const BASE_ACCEPTED_DROP_COLS = {
+  // Flowroots, app9FDblMeiv6Ijbj, ruled 2026-09-03.
   //   Revenue          a Revenue Range lookalike that is not one: the column shifted on import and
   //                    mixes bands ("Under 1 Million", "51 to 250") with MX providers ("Google",
   //                    "IronPort") across 4,098 of 4,774 rows. Never feed it to Revenue Range.
   //   Company Website  redundant with Domain and dirty ("MD", "https://linkedin.com").
-  //   Vendors          the segment definition frozen as a column ("heroku.com" on all 638 rows);
-  //                    the Tag carries it.
-  'Revenue', 'Company Website', 'Vendors',
-  // Added 2026-09-03 from the Piper AI base. These are Piper's own spellings of concepts already
-  // ruled out above, named here so the report counts them instead of letting them vanish unread.
+  //   Vendors          on THIS base the segment definition frozen as a column ("heroku.com" on all
+  //                    638 rows); the Tag carries it. On any other base Vendors is a custom column.
+  app9FDblMeiv6Ijbj: ['Revenue', 'Company Website', 'Vendors'],
+  // Piper AI, appR7aGJohe6xrPCv, ruled 2026-09-03. Piper's own spellings of concepts already ruled
+  // out above.
   //   Created              a CREATED_TIME formula on all six legacy tables, redundant with the
   //                        register's own Build Date.
   //   Build Date (legacy)  literally the legacy Build Date, on all six tables.
   //   State Full (calc)    literally State Full, the formula spelling.
   //   ✨ ICP Fit (2)       an empty second copy of the frozen ICP Fit column, 0 non-empty cells.
-  'Created', 'Build Date (legacy)', 'State Full (calc)', '✨ ICP Fit (2)'];
+  appR7aGJohe6xrPCv: ['Created', 'Build Date (legacy)', 'State Full (calc)', '✨ ICP Fit (2)'],
+};
 // Companies only, ruled out of the register 2026-09-02 alongside Company Status and State Full.
 // Email Pattern has no home on any register table and never will. Email Source is People's alone
 // (the register's Companies lane is Email, MV P0, BB, Final Email, Status); the Companies-side
@@ -435,8 +456,69 @@ const PERSON_COPY_COLS = ['City', 'State', 'Country', 'Zip', 'Street', 'Industry
 // Its own set, not ACCEPTED_DROP_COLS, because the maps do read these columns: an accepted column
 // no map reads is counted a second time, per row, by acceptedColsOf.
 const LOOKUP_DROPS = { Companies: new Set(), People: new Set(['Company', 'Domain', 'Tag']) };
-const ACCEPTED_DROPS = { Companies: new Set([...ACCEPTED_DROP_COLS, ...COMPANY_ACCEPTED_DROP_COLS]), People: new Set([...ACCEPTED_DROP_COLS, ...PERSON_COPY_COLS]) };
+// Built per run, once the base is known: the register's list plus that base's own rulings.
+let ACCEPTED_DROPS = { Companies: new Set(), People: new Set() };
+function buildAcceptedDrops(base) {
+  const own = BASE_ACCEPTED_DROP_COLS[base] || [];
+  ACCEPTED_DROPS = { Companies: new Set([...ACCEPTED_DROP_COLS, ...own, ...COMPANY_ACCEPTED_DROP_COLS]), People: new Set([...ACCEPTED_DROP_COLS, ...own, ...PERSON_COPY_COLS]) };
+  return ACCEPTED_DROPS;
+}
 const fromNamesOf = (MAP) => new Set(MAP.flatMap((m) => m.from));
+
+// ------------------------------------------------------------------ Custom columns
+//
+// Every legacy column is one of four things: carried by a map, accepted by a ruling, derived (a
+// formula, lookup, count or rollup the target rebuilds or does without), or CUSTOM: a column no map
+// and no ruling names. Before 2026-09-06 a custom column was never read, never counted and never
+// reported; it simply vanished when the legacy table was frozen. Now every custom column is read,
+// its non-empty cells counted, and a data-bearing one blocks --apply by name unless --carry-custom
+// creates it on the target (same type where the API allows, text for selects and AI fields) and
+// carries its values through the ordinary map path. A legacy formula whose every referenced column
+// lands on the same target is recreated there verbatim, ids re-expressed as names.
+const ALWAYS_READ = new Set(['Domain', 'Name', 'first_name', 'last_name', 'Contact Key', 'Tag', 'detected_at']);
+const DERIVED_TYPES = new Set(['formula', 'multipleLookupValues', 'count', 'rollup', 'createdTime', 'lastModifiedTime', 'lastModifiedBy', 'createdBy', 'autoNumber', 'button', 'externalSyncSource']);
+const CARRY_TYPE = { singleLineText: 'singleLineText', multilineText: 'multilineText', richText: 'richText', email: 'email', url: 'url', phoneNumber: 'phoneNumber', number: 'number', currency: 'number', percent: 'number', rating: 'number', checkbox: 'checkbox', date: 'date', dateTime: 'dateTime', singleSelect: 'singleLineText', multipleSelects: 'singleLineText', aiText: 'multilineText' };
+
+function classifyLegacyColumns(legacy, targets) {
+  const role = legacy.shape === 'domains' ? 'Companies' : 'People';
+  const carried = new Set([...fromNamesOf(COMPANY_MAP), ...(legacy.shape === 'contacts' ? fromNamesOf(PEOPLE_MAP) : [])]);
+  const accepted = new Set([...ACCEPTED_DROPS.Companies, ...(legacy.shape === 'contacts' ? ACCEPTED_DROPS.People : []), ...LOOKUP_DROPS[role]]);
+  const out = { custom: [], formulas: [], derived: [] };
+  for (const f of legacy.fieldsRaw) {
+    if (ALWAYS_READ.has(f.name) || carried.has(f.name) || accepted.has(f.name)) continue;
+    if (f.type === 'formula') { out.formulas.push(f); continue; }
+    if (DERIVED_TYPES.has(f.type)) { out.derived.push(f.name); continue; }
+    out.custom.push(f);
+  }
+  return out;
+}
+
+// Reads only the custom columns and counts non-empty cells per column. One extra pass per table;
+// cheap next to the migration itself, and the only way the report can name what would be lost.
+async function countCustomColumns(base, legacy, custom, limit) {
+  const counts = {};
+  if (!custom.length) return counts;
+  const rows = await listAll(base, legacy.id, custom.map((f) => f.name), { limit, label: `${legacy.name} (custom columns)` });
+  for (const r of rows) for (const f of custom) {
+    let v = (r.fields || {})[f.name];
+    if (v && typeof v === 'object' && !Array.isArray(v) && 'state' in v) v = v.value;
+    if (!isEmpty(v)) bump(counts, f.name);
+  }
+  return counts;
+}
+
+// Re-express a formula's {fldXXX} references as {Name} using the legacy table's own fields.
+function formulaByName(formula, legacy) {
+  const byId = new Map(legacy.fieldsRaw.map((f) => [f.id, f.name]));
+  const refs = new Set();
+  const text = String(formula || '').replace(/\{(fld[A-Za-z0-9]{14})\}/g, (m, id) => { const n = byId.get(id); if (!n) return m; refs.add(n); return `{${n}}`; });
+  const unresolved = /\{fld[A-Za-z0-9]{14}\}/.test(text);
+  return { text, refs: [...refs], unresolved };
+}
+
+async function createField(base, tableId, body) {
+  return request('POST', `${API}/meta/bases/${base}/tables/${tableId}/fields`, body);
+}
 
 // ------------------------------------------------------------------ Schema indexing
 
@@ -987,7 +1069,8 @@ function outDir(opts) {
 
 function legacyRecord(t, shape) {
   return {
-    name: t.name, id: t.id, shape, fieldSet: new Set(t.fields.map((f) => f.name)), fieldTypes: new Map(t.fields.map((f) => [f.name, f.type])),
+    name: t.name, id: t.id, shape, fieldSet: new Set(t.fields.map((f) => f.name)), fieldTypes: new Map(t.fields.map((f) => [f.name, f.type])), fieldsRaw: t.fields,
+    customColumns: {}, customFormulas: [], derivedColumns: [],
     isIntent: /\(intent\)/i.test(t.name), domainSource: '', signalId: null, signalName: null,
     rowsRead: 0, noDomain: 0, domainNormalized: 0,
     companiesNew: 0, companiesMergedIntoLive: 0, companiesCollisions: 0, companiesSeededFromContacts: 0, companiesTouchedFromContacts: 0,
@@ -1012,6 +1095,7 @@ async function main() {
   if (!/^app[A-Za-z0-9]{14}$/.test(opts.base)) die('--base appXXXXXXXXXXXXXX is required');
 
   const base = opts.base;
+  buildAcceptedDrops(base);
   const startedAt = new Date();
   const ts = startedAt.toISOString().replace(/[:.]/g, '-');
   const dir = outDir(opts);
@@ -1048,6 +1132,74 @@ async function main() {
   if (!legacies.length && !opts.linkLive) die('no eligible legacy table (needs a Domain or a Contact Key column); --link-live runs without one');
   if (!legacies.length) console.log('  no legacy table selected: --link-live on the live rows only');
   legacies.sort((a, b) => (a.shape === b.shape ? 0 : a.shape === 'domains' ? -1 : 1));   // domains rows take precedence over contact-derived company data
+
+  // 2b. Custom columns: every legacy column no map and no ruling names, read and counted before
+  // anything else is planned. Data-bearing ones block apply by name; --carry-custom creates them on
+  // the target (apply only) and adds a map entry so the ordinary path carries the values.
+  const customReport = { columns: {}, formulas: [], created: [], blocked: [] };
+  const dynamicMaps = [];
+  for (const legacy of legacies) {
+    const cls = classifyLegacyColumns(legacy, targets);
+    legacy.derivedColumns = cls.derived;
+    const counts = await countCustomColumns(base, legacy, cls.custom, opts.limit);
+    legacy.customColumns = Object.fromEntries(cls.custom.map((f) => [f.name, { type: f.type, nonEmpty: counts[f.name] || 0, description: f.description || '' }]));
+    const defaultTarget = legacy.shape === 'domains' ? 'Companies' : 'People';
+    for (const f of cls.custom) {
+      const n = counts[f.name] || 0;
+      const to = opts.customTo[f.name] || defaultTarget;
+      const entry = customReport.columns[f.name] || (customReport.columns[f.name] = { type: f.type, target: to, nonEmpty: 0, tables: [] });
+      entry.nonEmpty += n; entry.tables.push(`${legacy.name} (${n})`);
+    }
+    for (const f of cls.formulas) {
+      const { text, refs, unresolved } = formulaByName(f.options && f.options.formula, legacy);
+      legacy.customFormulas.push({ name: f.name, formula: text, refs, unresolved, description: f.description || '' });
+      customReport.formulas.push({ name: f.name, table: legacy.name, refs, formula: text.slice(0, 400) });
+    }
+  }
+  const dataBearingCustom = Object.entries(customReport.columns).filter(([, c]) => c.nonEmpty > 0);
+  if (dataBearingCustom.length) {
+    console.log(`  custom columns carrying data: ${dataBearingCustom.map(([k, c]) => `${k} (${c.nonEmpty}, ${c.type}, to ${c.target})`).join(', ')}`);
+    if (!opts.carryCustom) customReport.blocked = dataBearingCustom.map(([k]) => k);
+    else {
+      // Create what the target lacks (apply only; a dry run plans it), then map it by name so the
+      // normal path reads and writes it. Formulas after their columns.
+      for (const [name, c] of dataBearingCustom) {
+        const target = targets[c.target];
+        const type = CARRY_TYPE[c.type];
+        if (!type) { customReport.blocked.push(`${name}: type ${c.type} cannot be carried`); continue; }
+        if (!target.fields.has(name)) {
+          const body = { name, type, description: `Client custom column, not a register field. Carried by scripts/migrate-client.js on ${startedAt.toISOString().slice(0, 10)} from the legacy table(s) that held it. ${type !== c.type ? `Legacy type ${c.type}, carried as ${type}. ` : ''}${(legacies.flatMap((l) => (l.customColumns[name] || {}).description ? [l.customColumns[name].description] : [])[0] || '')}`.trim().slice(0, 20000) };
+          if (type === 'number') body.options = { precision: 0 };
+          if (type === 'checkbox') body.options = { icon: 'check', color: 'greenBright' };
+          if (type === 'date') body.options = { dateFormat: { name: 'iso' } };
+          if (type === 'dateTime') body.options = { dateFormat: { name: 'iso' }, timeFormat: { name: '24hour' }, timeZone: 'utc' };
+          if (opts.apply) { const made = await createField(base, target.id, body); console.log(`  created ${c.target}.${name} (${made.id}, ${type})`); }
+          customReport.created.push({ name, target: c.target, type, planned: !opts.apply });
+        }
+        (c.target === 'Companies' ? COMPANY_MAP : PEOPLE_MAP).push({ to: name, from: [name], ...(c.target === 'Companies' && legacies.some((l) => l.shape === 'contacts' && l.fieldSet.has(name)) ? {} : {}) });
+        dynamicMaps.push(name);
+      }
+      // Legacy formulas whose referenced columns all sit on one target now: recreated there.
+      const seenFormula = new Set();
+      for (const legacy of legacies) for (const fm of legacy.customFormulas) {
+        if (seenFormula.has(fm.name) || fm.unresolved || !fm.refs.length) continue;
+        seenFormula.add(fm.name);
+        const homes = fm.refs.map((r) => (customReport.columns[r] || {}).target || (targets.Companies.fields.has(r) && !targets.People.fields.has(r) ? 'Companies' : targets.People.fields.has(r) && !targets.Companies.fields.has(r) ? 'People' : null));
+        const home = homes.every((h) => h && h === homes[0]) ? homes[0] : null;
+        if (!home) { customReport.blocked.push(`${fm.name}: formula references ${fm.refs.join(', ')} which do not all land on one target`); continue; }
+        if (targets[home].fields.has(fm.name)) continue;
+        const body = { name: fm.name, type: 'formula', description: `Client custom formula, recreated by scripts/migrate-client.js on ${startedAt.toISOString().slice(0, 10)} from ${legacy.name}. ${fm.description}`.trim().slice(0, 20000), options: { formula: fm.formula } };
+        if (opts.apply) { const made = await createField(base, targets[home].id, body); console.log(`  created ${home}.${fm.name} (${made.id}, formula)`); }
+        customReport.created.push({ name: fm.name, target: home, type: 'formula', planned: !opts.apply });
+      }
+      if (opts.apply && customReport.created.length) {   // re-read the targets so the plan sees the new columns
+        const meta2 = await getMeta(base);
+        targets.Companies = indexTarget(meta2.find((t) => t.id === compT.id), 'Companies');
+        targets.People = indexTarget(meta2.find((t) => t.id === peopT.id), 'People');
+      }
+    }
+  }
+  if (opts.carryCustom && !opts.apply && customReport.created.length) console.log(`  --carry-custom would create: ${customReport.created.map((c) => `${c.target}.${c.name} (${c.type})`).join(', ')}`);
 
   // 3. Mirrors.
   const ctx = { base, opts, targets, companies: new Map(), people: new Map(), domainsIn: new Set(), keysIn: new Set(), validLinks: {} };
@@ -1115,7 +1267,10 @@ async function main() {
   if (signals.unresolved.length) guards.reasons.push(`signal unresolved for: ${signals.unresolved.join('; ')}`);
   const linkLiveDrops = ctx.linkLive ? Object.values(ctx.linkLive.companies.droppedKeys).reduce((a, n) => a + n, 0) : 0;
   if (linkLiveDrops) guards.reasons.push(`${linkLiveDrops} non-empty values would be dropped from the Companies rows --link-live creates (keys Companies lacks or cannot take)`);
+  if (customReport.blocked.length) guards.reasons.push(`custom columns carrying data that no map and no ruling names: ${customReport.blocked.join('; ')}. Pass --carry-custom to create and carry them, or add a ruling under BASE_ACCEPTED_DROP_COLS[${base}]`);
+  const dryCustom = !opts.apply && opts.carryCustom && dataBearingCustom.length;   // a dry run cannot create columns, so the plan below counts them as drops; that is expected, not a loss
   guards.blocked = guards.reasons.length > 0 && !opts.allowLoss;
+  if (dryCustom) guards.note = 'dry run with --carry-custom: the custom columns are counted under droppedKeys because they do not exist on the target yet; --apply creates them first';
 
   const accountedC = tally.Companies.create + tally.Companies.update + tally.Companies.unchanged;
   const accountedP = tally.People.create + tally.People.update + tally.People.unchanged;
@@ -1139,6 +1294,8 @@ async function main() {
     companies: { uniqueDomainsIn: ctx.domainsIn.size, planned: { create: tally.Companies.create, update: tally.Companies.update, unchanged: tally.Companies.unchanged }, existingMatched: tally.Companies.existingMatched, collisions: tally.Companies.collisions, tagCollisions: tally.Companies.tagCollisions, liveRows: liveC.length },
     people: { uniqueKeysIn: ctx.keysIn.size, planned: { create: tally.People.create, update: tally.People.update, unchanged: tally.People.unchanged }, existingMatched: tally.People.existingMatched, collisions: tally.People.collisions, tagCollisions: tally.People.tagCollisions, withoutCompaniesRow: tally.People.withoutCompaniesRow, unkeyed: legacies.reduce((a, l) => a + l.unkeyed, 0), keyDrift: legacies.reduce((a, l) => a + l.keyDrift, 0), nameWasCompany: legacies.reduce((a, l) => a + l.nameWasCompany, 0), liveRows: liveP.length },
     droppedKeys, acceptedDrops, lookupDrops, invalidValues, unresolvedCampaignIds,
+    customColumns: customReport,
+    derivedColumns: Object.fromEntries(legacies.map((l) => [l.name, l.derivedColumns])),
     reconciliation: {
       companies: { uniqueDomainsIn: ctx.domainsIn.size, accounted: accountedC, ok: ctx.domainsIn.size === accountedC },
       people: { uniqueKeysIn: ctx.keysIn.size, accounted: accountedP, ok: ctx.keysIn.size === accountedP, note: ctx.keysIn.size === accountedP ? '' : 'key drift: a row whose rebuilt key differs from its legacy Contact Key was merged into the row that legacy key names (see legacy[].people.keyDrift); the difference is rows folded, not rows lost' },
@@ -1200,6 +1357,12 @@ function printSummary(r) {
     const miss = r.targets[role].missingRegisterFields;
     if (miss.length) row(`${role} lacks (register)`, miss.join(', '));
   }
+  const cc = (r.customColumns || {}).columns || {}; const cck = Object.keys(cc);
+  row('Custom columns', cck.length ? cck.map((k) => `${k} (${cc[k].nonEmpty} non-empty, ${cc[k].type}, to ${cc[k].target})`).join(', ') : 'none');
+  const cf = (r.customColumns || {}).formulas || [];
+  if (cf.length) row('Legacy formulas', cf.map((f) => `${f.name} on ${f.table} over ${f.refs.join('+') || 'nothing'}`).join(', '));
+  const cr = (r.customColumns || {}).created || [];
+  if (cr.length) row('Custom carried', cr.map((c) => `${c.target}.${c.name} (${c.type}${c.planned ? ', planned' : ', created'})`).join(', '));
   row('Unresolved Campaigns ids', r.unresolvedCampaignIds);
   row('Signals', `resolved ${Object.keys(r.signals.resolved).length}, unresolved ${r.signals.unresolved.length}${r.signals.unresolved.length ? ` (${r.signals.unresolved.join('; ')})` : ''}`);
   const inv = Object.entries(r.invalidValues).flatMap(([role, o]) => Object.entries(o).map(([k, n]) => `${role}.${k} x${n}`));

@@ -14,6 +14,8 @@ const name = p.clientName || '(unknown)';
 let v = {}; try { v = $('Build Client Vars').first().json || {}; } catch (e) {}
 let folderId = ''; try { folderId = $('Create Client Folder').first().json.id || ''; } catch (e) {}
 let channelId = ''; try { channelId = $('Create Slack Channel').first().json.id || ''; } catch (e) {}
+let channelFound = false; if (!channelId) { try { channelId = $('Resolve Channel').first().json.channelId || ''; channelFound = !!channelId; } catch (e) {} }   // a rerun: the channel pre-existed, Resolve Channel found it by name
+let inviteError = ''; try { inviteError = String(($('Invite Owner to Channel').first().json || {}).error || ''); } catch (e) {}
 let reg = {}; try { reg = $('Build Registry Row').first().json || {}; } catch (e) {}
 
 // The registry upsert's own answer. Airtable returns records[] on both the create and the update
@@ -27,6 +29,7 @@ const created = ((upBody && Array.isArray(upBody.createdRecords)) ? upBody.creat
 const failed = [];
 if (!folderId) failed.push('Drive: no client folder id came back; the anatomy may be incomplete');
 if (!channelId) failed.push('Slack: no channel id came back for ' + (v.channelName || '(unnamed)'));
+if (inviteError) failed.push('Slack: the Operator invite to ' + (v.channelName || '(unnamed)') + ' failed: ' + inviteError);
 for (const m of (reg.missing || [])) failed.push('Registry: ' + m);
 if (!regRec) {
   const e = (upBody && upBody.error) || (up && up.error) || '';
@@ -50,7 +53,7 @@ const lines = [
   '',
   '**Built**',
   '- **Drive:** client folder ' + (folderId || '(none)') + ', full anatomy plus the Overrides stub; Shared shared with ' + (emails.length ? emails.length + ' contact(s): ' + emails.join(', ') : 'nobody'),
-  '- **Slack:** ' + (v.channelName || '') + ' created (' + (channelId || 'none') + '), Operator invited',
+  '- **Slack:** ' + (v.channelName || '') + (channelFound ? ' already existed (' : ' created (') + (channelId || 'none') + ')' + (inviteError ? ', Operator NOT invited' : ', Operator invited'),
   '- **Registry:** Clients row ' + (regRec || '(none)') + ' ' + (regRec ? (created ? 'created' : 'filled in place') : 'NOT written') + ', fields set: ' + ((reg.written || []).join(', ') || 'none'),
   '- **Table ids resolved from the base:** Companies ' + (reg.companiesTableId || '(none)') + ', People ' + (reg.peopleTableId || '(none)'),
 ];
@@ -78,15 +81,13 @@ if (failed.length) { lines.push('', '**Failed (' + failed.length + ')**'); for (
 
 lines.push(
   '',
-  '**Operator, the four hand acts.** Everything above is done. None of these four can be: Airtable has no API for any of them. Work them top to bottom; 3 depends on 2.',
+  '**Operator, the three hand acts.** Everything above is done. None of these can be: Airtable has no API for them. The mirrors and their six link columns already came with the template (ruled 2026-09-06: CLAYROOTS SCHEMA carries `Client Campaigns` and `Client Signals` synced to the Hub TEMPLATE rows, so every duplicate carries the links).',
   '',
   '1. **The relevance rule, on Companies and People.** Both ship from the template with a placeholder formula (Companies `IF(OR({manually_approved}, {public_emails_clean} != ""), 1, 0)`, People `IF(OR({manually_approved}, FALSE()), 1, 0)`). Replace each with ' + name + '\'s buyer rule. Every view that feeds a campaign reads relevance, so until this is done the People side cuts everyone. The meta API can rename a field, never re-express a formula.',
   '',
-  '2. **The two mirrors.** In base ' + p.base + ', Add table > Sync from another base, from the Hub (appQG6dK0FIOhTxOl): the Campaigns view filtered to ' + name + ' as **"' + name + ' Campaigns"**, and the Signals view filtered to ' + name + ' as **"' + name + ' Signals"**, each with Hub Record ID included. A sync is an interface act; there is no endpoint for one.',
+  '2. **Point the two mirrors at ' + name + '.** Now that the Clients row exists: in the Hub, add a Campaigns view and a Signals view filtered to Client = ' + name + '. In base ' + p.base + ', open the sync settings of "' + name + ' Campaigns" and "' + name + ' Signals" and switch each source view from the TEMPLATE view to the new one. The link columns stay as they are.',
   '',
-  '3. **The mirror columns, which 2 unlocks.** Campaigns (link) and Sequencers (lookup through it) on both Companies and People, Signals (link) on Companies and Signals (lookup) on People. The scaffold skipped exactly these this run because the mirrors did not exist yet. Fastest path: create a Hub Automations row with Automation = Scaffold Client Base and Client = ' + name + ', which fires POST /webhook/launch-scaffold-client-base and runs the same scaffold again; with the mirrors present it creates all of them and writes its own row. By hand is the same six columns.',
-  '',
-  '4. **The two share links.** Share the Companies table and the People table, then either paste each link into that table\'s description in the base and rerun this machine, or paste them straight into this client\'s Clients row, ClayrootsCompaniesSharedView and ClayrootsPeopleSharedView. That is the surface we hand the client. No API creates a share.',
+  '3. **The two share links.** Share the Companies table and the People table, then either paste each link into that table\'s description in the base and rerun this machine, or paste them straight into this client\'s Clients row, ClayrootsCompaniesSharedView and ClayrootsPeopleSharedView. That is the surface we hand the client. No API creates a share.',
 );
 
 const started = Date.parse(p.startedAt || '') || sd.runStartedAt || Date.now();

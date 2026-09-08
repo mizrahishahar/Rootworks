@@ -3,7 +3,7 @@
   "createdAt": "2026-09-08T20:13:35.736Z",
   "id": "1qiLA5nTnxXUQTgS",
   "name": "Enrich Contacts QuickEnrich",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -320,7 +320,7 @@
   "meta": null,
   "pinData": null,
   "versionId": "61019e71-0865-4f0c-aecf-8b0a7bb1487c",
-  "activeVersionId": null,
+  "activeVersionId": "61019e71-0865-4f0c-aecf-8b0a7bb1487c",
   "triggerCount": 0,
   "shared": [
     {
@@ -331,6 +331,324 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-09-08T20:19:19.421Z",
+    "createdAt": "2026-09-08T20:19:19.421Z",
+    "versionId": "61019e71-0865-4f0c-aecf-8b0a7bb1487c",
+    "workflowId": "1qiLA5nTnxXUQTgS",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "e1c0-0014-4000-8000-000000000014",
+        "name": "Enrich Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Companies: the QuickEnrich provider of Enrich Contacts. QuickEnrich has no seniority or\n// department filter, so it is asked for everyone (ruled 2026-09-08: insert everyone, no pressure):\n// one free contact-finder call per company for the roster, then one paid email search per person\n// up to the cap. One item per company out (the roster request), or {_none:true}.\nconst inp=$input.first().json||{};\nconst companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst out=companies.map(c=>({ json:{ domain:String(c.domain).toLowerCase(), cap:Math.max(1,Math.min(50,Number(c.cap)||20)), body:{ company_url:{ include:[String(c.domain).toLowerCase()], exclude:[] }, per_page:100, page:1 } } }));\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "e1c0-0015-4000-8000-000000000015",
+        "name": "QE Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e1c0-0016-4000-8000-000000000016",
+        "name": "Any QE Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.quickenrich.io/api/employees/contact-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "e1c0-0017-4000-8000-000000000017",
+        "name": "QE Roster",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          680,
+          -100
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "QuickEnrich: the free roster of a domain (no emails, has_email flags and LinkedIn URLs). Header Auth credential: Authorization = Bearer <key> (attach in the UI). 120 requests a minute on this endpoint; paced at 120."
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Pick: the roster answers (aligned to QE Companies by index) -> one email-search request per\n// person, up to the cap per company, people with an email on file first. The roster is free; the\n// search costs one credit only on a hit. Everyone picked is inserted, email or not: a person the\n// roster named is a person, the email is the email Rootflow's problem. Errors ride in _stats.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst reqs=$('QE Companies').all().map(i=>i.json||{});\nlet answers=[]; try{ answers=$('QE Roster').all(); }catch(e){}\nconst st={ rosterCalled:0, rosterRows:0, errors:0, noKey:0, firstError:'', failReasons:[] };\nconst out=[];\nconst na=(v)=>{ const s=String(v==null?'':v).trim(); return (s===''||s==='N/A')?'':s; };\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req||req._none) return;\n  st.rosterCalled++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.data===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='QuickEnrich contact-finder: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||typeof b!=='object'||!Array.isArray(b.data)){ st.errors++; const r='QuickEnrich contact-finder HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const rows=b.data.slice().sort((a,c)=>(c.has_email?1:0)-(a.has_email?1:0));\n  st.rosterRows+=rows.length;\n  let n=0;\n  for(const p of rows){\n    if(n>=req.cap) break;\n    const first=na(p.first_name), last=na(p.last_name);\n    if(!first) continue;\n    n++;\n    // The search URL carries only the parameters that have a value: an empty linkedin_url next to\n    // the name + domain trio is not a documented shape.\n    const q={ linkedin_url:na(p.employee_linkedin), company_url:req.domain, first_name:first, last_name:last };\n    const qs=Object.keys(q).filter(k=>q[k]).map(k=>k+'='+encodeURIComponent(q[k])).join('&');\n    out.push({ json:{ domain:req.domain, name:(first+' '+last).trim(), title:na(p.title), linkedin:na(p.employee_linkedin), hasEmail:!!p.has_email, hasPhone:!!p.has_phone,\n      query:q, url:'https://app.quickenrich.io/api/employees/search?'+qs } });\n  }\n});\nif(!out.length) return [{ json:{ _none:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
+        },
+        "id": "e1c0-0018-4000-8000-000000000018",
+        "name": "QE Pick",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          920,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e1c0-0019-4000-8000-000000000019",
+        "name": "Any QE Picks?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1140,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 70
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "e1c0-0020-4000-8000-000000000020",
+        "name": "QE Email",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1380,
+          -100
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "QuickEnrich: the paid email search per person (LinkedIn URL first, then name + domain), one credit only on a hit. Same credential as the node before it. 1,000 requests a minute; paced at 850."
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Parse: the email-search answers (aligned to QE Pick by index) -> people per domain in the\n// shared provider contract (see GL Parse). A person whose search found nothing is still a person\n// (name, title, LinkedIn from the roster), written without an email. Seniority and department are\n// derived from the title by the caller's merge. Never throws.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], rosterCalled:0, rosterRows:0, noKey:0, emails:0 };\nconst people={};\nlet first={}; try{ first=$('QE Pick').first().json||{}; }catch(e){}\nconst rs=first._stats||{};\nfor(const k of ['rosterCalled','rosterRows','noKey']) st[k]=Number(rs[k])||0;\nst.errors+=Number(rs.errors)||0; if(rs.firstError&&!st.firstError) st.firstError=rs.firstError; for(const r of (rs.failReasons||[])) st.failReasons.push(r);\nlet picks=[]; try{ picks=$('QE Pick').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('QE Email').all(); }catch(e){}\nconst na=(v)=>{ const s=String(v==null?'':v).trim(); return (s===''||s==='N/A')?'':s; };\nanswers.forEach((it,i)=>{\n  const p=picks[i]; if(!p) return;\n  st.called++;\n  const j=it.json||{};\n  let email='', phone='', sourceId='';\n  if(j.error&&j.body===undefined&&j.data===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='QuickEnrich email search: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r);\n  } else {\n    const b=(j.body!==undefined)?j.body:j;\n    const status=Number(j.statusCode)||200;\n    if(status>=300||!b||typeof b!=='object'){ st.errors++; const r='QuickEnrich email search HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); }\n    else { const d=(b.data&&!Array.isArray(b.data))?b.data:((Array.isArray(b.data)&&b.data[0])||{}); email=na(d.email).toLowerCase(); phone=na(d.employee_phone); if(email){ st.emails++; st.credits+=1; } }\n  }\n  const list=people[p.domain]||(people[p.domain]=[]);\n  st.returned++;\n  list.push({ source:'QuickEnrich', sourceId:sourceId, name:p.name, title:p.title, seniority:'', department:'', email:email, linkedin:p.linkedin, phone:phone });\n  st.kept++;\n});\nlet status='ok', reason='';\nconst attempted=st.rosterCalled+st.called;\nif(st.noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the QuickEnrich nodes'; }\nelse if(attempted&&st.errors>=attempted&&!st.kept){ status='error'; reason=st.firstError; }\nelse if(!attempted){ status='skipped'; reason='nothing to ask'; }\nreturn [{ json:{ provider:'QuickEnrich', status, reason, stats:st, people } }];\n"
+        },
+        "id": "e1c0-0021-4000-8000-000000000021",
+        "name": "QE Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1620,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Enrich Trigger": {
+        "main": [
+          [
+            {
+              "node": "QE Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Companies": {
+        "main": [
+          [
+            {
+              "node": "Any QE Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any QE Companies?": {
+        "main": [
+          [
+            {
+              "node": "QE Roster",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Roster": {
+        "main": [
+          [
+            {
+              "node": "QE Pick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Pick": {
+        "main": [
+          [
+            {
+              "node": "Any QE Picks?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any QE Picks?": {
+        "main": [
+          [
+            {
+              "node": "QE Email",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Email": {
+        "main": [
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": []
 }

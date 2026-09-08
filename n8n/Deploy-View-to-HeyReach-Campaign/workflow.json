@@ -1,0 +1,777 @@
+{
+  "updatedAt": "2026-09-08T20:32:16.706Z",
+  "createdAt": "2026-09-08T20:32:16.706Z",
+  "id": "igc6v7tiTY0fV79n",
+  "name": "Deploy View to HeyReach Campaign",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "hrd-00-webhook",
+      "name": "Deploy Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1600,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deploy-view-to-heyreach",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "c7d2e4f6-3a1b-4c8d-9e0f-5b6a7c8d9e01",
+      "notes": "The door's ONLY entry (ruling 2026-09-03). Schedule Live View Deploys creates the launch row and POSTs {recordId} here, so a scheduled deploy and a hand launch are the same run."
+    },
+    {
+      "id": "hrd-01-open",
+      "name": "Open Deploy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1400,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Open-Deploy.js"
+      }
+    },
+    {
+      "id": "hrd-02-prepare",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        200
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VfjJGNlykzuZok2T",
+          "cachedResultName": "Deploy View Prepare and Finish"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "Mode prepare, awaited, error left to travel: resolves the launch row into client (and its HeyReach API Key), base, campaign, mirror row, table, view and the field contract, drops DNC domains, applies the run cap and hands back the leads shaped for AddLeadsToCampaignV2 in 100-lead chunks. A failure inside it fails this run, which is the run the Error Logger names."
+    },
+    {
+      "id": "hrd-03-loadstate",
+      "name": "Load State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1000,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Load-State.js"
+      }
+    },
+    {
+      "id": "hrd-04-getcamp",
+      "name": "Get HR Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -800,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://api.heyreach.io/api/public/campaign/GetById?campaignId=\" + $json.target }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "={{ $(\"Load State\").first().json.hrKey }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Proves the campaign exists in the client's workspace and reads its name, status and senders. X-API-KEY from the registry via Load State."
+    },
+    {
+      "id": "hrd-05-checkcamp",
+      "name": "Check HR Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Check-HR-Campaign.js"
+      }
+    },
+    {
+      "id": "hrd-06-ready",
+      "name": "Ready to Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lr1",
+              "leftValue": "={{ $json.ready ? \"yes\" : \"no\" }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "No leads to send is not a failure: a refused launch and a view where every row was skipped both go straight to the close, which stamps the rows and writes the row."
+    },
+    {
+      "id": "hrd-07-pace",
+      "name": "Send Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        100
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "9d3e5f7a-2b4c-4d6e-8f0a-1b2c3d4e5f60"
+    },
+    {
+      "id": "hrd-08-add",
+      "name": "HR Add Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heyreach.io/api/public/campaign/AddLeadsToCampaignV2",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "={{ $(\"Load State\").first().json.hrKey }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "100 leads to a request (HeyReach allows more; kept small so a refused chunk is small). Answers counts only: added, updated, failed. Which rows failed is decided by the read-back."
+    },
+    {
+      "id": "hrd-09-collectadd",
+      "name": "Collect Add",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Add.js"
+      }
+    },
+    {
+      "id": "hrd-10-senddone",
+      "name": "Send Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sd1",
+              "leftValue": "={{ $json.done ? \"done\" : \"more\" }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "hrd-11-progress",
+      "name": "Stamp Progress",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -160
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $json._lid }}",
+            "Status": "Running",
+            "Description": "={{ $json._prog }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Writes live upload progress onto the launch row after every chunk. A SIDE branch of Collect Add: it must never sit between Collect Add and Send Done?, its Airtable output would destroy the loop state.",
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "hrd-12-initrb",
+      "name": "Init Readback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Init-Readback.js"
+      }
+    },
+    {
+      "id": "hrd-13-anyread",
+      "name": "Any to Read?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ar1",
+              "leftValue": "={{ $json.done ? \"done\" : \"more\" }}",
+              "rightValue": "more",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Nothing sent this run = nothing to read back; straight to the close."
+    },
+    {
+      "id": "hrd-14-rbpace",
+      "name": "RB Pace",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        200
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.wait || 0 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "8f6a4c2e-0d1b-4e7a-b5c3-2e1f0a9b8c7d"
+    },
+    {
+      "id": "hrd-15-getleads",
+      "name": "HR Get Campaign Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heyreach.io/api/public/campaign/GetLeadsFromCampaign",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "={{ $(\"Load State\").first().json.hrKey }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Read-back: the campaign's lead list, 100 to a page, walked to totalCount. Membership = the profile URL is on the list."
+    },
+    {
+      "id": "hrd-16-collectrb",
+      "name": "Collect RB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-RB.js"
+      }
+    },
+    {
+      "id": "hrd-17-rbdone",
+      "name": "RB Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1600,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rd1",
+              "leftValue": "={{ $json.done ? \"done\" : \"more\" }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "hrd-90-close",
+      "name": "Close Deploy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Close-Deploy.js"
+      }
+    },
+    {
+      "id": "hrd-91-finish",
+      "name": "Finish",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2000,
+        200
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VfjJGNlykzuZok2T",
+          "cachedResultName": "Deploy View Prepare and Finish"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "notes": "Mode finish, awaited, error left to travel: stamps Deploy Error and the Campaigns links on the source rows, writes the Lead Lists receipt and writes this run's Hub row, upserted on this execution's id. A failed log write crashes it, and with it this run."
+    }
+  ],
+  "connections": {
+    "Deploy Webhook": {
+      "main": [
+        [
+          {
+            "node": "Open Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Deploy": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Load State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load State": {
+      "main": [
+        [
+          {
+            "node": "Get HR Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get HR Campaign": {
+      "main": [
+        [
+          {
+            "node": "Check HR Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check HR Campaign": {
+      "main": [
+        [
+          {
+            "node": "Ready to Send?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to Send?": {
+      "main": [
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Pace": {
+      "main": [
+        [
+          {
+            "node": "HR Add Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HR Add Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Add": {
+      "main": [
+        [
+          {
+            "node": "Send Done?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stamp Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Done?": {
+      "main": [
+        [
+          {
+            "node": "Init Readback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Readback": {
+      "main": [
+        [
+          {
+            "node": "Any to Read?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any to Read?": {
+      "main": [
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Pace": {
+      "main": [
+        [
+          {
+            "node": "HR Get Campaign Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HR Get Campaign Leads": {
+      "main": [
+        [
+          {
+            "node": "Collect RB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect RB": {
+      "main": [
+        [
+          {
+            "node": "RB Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RB Done?": {
+      "main": [
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RB Pace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Deploy": {
+      "main": [
+        [
+          {
+            "node": "Finish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "80033264-4716-44b9-ad90-9dfc99907127",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-08T20:32:16.711Z",
+      "createdAt": "2026-09-08T20:32:16.711Z",
+      "role": "workflow:owner",
+      "workflowId": "igc6v7tiTY0fV79n",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

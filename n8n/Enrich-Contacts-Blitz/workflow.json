@@ -3,7 +3,7 @@
   "createdAt": "2026-09-08T20:13:33.303Z",
   "id": "yuAFXnpQ1K3F9AJC",
   "name": "Enrich Contacts Blitz",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -305,7 +305,7 @@
   "meta": null,
   "pinData": null,
   "versionId": "44345314-8d91-4d03-a592-e3315b93947c",
-  "activeVersionId": null,
+  "activeVersionId": "44345314-8d91-4d03-a592-e3315b93947c",
   "triggerCount": 0,
   "shared": [
     {
@@ -316,6 +316,309 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-09-08T20:19:17.017Z",
+    "createdAt": "2026-09-08T20:19:17.017Z",
+    "versionId": "44345314-8d91-4d03-a592-e3315b93947c",
+    "workflowId": "yuAFXnpQ1K3F9AJC",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "e1c0-0006-4000-8000-000000000006",
+        "name": "Enrich Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Companies: the Blitz provider of Enrich Contacts. Blitz keys everything on the company's\n// LinkedIn page, so the pass is two calls per company: domain-to-linkedin, then employee-finder.\n// One item per company out (the first call's input), or {_none:true}. The floor in Blitz's own\n// six job levels (C-Team, VP, Director, Manager, Staff, Other): Staff only at small companies,\n// Other always (unknown is not junior). No job_function filter: every function is asked.\nconst inp=$input.first().json||{};\nconst companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };\nconst out=companies.map(c=>({ json:{ domain:String(c.domain).toLowerCase(), cap:Math.max(1,Math.min(50,Number(c.cap)||20)), jobLevel:LEVELS[c.floor]||LEVELS.wide, body:{ domain:'https://'+String(c.domain).toLowerCase() } } }));\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "e1c0-0007-4000-8000-000000000007",
+        "name": "BZ Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e1c0-0008-4000-8000-000000000008",
+        "name": "Any BZ Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.blitz-api.ai/v2/enrichment/domain-to-linkedin",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 120
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "e1c0-0009-4000-8000-000000000009",
+        "name": "BZ Domain To LinkedIn",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          680,
+          -100
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "Blitz: the company LinkedIn page for a domain. Header Auth credential: x-api-key = the key (attach in the UI). 10 requests a second per endpoint; paced at 8."
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Roster Requests: the domain-to-linkedin answers (one per company, aligned to BZ Companies by\n// index, error items included) -> one employee-finder request per company that resolved. The cap\n// is max_results (1 to 50), one page: a cap never exceeds 50, so the second page is never needed.\n// Companies that did not resolve, and every error, are carried in _stats for BZ Parse.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst reqs=$('BZ Companies').all().map(i=>i.json||{});\nlet answers=[]; try{ answers=$('BZ Domain To LinkedIn').all(); }catch(e){}\nconst st={ resolveCalled:0, resolved:0, unresolved:0, errors:0, noKey:0, firstError:'', failReasons:[] };\nconst out=[];\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req||req._none) return;\n  st.resolveCalled++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.found===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='Blitz domain-to-linkedin: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||typeof b!=='object'){ st.errors++; const r='Blitz domain-to-linkedin HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const url=String(b.company_linkedin_url||'').trim();\n  if(!b.found||!url){ st.unresolved++; return; }\n  st.resolved++;\n  out.push({ json:{ domain:req.domain, cap:req.cap, companyLinkedin:url, body:{ company_linkedin_url:url, job_level:req.jobLevel, max_results:req.cap, page:1 } } });\n});\nif(!out.length) return [{ json:{ _none:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
+        },
+        "id": "e1c0-0010-4000-8000-000000000010",
+        "name": "BZ Roster Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          920,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e1c0-0011-4000-8000-000000000011",
+        "name": "Any BZ Roster?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1140,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.blitz-api.ai/v2/search/employee-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 120
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "e1c0-0012-4000-8000-000000000012",
+        "name": "BZ Employee Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1380,
+          -100
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "Blitz: everyone at one company page, job_level filtered, max_results = the cap (50 at most, one page). Same credential as the node before it."
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Parse: the employee-finder answers (aligned to BZ Roster Requests by index) -> people per\n// domain, plus the provider verdict in the shared provider contract (see GL Parse). Employee\n// Finder returns no email, no seniority and no department per row: the title comes from the\n// person's current experience at this company, seniority and department are derived from the\n// title by the caller's merge. Never throws.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], resolveCalled:0, resolved:0, unresolved:0, noKey:0 };\nconst people={};\nlet first={}; try{ first=$('BZ Roster Requests').first().json||{}; }catch(e){}\nconst rs=first._stats||{};\nfor(const k of ['resolveCalled','resolved','unresolved','noKey']) st[k]=Number(rs[k])||0;\nst.errors+=Number(rs.errors)||0; if(rs.firstError&&!st.firstError) st.firstError=rs.firstError; for(const r of (rs.failReasons||[])) st.failReasons.push(r);\nlet reqs=[]; try{ reqs=$('BZ Roster Requests').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('BZ Employee Finder').all(); }catch(e){}\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req) return;\n  st.called++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.results===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='Blitz employee-finder: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||!Array.isArray(b.results)){ st.errors++; const r='Blitz employee-finder HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const list=people[req.domain]||(people[req.domain]=[]);\n  for(const p of b.results){\n    st.returned++;\n    if(list.length>=req.cap) continue;\n    const exps=Array.isArray(p.experiences)?p.experiences:[];\n    const here=exps.find(e=>e&&e.job_is_current&&(norm(e.company_domain)===req.domain||String(e.company_linkedin_url||'').replace(/\\/+$/,'')===req.companyLinkedin.replace(/\\/+$/,'')))||exps.find(e=>e&&e.job_is_current)||exps[0]||{};\n    const name=String(p.full_name||((String(p.first_name||'')+' '+String(p.last_name||'')).trim())).trim();\n    if(!name) continue;\n    list.push({ source:'Blitz', sourceId:String(p.linkedin_id||p.id||''), name:name, title:String(here.job_title||p.headline||'').trim(), seniority:'', department:'', email:'', linkedin:String(p.linkedin_url||'').trim(), phone:'' });\n    st.kept++;\n  }\n});\nlet status='ok', reason='';\nconst attempted=st.resolveCalled+st.called;\nif(st.noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the Blitz nodes'; }\nelse if(attempted&&st.errors>=attempted&&!st.kept){ status='error'; reason=st.firstError; }\nelse if(!attempted){ status='skipped'; reason='nothing to ask'; }\nreturn [{ json:{ provider:'Blitz', status, reason, stats:st, people } }];\n"
+        },
+        "id": "e1c0-0013-4000-8000-000000000013",
+        "name": "BZ Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1620,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Enrich Trigger": {
+        "main": [
+          [
+            {
+              "node": "BZ Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Companies": {
+        "main": [
+          [
+            {
+              "node": "Any BZ Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any BZ Companies?": {
+        "main": [
+          [
+            {
+              "node": "BZ Domain To LinkedIn",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Domain To LinkedIn": {
+        "main": [
+          [
+            {
+              "node": "BZ Roster Requests",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Roster Requests": {
+        "main": [
+          [
+            {
+              "node": "Any BZ Roster?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any BZ Roster?": {
+        "main": [
+          [
+            {
+              "node": "BZ Employee Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Employee Finder": {
+        "main": [
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": []
 }

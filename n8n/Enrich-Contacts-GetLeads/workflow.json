@@ -3,7 +3,7 @@
   "createdAt": "2026-09-08T20:13:29.318Z",
   "id": "oOiQqxazAycHl6Lz",
   "name": "Enrich Contacts GetLeads",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -198,7 +198,7 @@
   "meta": null,
   "pinData": null,
   "versionId": "ae790e15-6763-4375-9060-af161e4713c7",
-  "activeVersionId": null,
+  "activeVersionId": "ae790e15-6763-4375-9060-af161e4713c7",
   "triggerCount": 0,
   "shared": [
     {
@@ -209,6 +209,202 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
+  "activeVersion": {
+    "updatedAt": "2026-09-08T20:19:14.115Z",
+    "createdAt": "2026-09-08T20:19:14.115Z",
+    "versionId": "ae790e15-6763-4375-9060-af161e4713c7",
+    "workflowId": "oOiQqxazAycHl6Lz",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "e1c0-0001-4000-8000-000000000001",
+        "name": "Enrich Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// GL Requests: the GetLeads provider of Enrich Contacts. Input: the batch plan, one item\n// { companies:[{recordId, domain, company, band, cap, floor}] }. Output: one item per\n// POST /api/v1/contacts/search call, or one {_none:true} when there is nothing to ask.\n//\n// The floor is expressed in GetLeads' own six levels (C-Team, VP, Director, Manager, Staff, Other;\n// pulled live 2026-09-08). \"Everyone non-junior\": Staff (individual contributors) rides along\n// only at small companies, Other (unknown) always rides (unknown is not junior). No department\n// filter: every function is asked (ruled 2026-09-08, everyone who is not junior).\n//\n// One call per (floor, cap) group, up to 1,000 domains a call: with max_per_company at the cap\n// (GetLeads hard-stops at 50) a 100-company batch never exceeds the 5,000-row page, and the node\n// still pages on next_offset for safety. Every row costs one fair-use row, never cash.\nconst inp=$input.first().json||{};\nconst companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };\nconst COLUMNS=['First Name','Last Name','Contact Full Name','Email','Email Verification Status','Current Job Title','Seniority Level','Department / Function','Contact LinkedIn URL','Cellphone','Direct Office Phone','Company Domain','Work Email Domain','Current Employer Name'];\nconst groups={};\nfor(const c of companies){ const floor=LEVELS[c.floor]?c.floor:'wide'; const cap=Math.max(1,Math.min(50,Number(c.cap)||20)); const k=floor+':'+String(cap).padStart(2,'0'); (groups[k]=groups[k]||{ floor, cap, list:[] }).list.push(c.domain); }\nconst out=[];\nfor(const k of Object.keys(groups).sort()){\n  const g=groups[k];\n  for(let i=0;i<g.list.length;i+=1000){\n    const part=g.list.slice(i,i+1000);\n    out.push({ json:{ body:{ domains:part, seniority:LEVELS[g.floor], max_per_company:g.cap, limit:5000, offset:0, columns:COLUMNS }, domains:part, cap:g.cap, floor:g.floor } });\n  }\n}\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "e1c0-0002-4000-8000-000000000002",
+        "name": "GL Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e1c0-0003-4000-8000-000000000003",
+        "name": "Any GL Requests?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.getleads.io/api/v1/contacts/search",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 700
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response.body.next_offset }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body || $response.body.has_more !== true }}",
+                "limitPagesFetched": true,
+                "maxRequests": 10,
+                "requestInterval": 700
+              }
+            },
+            "timeout": 180000
+          }
+        },
+        "id": "e1c0-0004-4000-8000-000000000004",
+        "name": "GL Search",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          680,
+          -100
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "GetLeads contact search. Header Auth credential: Authorization = Bearer glb_live_... (attach in the UI). Every returned row costs one fair-use row, never cash. Pages on next_offset; a 100-company batch at cap 50 fits one page."
+      },
+      {
+        "parameters": {
+          "jsCode": "// GL Parse: every page GetLeads answered -> people per domain, plus the provider verdict. The one\n// item out is the provider contract every Enrich Contacts provider answers with:\n//   { provider, status: ok | skipped | error, reason, stats:{called, returned, kept, credits, errors,\n//     firstError, failReasons[]}, people:{ <domain>: [ {source, sourceId, name, title, seniority,\n//     department, email, linkedin, phone} ] } }\n// It never throws. A missing credential, an exhausted fair-use budget or a dead API are a status\n// on this item and a line in the caller's log; the caller moves on to the next provider (ruled\n// 2026-09-08: unlimited providers, nothing blocks on one of them).\n//\n// Rows are matched to the plan by the row's own company domain, never by call order: the node pages\n// on next_offset, so one request can answer with several items and alignment by index is not\n// safe. Column names in the REST answer are the catalog's raw names; the docs say display labels on\n// MCP and CSV, raw names on JSON, so every field is read through a normalized-key lookup that\n// accepts either spelling.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst inp=$('GL Requests').first().json||{};\nconst plan=$('Enrich Trigger').first().json||{};\nconst byDomain={}; for(const c of (Array.isArray(plan.companies)?plan.companies:[])){ if(c&&c.domain) byDomain[String(c.domain).toLowerCase()]=c; }\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], dropped:0, pages:0 };\nconst people={};\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst nk=(s)=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');\nconst pick=(row,cands)=>{ for(const c of cands){ const v=row[c]; if(v!==undefined&&v!==null&&String(v).trim()!==''&&String(v).trim()!=='N/A') return String(v).trim(); } return ''; };\nconst flat=(r)=>{ const o={}; for(const k of Object.keys(r||{})){ const v=r[k]; if(v&&typeof v==='object'&&!Array.isArray(v)){ for(const k2 of Object.keys(v)) o[nk(k2)]=v[k2]; } o[nk(k)]=v; } return o; };\nlet items=[];\nif(inp._none){ return [{ json:{ provider:'GetLeads', status:'skipped', reason:'nothing to ask', stats:st, people:{} } }]; }\ntry{ items=$('GL Search').all(); }catch(e){ items=[]; }\nlet noKey=false, budget=false;\nfor(const it of items){\n  const j=it.json||{};\n  st.pages++;\n  if(j.error&&j.contacts===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ noKey=true; continue; }\n    if(/fair.?use|not enough credits|credits_exhausted|payment required|\\b402\\b/i.test(msg)){ budget=true; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n    st.errors++; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue;\n  }\n  if(j.ok===false||(!Array.isArray(j.contacts)&&j.message)){\n    const msg=String(j.message||j.code||'answer without contacts');\n    if(/fair.?use|not enough credits|credits_exhausted/i.test(msg+' '+String(j.code||''))){ budget=true; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n    st.errors++; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue;\n  }\n  if(!Array.isArray(j.contacts)){ st.errors++; const r='GetLeads: unreadable answer '+JSON.stringify(j).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n  st.credits+=Number(j.query_credits_used)||0;\n  for(const raw of j.contacts){\n    st.returned++;\n    const r=flat(raw);\n    const email=pick(r,['email','emailaddress','workemail']).toLowerCase();\n    let d=norm(pick(r,['companydomain','domain','workemaildomain','emaildomain']));\n    if(!d||!byDomain[d]){ const at=email.lastIndexOf('@'); const ed=at>-1?email.slice(at+1):''; if(ed&&byDomain[ed]) d=ed; }\n    const c=byDomain[d];\n    if(!c){ st.dropped++; continue; }\n    const list=people[d]||(people[d]=[]);\n    if(list.length>=(Number(c.cap)||50)) continue;\n    const first=pick(r,['firstname']), last=pick(r,['lastname']);\n    const name=pick(r,['contactfullname','fullname'])||((first+' '+last).trim());\n    if(!name) continue;\n    list.push({\n      source:'GetLeads', sourceId:pick(r,['contactid','id','contactuuid','personid']),\n      name:name, title:pick(r,['currentjobtitle','jobtitle','title']),\n      seniority:pick(r,['senioritylevel','seniority','joblevel']), department:pick(r,['departmentfunction','jobfunction','function']),\n      email:email, emailStatus:pick(r,['emailverificationstatus','emailstatus']),\n      linkedin:pick(r,['contactlinkedinurl','linkedinurl','linkedin']), phone:pick(r,['cellphone','directofficephone','phone'])\n    });\n    st.kept++;\n  }\n}\ntry{ st.called=$('GL Requests').all().filter(i=>i.json&&!i.json._none).length; }catch(e){ st.called=st.pages; }\nlet status='ok', reason='';\nif(noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the GetLeads node'; }\nelse if(budget&&!st.kept){ status='skipped'; reason='fair-use budget exhausted'; }\nelse if(st.errors&&!st.kept&&items.length&&st.errors>=items.length){ status='error'; reason=st.firstError; }\nif(budget&&st.kept) st.failReasons.push('GetLeads: fair-use budget hit mid-batch, later pages skipped');\nreturn [{ json:{ provider:'GetLeads', status, reason, stats:st, people } }];\n"
+        },
+        "id": "e1c0-0005-4000-8000-000000000005",
+        "name": "GL Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          920,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Enrich Trigger": {
+        "main": [
+          [
+            {
+              "node": "GL Requests",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Requests": {
+        "main": [
+          [
+            {
+              "node": "Any GL Requests?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any GL Requests?": {
+        "main": [
+          [
+            {
+              "node": "GL Search",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "GL Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Search": {
+        "main": [
+          [
+            {
+              "node": "GL Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": []
 }

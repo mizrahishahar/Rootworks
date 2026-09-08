@@ -2,11 +2,18 @@
 // Export Callback fills that table from every completion webhook) -> the next poll state. A row
 // in state DONE settles the export: found from the row when the webhook carried statistics, else
 // into toPoll for one statistics read later; no row keeps it pending. Polled every 15 s, clocked
-// from submittedAt. The 4-minute cap is the safety net for exports whose webhook never arrives:
-// past it, whatever is still pending moves to toPoll, where one statistics read each decides DONE
-// or still PENDING. Never a hang, never a poll per export while the webhook works. The breaker's
-// counters (planned, rateLimited, unserved, stoppedEarly) ride through untouched.
-const WAIT_MS=15000, MAX_POLL_MS=240000;
+// from submittedAt. The cap is the safety net for exports whose webhook never arrives: past it,
+// whatever is still pending moves to toPoll, where one statistics read each decides DONE or still
+// PENDING. Never a hang, never a poll per export while the webhook works. The breaker's counters
+// (planned, rateLimited, unserved, stoppedEarly) ride through untouched.
+//
+// CAP RAISED 4 -> 30 MINUTES (2026-09-08). Under load AI-Ark works a queue of 400 exports for well
+// over four minutes; on 2026-09-07 nine lanes gave up on 1,162 exports as "still PENDING", every
+// one of them paid at submission, and by the next morning their track ids had expired unread
+// (404 "track id expired or not found"). An export abandoned at the cap is a loss, not a skip, so
+// the wait is now sized to the queue, not to the fast case. The parent waits 60 minutes for this
+// row (Ark Rows Check), which still covers it.
+const WAIT_MS=15000, MAX_POLL_MS=30*60*1000;
 let pend=[]; try{ pend=$('Ark Pending').all().map(i=>i.json); }catch(e){}
 const prev=(pend[0]&&pend[0].state)||{ pending:[], done:[], toPoll:[], errors:[], submitted:0, planned:0, rateLimited:0, unserved:0, stoppedEarly:false, attempts:0 };
 const now=Date.now(); const submittedAt=Number(prev.submittedAt)||now; const elapsed=now-submittedAt;

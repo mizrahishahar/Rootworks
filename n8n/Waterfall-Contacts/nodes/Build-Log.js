@@ -115,7 +115,7 @@ const lines=[
   '**Cap per company:** '+(p.arkOnly?'flat five, every company size (the AI-Ark only mode)':'by band, 1-10 four, 11-50 six, 51-200 ten, 201 and up twelve (per source at ContaGen and Supersoniq, absolute at AI-Ark)'),
   '',
   '**Funnel**',
-  '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows, '+num(mk.batches)+' writer batches of 250'+(on('AI-Ark')?', then one AI-Ark lane over every company they covered':'')+')',
+  '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows'+(pick.scoped?', scoped to the caller\'s '+num(pick.scoped)+' domain(s), '+num(pick.outOfScope)+' view rows outside the scope skipped':'')+', '+num(mk.batches)+' writer batches of 250'+(on('AI-Ark')?', then one AI-Ark lane over every company they covered':'')+')',
   '- **Already held (tier zero):** '+num(mk.heldRows)+' people at '+num(mk.heldCompanies)+' companies'
 ];
 if(on('ContaGen')) lines.push(tier('ContaGen', t.contagen));

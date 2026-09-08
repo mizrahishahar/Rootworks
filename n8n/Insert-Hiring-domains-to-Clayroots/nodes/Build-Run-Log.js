@@ -15,6 +15,9 @@ try{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(
 const d=fq.drops||{};
 const dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'hosted platform '+nf(d.hosted_platform),'duplicate '+nf(d.duplicate)].join(' · ');
 const hardDropped=Math.max(0,(fq.jobs_in||0)-(fq.qualified||0));
+// The cross-day dedupe: companies that already carried this signal, dropped before any paid call.
+let ds={ already_signalled:0, already_signalled_domains:[], new_to_signal:fq.qualified||0 };
+try{ const s=$('Drop Already Signalled').first().json._stats; if(s&&s.already_signalled!==undefined) ds=s; }catch(e){}
 
 let bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];
 try{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}
@@ -56,13 +59,14 @@ const lines=[
   '**Funnel**',
   '- **Jobs scraped:** '+nf(fq.jobs_in),
   '- **Past the hard lines:** '+nf(fq.qualified),
+  '- **Already carrying this signal (dropped before any paid call):** '+nf(ds.already_signalled)+(ds.already_signalled?' ('+(ds.already_signalled_domains||[]).slice(0,12).join(', ')+(ds.already_signalled>12?', ...':'')+')':'')+' · new to this signal: '+nf(ds.new_to_signal),
   '- **BizData:** matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+' · errors '+nf(bz.errors),
   '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),
   '- **First hire (Existing In Role):** yes '+nf(ir.yes)+' · no '+nf(ir.no)+' · unknown '+nf(ir.unknown),
   '- **Rows formatted:** '+nf(fm.kept)+' ('+nf(fm.new)+' not yet in Companies, '+nf(fm.existing)+' existing, Signals unioned)',
   '- **Insert domains to Clayroots:** '+helperLine,
   '',
-  '**Contacts:** '+(waterfall?'Waterfall Contacts fired as a sub-workflow (Companies · Not Sourced · ContaGen, Supersoniq, AI-Ark · cap 5,000); its own run-log row carries the pull.':'Waterfall Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'
+  '**Contacts:** '+(waterfall?'Waterfall Contacts fired as a sub-workflow (Companies · Not Sourced · scoped to the '+nf(landed)+' domain(s) this run landed · AI-Ark · cap 150); its own run-log row carries the pull.':'Waterfall Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'
 ];
 if(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\n'+rejLines.join('\n')+((icp.rejected||[]).length>10?'\n- ...and '+((icp.rejected||[]).length-10)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));

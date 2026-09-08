@@ -18,17 +18,24 @@
 // Everything is counted from Ark Export's own runs, one run per window, and nothing reads a node
 // downstream of this one: a storm in an earlier window IS a sleep already spent, because the only
 // other thing a storm can do is stop the loop.
-const STORM = 8;          // rate-limited answers in one window that make it a storm
+const STORM = 8;          // refused answers in one window that make it a storm
 const MAX_BACKOFFS = 8;   // storms slept through before the lane gives up
+// REFUSALS THAT ARE A STORM (2026-09-08): 429 (the key's rate ceiling), 402 "you don't have enough
+// credit" and 400 "too many pending requests". The last two are AI-Ark's RESERVATION wall: every
+// pending export reserves its requested size against the balance, and the wall answers 402 or 400
+// while too much is in flight, with the balance itself untouched (2026-09-07: 2,835 credits in the
+// account, 4,000 exports refused). The reservation releases as exports settle, so the right answer
+// is the same sleep-and-resume as a rate storm, never a burn through the rest of the list.
+const refused = (j) => { const s = Number((j || {}).statusCode) || 0; if (s === 429 || s === 402) return true; if (s === 400) { const b = (j || {}).body; const t = typeof b === 'string' ? b : JSON.stringify(b || {}); return /too many pending/i.test(t); } return false; };
 const runs = (name) => { const out = []; for (let i = 0; i < 10000; i++) { let it = null; try { it = $(name).all(0, i); } catch (e) { break; } if (!it || !it.length) break; out.push(it); } return out; };
 const windows = runs('Ark Export');
-const limitedIn = (run) => { let n = 0; for (const it of (run || [])) { if (Number((it.json || {}).statusCode) === 429) n++; } return n; };
+const limitedIn = (run) => { let n = 0; for (const it of (run || [])) { if (refused(it.json)) n++; } return n; };
 let submitted = 0, rateLimited = 0, streak = 0;
 for (const run of windows) {
   for (const it of run) {
     const j = it.json || {};
     submitted++;
-    if (Number(j.statusCode) === 429) { rateLimited++; streak++; } else streak = 0;
+    if (refused(j)) { rateLimited++; streak++; } else streak = 0;
   }
 }
 // This window only. The trailing streak never resets across windows, so a governor reading it

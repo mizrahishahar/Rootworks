@@ -4,7 +4,8 @@
 // Emits one item: { domains, icp_text, companies:{domain -> {company row, biz}} }.
 const cfg=$('Parse Play').first().json;
 const parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };
-const rows=$('Filter & Qualify Jobs').all().map(i=>i.json).filter(c=>c&&c.domain);
+// The list BizData was called on is Drop Already Signalled's output (the cross-day dedupe, 2026-09-06), aligned by index.
+const rows=$('Drop Already Signalled').all().map(i=>i.json).filter(c=>c&&c.domain);
 let bizItems=[]; try{ bizItems=$('DiscoLike BizData').all(); }catch(e){}
 const stats={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] };
 const companies={};

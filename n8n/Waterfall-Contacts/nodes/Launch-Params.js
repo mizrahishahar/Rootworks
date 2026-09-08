@@ -66,6 +66,9 @@ const table=((f['Table']||'')+'').trim();
 const view=((f['View']||'')+'').trim();
 const maxCompanies=Math.floor(Number(f['Max companies'])||0);
 const tiersRaw=((f['Tiers']||'')+'').trim();
+// Domains: an event caller's scope inside the view (the insert doors pass what they landed). Empty
+// means the whole view, which is what every launch row means. Pick Companies applies it.
+const domains=arr(f['Domains']).map(x=>String(x||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'')).filter(Boolean);
 const startedAt=new Date().toISOString();
 // Every refusal carries what the row actually held, so the Failed row names the reason AND shows
 // the Operator the launch row as the machine read it.
@@ -172,6 +175,7 @@ return [{ json: {
   arkSeniority: arkSeniority,
   rolesUnmapped: rolesUnmapped,
   maxCompanies: maxCompanies,
+  domains: domains,
   trigger: trigger,
   _launchRecordId: rec.id||'',
   startedAt: startedAt

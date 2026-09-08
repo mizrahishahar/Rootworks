@@ -24,7 +24,9 @@ Before any campaign is built or changed, its settings are shown for approval as 
 
 **Limits live on the inbox, not the campaign.** The campaign daily limit sits high (5000) so it never binds the inbox ramp.
 
-**Replies and unsubscribes.** Stop on reply at the DOMAIN, not the lead. Unsubscribes auto-add to the blocklist.
+**Replies and unsubscribes.** Stop on reply at the DOMAIN, not the lead (`is_acc_based_sending`). Unsubscribes auto-add to the workspace blocklist: `unsub_blocklist: "yes"`, which is what keeps an unsubscriber from being reachable by every OTHER campaign in the workspace. Off, an unsubscribe stops that one campaign and nothing else. It silently resets to 0 on any patch that omits it, so it is re-sent on the last patch of every touch and confirmed in the read-back.
+
+**One lead per domain per day.** `is_max_lead_domain_per_day: "yes"` with `max_lead_domain_per_day: 1`, on every campaign, no exceptions. A contacts-table deploy routinely lands several people from one company in one campaign, and without the cap they are all mailed the same morning. Stop-on-reply does not save you: it only fires after someone has already replied.
 
 **Draft first.** Campaigns are built as drafts; the Operator flips them live.
 

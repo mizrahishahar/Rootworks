@@ -13,6 +13,7 @@ Do not hand-edit; rerun the script after every pull.
 |---|---|---|---|
 | AI-Ark-Export---Clayroots | POST https://n8n.flowroots.com/webhook/launch-aiark-contacts | Clayroots Base ID, Build name, AI-Ark contacts CSV (file), Domains Table ID, Existing Table ID, Tag | **yes - launch on Waiting** |
 | AI-Ark-Export-Callback | POST https://n8n.flowroots.com/webhook/ai-ark-export-noop |  | no |
+| AI-Ark-Ops-one-off | POST https://n8n.flowroots.com/webhook/ai-ark-read-exports |  | no |
 | Airtable-Ops-one-off | POST https://n8n.flowroots.com/webhook/get-view-meta <br> POST https://n8n.flowroots.com/webhook/add-fields-to-table <br> POST https://n8n.flowroots.com/webhook/patch-records <br> POST https://n8n.flowroots.com/webhook/create-records <br> POST https://n8n.flowroots.com/webhook/list-records |  | no |
 | Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |
 | Alta-OAuth-Callback | GET https://n8n.flowroots.com/webhook/alta-oauth-callback |  | no |

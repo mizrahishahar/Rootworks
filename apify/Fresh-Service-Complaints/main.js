@@ -1,16 +1,19 @@
 // Fresh Service Complaints: the glue between two rented scrapers, per the architecture
-// settled with the Operator 2026-09-06.
+// settled with the Operator 2026-09-06 and tightened 2026-09-07.
 //
 //   STEP 1 (feed): for each Trustpilot category, read the category page sorted by
 //     latest review - the stores reviewed since yesterday, across the WHOLE category.
-//   STEP 2 (filter): for those stores, in batches of 10, fetch only 1-2 star reviews
+//     SIZE FILTER: skip any store whose total review count is above maxCompanyTotalReviews
+//     (the review-firehose giants: IKEA, Fabletics, Vinted, Overstock...). Cutting them
+//     here, before spending, means the budget reaches deeper into the mid-market where
+//     Adelante's real DTC buyers live, and no IKEA ever reaches the handler.
+//   STEP 2 (filter): for the survivors, in batches of 10, fetch only 1-2 star reviews
 //     tagged customer_service within the lookback window. Silent stores cost nothing.
 //   OUTPUT: one dataset of review rows + company metadata rows, the exact shape the
-//     n8n handler (Handle Service Reviews Intent Signal) parses. The scheduled task's
+//     n8n handler (Insert Reviews domains to Clayroots) parses. The scheduled task's
 //     webhook posts { play, resource } to the handler; this actor never calls n8n itself.
 //
-// Both children are blackfalcondata/trustpilot-reviews-scraper, the actor proven live
-// (categories mode 350 rows 2026-09-01; reviews mode 10-domain batches 2026-08-27).
+// Both children are blackfalcondata/trustpilot-reviews-scraper, the actor proven live.
 // Batch size 10 is that actor's hard companyDomains cap - never raise it.
 // Every child call carries maxTotalChargeUsd; this actor does no unbounded work.
 import { Actor, log } from 'apify';
@@ -20,14 +23,15 @@ await Actor.init();
 const input = (await Actor.getInput()) ?? {};
 const {
   categories = ['https://www.trustpilot.com/categories/clothing_store'],
-  feedPagesPerCategory = 6,
+  feedPagesPerCategory = 12,
+  maxCompanyTotalReviews = 8000,
   lookbackDays = 2,
   stars = [1, 2],
   topics = ['customer_service'],
   maxReviewsPerCompany = 20,
   reviewBatchSize = 10,
-  childMaxChargeUsd = 0.25,
-  maxDomainsPerRun = 1000,
+  childMaxChargeUsd = 1,
+  maxDomainsPerRun = 1500,
   scraperActor = 'blackfalcondata/trustpilot-reviews-scraper',
 } = input;
 
@@ -40,9 +44,10 @@ async function callChild(runInput) {
   return items;
 }
 
-// STEP 1: the feeds.
+// STEP 1: the feeds, with the size filter applied as each category is read.
 const seen = new Set();
 const domains = [];
+let skippedTooBig = 0;
 for (const cat of categories) {
   const url = cat.includes('sort=') ? cat : cat + (cat.includes('?') ? '&' : '?') + 'sort=latest_review';
   let items = [];
@@ -60,9 +65,12 @@ for (const cat of categories) {
   let added = 0;
   for (const it of items) {
     const d = String(it.companyDomain || '').toLowerCase().replace(/^www\./, '').trim();
-    if (d && !seen.has(d)) { seen.add(d); domains.push(d); added++; }
+    if (!d || seen.has(d)) continue;
+    const total = Number(it.totalReviews || 0);
+    if (maxCompanyTotalReviews > 0 && total > maxCompanyTotalReviews) { skippedTooBig++; seen.add(d); continue; }
+    seen.add(d); domains.push(d); added++;
   }
-  log.info(`feed ${url}: ${items.length} rows, ${added} new domains (${domains.length} total)`);
+  log.info(`feed ${url}: ${items.length} rows, ${added} kept, ${skippedTooBig} skipped as too big (${domains.length} total)`);
   if (domains.length >= maxDomainsPerRun) { log.warning(`hit maxDomainsPerRun ${maxDomainsPerRun}, stopping feeds`); break; }
 }
 
@@ -105,6 +113,7 @@ for (let i = 0; i < Math.min(domains.length, maxDomainsPerRun); i += reviewBatch
 const summary = {
   categories: categories.length,
   storesInFeeds: domains.length,
+  skippedTooBig,
   freshNegativeServiceReviews: reviewCount,
   companiesWithComplaints: companiesWithComplaints.size,
   failedBatches: failedBatches.length,

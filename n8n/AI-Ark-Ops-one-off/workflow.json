@@ -1,0 +1,286 @@
+{
+  "updatedAt": "2026-09-08T06:02:05.459Z",
+  "createdAt": "2026-09-08T06:02:05.459Z",
+  "id": "vLPMtxmEk8rVjOeK",
+  "name": "AI-Ark Ops (one-off)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a1a10000-0000-4000-8000-000000000001",
+      "name": "Read Exports Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-ark-read-exports",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "a1a1a1a1-read-exports-door-0001",
+      "notes": "One-off door, HQ only. POST { trackIds: [..] } (up to 50). Reads each export's statistics and, where found > 0, its inquiries page, and answers with the raw AI-Ark bodies. Built 2026-09-08 to recover the 1,162 exports the Waterfall Contacts Batch lane abandoned as 'still PENDING' on 2026-09-07 (paid at submission, never fetched). Deactivate after use."
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000002",
+      "name": "Split Track Ids",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Split-Track-Ids.js"
+      }
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000003",
+      "name": "Ark Statistics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        440,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TFaSEjm5g2RUVDCA",
+          "name": "ai-ark"
+        }
+      },
+      "parameters": {
+        "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/statistics",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 600
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000004",
+      "name": "Statistics Pairs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Statistics-Pairs.js",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000005",
+      "name": "Any Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $json.fetch }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000006",
+      "name": "Ark Inquiries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        -120
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TFaSEjm5g2RUVDCA",
+          "name": "ai-ark"
+        }
+      },
+      "parameters": {
+        "url": "=https://api.ai-ark.com/api/developer-portal/v1/people/export/{{ $json.trackId }}/inquiries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page",
+              "value": "0"
+            },
+            {
+              "name": "size",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 600
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "a1a10000-0000-4000-8000-000000000007",
+      "name": "Collect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Collect.js",
+        "mode": "runOnceForAllItems"
+      }
+    }
+  ],
+  "connections": {
+    "Read Exports Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Track Ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Track Ids": {
+      "main": [
+        [
+          {
+            "node": "Ark Statistics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Statistics": {
+      "main": [
+        [
+          {
+            "node": "Statistics Pairs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Statistics Pairs": {
+      "main": [
+        [
+          {
+            "node": "Any Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Found?": {
+      "main": [
+        [
+          {
+            "node": "Ark Inquiries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ark Inquiries": {
+      "main": [
+        [
+          {
+            "node": "Collect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "9558c997-f845-4acb-87b5-30faade4f8d6",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-08T06:02:05.469Z",
+      "createdAt": "2026-09-08T06:02:05.469Z",
+      "role": "workflow:owner",
+      "workflowId": "vLPMtxmEk8rVjOeK",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

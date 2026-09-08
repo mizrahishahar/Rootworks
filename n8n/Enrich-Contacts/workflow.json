@@ -1,0 +1,2333 @@
+{
+  "updatedAt": "2026-09-08T20:13:57.212Z",
+  "createdAt": "2026-09-01T23:51:54.209Z",
+  "id": "PLTNYqqoYfrt9ypd",
+  "name": "Enrich Contacts",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-waterfall-contacts",
+        "options": {}
+      },
+      "id": "c4d50001-0001-4000-8000-000000000001",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "waterfall-contacts"
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "c4d50001-0002-4000-8000-000000000002",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Launch row contract (ruled 2026-09-02): Client, Table (must be \"Companies\", by name, no default), View (by name, required, no default), Sources, Departments, Max companies. Launch Params refuses anything else before a paid call."
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "c4d50001-0003-4000-8000-000000000003",
+      "name": "Sub Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "notes": "Event entry: one item carrying the same keys as a launch row (Client, Table, View, Tag, and Domains for the insert doors). This is how an insert door calls this machine after landing: Table \"Companies\", View \"Not Sourced\", Domains = what it landed. No launch row, no Running stamp; Stamp Progress creates the run row on Execution ID after the first pass."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Event-Row.js"
+      },
+      "id": "c4d50001-0004-4000-8000-000000000004",
+      "name": "Event Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+        "options": {}
+      },
+      "id": "c4d50001-0005-4000-8000-000000000005",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "A launch row with no Client link used to kill the run right here: $json.fields.Client[0] threw inside the node before Launch Params could name the refusal, so the row got nothing back. It now asks for \"recMISSING\" and keeps going; Launch Params reads the answer defensively and refuses with the reason.",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "c4d50001-0006-4000-8000-000000000006",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0007-4000-8000-000000000007",
+      "name": "Launch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ],
+      "notes": "The refusal gate. Launch Params names a bad launch row instead of throwing; false here means refused, and Build Refusal closes the row as Failed with the reason before anything is read or paid for."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Tally": "",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c4d50001-0008-4000-8000-000000000008",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "notes": "First thing the launch door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. It passes the record through, so Resolve Base still reads fields.Client off it.",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c4d50001-0009-4000-8000-000000000009",
+      "name": "AT List Tables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Find-Tables.js"
+      },
+      "id": "c4d50001-0010-4000-8000-000000000010",
+      "name": "Find Tables",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Params').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Tables').first().json.companiesTableId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Launch Params').first().json.view }}"
+          },
+          "fields": [
+            "Domain",
+            "Company",
+            "Employees"
+          ]
+        }
+      },
+      "id": "c4d50001-0011-4000-8000-000000000011",
+      "name": "Read Companies View",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The Companies view (by name, required on the launch row) is the selector; Max companies (required) is the read limit and the spend cap. A view that does not exist crashes here, before any paid call, into the Error Logger. Tag is not read: People stores none."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Pick-Companies.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0012-4000-8000-000000000012",
+      "name": "Pick Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1",
+              "leftValue": "={{ $json.picked || 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0013-4000-8000-000000000013",
+      "name": "Any Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/People-Filters.js"
+      },
+      "id": "c4d50001-0014-4000-8000-000000000014",
+      "name": "People Filters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Launch Params').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Find Tables').first().json.peopleTableId }}"
+        },
+        "filterByFormula": "={{ $json.formula }}",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Contact Key",
+            "LinkedIn URL",
+            "Domain",
+            "Email",
+            "Contact Source",
+            "Title",
+            "Phone",
+            "Seniority",
+            "Department",
+            "Source ID"
+          ]
+        }
+      },
+      "id": "c4d50001-0015-4000-8000-000000000015",
+      "name": "Read People",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Tier zero: what the base already holds at these domains, ids only, one call per 100 domains. Domain on People is a lookup through the Companies link; the {Domain} filter matches the lookup's text and the field comes back as an array of one."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Make-Batches.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0016-4000-8000-000000000016",
+      "name": "Make Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "c4d50001-0017-4000-8000-000000000017",
+      "name": "Loop Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3080,
+        -120
+      ],
+      "notes": "The writer lane: one 250-company batch per sub-execution, one after another (Airtable's 5 requests per second per base is a global ceiling, so parallel identical lanes buy nothing; measured 2026-09-02). Its done output ends the writer lane and hands every closed batch to the AI-Ark lane."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "61QayoPOnxClmE54",
+          "cachedResultName": "Enrich Contacts Batch"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "c4d50001-0018-4000-8000-000000000018",
+      "name": "Run Batch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3300,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Mode writer, awaited: ContaGen and Supersoniq for the batch, Clean Fields, DNC, the People writer (PATCH in tens), the Companies stamps, a recount, then its own Hub row keyed <this execution>-<batchNum>, and its counters plus the recount's held state back as the last node's output (the held state feeds this batch's AI-Ark pass). A crash comes back as an error item and is logged; never retried (the paid tiers would run twice)."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Pass-Result.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0019-4000-8000-000000000019",
+      "name": "Pass Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c4d50001-0024-4000-8000-000000000024",
+      "name": "AT List Views",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3740,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "After every writer batch and after the AI-Ark lane's row (ruled 2026-09-02): read the base meta again; the email door fires only if People carries a view named exactly \"Not Waterfalled\"."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Find-Waterfall-View.js"
+      },
+      "id": "c4d50001-0025-4000-8000-000000000025",
+      "name": "Find Waterfall View",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "w1",
+              "leftValue": "={{ $json.hasView }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0026-4000-8000-000000000026",
+      "name": "Waterfall View?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/waterfall-record",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"table\": \"People\", \"baseId\": $('Launch Params').first().json.base, \"clientRecordId\": $('Launch Params').first().json.clientRecId, \"view\": $('Find Waterfall View').first().json.viewName } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 5000
+        }
+      },
+      "id": "c4d50001-0027-4000-8000-000000000027",
+      "name": "Fire Waterfall",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4400,
+        -120
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "notes": "The hand-off, once after every writer batch and once more after the last AI-Ark row landed (ruled 2026-09-02): Waterfall Emails' record door (Record Webhook -> Params reads body.table, body.baseId, body.clientRecordId, body.view; the door resolves the People table by name). Body {table: \"People\", baseId, clientRecordId, view: \"Not Waterfalled\"}. Fired without waiting for its answer: the door responds at its last node, so the 5 s timeout here is expected and counts as fired; the email waterfall keeps running and writes its own log row. A 4xx/5xx or a refused connection counts as a failed hand-off."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Handoff-Tick.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c4d50001-0030-4000-8000-000000000030",
+      "name": "Handoff Tick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c4d50001-0031-4000-8000-000000000031",
+      "name": "Stamp Progress",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Live Running row after every hand-off, on the launch row's Execution ID (created here on an event run). Write-only progress from this execution's own memory; no Tally, no read-add-write. The counters live in the pass rows and are summed at the close."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "s1",
+              "leftValue": "={{ $('Pass Result').first().json.stop }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0033-4000-8000-000000000033",
+      "name": "Stop?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        120
+      ],
+      "notes": "True when the batch had every paid call fail after retry: the paid tiers are dead, launching more batches would only burn time. The ark passes already fired keep running; the close waits for their rows."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "=AND({Automation} = 'Enrich Contacts Batch', FIND('{{ $execution.id }}-', {Execution ID} & '') = 1)",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Execution ID",
+            "Status",
+            "Errors",
+            "Records In",
+            "Records Out",
+            "Tally"
+          ]
+        }
+      },
+      "id": "c4d50001-0038-4000-8000-000000000038",
+      "name": "Read Batch Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5500,
+        -320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "At the close: the pass rows of this run, by prefix (Execution ID \"<this execution>-<batchNum>\" and \"<this execution>-<batchNum>-ark\", Automation \"Waterfall Contacts Batch\"). Each row's Tally is that pass's counters; Build Log sums them. A failed read crashes loudly rather than logging zeros."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "c4d50001-0028-4000-8000-000000000028",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        -320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "c4d50001-0045-4000-8000-000000000045",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        -560
+      ],
+      "notes": "A badly filled launch row closes here as Failed with the named reason and the execution link, on the same row Stamp Running opened. Refusals are expected outcomes and are logged as such; the Error Logger still owns real crashes."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c4d50001-0029-4000-8000-000000000029",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5940,
+        -320
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub Trigger": {
+      "main": [
+        [
+          {
+            "node": "Event Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Row": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Launch OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch OK?": {
+      "main": [
+        [
+          {
+            "node": "AT List Tables",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT List Tables": {
+      "main": [
+        [
+          {
+            "node": "Find Tables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Tables": {
+      "main": [
+        [
+          {
+            "node": "Read Companies View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Companies View": {
+      "main": [
+        [
+          {
+            "node": "Pick Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Companies": {
+      "main": [
+        [
+          {
+            "node": "Any Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Companies?": {
+      "main": [
+        [
+          {
+            "node": "People Filters",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "People Filters": {
+      "main": [
+        [
+          {
+            "node": "Read People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read People": {
+      "main": [
+        [
+          {
+            "node": "Make Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Batches": {
+      "main": [
+        [
+          {
+            "node": "Loop Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Batches": {
+      "main": [
+        [
+          {
+            "node": "AT List Views",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Batch": {
+      "main": [
+        [
+          {
+            "node": "Pass Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pass Result": {
+      "main": [
+        [
+          {
+            "node": "Handoff Tick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff Tick": {
+      "main": [
+        [
+          {
+            "node": "Stamp Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Progress": {
+      "main": [
+        [
+          {
+            "node": "Stop?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop?": {
+      "main": [
+        [
+          {
+            "node": "AT List Views",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AT List Views": {
+      "main": [
+        [
+          {
+            "node": "Find Waterfall View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Waterfall View": {
+      "main": [
+        [
+          {
+            "node": "Waterfall View?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waterfall View?": {
+      "main": [
+        [
+          {
+            "node": "Fire Waterfall",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Batch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Waterfall": {
+      "main": [
+        [
+          {
+            "node": "Read Batch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch Rows": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "6a2275c9-9bf4-4110-afb2-a8291bbd279e",
+  "activeVersionId": "6a2275c9-9bf4-4110-afb2-a8291bbd279e",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-01T23:51:54.214Z",
+      "createdAt": "2026-09-01T23:51:54.214Z",
+      "role": "workflow:owner",
+      "workflowId": "PLTNYqqoYfrt9ypd",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-08T20:13:57.218Z",
+    "createdAt": "2026-09-08T20:13:57.218Z",
+    "versionId": "6a2275c9-9bf4-4110-afb2-a8291bbd279e",
+    "workflowId": "PLTNYqqoYfrt9ypd",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-waterfall-contacts",
+          "options": {}
+        },
+        "id": "c4d50001-0001-4000-8000-000000000001",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "waterfall-contacts"
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "c4d50001-0002-4000-8000-000000000002",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          220,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Launch row contract (ruled 2026-09-02): Client, Table (must be \"Companies\", by name, no default), View (by name, required, no default), Sources, Departments, Max companies. Launch Params refuses anything else before a paid call."
+      },
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "c4d50001-0003-4000-8000-000000000003",
+        "name": "Sub Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          200
+        ],
+        "notes": "Event entry: one item carrying the same keys as a launch row (Client, Table, View, Tag, and Domains for the insert doors). This is how an insert door calls this machine after landing: Table \"Companies\", View \"Not Sourced\", Domains = what it landed. No launch row, no Running stamp; Stamp Progress creates the run row on Execution ID after the first pass."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Event Row: the sub entry carries one item with the same keys as a launch row (Client, Table,\n// View, and for the insert doors Domains). This is how an insert door calls this machine after\n// landing: Table \"Companies\", View \"Not Sourced\", Domains = what it just landed. Shape it like\n// Fetch Launch Record's output so Resolve Base and Launch Params read one shape on both entries;\n// the camelCase spellings a door might send are folded into the row keys here. Anything else a\n// caller still sends from the old contract (Tiers, Sources, Departments, Roles, Max companies) is\n// carried but never read (ruled 2026-09-08: the launch row is Client, Table, View, Tag).\nconst j=$input.first().json||{};\nconst f=(j.fields&&typeof j.fields==='object')?Object.assign({},j.fields):Object.assign({},j);\nconst arr=(v)=>Array.isArray(v)?v:(v?[v]:[]);\nconst alias=(key,alts)=>{ if(f[key]===undefined||f[key]===''||f[key]===null){ for(const a of alts){ if(f[a]!==undefined&&f[a]!==''&&f[a]!==null){ f[key]=f[a]; break; } } } };\nalias('Table',['table']); alias('View',['view']); alias('Tag',['tag']);\n// Domains: optional, event callers only. The insert doors pass the domains they just landed so the\n// pull is scoped to them inside the view (added 2026-09-06 after three 5,000-company sweeps of a\n// migrated backlog). A launch row has no such field and reads the whole view, as before.\nalias('Domains',['domains']); f.Domains=arr(f.Domains).map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);\nf.Client=arr(f.Client||f.client||f.clientRecId||f.clientRecordId).map(x=>(x&&typeof x==='object')?x.id:x).filter(Boolean);\nif(!f.Client.length){ throw new Error('Enrich Contacts was called without a Client. Pass the Hub Clients record id as Client. Nothing was pulled.'); }\nreturn [{ json: { id: '', fields: f, _event: true } }];\n"
+        },
+        "id": "c4d50001-0004-4000-8000-000000000004",
+        "name": "Event Row",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+          "options": {}
+        },
+        "id": "c4d50001-0005-4000-8000-000000000005",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          0
+        ],
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "A launch row with no Client link used to kill the run right here: $json.fields.Client[0] threw inside the node before Launch Params could name the refusal, so the row got nothing back. It now asks for \"recMISSING\" and keeps going; Launch Params reads the answer defensively and refuses with the reason.",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row (or the caller's passthrough item, same keys) is the whole\n// contract, and since 2026-09-08 it is four fields: Client (resolves the base), Table (by name,\n// required, no default, and it must be \"Companies\": this machine sources people for companies and\n// refuses any other table), View (a Companies view, by name, required, no default; the insert\n// doors call with \"Not Sourced\"), Tag (carried for the log only: People stores no Tag, it is a\n// lookup through the Companies link). Nothing else is read. Every provider is asked for every\n// company; the cap and the seniority floor are rules in code (Plan Batch); a provider with no\n// credential on its node is a logged skip. Any missing piece stops the run here, before a call.\n//\n// REFUSALS (2026-09-03). A launch row that was not properly filled is an EXPECTED outcome, not a\n// crash, and it must be visible on the row the Operator launched. So every guard below RETURNS a\n// refusal item (`refused` carries the named reason) instead of throwing. `Launch OK?` routes that\n// item to Build Refusal, which closes the launch row as Failed with the reason and the execution\n// link, and the run ends there: no table read, no call, nothing written.\nlet rec=null, trigger='form';\ntry{ rec=$('Fetch Launch Record').first().json; }catch(e){}\nif(!rec||!rec.fields){ rec=$('Event Row').first().json; trigger='event'; }\nconst f=rec.fields||{};\n// Resolve Base is allowed to answer with an error item (a launch row with no Client link is asked\n// for record \"recMISSING\"), so read it defensively.\nconst cf=(($('Resolve Base').first().json||{}).fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst where='Launch record '+(rec.id||'(event)');\nconst clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';\nconst table=((f['Table']||'')+'').trim();\nconst view=((f['View']||'')+'').trim();\nconst tag=((f['Tag']||'')+'').trim();\nconst domains=arr(f['Domains']).map(x=>String(x||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'')).filter(Boolean);\nconst startedAt=new Date().toISOString();\nconst refuse=(reason)=>[{ json:{ refused: reason, trigger: trigger, _launchRecordId: rec.id||'', clientRecId: clientRecId, base: base, table: table, view: view, tag: tag, startedAt: startedAt } }];\nif(!clientRecId){ return refuse(where+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!table){ return refuse(where+' has no Table. This machine takes Table \"Companies\" by name, no default. Nothing was pulled.'); }\nif(table.toLowerCase()!=='companies'){ return refuse(where+' names Table \"'+table+'\". This machine sources people for companies and takes only Table \"Companies\". Nothing was pulled.'); }\nif(!view){ return refuse(where+' has no View. A Companies view is required by name, no default (the insert doors pass \"Not Sourced\"). Nothing was pulled.'); }\nreturn [{ json: { refused: '', base: base, clientRecId: clientRecId, table: 'Companies', view: view, tag: tag, domains: domains, trigger: trigger, _launchRecordId: rec.id||'', startedAt: startedAt } }];\n"
+        },
+        "id": "c4d50001-0006-4000-8000-000000000006",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c4d50001-0007-4000-8000-000000000007",
+        "name": "Launch OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          0
+        ],
+        "notes": "The refusal gate. Launch Params names a bad launch row instead of throwing; false here means refused, and Build Refusal closes the row as Failed with the reason before anything is read or paid for."
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Tally": "",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "c4d50001-0008-4000-8000-000000000008",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "notes": "First thing the launch door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. It passes the record through, so Resolve Base still reads fields.Client off it.",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "c4d50001-0009-4000-8000-000000000009",
+        "name": "AT List Tables",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1320,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Find Tables: the client base must already carry tables named exactly \"Companies\" and\n// \"People\" in the register's shape. Nothing here ever creates a table or a field; the\n// scaffold is Onboard Client's job. DNC is optional and found by name. Since 2026-09-08 the\n// People field types travel too: Contact Source is written as a list when the base carries it as\n// a multi-select, and as the first source only while it is still a single select.\nconst p=$('Launch Params').first().json;\nconst r=$input.first().json||{};\nconst body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nif(!tables){ throw new Error('Could not read the table list for base '+p.base+': '+JSON.stringify(body).slice(0,200)+'. Nothing was pulled.'); }\nconst byName=(n)=>tables.find(x=>String(x.name||'').trim().toLowerCase()===n);\nconst companies=byName('companies');\nif(!companies){ throw new Error('Base '+p.base+' has no Companies table. Scaffold the client base to the ClayRoots Standard first. Nothing was pulled.'); }\nconst people=byName('people');\nif(!people){ throw new Error('Base '+p.base+' has no People table. Scaffold the client base to the ClayRoots Standard first. Nothing was pulled.'); }\nconst cNames=new Set((companies.fields||[]).map(x=>x.name));\nfor(const need of ['Domain','Company','Employees','Tag','Contacts Pulled At']){ if(!cNames.has(need)){ throw new Error('Companies table '+companies.id+' is missing the core field \"'+need+'\". Bring it to the register first. Nothing was pulled.'); } }\nconst pNames=new Set((people.fields||[]).map(x=>x.name));\nfor(const need of ['Name','Contact Key','Domain','LinkedIn URL','Companies','Contact Source']){ if(!pNames.has(need)){ throw new Error('People table '+people.id+' is missing the core field \"'+need+'\". Bring it to the register first. Nothing was pulled.'); } }\nconst pTypes={}; for(const x of (people.fields||[])) pTypes[x.name]=x.type;\nconst dnc=byName('dnc');\nreturn [{ json: Object.assign({}, p, {\n  companiesTableId: companies.id, companiesTableName: companies.name, companiesFields: Array.from(cNames),\n  peopleTableId: people.id, peopleTableName: people.name, peopleFields: Array.from(pNames), peopleFieldTypes: pTypes,\n  contactSourceMulti: pTypes['Contact Source']==='multipleSelects',\n  dncTableId: dnc?dnc.id:'', dncTableName: dnc?dnc.name:''\n}) }];\n"
+        },
+        "id": "c4d50001-0010-4000-8000-000000000010",
+        "name": "Find Tables",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Launch Params').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Tables').first().json.companiesTableId }}"
+          },
+          "returnAll": true,
+          "options": {
+            "view": {
+              "__rl": true,
+              "mode": "id",
+              "value": "={{ $('Launch Params').first().json.view }}"
+            },
+            "fields": [
+              "Domain",
+              "Company",
+              "Employees"
+            ]
+          }
+        },
+        "id": "c4d50001-0011-4000-8000-000000000011",
+        "name": "Read Companies View",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1760,
+          0
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The Companies view (by name, required on the launch row) is the selector; Max companies (required) is the read limit and the spend cap. A view that does not exist crashes here, before any paid call, into the Error Logger. Tag is not read: People stores none."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Pick Companies: the Companies view rows become the run's company list. Rows without a Domain\n// are counted and dropped; duplicate domains collapse to one. No cap (ruled 2026-09-08: the view\n// is the scope, every company in it is asked). One item out, always, so the empty-pick gate\n// reaches the close. The company's Domain is what the batch builds every Contact Key from;\n// People stores no Domain, Company or Tag of its own (lookups through the Companies link).\nconst p=$('Launch Params').first().json;\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst seen=new Set(); const companies=[];\n// An event caller's Domains scope: only view rows whose Domain is in it are picked, the rest are\n// counted as outOfScope. Empty scope = the whole view (every launch row).\nconst scope=new Set((p.domains||[]).map(norm).filter(Boolean));\nconst stats={ viewRows:0, noDomain:0, duplicate:0, picked:0, outOfScope:0, scoped:scope.size };\nfor(const it of $input.all()){\n  const j=it.json||{}; if(!j.id) continue; stats.viewRows++;\n  const f=j.fields||{};\n  const d=norm(f.Domain); if(!d){ stats.noDomain++; continue; }\n  if(scope.size&&!scope.has(d)){ stats.outOfScope++; continue; }\n  if(seen.has(d)){ stats.duplicate++; continue; }\n  seen.add(d);\n  companies.push({ recordId:j.id, domain:d, company:String(f.Company||'').trim(), employees:String(f.Employees==null?'':f.Employees).trim() });\n}\nstats.picked=companies.length;\nreturn [{ json: { picked: companies.length, domains: companies.map(c=>c.domain), companies: companies, _stats: stats } }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "c4d50001-0012-4000-8000-000000000012",
+        "name": "Pick Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          0
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "a1",
+                "leftValue": "={{ $json.picked || 0 }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c4d50001-0013-4000-8000-000000000013",
+        "name": "Any Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2200,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// People Filters: tier zero reads what the base already holds at these domains, ids only\n// (Contact Key, LinkedIn URL, Domain). Domain on People is a lookup through the Companies link\n// (People stores none of its own, ruled 2026-09-02); filterByFormula {Domain}='x' matches the\n// lookup's text, so these reads keep working unchanged. One OR formula per 100 domains keeps\n// every request under Airtable's URL limit; Read People runs once per item and returns all pages.\nconst d=$input.first().json.domains||[];\nconst esc=(s)=>String(s).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nconst out=[];\nfor(let i=0;i<d.length;i+=100){\n  const chunk=d.slice(i,i+100);\n  out.push({ json: { formula: chunk.length===1?(\"{Domain}='\"+esc(chunk[0])+\"'\"):('OR('+chunk.map(x=>\"{Domain}='\"+esc(x)+\"'\").join(',')+')') } });\n}\nif(!out.length) out.push({ json: { formula: \"{Domain}=''\" } });\nreturn out;\n"
+        },
+        "id": "c4d50001-0014-4000-8000-000000000014",
+        "name": "People Filters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Launch Params').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Find Tables').first().json.peopleTableId }}"
+          },
+          "filterByFormula": "={{ $json.formula }}",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Contact Key",
+              "LinkedIn URL",
+              "Domain",
+              "Email",
+              "Contact Source",
+              "Title",
+              "Phone",
+              "Seniority",
+              "Department",
+              "Source ID"
+            ]
+          }
+        },
+        "id": "c4d50001-0015-4000-8000-000000000015",
+        "name": "Read People",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          -120
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Tier zero: what the base already holds at these domains, ids only, one call per 100 domains. Domain on People is a lookup through the Companies link; the {Domain} filter matches the lookup's text and the field comes back as an array of one."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Make Batches: held people per company (tier zero: record id, Contact Key, LinkedIn URL, Email,\n// Contact Source, Title, Phone, Seniority, Department, so the batch can FILL blanks on a held row\n// instead of skipping it) plus 100 companies per batch item. The batch item carries everything\n// the batch needs and the key of the Hub row it will write: parentExecId (this execution) and\n// batchNum, dealt once here, 1..N, so \"<parentExecId>-<batchNum>\" is unique by construction.\n// Domain comes back from People as a lookup (an array of one), read array-safe.\nconst p=$('Launch Params').first().json;\nconst cfg=$('Find Tables').first().json;\nconst pick=$('Pick Companies').first().json;\nconst held={};\nlet heldRows=0;\nconst one=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();\nconst many=(v)=>Array.isArray(v)?v.map(x=>(x&&typeof x==='object')?String(x.name||''):String(x)).filter(Boolean):(v?[String((v&&typeof v==='object')?(v.name||''):v)].filter(Boolean):[]);\ntry{\n  for(const it of $('Read People').all()){\n    const j=it.json||{}; if(!j.id) continue;\n    const f=j.fields||{};\n    const d=one(f.Domain).toLowerCase(); if(!d) continue;\n    heldRows++;\n    (held[d]=held[d]||[]).push({ id:j.id, key:one(f['Contact Key']).toLowerCase(), linkedin:one(f['LinkedIn URL']), email:one(f.Email), sources:many(f['Contact Source']), title:one(f.Title), phone:one(f.Phone), seniority:one(f.Seniority), department:one(f.Department), sourceId:one(f['Source ID']) });\n  }\n}catch(e){}\nconst companies=(pick.companies||[]).map(c=>Object.assign({}, c, { heldRows: held[c.domain]||[] }));\nconst BATCH=100;\nconst out=[];\nfor(let i=0;i<companies.length;i+=BATCH){\n  out.push({ json: {\n    parentExecId: String($execution.id),\n    batchNum: out.length+1, batchCount: Math.ceil(companies.length/BATCH),\n    base: p.base, clientRecId: p.clientRecId,\n    peopleTableId: cfg.peopleTableId, peopleTableName: cfg.peopleTableName, companiesTableId: cfg.companiesTableId, dncTableId: cfg.dncTableId,\n    peopleFields: cfg.peopleFields, contactSourceMulti: cfg.contactSourceMulti===true,\n    companies: companies.slice(i,i+BATCH)\n  } });\n}\nif(!out.length) throw new Error('Make Batches received no companies; the empty-pick gate should have caught this.');\nout[0].json._stats={ heldRows: heldRows, heldCompanies: companies.filter(c=>c.heldRows.length>0).length, companiesIn: companies.length, batches: out.length };\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "c4d50001-0016-4000-8000-000000000016",
+        "name": "Make Batches",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        },
+        "id": "c4d50001-0017-4000-8000-000000000017",
+        "name": "Loop Batches",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          3080,
+          -120
+        ],
+        "notes": "The writer lane: one 250-company batch per sub-execution, one after another (Airtable's 5 requests per second per base is a global ceiling, so parallel identical lanes buy nothing; measured 2026-09-02). Its done output ends the writer lane and hands every closed batch to the AI-Ark lane."
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "61QayoPOnxClmE54",
+            "cachedResultName": "Enrich Contacts Batch"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "c4d50001-0018-4000-8000-000000000018",
+        "name": "Run Batch",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          3300,
+          0
+        ],
+        "onError": "continueRegularOutput",
+        "notes": "Mode writer, awaited: ContaGen and Supersoniq for the batch, Clean Fields, DNC, the People writer (PATCH in tens), the Companies stamps, a recount, then its own Hub row keyed <this execution>-<batchNum>, and its counters plus the recount's held state back as the last node's output (the held state feeds this batch's AI-Ark pass). A crash comes back as an error item and is logged; never retried (the paid tiers would run twice)."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Pass Result: one batch closed (Run Batch, awaited). The sub's last node answers with its\n// counters (Batch Response); its own Hub row is already written when it answers. A crash arrives\n// as an error item: the parent continues past a dead batch and logs it, it never retries one.\n// stop = a batch where every provider that was asked failed: no further batches, straight to the\n// close (a provider that was skipped for want of a credential is not a failure).\nlet batchNum=0; try{ batchNum=Number($('Loop Batches').first().json.batchNum)||0; }catch(e){}\nconst j=$input.first().json||{};\nconst out={ batchNum:batchNum, key:String(batchNum), status:'closed', written:0, allFailed:false, stop:false, reason:'' };\nif(j.error!==undefined&&j.error!==null&&j.error!==''){\n  out.status='crashed';\n  out.reason=String((typeof j.error==='object'?(j.error.message||j.error.description||JSON.stringify(j.error)):j.error)||'crashed').slice(0,200);\n  return [{ json: out }];\n}\nif(Number(j.batchNum)>0){ out.batchNum=Number(j.batchNum); out.key=String(out.batchNum); }\nout.written=Number(j.written)||0;\nout.allFailed=!!j.allFailed;\nif(out.allFailed){\n  out.status='allFailed';\n  out.reason=String((Array.isArray(j.failReasons)&&j.failReasons[0])||'every provider that was asked failed').slice(0,200);\n  out.stop=true;\n}\nreturn [{ json: out }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "c4d50001-0019-4000-8000-000000000019",
+        "name": "Pass Result",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "c4d50001-0024-4000-8000-000000000024",
+        "name": "AT List Views",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3740,
+          0
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "After every writer batch and after the AI-Ark lane's row (ruled 2026-09-02): read the base meta again; the email door fires only if People carries a view named exactly \"Not Waterfalled\"."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Find Waterfall View: after every lane group closes, read the base meta again. The email door is\n// fired only when the People table carries a view named exactly \"Not Waterfalled\" (the register's\n// view: relevance = 1 and Status empty); otherwise the hand-over is a skip in the log. Nothing else\n// (ruled 2026-09-02). No Fire Waterfall field exists on the launch row.\nconst cfg=$('Find Tables').first().json;\nconst r=$input.first().json||{};\nconst body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:[];\nconst t=tables.find(x=>x.id===cfg.peopleTableId)||null;\nconst VIEW='Not Waterfalled';\nconst v=t?((t.views||[]).find(x=>String(x.name||'').trim()===VIEW)):null;\nreturn [{ json: { hasView: !!v, viewName: VIEW, viewId: v?v.id:'', metaOk: tables.length>0 } }];\n"
+        },
+        "id": "c4d50001-0025-4000-8000-000000000025",
+        "name": "Find Waterfall View",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3960,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "w1",
+                "leftValue": "={{ $json.hasView }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c4d50001-0026-4000-8000-000000000026",
+        "name": "Waterfall View?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4180,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.flowroots.com/webhook/waterfall-record",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"table\": \"People\", \"baseId\": $('Launch Params').first().json.base, \"clientRecordId\": $('Launch Params').first().json.clientRecId, \"view\": $('Find Waterfall View').first().json.viewName } }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 5000
+          }
+        },
+        "id": "c4d50001-0027-4000-8000-000000000027",
+        "name": "Fire Waterfall",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4400,
+          -120
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput",
+        "notes": "The hand-off, once after every writer batch and once more after the last AI-Ark row landed (ruled 2026-09-02): Waterfall Emails' record door (Record Webhook -> Params reads body.table, body.baseId, body.clientRecordId, body.view; the door resolves the People table by name). Body {table: \"People\", baseId, clientRecordId, view: \"Not Waterfalled\"}. Fired without waiting for its answer: the door responds at its last node, so the 5 s timeout here is expected and counts as fired; the email waterfall keeps running and writes its own log row. A 4xx/5xx or a refused connection counts as a failed hand-off."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Handoff Tick: the live Running row, written after every batch. The email hand-off is not made\n// here: it fires ONCE per run, after the last batch closed (ruled 2026-09-03 after eight\n// per-batch calls spawned forty executions and the droplet ran out of memory), against the People\n// view \"Not Waterfalled\". The run so far is read from every Pass Result run (run by run, until a\n// run index does not exist). The item out is the row, nothing else, so Stamp Progress can\n// auto-map it.\nconst p=$('Launch Params').first().json;\nconst cfg=$('Find Tables').first().json;\nlet batchCount=0, total=0; try{ const s=$('Make Batches').first().json._stats||{}; total=Number(s.companiesIn)||0; batchCount=Number(s.batches)||0; }catch(e){}\nconst runs=(name)=>{ const out=[]; for(let i=0;i<10000;i++){ let it=null; try{ it=$(name).all(0,i); }catch(e){ break; } if(!it||!it.length) break; out.push(it); } return out; };\nconst batches=runs('Pass Result').map(r=>r[0].json||{});\nconst closed=batches.filter(x=>x.status==='closed').length;\nconst written=batches.reduce((a,x)=>a+(Number(x.written)||0),0);\nconst inp=$input.first().json||{};\nconst out={\n  'Execution ID': String($execution.id),\n  'Automation': 'Enrich Contacts',\n  'Trigger': p.trigger||'form',\n  'Status': 'Running',\n  'Run at': p.startedAt,\n  'Target': (cfg.peopleTableName||'People')+' ('+(cfg.peopleTableId||'')+')',\n  'Records In': total,\n  'Records Out': written,\n  'Description': '**Running: '+closed+' of '+batchCount+' batches closed ('+batches.length+' launched, one at a time), '+written+' people rows written so far; batch '+(Number(inp.batchNum)||0)+' '+(inp.status||'closed')+(inp.reason?(' ('+inp.reason+')'):'')+'. The email hand-off fires once, after the last batch.**',\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id\n};\nif(p.clientRecId) out['Client']=[p.clientRecId];\nreturn [{ json: out }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "c4d50001-0030-4000-8000-000000000030",
+        "name": "Handoff Tick",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4620,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "c4d50001-0031-4000-8000-000000000031",
+        "name": "Stamp Progress",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4840,
+          0
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Live Running row after every hand-off, on the launch row's Execution ID (created here on an event run). Write-only progress from this execution's own memory; no Tally, no read-add-write. The counters live in the pass rows and are summed at the close."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "s1",
+                "leftValue": "={{ $('Pass Result').first().json.stop }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c4d50001-0033-4000-8000-000000000033",
+        "name": "Stop?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5280,
+          120
+        ],
+        "notes": "True when the batch had every paid call fail after retry: the paid tiers are dead, launching more batches would only burn time. The ark passes already fired keep running; the close waits for their rows."
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "=AND({Automation} = 'Enrich Contacts Batch', FIND('{{ $execution.id }}-', {Execution ID} & '') = 1)",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Execution ID",
+              "Status",
+              "Errors",
+              "Records In",
+              "Records Out",
+              "Tally"
+            ]
+          }
+        },
+        "id": "c4d50001-0038-4000-8000-000000000038",
+        "name": "Read Batch Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5500,
+          -320
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "At the close: the pass rows of this run, by prefix (Execution ID \"<this execution>-<batchNum>\" and \"<this execution>-<batchNum>-ark\", Automation \"Waterfall Contacts Batch\"). Each row's Tally is that pass's counters; Build Log sums them. A failed read crashes loudly rather than logging zeros."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Log: the one launch-row log, written once after the last batch closed and the single email\n// hand-off was made or skipped. The counters come from the pass rows: Enrich Contacts Batch writes\n// one Hub row per batch keyed \"<this execution>-<n>\" with its counters JSON in Tally; Read Batch\n// Rows pulled them by that prefix and they are summed here (no read-add-write Tally loop). Per\n// provider: called, returned, kept, credits, errors, and how many batches it was skipped in and\n// why. Status computed from failed[], skips separated from errors, Client attached.\nconst p=$('Launch Params').first().json;\nlet cfg={}; try{ cfg=$('Find Tables').first().json||{}; }catch(e){}\nlet pick={ viewRows:0, noDomain:0, duplicate:0, picked:0, outOfScope:0, scoped:0 };\ntry{ const j=$('Pick Companies').first().json||{}; if(j._stats) pick=j._stats; }catch(e){}\nlet mk={ heldRows:0, heldCompanies:0, companiesIn:0, batches:0 };\ntry{ const j=$('Make Batches').first().json||{}; if(j._stats) mk=j._stats; }catch(e){}\nconst num=(v)=>Number(v)||0;\nconst runs=(name)=>{ const out=[]; for(let i=0;i<10000;i++){ let it=null; try{ it=$(name).all(0,i); }catch(e){ break; } if(!it||!it.length) break; out.push(it); } return out; };\nconst PRIORITY=['Blitz','GetLeads','QuickEnrich','Supersoniq'];\nconst prov={}; for(const x of PRIORITY) prov[x]={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', skipped:0, skipReasons:{}, failedBatches:0, okBatches:0 };\nconst t={ batches:0, companies:0, returned:0, built:0, updated:0, heldUnchanged:0, dupes:0, noKey:0, fenced:0, emailsAppended:0, dnc:0, written:0, updatedWritten:0, writeErrors:0, stamped:0, stampErrors:0, covered:0, zero:0, zeroDomains:[], failReasons:[], singleSelectSource:false };\nconst prefix=String($execution.id)+'-';\nconst rows={};\ntry{\n  for(const it of $('Read Batch Rows').all()){\n    const r=it.json||{}; if(!r.id||!r.fields) continue;\n    const f=r.fields; const id=String(f['Execution ID']||'');\n    if(id.indexOf(prefix)!==0) continue;\n    const n=Number(id.slice(prefix.length))||0;\n    let c=null; try{ c=JSON.parse(f.Tally||''); }catch(e){}\n    if(!c||typeof c!=='object') c=null;\n    rows[n]={ status:String(f.Status||''), errors:num(f.Errors), counters:c };\n    if(!c) continue;\n    t.batches+=1; t.companies+=num(c.companiesIn);\n    for(const x of PRIORITY){ const s=(c.providers||{})[x]||{}; const d=prov[x]; if(s.status==='skipped'){ d.skipped++; const k=String(s.reason||'skipped'); d.skipReasons[k]=(d.skipReasons[k]||0)+1; continue; } if(s.status==='error'){ d.failedBatches++; d.errors+=Math.max(1,num(s.errors)); if(!d.firstError) d.firstError=String(s.reason||s.firstError||'').slice(0,300); continue; } d.okBatches++; d.called+=num(s.called); d.returned+=num(s.returned); d.kept+=num(s.kept); d.credits+=num(s.credits); d.errors+=num(s.errors); if(!d.firstError&&s.firstError) d.firstError=String(s.firstError).slice(0,300); }\n    for(const k of ['returned','built','updated','heldUnchanged','dupes','noKey','fenced','emailsAppended','dnc','written','updatedWritten','writeErrors','stamped','stampErrors','covered','zero']) t[k]+=num(c[k]);\n    if(c.singleSelectSource) t.singleSelectSource=true;\n    t.zeroDomains=t.zeroDomains.concat(Array.isArray(c.zeroDomains)?c.zeroDomains:[]).slice(0,50);\n    for(const x of (Array.isArray(c.failReasons)?c.failReasons:[])){ if(t.failReasons.length<10) t.failReasons.push(String(x).slice(0,200)); }\n  }\n}catch(e){}\nconst rowsRead=Object.keys(rows).length;\nconst batches=runs('Pass Result').map(r=>r[0].json||{});\nconst launched=batches.length;\nconst closed=batches.filter(x=>x.status==='closed').length;\nconst stopped=batches.find(x=>x.allFailed)||null;\nconst notLaunched=Math.max(0, num(mk.batches)-launched);\nconst isFired=(j)=>{ if(!j) return false; if(j.error&&j.statusCode===undefined) return /timeout|timed out|ETIMEDOUT|ESOCKETTIMEDOUT/i.test(String((j.error&&j.error.message)||'')); const s=num(j.statusCode); return s>=200&&s<300; };\nconst fires=runs('Fire Waterfall').map(r=>r[0].json||{});\nconst fired=fires.filter(isFired).length;\nconst fireFailed=fires.length-fired;\nconst views=runs('Find Waterfall View').map(r=>r[0].json||{});\nconst viewSkips=views.filter(v=>v.hasView===false&&v.metaOk).length;\nconst metaFails=views.filter(v=>!v.metaOk).length;\nconst failed=[]; const skips=[];\nfor(const x of PRIORITY){ const s=prov[x]; for(let i=0;i<num(s.errors);i++) failed.push({ tier:x, reason:s.firstError||'call failed' }); for(const [k,v] of Object.entries(s.skipReasons)) skips.push(x+' skipped in '+v+' batch'+(v===1?'':'es')+' ('+k+')'); }\nfor(let i=0;i<num(t.writeErrors);i++) failed.push({ tier:'People writer', reason:'row not in the answer (see the pass rows for the HTTP reason)' });\nfor(let i=0;i<num(t.stampErrors);i++) failed.push({ tier:'Contacts Pulled At stamp', reason:'row not in the answer' });\nfor(const x of batches){\n  const has=!!rows[x.batchNum];\n  if(x.status==='closed'){ if(!has) failed.push({ tier:'Batch '+x.batchNum, reason:'closed but no Hub row was read back under '+prefix+x.batchNum }); continue; }\n  if(x.status==='allFailed') failed.push({ tier:'Batch '+x.batchNum, reason:'every provider that was asked failed ('+x.reason+'); no further batches were launched' });\n  else if(x.status==='crashed') failed.push({ tier:'Batch '+x.batchNum, reason:'crashed ('+x.reason+'); no counters from it'+(has?', though its row landed and is counted':'') });\n  else failed.push({ tier:'Batch '+x.batchNum, reason:x.reason||x.status });\n}\nfor(let i=0;i<metaFails;i++) failed.push({ tier:'Waterfall hand-over', reason:'the base meta could not be read, the view check did not run' });\nfor(const j of fires){ if(!isFired(j)) failed.push({ tier:'Waterfall hand-over', reason:(j.error&&j.statusCode===undefined)?('door call errored: '+String((j.error&&j.error.message)||'').slice(0,100)):('door HTTP '+j.statusCode) }); }\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst companiesIn=num(pick.picked);\nconst covered=num(t.covered);\nconst pct=companiesIn?Math.round(100*covered/companiesIn):0;\nconst line=(x)=>{ const s=prov[x]; if(!s.okBatches&&!s.failedBatches&&s.skipped) return '- **'+x+':** skipped in every batch ('+Object.keys(s.skipReasons).join('; ')+')'; return '- **'+x+':** called '+num(s.called)+', returned '+num(s.returned)+', kept '+num(s.kept)+(num(s.credits)?', credits '+(Math.round(num(s.credits)*100)/100):'')+(num(s.errors)?', errors '+num(s.errors):'')+(s.skipped?', skipped in '+s.skipped+' batch'+(s.skipped===1?'':'es'):''); };\nconst zd=Array.isArray(t.zeroDomains)?t.zeroDomains:[];\nconst lines=[\n  '**'+companiesIn+' companies in, '+num(t.built)+' people new, '+num(t.updated)+' held people filled, '+num(t.written)+' rows written into '+(cfg.peopleTableName||'People')+', '+covered+' of '+companiesIn+' covered ('+pct+'%)**',\n  '',\n  '**Scope:** one client, Companies view \"'+p.view+'\"'+(p.tag?', Tag \"'+p.tag+'\"':'')+(pick.scoped?', scoped to the caller\\'s '+num(pick.scoped)+' domain(s)':''),\n  '**Rule:** every provider asked for every company; cap per provider and seniority floor by the Employees value on our row (up to 50 or unknown: 20 wide; 51 to 500: 30 non-junior; 501 and up: 50 manager and up); merge on Contact Key and LinkedIn slug, first writer wins by priority Blitz, GetLeads, QuickEnrich, Supersoniq; emails appended; held rows filled, never overwritten',\n  '',\n  '**Funnel**',\n  '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows'+(pick.scoped?', '+num(pick.outOfScope)+' outside the scope skipped':'')+', '+num(mk.batches)+' batches of 100)',\n  '- **Already held (tier zero):** '+num(mk.heldRows)+' people at '+num(mk.heldCompanies)+' companies'\n];\nfor(const x of PRIORITY) lines.push(line(x));\nlines.push('- **Merge:** '+num(t.returned)+' returned; '+num(t.built)+' new rows; '+num(t.updated)+' held rows filled ('+num(t.emailsAppended)+' emails appended); '+num(t.heldUnchanged)+' held unchanged; '+num(t.dupes)+' merged as the same person across providers; '+num(t.noKey)+' without a usable first name; '+num(t.fenced)+' LinkedIn URLs rejected by the name fence; '+num(t.dnc)+' on the DNC table');\nif(t.singleSelectSource) lines.push('- **Contact Source is a single select on this base:** only the first source per person was recorded; retype it to a multi-select to record every provider');\nlines.push('- **Written (rows in the writer\\'s answers):** '+num(t.written)+' ('+num(t.updatedWritten)+' updates of held rows)');\nlines.push('- **Coverage:** '+covered+' of '+companiesIn+' companies with at least one person ('+pct+'%)');\nlines.push('- **Zero-contact companies:** '+num(t.zero)+(zd.length?' ('+zd.slice(0,20).join(', ')+(zd.length>20?', ...':'')+')':''));\nlines.push('- **Contacts Pulled At stamped:** '+num(t.stamped));\nlines.push('');\nif(companiesIn){\n  const bits=[launched+' batch'+(launched===1?'':'es')+' launched one at a time, '+closed+' closed', rowsRead+' pass row'+(rowsRead===1?'':'s')+' read back under \"'+prefix+'*\" (each pass writes its own Hub row, summed here)'];\n  if(stopped) bits.push('stopped after batch '+stopped.batchNum+', every provider that was asked failed in it'+(notLaunched?', '+notLaunched+' not launched':''));\n  lines.push('**Passes:** '+bits.join('; '));\n}\nif(!companiesIn) lines.push('**Waterfall:** not fired, nothing was pulled');\nelse if(fires.length||viewSkips){\n  const bits=[];\n  if(fired) bits.push('the hand-off fired once for the whole run'+(fired===1?'':' ('+fired+' calls, which should never happen)')+', to the email door (People view \"Not Waterfalled\"; the door is not awaited and the email waterfall writes its own rows)');\n  if(fireFailed) bits.push('the hand-off failed'+(fireFailed===1?'':' ('+fireFailed+' calls)'));\n  if(viewSkips) bits.push('the hand-off was skipped, People had no view \"Not Waterfalled\"');\n  lines.push('**Waterfall:** '+bits.join('; '));\n  if(viewSkips) skips.push('the waterfall hand-over was skipped, People has no view \"Not Waterfalled\"');\n}\nelse lines.push('**Waterfall:** the one hand-off did not run (the base meta could not be read, so the view check gave no verdict)');\nif(pick.noDomain) skips.push(num(pick.noDomain)+' view rows without a domain');\nif(pick.duplicate) skips.push(num(pick.duplicate)+' duplicate domains in the view');\nif(!companiesIn) skips.push('view \"'+p.view+'\" had no rows to work');\nif(notLaunched&&stopped) skips.push(notLaunched+' batches not launched after batch '+stopped.batchNum+' failed every provider');\nif(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');\nif(failed.length){\n  const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; }\n  lines.push('', '**Failures ('+failed.length+')**');\n  for(const [r,c] of Object.entries(byReason).slice(0,12)) lines.push('- '+c+' x '+r);\n  for(const r of t.failReasons.slice(0,5)) lines.push('- '+r);\n}\nconst tally=Object.assign({}, t, { providers: prov, executionId: String($execution.id), passes: { launched: launched, closed: closed, rows: rowsRead, notLaunched: notLaunched }, handoffs: { fired: fired, failed: fireFailed, skipped: viewSkips } });\nconst log={\n  'Automation':'Enrich Contacts',\n  'Status': failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger': p.trigger||'form',\n  'Errors': failed.length,\n  'Run at': $now.toISO(),\n  'Target': (cfg.peopleTableName||'People')+' ('+(cfg.peopleTableId||'')+')',\n  'View': p.view,\n  'Records In': companiesIn,\n  'Records Out': num(t.written),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Tally': JSON.stringify(tally),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
+        },
+        "id": "c4d50001-0028-4000-8000-000000000028",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5720,
+          -320
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Refusal: the row a badly filled launch writes. A refusal is an expected outcome, not a\n// crash, so it is logged as one: Launch Params names the reason instead of throwing, Launch OK?\n// routes here, and this closes the launch row (already stamped Running with this Execution ID)\n// as Failed with the reason and the link. Nothing ran: the guards sit ahead of every call.\nconst p=$('Launch Params').first().json||{};\nconst reason=String(p.refused||'the launch row was refused and no reason was recorded');\nconst show=(v)=>(v===''||v===null||v===undefined||v===0)?'(empty)':String(v);\nconst lines=[\n  '**Refused before anything ran: '+reason+'**',\n  '',\n  '**Scope:** '+(p.clientRecId?('one client ('+p.clientRecId+')'):'no client resolved')+', launch '+(p._launchRecordId||'(event call, no launch row)'),\n  '',\n  '**The launch row as this machine read it**',\n  '- **Client:** '+show(p.clientRecId),\n  '- **Clayroots Base ID:** '+(p.base||'(empty, or the Clients row could not be read)'),\n  '- **Table:** '+show(p.table)+' (only \"Companies\" is accepted)',\n  '- **View:** '+show(p.view),\n  '- **Tag:** '+show(p.tag),\n  '',\n  '**Failures (1)**',\n  '- Launch guard: '+reason,\n  '',\n  'No company view was read, no provider was called and nothing was written to the client base.',\n  'Fill the named field on the launch row, clear Execution ID, and the Airtable door will fire it again.'\n];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst log={\n  'Automation':'Enrich Contacts',\n  'Status':'Failed',\n  'Trigger': p.trigger||'form',\n  'Errors': 1,\n  'Run at': $now.toISO(),\n  'Records In': 0,\n  'Records Out': 0,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id)\n};\nif(p.view) log['View']=p.view;\nif(p.clientRecId) log['Client']=[p.clientRecId];\nreturn [{ json: log }];\n"
+        },
+        "id": "c4d50001-0045-4000-8000-000000000045",
+        "name": "Build Refusal",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5720,
+          -560
+        ],
+        "notes": "A badly filled launch row closes here as Failed with the named reason and the execution link, on the same row Stamp Running opened. Refusals are expected outcomes and are logged as such; the Error Logger still owns real crashes."
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "c4d50001-0029-4000-8000-000000000029",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5940,
+          -320
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sub Trigger": {
+        "main": [
+          [
+            {
+              "node": "Event Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Row": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Launch OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch OK?": {
+        "main": [
+          [
+            {
+              "node": "AT List Tables",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Refusal": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AT List Tables": {
+        "main": [
+          [
+            {
+              "node": "Find Tables",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Tables": {
+        "main": [
+          [
+            {
+              "node": "Read Companies View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Companies View": {
+        "main": [
+          [
+            {
+              "node": "Pick Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pick Companies": {
+        "main": [
+          [
+            {
+              "node": "Any Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Companies?": {
+        "main": [
+          [
+            {
+              "node": "People Filters",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "People Filters": {
+        "main": [
+          [
+            {
+              "node": "Read People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read People": {
+        "main": [
+          [
+            {
+              "node": "Make Batches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Make Batches": {
+        "main": [
+          [
+            {
+              "node": "Loop Batches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Batches": {
+        "main": [
+          [
+            {
+              "node": "AT List Views",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Run Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Batch": {
+        "main": [
+          [
+            {
+              "node": "Pass Result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pass Result": {
+        "main": [
+          [
+            {
+              "node": "Handoff Tick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Handoff Tick": {
+        "main": [
+          [
+            {
+              "node": "Stamp Progress",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Progress": {
+        "main": [
+          [
+            {
+              "node": "Stop?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stop?": {
+        "main": [
+          [
+            {
+              "node": "AT List Views",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Loop Batches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AT List Views": {
+        "main": [
+          [
+            {
+              "node": "Find Waterfall View",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Waterfall View": {
+        "main": [
+          [
+            {
+              "node": "Waterfall View?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Waterfall View?": {
+        "main": [
+          [
+            {
+              "node": "Fire Waterfall",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Read Batch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Waterfall": {
+        "main": [
+          [
+            {
+              "node": "Read Batch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Batch Rows": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

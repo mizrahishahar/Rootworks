@@ -1,0 +1,214 @@
+{
+  "updatedAt": "2026-09-08T20:19:14.113Z",
+  "createdAt": "2026-09-08T20:13:29.318Z",
+  "id": "oOiQqxazAycHl6Lz",
+  "name": "Enrich Contacts GetLeads",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "e1c0-0001-4000-8000-000000000001",
+      "name": "Enrich Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Requests.js"
+      },
+      "id": "e1c0-0002-4000-8000-000000000002",
+      "name": "GL Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e1c0-0003-4000-8000-000000000003",
+      "name": "Any GL Requests?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.getleads.io/api/v1/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 700
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "offset",
+                    "value": "={{ $response.body.next_offset }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body || $response.body.has_more !== true }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10,
+              "requestInterval": 700
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "e1c0-0004-4000-8000-000000000004",
+      "name": "GL Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        680,
+        -100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "GetLeads contact search. Header Auth credential: Authorization = Bearer glb_live_... (attach in the UI). Every returned row costs one fair-use row, never cash. Pages on next_offset; a 100-company batch at cap 50 fits one page."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Parse.js"
+      },
+      "id": "e1c0-0005-4000-8000-000000000005",
+      "name": "GL Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Enrich Trigger": {
+      "main": [
+        [
+          {
+            "node": "GL Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Requests": {
+      "main": [
+        [
+          {
+            "node": "Any GL Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any GL Requests?": {
+      "main": [
+        [
+          {
+            "node": "GL Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Search": {
+      "main": [
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "ae790e15-6763-4375-9060-af161e4713c7",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-08T20:13:29.331Z",
+      "createdAt": "2026-09-08T20:13:29.331Z",
+      "role": "workflow:owner",
+      "workflowId": "oOiQqxazAycHl6Lz",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

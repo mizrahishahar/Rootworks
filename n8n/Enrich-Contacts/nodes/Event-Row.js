@@ -1,0 +1,19 @@
+// Event Row: the sub entry carries one item with the same keys as a launch row (Client, Table,
+// View, and for the insert doors Domains). This is how an insert door calls this machine after
+// landing: Table "Companies", View "Not Sourced", Domains = what it just landed. Shape it like
+// Fetch Launch Record's output so Resolve Base and Launch Params read one shape on both entries;
+// the camelCase spellings a door might send are folded into the row keys here. Anything else a
+// caller still sends from the old contract (Tiers, Sources, Departments, Roles, Max companies) is
+// carried but never read (ruled 2026-09-08: the launch row is Client, Table, View, Tag).
+const j=$input.first().json||{};
+const f=(j.fields&&typeof j.fields==='object')?Object.assign({},j.fields):Object.assign({},j);
+const arr=(v)=>Array.isArray(v)?v:(v?[v]:[]);
+const alias=(key,alts)=>{ if(f[key]===undefined||f[key]===''||f[key]===null){ for(const a of alts){ if(f[a]!==undefined&&f[a]!==''&&f[a]!==null){ f[key]=f[a]; break; } } } };
+alias('Table',['table']); alias('View',['view']); alias('Tag',['tag']);
+// Domains: optional, event callers only. The insert doors pass the domains they just landed so the
+// pull is scoped to them inside the view (added 2026-09-06 after three 5,000-company sweeps of a
+// migrated backlog). A launch row has no such field and reads the whole view, as before.
+alias('Domains',['domains']); f.Domains=arr(f.Domains).map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
+f.Client=arr(f.Client||f.client||f.clientRecId||f.clientRecordId).map(x=>(x&&typeof x==='object')?x.id:x).filter(Boolean);
+if(!f.Client.length){ throw new Error('Enrich Contacts was called without a Client. Pass the Hub Clients record id as Client. Nothing was pulled.'); }
+return [{ json: { id: '', fields: f, _event: true } }];

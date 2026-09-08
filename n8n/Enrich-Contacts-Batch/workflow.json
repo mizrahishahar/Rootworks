@@ -1,0 +1,1947 @@
+{
+  "updatedAt": "2026-09-08T20:14:30.796Z",
+  "createdAt": "2026-09-01T23:50:55.483Z",
+  "id": "61QayoPOnxClmE54",
+  "name": "Enrich Contacts Batch",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "b7a20001-0046-4000-8000-000000000046",
+      "name": "Batch Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -220,
+        0
+      ],
+      "notes": "One item from Waterfall Contacts: { mode: writer | ark, parentExecId, batchNum, batchCount, base, clientRecId, peopleTableId, peopleTableName, companiesTableId, dncTableId, peopleFields[], sources[], cgDepartments[], arkFunctions[], companies[{ recordId, domain, company, employees, heldCount, heldKeys[], heldLinkedin[] }] }. Writer: one 250-company batch, awaited, held state from its recount returned. Ark: the same batch, fired not awaited the moment the writer closed, held state from that recount on the companies. Both write their own Hub row before answering."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Input.js"
+      },
+      "id": "b7a20001-0001-4000-8000-000000000001",
+      "name": "Batch Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Batch.js"
+      },
+      "id": "b7a20001-0002-4000-8000-000000000002",
+      "name": "Plan Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Batch Input').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Batch Input').first().json.dncTableId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain"
+          ]
+        }
+      },
+      "id": "b7a20001-0003-4000-8000-000000000003",
+      "name": "Get DNC Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The client's table named DNC (resolved by name in the parent), every page via the node's own offset pagination. No DNC table: the read errors quietly and nothing is dropped."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Ready.js"
+      },
+      "id": "b7a20001-0004-4000-8000-000000000004",
+      "name": "Plan Ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "p1",
+              "leftValue": "={{ $json['Contact Key'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0014-4000-8000-000000000014",
+      "name": "Any People?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3080,
+        300
+      ],
+      "notes": "Fed by Build People (writer) or Build Ark People (ark): one People pipeline for both modes from here to the writer."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "b7a20001-0015-4000-8000-000000000015",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3300,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Apply-DNC.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0016-4000-8000-000000000016",
+      "name": "Apply DNC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        180
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d1",
+              "leftValue": "={{ $json['Contact Key'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7a20001-0017-4000-8000-000000000017",
+      "name": "Any After DNC?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3740,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-People.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0048-4000-8000-000000000048",
+      "name": "Chunk People",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.peopleTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "b7a20001-0018-4000-8000-000000000018",
+      "name": "Write People",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4180,
+        60
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The one People writer, both modes (ruled 2026-09-02): PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason and the pass continues. Written rows are counted from the answer's records[], never from item ids."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Stamp-Rows.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0043-4000-8000-000000000043",
+      "name": "Stamp Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.companiesTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "b7a20001-0044-4000-8000-000000000044",
+      "name": "Stamp Companies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        60
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The one Companies writer: Contacts Pulled At = now on every company in the batch, PATCH by record id, ten per request, 200 ms apart, no retry; a request that is not 2xx counts its ten as stamp errors. Stamped rows are counted from the answer's records[]."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Recount-Filters.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0020-4000-8000-000000000020",
+      "name": "Recount Filters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Batch Input').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Batch Input').first().json.peopleTableId }}"
+        },
+        "filterByFormula": "={{ $json.formula }}",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Contact Key",
+            "LinkedIn URL",
+            "Domain"
+          ]
+        }
+      },
+      "id": "b7a20001-0021-4000-8000-000000000021",
+      "name": "Recount People",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        60
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "What the base holds now at the batch's domains, after the writer and the stamps: the batch's coverage. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text, the field comes back as an array of one."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Summary.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0045-4000-8000-000000000045",
+      "name": "Batch Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Batch-Log.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0056-4000-8000-000000000056",
+      "name": "Build Batch Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "b7a20001-0057-4000-8000-000000000057",
+      "name": "Log Batch",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        5940,
+        180
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "This pass's own Hub row (ruled 2026-09-02), upsert on Execution ID \"<parentExecId>-<batchNum>\" or \"<parentExecId>-ark\", Client attached, Tally = the counters JSON the parent sums. Loud: a failed write crashes into the Error Logger instead of vanishing."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Batch-Response.js",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b7a20001-0058-4000-8000-000000000058",
+      "name": "Batch Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6160,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Input.js"
+      },
+      "id": "e1c0-0027-4000-8000-000000000027",
+      "name": "GL Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "oOiQqxazAycHl6Lz",
+          "cachedResultName": "Enrich Contacts GetLeads"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1c0-0028-4000-8000-000000000028",
+      "name": "Run GetLeads",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1300,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Input.js"
+      },
+      "id": "e1c0-0029-4000-8000-000000000029",
+      "name": "BZ Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "yuAFXnpQ1K3F9AJC",
+          "cachedResultName": "Enrich Contacts Blitz"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1c0-0030-4000-8000-000000000030",
+      "name": "Run Blitz",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1740,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Input.js"
+      },
+      "id": "e1c0-0031-4000-8000-000000000031",
+      "name": "QE Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1qiLA5nTnxXUQTgS",
+          "cachedResultName": "Enrich Contacts QuickEnrich"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1c0-0032-4000-8000-000000000032",
+      "name": "Run QuickEnrich",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2180,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Input.js"
+      },
+      "id": "e1c0-0033-4000-8000-000000000033",
+      "name": "SQ Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "0NTbsxZv9Id1CT0j",
+          "cachedResultName": "Enrich Contacts Supersoniq"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "e1c0-0034-4000-8000-000000000034",
+      "name": "Run Supersoniq",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2620,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Merge-People.js"
+      },
+      "id": "e1c0-0035-4000-8000-000000000035",
+      "name": "Merge People",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Batch Trigger": {
+      "main": [
+        [
+          {
+            "node": "Batch Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Input": {
+      "main": [
+        [
+          {
+            "node": "Plan Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Batch": {
+      "main": [
+        [
+          {
+            "node": "Get DNC Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DNC Domains": {
+      "main": [
+        [
+          {
+            "node": "Plan Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Ready": {
+      "main": [
+        [
+          {
+            "node": "GL Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Input": {
+      "main": [
+        [
+          {
+            "node": "Run GetLeads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run GetLeads": {
+      "main": [
+        [
+          {
+            "node": "BZ Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Input": {
+      "main": [
+        [
+          {
+            "node": "Run Blitz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Blitz": {
+      "main": [
+        [
+          {
+            "node": "QE Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Input": {
+      "main": [
+        [
+          {
+            "node": "Run QuickEnrich",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run QuickEnrich": {
+      "main": [
+        [
+          {
+            "node": "SQ Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Input": {
+      "main": [
+        [
+          {
+            "node": "Run Supersoniq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Supersoniq": {
+      "main": [
+        [
+          {
+            "node": "Merge People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge People": {
+      "main": [
+        [
+          {
+            "node": "Any People?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any People?": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stamp Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Apply DNC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply DNC": {
+      "main": [
+        [
+          {
+            "node": "Any After DNC?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any After DNC?": {
+      "main": [
+        [
+          {
+            "node": "Chunk People",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stamp Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk People": {
+      "main": [
+        [
+          {
+            "node": "Write People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write People": {
+      "main": [
+        [
+          {
+            "node": "Stamp Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Rows": {
+      "main": [
+        [
+          {
+            "node": "Stamp Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Companies": {
+      "main": [
+        [
+          {
+            "node": "Recount Filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recount Filters": {
+      "main": [
+        [
+          {
+            "node": "Recount People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recount People": {
+      "main": [
+        [
+          {
+            "node": "Batch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Summary": {
+      "main": [
+        [
+          {
+            "node": "Build Batch Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Batch Log": {
+      "main": [
+        [
+          {
+            "node": "Log Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Batch": {
+      "main": [
+        [
+          {
+            "node": "Batch Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "3bcd09cb-cfa4-48c0-bd50-4a1303381671",
+  "activeVersionId": "3bcd09cb-cfa4-48c0-bd50-4a1303381671",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-01T23:50:55.489Z",
+      "createdAt": "2026-09-01T23:50:55.489Z",
+      "role": "workflow:owner",
+      "workflowId": "61QayoPOnxClmE54",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-08T20:14:30.805Z",
+    "createdAt": "2026-09-08T20:14:30.805Z",
+    "versionId": "3bcd09cb-cfa4-48c0-bd50-4a1303381671",
+    "workflowId": "61QayoPOnxClmE54",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "b7a20001-0046-4000-8000-000000000046",
+        "name": "Batch Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -220,
+          0
+        ],
+        "notes": "One item from Waterfall Contacts: { mode: writer | ark, parentExecId, batchNum, batchCount, base, clientRecId, peopleTableId, peopleTableName, companiesTableId, dncTableId, peopleFields[], sources[], cgDepartments[], arkFunctions[], companies[{ recordId, domain, company, employees, heldCount, heldKeys[], heldLinkedin[] }] }. Writer: one 250-company batch, awaited, held state from its recount returned. Ark: the same batch, fired not awaited the moment the writer closed, held state from that recount on the companies. Both write their own Hub row before answering."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Input: the caller's passthrough item, one per call, exactly as the parent shaped it: one\n// batch of companies (100, ruled 2026-09-08) with what People already holds at their domains, the\n// base and table ids, and the key of the Hub row this pass writes: \"<parentExecId>-<batchNum>\".\n// One mode, one machine (rebuilt 2026-09-08 as the Enrich Contacts Rootflow): every provider\n// sub-workflow is asked for every company, the answers are merged on Contact Key and LinkedIn\n// slug, the People writer upserts, the companies are stamped, a recount reports coverage.\n// The key parts are required here, before any paid call; startedAt is the clock Duration s runs on.\nconst raw=$input.first().json||{};\nconst inp=Object.assign({}, raw);\nconst parentExecId=String(inp.parentExecId||'').trim();\nconst batchNum=Math.floor(Number(inp.batchNum)||0);\nconst who='Enrich Contacts Batch';\nif(!parentExecId) throw new Error(who+' was called without parentExecId. Its Hub row is keyed by it. Nothing was pulled.');\nif(!(batchNum>0)) throw new Error(who+' '+parentExecId+' was called without batchNum. Its Hub row is keyed \"<parentExecId>-<batchNum>\". Nothing was pulled.');\nif(!/^app[A-Za-z0-9]{14}$/.test(String(inp.base||''))) throw new Error(who+' '+parentExecId+' has no valid base. Nothing was pulled.');\nfor(const k of ['peopleTableId','companiesTableId']){ if(!inp[k]) throw new Error(who+' '+parentExecId+' has no '+k+'. Nothing was pulled.'); }\nif(!Array.isArray(inp.companies)||!inp.companies.length) throw new Error(who+' '+parentExecId+' received an empty company list. The parent must never send one.');\ninp.parentExecId=parentExecId;\ninp.batchNum=batchNum;\ninp.logKey=parentExecId+'-'+String(batchNum);\ninp.startedAt=new Date().toISOString();\nreturn [{ json: inp }];\n"
+        },
+        "id": "b7a20001-0001-4000-8000-000000000001",
+        "name": "Batch Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Plan Batch: the companies in, the plan out. Ruled 2026-09-08: every provider is asked for every\n// company; the only shaping is a cap per provider and a seniority floor, both read off the\n// Employees value already on OUR Companies row (sources disagree on headcount, so the provider's\n// own size is never consulted), in three coarse tiers so a one-band disagreement changes nothing:\n//   up to 50 employees, or unknown   cap 20 per provider   floor \"wide\": everyone non-junior, senior ICs too\n//   51 to 500                        cap 30 per provider   floor \"nonjunior\": everyone non-junior\n//   501 and up                       cap 50 per provider   floor \"manager\": manager and up\n// 50 is the ceiling because GetLeads' max_per_company hard-stops there. Each provider sub-workflow\n// translates the floor into its own vocabulary. Pull WIDE, cut in the base: who gets messaged is\n// the relevance formula and the views on People. No Tag: People stores none (a lookup).\nconst inp=$input.first().json||{};\nconst companies=Array.isArray(inp.companies)?inp.companies:[];\nif(!companies.length) throw new Error('Enrich Contacts Batch received an empty company list. The parent must never send one.');\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s+]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst tier=(b)=>{ if(!b||b==='1-10'||b==='11-50') return { cap:20, floor:'wide' }; if(b==='51-200'||b==='201-500') return { cap:30, floor:'nonjunior' }; return { cap:50, floor:'manager' }; };\nconst plan=companies.map(c=>{ const b=band(c.employees); const t=tier(b); return {\n  recordId:c.recordId, domain:String(c.domain||'').trim().toLowerCase(), company:String(c.company||'').trim(),\n  band:b||'unknown', cap:t.cap, floor:t.floor,\n  heldRows:Array.isArray(c.heldRows)?c.heldRows:[]\n}; }).filter(c=>c.domain);\nconst tiers={ wide:0, nonjunior:0, manager:0 }; for(const c of plan) tiers[c.floor]++;\nreturn [{ json: {\n  batchNum:Number(inp.batchNum)||0, batchCount:Number(inp.batchCount)||0,\n  plan:plan, companies:plan.map(c=>({ recordId:c.recordId, domain:c.domain, company:c.company, band:c.band, cap:c.cap, floor:c.floor })),\n  tiers:tiers, capRule:'up to 50 employees or unknown: 20 wide; 51 to 500: 30 non-junior; 501 and up: 50 manager and up'\n} }];\n"
+        },
+        "id": "b7a20001-0002-4000-8000-000000000002",
+        "name": "Plan Batch",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.dncTableId }}"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain"
+            ]
+          }
+        },
+        "id": "b7a20001-0003-4000-8000-000000000003",
+        "name": "Get DNC Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The client's table named DNC (resolved by name in the parent), every page via the node's own offset pagination. No DNC table: the read errors quietly and nothing is dropped."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Plan Ready: the DNC read sits between Plan Batch and the tiers so both DNC passes share it;\n// re-emit the plan as the one item the gates read, so no gate ever evaluates against DNC rows.\nreturn [{ json: $('Plan Batch').first().json }];\n"
+        },
+        "id": "b7a20001-0004-4000-8000-000000000004",
+        "name": "Plan Ready",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "p1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0014-4000-8000-000000000014",
+        "name": "Any People?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3080,
+          300
+        ],
+        "notes": "Fed by Build People (writer) or Build Ark People (ark): one People pipeline for both modes from here to the writer."
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "b7a20001-0015-4000-8000-000000000015",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          3300,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Apply DNC: drops people whose domain sits on the client's DNC table (every page of it, read once\n// by Get DNC Domains); the domain is the _domain carrier Merge People set, backed by a Contact Key\n// -> domain map read straight from the merge in case the helper dropped the carrier. Then fences\n// the write set to exactly what this machine writes on People (ruled 2026-09-02): Name, Title,\n// Seniority, Department, Email, LinkedIn URL, Phone, Companies, Contact Key, Contact Source,\n// Source ID, plus first_name and last_name, the split Clean Fields made from Name. The _id carrier\n// (a held row being updated) rides through to the writer. Domain, Company and Tag are lookups\n// through the Companies link and are never written; every other key is stripped, and a key the\n// table does not carry is stripped too. Zero survivors still emit one {_empty} placeholder.\nconst WRITE_FIELDS=['Name','first_name','last_name','Title','Seniority','Department','Email','LinkedIn URL','Phone','Companies','Contact Key','Contact Source','Source ID'];\nconst have=new Set(($('Batch Input').first().json.peopleFields)||[]);\nconst allow=new Set(WRITE_FIELDS.filter(k=>have.has(k)));\nconst dnc=new Set();\ntry{ for(const it of $('Get DNC Domains').all()){ const j=it.json||{}; const f=j.fields||{}; const d=String(f.Domain||f.domain||'').toLowerCase().trim(); if(d) dnc.add(d); } }catch(e){}\nconst domainByKey={};\ntry{ for(const it of $('Merge People').all()){ const j=it.json||{}; const k=String(j['Contact Key']||'').toLowerCase(); if(k&&j._domain) domainByKey[k]=String(j._domain).toLowerCase(); } }catch(e){}\nconst out=[];\nfor(const i of $('Clean Fields').all()){\n  const j=i.json||{};\n  if(j._empty) continue;\n  const key=String(j['Contact Key']||'').toLowerCase().trim();\n  if(!key) continue;\n  const d=String(j._domain||domainByKey[key]||'').toLowerCase().trim();\n  if(dnc.size&&d&&dnc.has(d)) continue;\n  const row={};\n  for(const k of Object.keys(j)){ if(allow.has(k)) row[k]=j[k]; }\n  if(j._id) row._id=j._id;\n  out.push({ json: row });\n}\nif(!out.length) return [{ json:{ _empty:true } }];\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0016-4000-8000-000000000016",
+        "name": "Apply DNC",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          180
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "d1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "b7a20001-0017-4000-8000-000000000017",
+        "name": "Any After DNC?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3740,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk People: the survivors of Apply DNC in tens, one item per Airtable request. Write People\n// PATCHes each as {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records, typecast} at 200 ms\n// apart, ten records per request at five requests per second. A new person is a record without an\n// id (matched on Contact Key); a held person being filled (the _id carrier from Merge People) is a\n// record WITH its id, which Airtable treats as a plain update inside the same request. The Contact\n// Keys and the size ride on the item, never in the body, for the count-back.\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty&&j['Contact Key']);\nconst out=[];\nfor(let i=0;i<rows.length;i+=10){\n  const part=rows.slice(i,i+10);\n  out.push({ json: {\n    body: { performUpsert: { fieldsToMergeOn: ['Contact Key'] }, records: part.map(r=>{ const f=Object.assign({}, r); const id=f._id; delete f._id; return id?{ id:id, fields:f }:{ fields:f }; }), typecast: true },\n    keys: part.map(r=>String(r['Contact Key']).toLowerCase()),\n    updates: part.filter(r=>r._id).length,\n    size: part.length\n  } });\n}\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0048-4000-8000-000000000048",
+        "name": "Chunk People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3960,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.peopleTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0018-4000-8000-000000000018",
+        "name": "Write People",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4180,
+          60
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The one People writer, both modes (ruled 2026-09-02): PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request), typecast: true}, 200 ms apart, so 50 rows per second against the Airtable node's measured 4.5. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason and the pass continues. Written rows are counted from the answer's records[], never from item ids."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Stamp Rows: Contacts Pulled At = now on every company in the batch, tried or not, found or\n// not, in tens, one item per Airtable request (Stamp Companies PATCHes each by record id, typecast\n// on, 200 ms apart). The Not Sourced view drops them; Not Covered keeps the zero-contact ones\n// visible. Writer mode only: the ark pass stamps nothing new.\nconst plan=$('Plan Batch').first().json;\nconst now=new Date().toISOString();\nconst ids=plan.plan.map(c=>c.recordId).filter(Boolean);\nconst out=[];\nfor(let i=0;i<ids.length;i+=10){\n  const part=ids.slice(i,i+10);\n  out.push({ json: { body: { records: part.map(id=>({ id: id, fields: { 'Contacts Pulled At': now } })), typecast: true }, size: part.length } });\n}\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0043-4000-8000-000000000043",
+        "name": "Stamp Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4620,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Batch Input').first().json.base }}/{{ $('Batch Input').first().json.companiesTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "b7a20001-0044-4000-8000-000000000044",
+        "name": "Stamp Companies",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4840,
+          60
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The one Companies writer: Contacts Pulled At = now on every company in the batch, PATCH by record id, ten per request, 200 ms apart, no retry; a request that is not 2xx counts its ten as stamp errors. Stamped rows are counted from the answer's records[]."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Recount Filters: after the writer's stamps, read People again for the batch's domains, ids\n// only (Contact Key, LinkedIn URL, Domain), one OR formula per 100 domains: the batch's coverage\n// is what the base holds now, and the same held state goes back to the parent, which hands it to\n// this batch's AI-Ark pass so AI-Ark is sized to the gap and its exclude list is exact. Domain on\n// People is a lookup through the Companies link; filterByFormula {Domain}='x' matches the lookup's\n// text, so the read works unchanged.\nconst plan=$('Plan Batch').first().json;\nconst d=plan.plan.map(c=>c.domain);\nconst esc=(s)=>String(s).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nconst out=[];\nfor(let i=0;i<d.length;i+=100){\n  const chunk=d.slice(i,i+100);\n  out.push({ json: { formula: chunk.length===1?(\"{Domain}='\"+esc(chunk[0])+\"'\"):('OR('+chunk.map(x=>\"{Domain}='\"+esc(x)+\"'\").join(',')+')') } });\n}\nif(!out.length) out.push({ json: { formula: \"{Domain}=''\" } });\nreturn out;\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0020-4000-8000-000000000020",
+        "name": "Recount Filters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5060,
+          60
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Batch Input').first().json.peopleTableId }}"
+          },
+          "filterByFormula": "={{ $json.formula }}",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Contact Key",
+              "LinkedIn URL",
+              "Domain"
+            ]
+          }
+        },
+        "id": "b7a20001-0021-4000-8000-000000000021",
+        "name": "Recount People",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5280,
+          60
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "What the base holds now at the batch's domains, after the writer and the stamps: the batch's coverage. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text, the field comes back as an array of one."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Summary: the counters of this pass, and the ONLY thing that crosses back to the parent\n// (through Batch Response, after this pass's own Hub row is written). Per provider: the verdict\n// its sub-workflow answered with (ok, skipped with a reason, error with a cause) and its counters.\n// Written rows are counted from the writer's answers (records[] of every 2xx PATCH), never from\n// item ids; a request that was not 2xx counts every record it carried as a write error with the\n// HTTP reason (never retried: a 429 locks Airtable for 30 s). Coverage reads the recount taken\n// after the stamps. allFailed means every provider that was actually asked answered error (a skip\n// is not a failure): the parent then stops launching batches.\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\nconst n=(v)=>Number(v)||0;\nconst PRIORITY=['Blitz','GetLeads','QuickEnrich','Supersoniq'];\nconst NODE={ Blitz:'Run Blitz', GetLeads:'Run GetLeads', QuickEnrich:'Run QuickEnrich', Supersoniq:'Run Supersoniq' };\nconst providers={};\nfor(const p of PRIORITY){\n  let j=null; try{ j=$(NODE[p]).first().json||null; }catch(e){ j=null; }\n  const s=(j&&j.stats)||{};\n  if(!j) providers[p]={ status:'skipped', reason:'not run', called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[] };\n  else if(j.error&&!j.provider) providers[p]={ status:'error', reason:'sub-workflow crashed: '+String((j.error&&(j.error.message||j.error.description))||j.error).slice(0,160), called:0, returned:0, kept:0, credits:0, errors:1, firstError:String((j.error&&j.error.message)||'crashed').slice(0,160), failReasons:[] };\n  else providers[p]={ status:String(j.status||'ok'), reason:String(j.reason||''), called:n(s.called), returned:n(s.returned), kept:n(s.kept), credits:Math.round(n(s.credits)*100)/100, errors:n(s.errors), firstError:String(s.firstError||''), failReasons:(Array.isArray(s.failReasons)?s.failReasons:[]).slice(0,5), extra:{ dropped:n(s.dropped), emailBlanked:n(s.emailBlanked), resolved:n(s.resolved), unresolved:n(s.unresolved), rosterRows:n(s.rosterRows), emails:n(s.emails), pages:n(s.pages), noKey:n(s.noKey) } };\n}\nlet merge={}; try{ const j=$('Merge People').first().json||{}; merge=j._stats||{}; }catch(e){}\nconst rowsOf=(name)=>{ try{ return $(name).all().filter(i=>i.json&&!i.json._empty&&i.json['Contact Key']).length; }catch(e){ return 0; } };\nconst dnc=Math.max(0, rowsOf('Clean Fields')-rowsOf('Apply DNC'));\nconst domainByKey={};\ntry{ for(const it of $('Merge People').all()){ const j=it.json||{}; const k=String(j['Contact Key']||'').toLowerCase(); if(k&&j._domain) domainByKey[k]=String(j._domain).toLowerCase(); } }catch(e){}\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nconst failReasons=[];\nconst reason=(prefix,j,b,status)=>{ const e=b&&b.error; const why=e?(typeof e==='object'?(e.message||e.type||JSON.stringify(e)):String(e)):((j.error&&j.error.message)||(typeof j.body==='string'?j.body:'')); return (prefix+' HTTP '+status+' '+String(why||'').replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim()).slice(0,180)+(status===429?' (rate limited; never retried)':''); };\nlet written=0, updatedWritten=0, writeErrors=0; const writtenByDomain={};\nlet chunks=[], resps=[];\ntry{ chunks=$('Chunk People').all().map(i=>i.json); resps=$('Write People').all(); }catch(e){}\nresps.forEach((it,i)=>{\n  const c=chunks[i]||{ size:0, keys:[], updates:0 }; const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ writeErrors+=n(c.size); if(failReasons.length<10) failReasons.push('People writer: '+String((j.error&&j.error.message)||'call failed').slice(0,160)); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){\n    written+=b.records.length; updatedWritten+=n(c.updates);\n    for(const r of b.records){ const k=String(((r||{}).fields||{})['Contact Key']||'').toLowerCase(); const d=domainByKey[k]||''; if(d) writtenByDomain[d]=(writtenByDomain[d]||0)+1; }\n    if(b.records.length<n(c.size)){ writeErrors+=n(c.size)-b.records.length; if(failReasons.length<10) failReasons.push('People writer: '+(n(c.size)-b.records.length)+' of '+c.size+' records missing from a 2xx answer'); }\n    return;\n  }\n  writeErrors+=n(c.size);\n  if(failReasons.length<10) failReasons.push(reason('People writer',j,b,status));\n});\nlet stamped=0, stampErrors=0; let sChunks=[], sResps=[];\ntry{ sChunks=$('Stamp Rows').all().map(i=>i.json); sResps=$('Stamp Companies').all(); }catch(e){}\nsResps.forEach((it,i)=>{\n  const c=sChunks[i]||{ size:0 }; const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ stampErrors+=n(c.size); if(failReasons.length<10) failReasons.push('Contacts Pulled At stamp: '+String((j.error&&j.error.message)||'call failed').slice(0,160)); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){ stamped+=b.records.length; if(b.records.length<n(c.size)) stampErrors+=n(c.size)-b.records.length; return; }\n  stampErrors+=n(c.size);\n  if(failReasons.length<10) failReasons.push(reason('Contacts Pulled At stamp',j,b,status));\n});\nconst held={}; let recountRows=0;\nconst domainOf=(f)=>{ const v=f.Domain; return String(Array.isArray(v)?(v[0]||''):(v||'')).trim().toLowerCase(); };\ntry{ for(const it of $('Recount People').all()){ const j=it.json||{}; if(!j.id) continue; const f=j.fields||{}; const d=domainOf(f); if(!d) continue; const h=held[d]||(held[d]={ count:0 }); h.count++; recountRows++; } }catch(e){}\nlet covered=0; const zeroDomains=[];\nfor(const c of plan.plan){\n  const have=((held[c.domain]||{}).count||0)+(writtenByDomain[c.domain]||0)+(!recountRows?(c.heldRows||[]).length:0);\n  if(have>0) covered++; else if(zeroDomains.length<50) zeroDomains.push(c.domain);\n}\nconst asked=PRIORITY.filter(p=>providers[p].status!=='skipped');\nconst allFailed=asked.length>0&&asked.every(p=>providers[p].status==='error');\nfor(const p of PRIORITY) for(const r of providers[p].failReasons) if(failReasons.length<10) failReasons.push(String(r));\nreturn [{ json: {\n  mode:'writer', batchNum: plan.batchNum, batchCount: plan.batchCount, logKey: inp.logKey,\n  companiesIn: plan.plan.length, tiers: plan.tiers,\n  providers: providers,\n  returned: n(merge.returned), built: n(merge.built), updated: n(merge.updated), heldUnchanged: n(merge.heldUnchanged), dupes: n(merge.dupes), noKey: n(merge.noKey), fenced: n(merge.fenced), emailsAppended: n(merge.emailsAppended), singleSelectSource: !!merge.singleSelectSource, perProvider: merge.perProvider||{}, dnc: dnc,\n  written: written, updatedWritten: updatedWritten, writeErrors: writeErrors, writeRequests: resps.length, stamped: stamped, stampErrors: stampErrors,\n  covered: covered, zero: plan.plan.length-covered, zeroDomains: zeroDomains,\n  allFailed: allFailed, failReasons: failReasons\n} }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0045-4000-8000-000000000045",
+        "name": "Batch Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5500,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Batch Log: this pass's own Hub row: Execution ID \"<parentExecId>-<n>\", Automation\n// \"Enrich Contacts Batch\", Client attached, Records In = companies in, Records Out = people\n// written, Description = one line per provider (its verdict and counters) then the merge, the\n// writer, the stamps and the coverage; Tally = the counters JSON the parent sums once every pass\n// row landed. Status computed: Failed when every provider that was asked answered error (the pass\n// did no work; the parent stops launching), Succeeded with errors when failed[] is not empty,\n// Succeeded otherwise. A provider that was skipped (no credential, out of credits, nothing to\n// ask) is a Skipped line, never an error (ruled 2026-09-08: the run moves on).\nconst inp=$('Batch Input').first().json;\nconst s=Object.assign({}, $('Batch Summary').first().json||{});\nconst num=(v)=>Number(v)||0;\nconst PRIORITY=['Blitz','GetLeads','QuickEnrich','Supersoniq'];\nconst failed=[]; const skips=[];\nfor(const p of PRIORITY){\n  const x=(s.providers||{})[p]||{};\n  if(x.status==='skipped'){ skips.push(p+': '+(x.reason||'skipped')); continue; }\n  if(x.status==='error'){ failed.push({ tier:p, reason:x.reason||x.firstError||'failed' }); continue; }\n  for(let i=0;i<num(x.errors);i++) failed.push({ tier:p, reason:x.firstError||'call failed' });\n}\nfor(let i=0;i<num(s.writeErrors);i++) failed.push({ tier:'People writer', reason:'row not in the answer' });\nfor(let i=0;i<num(s.stampErrors);i++) failed.push({ tier:'Contacts Pulled At stamp', reason:'row not in the answer' });\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(inp.startedAt).getTime())/1000)); }catch(e){}\nconst companiesIn=num(s.companiesIn), covered=num(s.covered), pct=companiesIn?Math.round(100*covered/companiesIn):0;\nconst line=(p)=>{ const x=(s.providers||{})[p]||{}; const e=x.extra||{}; if(x.status==='skipped') return '- **'+p+':** skipped ('+(x.reason||'')+')'; if(x.status==='error') return '- **'+p+':** failed ('+(x.reason||x.firstError||'')+')'; const bits=['called '+num(x.called),'returned '+num(x.returned),'kept '+num(x.kept)]; if(num(x.credits)) bits.push('credits '+x.credits); if(num(e.resolved)||num(e.unresolved)) bits.push(num(e.resolved)+' companies resolved on LinkedIn, '+num(e.unresolved)+' not'); if(num(e.rosterRows)) bits.push('roster '+num(e.rosterRows)+', emails '+num(e.emails)); if(num(e.dropped)) bits.push(num(e.dropped)+' at domains not asked dropped'); if(num(e.emailBlanked)) bits.push(num(e.emailBlanked)+' foreign-domain emails blanked'); if(num(x.errors)) bits.push('errors '+num(x.errors)); return '- **'+p+':** '+bits.join(', '); };\nconst t=s.tiers||{};\nconst lines=[ '**Batch '+num(s.batchNum)+' of '+num(s.batchCount)+': '+companiesIn+' companies in, '+num(s.built)+' people new, '+num(s.updated)+' held people filled, '+num(s.written)+' rows written, '+covered+' of '+companiesIn+' covered ('+pct+'%)**', '',\n  '**Parent run:** '+inp.parentExecId+' (this row is one pass of it; the parent sums the passes)',\n  '**Cap and floor:** '+String(s.capRule||'up to 50 employees or unknown: 20 wide; 51 to 500: 30 non-junior; 501 and up: 50 manager and up')+' (this batch: '+num(t.wide)+' wide, '+num(t.nonjunior)+' non-junior, '+num(t.manager)+' manager and up)',\n  '', '**Providers (every one asked for every company; priority Blitz, GetLeads, QuickEnrich, Supersoniq)**' ];\nfor(const p of PRIORITY) lines.push(line(p));\nlines.push('', '**Merge**');\nlines.push('- **Returned:** '+num(s.returned)+' people across providers; **new rows:** '+num(s.built)+'; **held rows filled:** '+num(s.updated)+' ('+num(s.emailsAppended)+' emails appended); **held unchanged:** '+num(s.heldUnchanged)+'; **same person from two providers:** '+num(s.dupes)+' merged; **no usable first name:** '+num(s.noKey)+'; **LinkedIn URLs rejected by the name fence:** '+num(s.fenced)+'; **on the DNC table:** '+num(s.dnc));\nconst pp=s.perProvider||{};\nlines.push('- **Per provider:** '+PRIORITY.map(p=>{ const x=pp[p]||{}; return p+' '+num(x.newRows)+' new / '+num(x.mergedInto)+' merged'; }).join('; '));\nif(s.singleSelectSource) lines.push('- **Contact Source is a single select on this base:** only the first source per person was recorded; retype it to a multi-select to record every provider');\nlines.push('- **Written (rows in the writer\\'s answers):** '+num(s.written)+' in '+num(s.writeRequests)+' requests of up to ten ('+num(s.updatedWritten)+' updates of held rows)');\nlines.push('- **Coverage:** '+covered+' of '+companiesIn+' companies with at least one person ('+pct+'%)');\nconst zd=Array.isArray(s.zeroDomains)?s.zeroDomains:[];\nlines.push('- **Zero-contact companies:** '+num(s.zero)+(zd.length?' ('+zd.slice(0,20).join(', ')+(zd.length>20?', ...':'')+')':''));\nlines.push('- **Contacts Pulled At stamped:** '+num(s.stamped));\nif(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');\nif(s.allFailed) lines.push('', '**Every provider that was asked failed. The parent launches no further batches.**');\nif(failed.length){\n  const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; }\n  lines.push('', '**Failures ('+failed.length+')**');\n  for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r);\n  for(const r of (Array.isArray(s.failReasons)?s.failReasons:[]).slice(0,5)) lines.push('- '+r);\n}\nconst status=s.allFailed?'Failed':(failed.length?'Succeeded with errors':'Succeeded');\nconst log={\n  'Execution ID': String(inp.logKey),\n  'Automation': 'Enrich Contacts Batch',\n  'Status': status,\n  'Trigger': 'event',\n  'Errors': failed.length,\n  'Run at': inp.startedAt,\n  'Target': (inp.peopleTableName||'People')+' ('+(inp.peopleTableId||'')+')',\n  'Records In': companiesIn,\n  'Records Out': num(s.written),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Tally': JSON.stringify(s),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id\n};\nif(inp.clientRecId) log['Client']=[inp.clientRecId];\nreturn [{ json: log }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0056-4000-8000-000000000056",
+        "name": "Build Batch Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5720,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "b7a20001-0057-4000-8000-000000000057",
+        "name": "Log Batch",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          5940,
+          180
+        ],
+        "onError": "stopWorkflow",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "This pass's own Hub row (ruled 2026-09-02), upsert on Execution ID \"<parentExecId>-<batchNum>\" or \"<parentExecId>-ark\", Client attached, Tally = the counters JSON the parent sums. Loud: a failed write crashes into the Error Logger instead of vanishing."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Batch Response: the last node, so its output is what Execute Workflow hands back to the parent:\n// the counters (Batch Summary), never rows. It runs after Log Batch, so this pass's Hub row exists\n// before the parent hears back and the parent's close reads it by prefix.\nreturn [{ json: $('Batch Summary').first().json }];\n",
+          "mode": "runOnceForAllItems"
+        },
+        "id": "b7a20001-0058-4000-8000-000000000058",
+        "name": "Batch Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6160,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Provider Input: the one item every provider sub-workflow receives, the plan's companies (domain,\n// cap, floor) and nothing else. Re-emitted before each Run node because Execute Workflow passes\n// its own input through, and the previous provider's answer must never be the next one's input.\nconst plan=$('Plan Ready').first().json||{};\nreturn [{ json:{ companies:plan.companies||[], batchNum:plan.batchNum||0 } }];\n"
+        },
+        "id": "e1c0-0027-4000-8000-000000000027",
+        "name": "GL Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "oOiQqxazAycHl6Lz",
+            "cachedResultName": "Enrich Contacts GetLeads"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "e1c0-0028-4000-8000-000000000028",
+        "name": "Run GetLeads",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1300,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Provider Input: the one item every provider sub-workflow receives, the plan's companies (domain,\n// cap, floor) and nothing else. Re-emitted before each Run node because Execute Workflow passes\n// its own input through, and the previous provider's answer must never be the next one's input.\nconst plan=$('Plan Ready').first().json||{};\nreturn [{ json:{ companies:plan.companies||[], batchNum:plan.batchNum||0 } }];\n"
+        },
+        "id": "e1c0-0029-4000-8000-000000000029",
+        "name": "BZ Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "yuAFXnpQ1K3F9AJC",
+            "cachedResultName": "Enrich Contacts Blitz"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "e1c0-0030-4000-8000-000000000030",
+        "name": "Run Blitz",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1740,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Provider Input: the one item every provider sub-workflow receives, the plan's companies (domain,\n// cap, floor) and nothing else. Re-emitted before each Run node because Execute Workflow passes\n// its own input through, and the previous provider's answer must never be the next one's input.\nconst plan=$('Plan Ready').first().json||{};\nreturn [{ json:{ companies:plan.companies||[], batchNum:plan.batchNum||0 } }];\n"
+        },
+        "id": "e1c0-0031-4000-8000-000000000031",
+        "name": "QE Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1qiLA5nTnxXUQTgS",
+            "cachedResultName": "Enrich Contacts QuickEnrich"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "e1c0-0032-4000-8000-000000000032",
+        "name": "Run QuickEnrich",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          2180,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Provider Input: the one item every provider sub-workflow receives, the plan's companies (domain,\n// cap, floor) and nothing else. Re-emitted before each Run node because Execute Workflow passes\n// its own input through, and the previous provider's answer must never be the next one's input.\nconst plan=$('Plan Ready').first().json||{};\nreturn [{ json:{ companies:plan.companies||[], batchNum:plan.batchNum||0 } }];\n"
+        },
+        "id": "e1c0-0033-4000-8000-000000000033",
+        "name": "SQ Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "0NTbsxZv9Id1CT0j",
+            "cachedResultName": "Enrich Contacts Supersoniq"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "e1c0-0034-4000-8000-000000000034",
+        "name": "Run Supersoniq",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          2620,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Merge People: every provider's answer, merged into the register's People shape (rebuilt\n// 2026-09-08 as the Enrich Contacts Rootflow). The rules, ruled 2026-09-08:\n//   Keys. Contact Key (cleaned first + last + domain) first; the LinkedIn slug second. A person\n//     already held at this domain (either key) is the same person: the held row is UPDATED, blanks\n//     filled, nothing overwritten. Two providers naming the same person merge the same way.\n//   Priority. Blitz, GetLeads, QuickEnrich, Supersoniq: first writer wins on every filled cell\n//     (Title, Seniority, Department, Phone, Source ID); nothing ever updates a held Title.\n//   Email. Comma-separated, priority order, deduped case-insensitively; the email Rootflow reads a\n//     list of any length. A held Email gets new candidates appended, never replaced.\n//   LinkedIn fence. A URL is written only when its slug contains the cleaned first or last name\n//     (the linkedin_name_match rule, applied in the machine); a URL that fails is left blank and\n//     the next provider gets its try. The formula stays on the table as the visible check.\n//   Contact Source. Every provider that returned the person, even one that filled nothing: an\n//     array when the field is a multi-select; the first (highest priority) source only when the\n//     base still carries the single select, and the run log says so.\n//   Seniority and Department come from the provider when it has them, else from the title.\n// The vocabularies come from the field register, inlined by the push as REGISTER at the @@register\n// line; a map target the register does not carry is a build defect and fails here.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client's rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule.\"}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"multipleSelects\",\"options\":{\"choices\":[{\"name\":\"Blitz\",\"color\":\"cyanLight2\"},{\"name\":\"GetLeads\",\"color\":\"greenLight2\"},{\"name\":\"QuickEnrich\",\"color\":\"yellowLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped the OR's second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client's rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty.\"},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Signals\",\"filter\":{\"words\":\"relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view\",\"formula\":\"AND({relevance} = 1, {Signals} != BLANK())\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Signals\",\"Signal At\",\"Build Date\"],\"sort\":{\"field\":\"Signal At\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"Blitz\":\"cyanLight2\",\"GetLeads\":\"greenLight2\",\"QuickEnrich\":\"yellowLight2\",\"Supersoniq\":\"purpleLight2\",\"ContaGen\":\"blueLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst inp=$('Batch Input').first().json;\nconst plan=$('Plan Batch').first().json;\nconst have=new Set(inp.peopleFields||[]);\nconst multi=inp.contactSourceMulti===true;\nconst PRIORITY=['Blitz','GetLeads','QuickEnrich','Supersoniq'];\nconst NODE={ Blitz:'Run Blitz', GetLeads:'Run GetLeads', QuickEnrich:'Run QuickEnrich', Supersoniq:'Run Supersoniq' };\nconst prov={};\nfor(const p of PRIORITY){ try{ const j=$(NODE[p]).first().json||{}; prov[p]=(j&&j.people&&typeof j.people==='object')?j.people:{}; }catch(e){ prov[p]={}; } }\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst PEOPLE=REGISTER.tables.find(t=>t.name==='People');\nconst choices=(n)=>new Set(PEOPLE.fields.find(f=>f.name===n).options.choices.map(c=>c.name));\nconst SENIORITY=choices('Seniority'), DEPARTMENT=choices('Department');\n// Provider seniority words -> the People Seniority select. GetLeads and Blitz speak six levels\n// (C-Team, VP, Director, Manager, Staff, Other); Supersoniq speaks the register's own words.\nconst SEN={ 'executive':'Executive', 'c-suite':'C-Suite', 'c_suite':'C-Suite', 'csuite':'C-Suite', 'c-team':'C-Suite', 'cxo':'C-Suite', 'founder':'Founder', 'owner':'Owner', 'president':'President', 'vp':'VP', 'vice president':'VP', 'head':'Head', 'director':'Director', 'manager':'Manager', 'senior manager':'Manager', 'senior':'Senior', 'senior_ic':'Senior', 'staff':'Senior', 'mid_level':'Senior', 'partner':'Partner', 'evp / svp':'EVP / SVP', 'evp':'EVP / SVP', 'svp':'EVP / SVP', 'board / chair':'Board / Chair', 'board':'Board / Chair', 'chair':'Board / Chair', 'unclassified':'Unclassified', 'other':'Unclassified' };\n// The title refines a coarse level (a \"C-Team\" who is the founder is a Founder) and stands in\n// where a provider sends no level at all (Blitz, QuickEnrich). Order matters: the first match wins.\nconst TITLE_SEN=[ [/\\b(co-?founder|founder|founding)\\b/i,'Founder'], [/\\b(owner|proprietor)\\b/i,'Owner'], [/\\b(chairman|chairwoman|chairperson|chair|board member)\\b/i,'Board / Chair'], [/\\b(chief\\s+[a-z ]+?\\s+officer|ceo|cto|cfo|coo|cmo|cro|cio|ciso|cpo|chro|cco|cso|cdo|cao)\\b/i,'C-Suite'], [/\\bpresident\\b/i,'President'], [/\\b(evp|svp|executive vice president|senior vice president)\\b/i,'EVP / SVP'], [/\\b(vp|vice president|vice-president)\\b/i,'VP'], [/\\bhead\\b/i,'Head'], [/\\bdirector\\b/i,'Director'], [/\\bmanager\\b/i,'Manager'], [/\\b(general partner|managing partner|partner)\\b/i,'Partner'], [/\\b(senior|sr\\.?|lead|principal|staff)\\b/i,'Senior'] ];\nconst mapSen=(raw,title)=>{ const t=String(title||''); for(const pair of TITLE_SEN){ if(pair[0].test(t)){ if(pair[1]==='President'&&/\\bvice/i.test(t)) continue; return pair[1]; } } return SEN[String(raw||'').trim().toLowerCase()]||'Unclassified'; };\nconst DEP={ 'executive':'Executive', 'general business & management':'Executive', 'engineering':'Engineering', 'technology':'Technology', 'it':'Technology', 'information technology':'Technology', 'r&d':'R&D', 'research & development':'R&D', 'research and development':'R&D', 'research':'R&D', 'science':'R&D', 'product':'Product', 'product management':'Product', 'data':'Data', 'data science':'Data', 'analytics':'Data', 'security':'Security', 'information security':'Security', 'design':'Design', 'art, culture and creative professionals':'Design', 'operations':'Operations', 'manufacturing & production':'Operations', 'sales':'Sales', 'sales - marketing':'Sales', 'sales & business development':'Sales', 'business development':'Sales', 'marketing':'Marketing', 'advertising & marketing':'Marketing', 'finance':'Finance', 'finance & accounting':'Finance', 'accounting':'Finance', 'human resources':'Human Resources', 'hr':'Human Resources', 'people':'Human Resources', 'customer success':'Customer Success', 'customer service':'Customer Success', 'customer/client service':'Customer Success', 'support':'Customer Success', 'project management':'Project Management', 'strategy':'Strategy', 'legal':'Legal', 'supply chain':'Supply Chain', 'supply chain & logistics':'Supply Chain', 'logistics':'Supply Chain', 'procurement':'Supply Chain', 'purchasing':'Supply Chain', 'communications':'Communications', 'public relations':'Communications', 'writing/editing':'Communications', 'community':'Community & Social', 'community & social':'Community & Social', 'social':'Community & Social', 'compliance':'Compliance & GRC', 'compliance & grc':'Compliance & GRC', 'grc':'Compliance & GRC', 'risk':'Compliance & GRC' };\nconst TITLE_DEP=[ [/\\b(ceo|founder|owner|president|chief executive|managing director|general manager)\\b/i,'Executive'], [/\\b(cto|engineer|engineering|developer|software|architect)\\b/i,'Engineering'], [/\\b(devops|sre|infrastructure|cloud|platform|it\\b|information technology|cio|sysadmin|systems)\\b/i,'Technology'], [/\\b(security|ciso|infosec)\\b/i,'Security'], [/\\b(data|analytics|bi\\b|machine learning|ai\\b)\\b/i,'Data'], [/\\b(product)\\b/i,'Product'], [/\\b(design|ux|ui\\b|creative)\\b/i,'Design'], [/\\b(sales|account executive|business development|revenue|cro)\\b/i,'Sales'], [/\\b(marketing|growth|demand|brand|content|seo|cmo)\\b/i,'Marketing'], [/\\b(finance|financial|accounting|controller|cfo|treasur)\\b/i,'Finance'], [/\\b(human resources|hr\\b|people|talent|recruit|chro)\\b/i,'Human Resources'], [/\\b(customer success|customer support|support|customer experience)\\b/i,'Customer Success'], [/\\b(legal|counsel|attorney)\\b/i,'Legal'], [/\\b(compliance|risk|grc|audit)\\b/i,'Compliance & GRC'], [/\\b(supply chain|logistics|procurement|purchasing)\\b/i,'Supply Chain'], [/\\b(project|program|pmo)\\b/i,'Project Management'], [/\\b(operations|ops\\b|coo)\\b/i,'Operations'], [/\\b(communications|pr\\b|public relations)\\b/i,'Communications'], [/\\b(strategy)\\b/i,'Strategy'] ];\nconst mapDep=(raw,title)=>{ for(const part of String(raw||'').split(/[,;|]/)){ const m=DEP[part.trim().toLowerCase()]; if(m) return m; } const t=String(title||''); for(const pair of TITLE_DEP){ if(pair[0].test(t)) return pair[1]; } return ''; };\nfor(const v of Object.values(SEN).concat(TITLE_SEN.map(x=>x[1]))){ if(!SENIORITY.has(v)) throw new Error('Merge People: Seniority \"'+v+'\" is not on the register'); }\nfor(const v of Object.values(DEP).concat(TITLE_DEP.map(x=>x[1]))){ if(!DEPARTMENT.has(v)) throw new Error('Merge People: Department \"'+v+'\" is not on the register'); }\nconst slugOf=(u)=>{ const m=String(u||'').toLowerCase().match(/linkedin\\.com\\/in\\/([^\\/?#]+)/); return m?m[1].replace(/\\/+$/,'').trim():''; };\nconst fenceOk=(slug,first,last)=>{ if(!slug) return false; const s=slug.replace(/[^a-z0-9]/g,''); const f=String(first||'').toLowerCase().replace(/[^a-z]/g,''); const l=String(last||'').toLowerCase().replace(/[^a-z]/g,''); return (f.length>=2&&s.indexOf(f)>-1)||(l.length>=3&&s.indexOf(l)>-1); };\nconst splitEmails=(s)=>String(s||'').split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.indexOf('@')>0);\nconst stats={ returned:0, built:0, updated:0, heldUnchanged:0, dupes:0, noKey:0, fenced:0, emailsAppended:0, singleSelectSource:!multi, perProvider:{} };\nfor(const p of PRIORITY) stats.perProvider[p]={ returned:0, newRows:0, mergedInto:0 };\nconst out=[];\nfor(const c of plan.plan){\n  const heldByKey={}, heldBySlug={};\n  for(const h of (c.heldRows||[])){\n    const rec={ id:h.id, key:String(h.key||'').toLowerCase(), held:true, fields:{ Title:h.title||'', Seniority:h.seniority||'', Department:h.department||'', 'LinkedIn URL':h.linkedin||'', Phone:h.phone||'', 'Source ID':h.sourceId||'' }, emails:splitEmails(h.email), sources:(Array.isArray(h.sources)?h.sources:(h.sources?[h.sources]:[])).slice(), changes:{}, emailChanged:false, sourceChanged:false };\n    if(rec.key) heldByKey[rec.key]=rec;\n    const s=slugOf(h.linkedin); if(s) heldBySlug[s]=rec;\n  }\n  const newByKey={}, newBySlug={}; const rows=[];\n  for(const p of PRIORITY){\n    for(const person of (prov[p][c.domain]||[])){\n      stats.returned++; stats.perProvider[p].returned++;\n      const full=String(person.name||'').trim();\n      const first=cleanFirst(full), last=cleanLast(full);\n      if(!first){ stats.noKey++; continue; }\n      const key=(first.toLowerCase()+last.toLowerCase()+c.domain).trim();\n      const rawLi=String(person.linkedin||'').trim(); const slug=slugOf(rawLi);\n      const li=(rawLi&&fenceOk(slug,first,last))?rawLi:''; if(rawLi&&!li) stats.fenced++;\n      const email=String(person.email||'').trim().toLowerCase();\n      const sen=mapSen(person.seniority, person.title); const dep=mapDep(person.department, person.title);\n      const incoming={ Title:String(person.title||'').trim(), Seniority:sen, Department:dep, 'LinkedIn URL':li, Phone:String(person.phone||'').trim(), 'Source ID':String(person.sourceId||'').trim() };\n      let target=newByKey[key]||(li&&newBySlug[slug])||heldByKey[key]||(li&&heldBySlug[slug])||null;\n      if(!target){\n        target={ id:'', key:key, held:false, fields:incoming, emails:email?[email]:[], sources:[p], name:full, changes:null };\n        newByKey[key]=target; if(li) newBySlug[slug]=target; rows.push(target);\n        stats.built++; stats.perProvider[p].newRows++;\n        continue;\n      }\n      stats.perProvider[p].mergedInto++;\n      if(!target.held) stats.dupes++;\n      for(const k of Object.keys(incoming)){\n        const cur=String(target.fields[k]||''); const nv=incoming[k];\n        const blank=!cur||(k==='Seniority'&&cur==='Unclassified');\n        if(blank&&nv){ target.fields[k]=nv; if(target.held) target.changes[k]=nv; }\n      }\n      if(email&&target.emails.indexOf(email)<0){ target.emails.push(email); if(target.held){ target.emailChanged=true; stats.emailsAppended++; } }\n      if(target.sources.indexOf(p)<0){ target.sources.push(p); if(target.held) target.sourceChanged=true; }\n    }\n  }\n  for(const r of rows){\n    const row={ 'Name':r.name, 'Title':r.fields.Title, 'Seniority':r.fields.Seniority, 'Department':r.fields.Department, 'Email':r.emails.join(', '), 'LinkedIn URL':r.fields['LinkedIn URL'], 'Phone':r.fields.Phone, 'Companies':[c.recordId], 'Contact Key':r.key, 'Contact Source':(multi?r.sources.slice():r.sources[0]), 'Source ID':r.fields['Source ID'], '_domain':c.domain };\n    if(!row.Department) delete row.Department;\n    for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }\n    out.push({ json:row });\n  }\n  for(const k of Object.keys(heldByKey)){\n    const r=heldByKey[k];\n    const changed=Object.keys(r.changes).length||r.emailChanged||r.sourceChanged;\n    if(!changed){ stats.heldUnchanged++; continue; }\n    const row=Object.assign({ '_id':r.id, 'Contact Key':r.key, '_domain':c.domain }, r.changes);\n    if(r.emailChanged) row['Email']=r.emails.join(', ');\n    if(r.sourceChanged&&multi) row['Contact Source']=r.sources.slice();\n    if(row.Department==='') delete row.Department;\n    for(const kk of Object.keys(row)){ if(kk.charAt(0)==='_') continue; if(!have.has(kk)) delete row[kk]; }\n    if(Object.keys(row).filter(x=>x.charAt(0)!=='_'&&x!=='Contact Key').length){ out.push({ json:row }); stats.updated++; } else stats.heldUnchanged++;\n  }\n}\nif(!out.length) return [{ json:{ _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+        },
+        "id": "e1c0-0035-4000-8000-000000000035",
+        "name": "Merge People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Batch Trigger": {
+        "main": [
+          [
+            {
+              "node": "Batch Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Input": {
+        "main": [
+          [
+            {
+              "node": "Plan Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Batch": {
+        "main": [
+          [
+            {
+              "node": "Get DNC Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get DNC Domains": {
+        "main": [
+          [
+            {
+              "node": "Plan Ready",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Ready": {
+        "main": [
+          [
+            {
+              "node": "GL Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Input": {
+        "main": [
+          [
+            {
+              "node": "Run GetLeads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run GetLeads": {
+        "main": [
+          [
+            {
+              "node": "BZ Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Input": {
+        "main": [
+          [
+            {
+              "node": "Run Blitz",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Blitz": {
+        "main": [
+          [
+            {
+              "node": "QE Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Input": {
+        "main": [
+          [
+            {
+              "node": "Run QuickEnrich",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run QuickEnrich": {
+        "main": [
+          [
+            {
+              "node": "SQ Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Input": {
+        "main": [
+          [
+            {
+              "node": "Run Supersoniq",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Supersoniq": {
+        "main": [
+          [
+            {
+              "node": "Merge People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge People": {
+        "main": [
+          [
+            {
+              "node": "Any People?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any People?": {
+        "main": [
+          [
+            {
+              "node": "Clean Fields",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Stamp Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Apply DNC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply DNC": {
+        "main": [
+          [
+            {
+              "node": "Any After DNC?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any After DNC?": {
+        "main": [
+          [
+            {
+              "node": "Chunk People",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Stamp Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk People": {
+        "main": [
+          [
+            {
+              "node": "Write People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write People": {
+        "main": [
+          [
+            {
+              "node": "Stamp Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Rows": {
+        "main": [
+          [
+            {
+              "node": "Stamp Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Companies": {
+        "main": [
+          [
+            {
+              "node": "Recount Filters",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recount Filters": {
+        "main": [
+          [
+            {
+              "node": "Recount People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recount People": {
+        "main": [
+          [
+            {
+              "node": "Batch Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Batch Summary": {
+        "main": [
+          [
+            {
+              "node": "Build Batch Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Batch Log": {
+        "main": [
+          [
+            {
+              "node": "Log Batch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Batch": {
+        "main": [
+          [
+            {
+              "node": "Batch Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

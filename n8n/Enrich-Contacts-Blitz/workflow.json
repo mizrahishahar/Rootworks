@@ -1,0 +1,321 @@
+{
+  "updatedAt": "2026-09-08T20:19:17.014Z",
+  "createdAt": "2026-09-08T20:13:33.303Z",
+  "id": "yuAFXnpQ1K3F9AJC",
+  "name": "Enrich Contacts Blitz",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "e1c0-0006-4000-8000-000000000006",
+      "name": "Enrich Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Companies.js"
+      },
+      "id": "e1c0-0007-4000-8000-000000000007",
+      "name": "BZ Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e1c0-0008-4000-8000-000000000008",
+      "name": "Any BZ Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.blitz-api.ai/v2/enrichment/domain-to-linkedin",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 120
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "e1c0-0009-4000-8000-000000000009",
+      "name": "BZ Domain To LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        680,
+        -100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "Blitz: the company LinkedIn page for a domain. Header Auth credential: x-api-key = the key (attach in the UI). 10 requests a second per endpoint; paced at 8."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Roster-Requests.js"
+      },
+      "id": "e1c0-0010-4000-8000-000000000010",
+      "name": "BZ Roster Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e1c0-0011-4000-8000-000000000011",
+      "name": "Any BZ Roster?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.blitz-api.ai/v2/search/employee-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 120
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "e1c0-0012-4000-8000-000000000012",
+      "name": "BZ Employee Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1380,
+        -100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "Blitz: everyone at one company page, job_level filtered, max_results = the cap (50 at most, one page). Same credential as the node before it."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Parse.js"
+      },
+      "id": "e1c0-0013-4000-8000-000000000013",
+      "name": "BZ Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Enrich Trigger": {
+      "main": [
+        [
+          {
+            "node": "BZ Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Companies": {
+      "main": [
+        [
+          {
+            "node": "Any BZ Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any BZ Companies?": {
+      "main": [
+        [
+          {
+            "node": "BZ Domain To LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Domain To LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "BZ Roster Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Roster Requests": {
+      "main": [
+        [
+          {
+            "node": "Any BZ Roster?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any BZ Roster?": {
+      "main": [
+        [
+          {
+            "node": "BZ Employee Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Employee Finder": {
+      "main": [
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "44345314-8d91-4d03-a592-e3315b93947c",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-08T20:13:33.308Z",
+      "createdAt": "2026-09-08T20:13:33.308Z",
+      "role": "workflow:owner",
+      "workflowId": "yuAFXnpQ1K3F9AJC",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

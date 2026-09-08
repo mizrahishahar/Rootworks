@@ -29,6 +29,7 @@ const SEL=(choices)=>({ choices: choices.map(c=>typeof c==='string'?{name:c}:c) 
 const txt=(name)=>({ name, kind:'plain', type:'singleLineText' });
 const long=(name)=>({ name, kind:'plain', type:'multilineText' });
 const sel=(name,choices)=>({ name, kind:'plain', type:'singleSelect', options:SEL(choices) });
+const msel=(name,choices)=>({ name, kind:'plain', type:'multipleSelects', options:SEL(choices) });
 const dt=(name)=>({ name, kind:'plain', type:'dateTime', options:{ dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc' } });
 const day=(name)=>({ name, kind:'plain', type:'date', options:{ dateFormat:{name:'iso'} } });
 const num=(name,precision)=>({ name, kind:'plain', type:'number', options:{ precision:precision||0 } });
@@ -61,7 +62,7 @@ const about=(f)=>Object.assign(f,{ company:true });
 // Email Source keeps the waterfall's tier colors (TIER). Department and DNC Reason carry their
 // own per-choice maps (DEPARTMENT_COLOR: families share a hue; DNC_COLOR).
 const VERDICT={ ok:'greenBright', done:'greenBright', deliverable:'greenBright', COMPLETED:'greenBright', catch_all:'yellowBright', risky:'yellowBright', invalid:'redBright', undeliverable:'redBright', no_email_found:'redBright', BOUNCED:'redBright', error:'orangeBright', UNSUBSCRIBED:'orangeBright', verifying:'blueBright', IN_SEQUENCE:'blueBright', REPLIED:'purpleBright', disposable:'orangeLight2', unknown:'grayBright', skipped:'grayLight2', NEVER_CONTACTED:'grayLight2' };
-const SOURCE={ ContaGen:'blueLight2', Supersoniq:'purpleLight2', 'AI-Ark':'tealLight2' };
+const SOURCE={ Blitz:'cyanLight2', GetLeads:'greenLight2', QuickEnrich:'yellowLight2', Supersoniq:'purpleLight2', ContaGen:'blueLight2', 'AI-Ark':'tealLight2' };
 const SCALE={ '1-10':'blueLight2', '11-50':'cyanLight2', '51-200':'tealLight2', '201-500':'greenLight2', '501-1000':'yellowLight2', '1001-5000':'orangeLight2', '5001-10000':'redLight2', '10001+':'purpleLight2' };
 const RANK={ 'C-Suite':'purpleLight2', Founder:'purpleLight2', Owner:'purpleLight2', President:'purpleLight2', Executive:'purpleLight2', VP:'blueLight2', 'EVP / SVP':'blueLight2', Head:'cyanLight2', Director:'cyanLight2', Manager:'tealLight2', Senior:'greenLight2', Partner:'yellowLight2', 'Board / Chair':'yellowLight2', Unclassified:'grayLight2' };
 const TIER={ P0:'blueBright', P1:'cyanBright', P2:'tealBright', P3:'purpleBright', none:'grayBright' };
@@ -90,7 +91,10 @@ const EMPLOYEES=paint(['1-10','11-50','51-200','201-500','501-1000','1001-5000',
 const SENIORITY=paint(['C-Suite','Founder','Owner','President','Executive','VP','Head','Director','Manager','Senior','Partner','EVP / SVP','Board / Chair','Unclassified'],RANK);
 // Department: Dave's live list, the register (ruled 2026-09-02); Build People in Waterfall Contacts Batch maps into it.
 const DEPARTMENT=paint(['Executive','Engineering','Technology','R&D','Product','Data','Security','Design','Operations','Sales','Marketing','Finance','Human Resources','Customer Success','Project Management','Strategy','Legal','Supply Chain','Communications','Community & Social','Compliance & GRC'],DEPARTMENT_COLOR);
-const CONTACT_SOURCE=paint(['ContaGen','Supersoniq','AI-Ark'],SOURCE);
+// Contact Source is a MULTI-select since 2026-09-08 (Enrich Contacts): every provider that returned
+// the person is added, even one that filled nothing. ContaGen and AI-Ark stay as choices so the
+// rows they wrote keep their value; no machine writes them any more.
+const CONTACT_SOURCE=paint(['Blitz','GetLeads','QuickEnrich','Supersoniq','ContaGen','AI-Ark'],SOURCE);
 const DNC_REASON=paint(['Customer','Not interested','Client request','Active deal'],DNC_COLOR);
 
 // relevance: the placeholder the Operator replaces per client with the client's buyer rule.
@@ -179,7 +183,7 @@ const PEOPLE={ name:'People', primary:'Name', after:[{table:'Companies'}], field
   sel('Seniority',SENIORITY), sel('Department',DEPARTMENT),
   txt('Email'), url('LinkedIn URL'), txt('Phone'),
   { name:'Companies', kind:'link', table:'Companies' },
-  txt('Contact Key'), sel('Contact Source',CONTACT_SOURCE), txt('Source ID'),
+  txt('Contact Key'), msel('Contact Source',CONTACT_SOURCE), txt('Source ID'),
   formula('Build Date','CREATED_TIME()'),
   ...LANE(),
   chk('manually_approved'),

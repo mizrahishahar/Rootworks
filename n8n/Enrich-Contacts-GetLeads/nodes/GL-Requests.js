@@ -7,9 +7,11 @@
 // only at small companies, Other (unknown) always rides (unknown is not junior). No department
 // filter: every function is asked (ruled 2026-09-08, everyone who is not junior).
 //
-// One call per (floor, cap) group, up to 1,000 domains a call: with max_per_company at the cap
-// (GetLeads hard-stops at 50) a 100-company batch never exceeds the 5,000-row page, and the node
-// still pages on next_offset for safety. Every row costs one fair-use row, never cash.
+// One call per (floor, cap) group, sized so ONE page always holds the whole answer: domains per call =
+// floor(5,000 / cap) (cap 20: 250 domains, cap 30: 166, cap 50: 100). No node pagination: proven
+// 2026-09-09 (run 22643) that n8n paging on a JSON body repeats the same page and aborts with
+// "identical 5x", discarding every page including the first, so the whole tier came back empty.
+// Every row costs one fair-use row, never cash.
 const inp=$input.first().json||{};
 const companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);
 const LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };
@@ -19,8 +21,9 @@ for(const c of companies){ const floor=LEVELS[c.floor]?c.floor:'wide'; const cap
 const out=[];
 for(const k of Object.keys(groups).sort()){
   const g=groups[k];
-  for(let i=0;i<g.list.length;i+=1000){
-    const part=g.list.slice(i,i+1000);
+  const per=Math.max(1,Math.floor(5000/g.cap));
+  for(let i=0;i<g.list.length;i+=per){
+    const part=g.list.slice(i,i+per);
     out.push({ json:{ body:{ domains:part, seniority:LEVELS[g.floor], max_per_company:g.cap, limit:5000, offset:0, columns:COLUMNS }, domains:part, cap:g.cap, floor:g.floor } });
   }
 }

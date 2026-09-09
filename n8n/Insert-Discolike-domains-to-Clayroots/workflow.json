@@ -2,14 +2,14 @@
   "updatedAt": "2026-09-02T20:20:54.074Z",
   "createdAt": "2026-09-01T22:29:57.704Z",
   "id": "w9Mi3fwVt3G43Ug5",
-  "name": "Insert Discolike domains to Clayroots",
+  "name": "Discover Discolike Companies",
   "active": true,
   "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "launch-insert-discolike-domains",
+        "path": "discover-discolike-companies",
         "options": {}
       },
       "id": "a1b2c3d4-0001-4000-8000-000000000001",
@@ -20,7 +20,8 @@
         0,
         0
       ],
-      "webhookId": "insert-discolike-domains"
+      "webhookId": "discover-discolike-companies",
+      "notes": "The one door (ruled 2026-09-09): POST /webhook/discover-discolike-companies with {recordId} = the Hub launch row, fired by the single launch automation from the Automation name slugified. Launch row: Client, Query ID, Tag. Table is implied (Companies)."
     },
     {
       "parameters": {
@@ -57,51 +58,6 @@
     {
       "parameters": {
         "resource": "record",
-        "operation": "get",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblK0nCoNVvFf5SPa"
-        },
-        "id": "={{ $json.fields.Client[0] }}",
-        "options": {}
-      },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
-      "name": "Resolve Base",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        440,
-        0
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Launch-Params.js"
-      },
-      "id": "a1b2c3d4-0004-4000-8000-000000000004",
-      "name": "Launch Params",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        660,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "record",
         "operation": "update",
         "base": {
           "__rl": true,
@@ -116,11 +72,12 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "id": "={{ $json._launchRecordId }}",
+            "id": "={{ $json.id }}",
             "Status": "Running",
             "Run at": "={{ $now.toISO() }}",
             "Execution ID": "={{ $execution.id }}",
-            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}",
+            "Tally": ""
           },
           "matchingColumns": [
             "id"
@@ -136,7 +93,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        880,
+        440,
         0
       ],
       "credentials": {
@@ -144,7 +101,104 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "notes": "First thing the door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. Passes the record through, so Resolve Base reads fields.Client off it."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "A launch row with no Client link asks for recMISSING and keeps going; Launch Params reads the answer defensively and refuses with the reason."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0101-4000-8000-000000000101",
+      "name": "Launch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ],
+      "notes": "The refusal gate: Launch Params names a bad launch row instead of throwing; false means refused, Build Refusal closes the row as Failed with the reason before DiscoLike is called."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "a1b2c3d4-0102-4000-8000-000000000102",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        400
+      ]
     },
     {
       "parameters": {
@@ -207,7 +261,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1100,
+        1320,
         0
       ],
       "alwaysOutputData": true,
@@ -216,7 +270,9 @@
           "id": "jreseZ3JAhJNgkk0",
           "name": "Discolike API"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "GET /v1/discover on the saved query (inclusion_query_id), 500 a page, every page, 4.5 s apart; free inside DiscoLike 90-day cache. Header Auth credential Discolike API. Continues on error: no credential or a dead API is a logged skip on the launch row (Format Companies counts the error items), never a crash."
     },
     {
       "parameters": {
@@ -228,7 +284,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
+        1540,
         0
       ],
       "alwaysOutputData": true
@@ -263,7 +319,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1540,
+        1760,
         0
       ]
     },
@@ -291,10 +347,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1760,
-        -120
+        1980,
+        0
       ],
-      "notes": "The landing helper: column check, open fields, DNC, Clean Fields, upsert on Domain (Domain Source on create only, Tag on every row). Counters come back. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+      "notes": "The shared landing helper: column check (the register fields must exist; custom keys in the pull are created as columns and their People lookups), DNC dropped, Clean Fields, upsert on Domain in tens (a held company is refreshed with the new pull, Domain Source kept, Tag re-stamped), counters back."
     },
     {
       "parameters": {
@@ -325,8 +381,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1980,
-        -120
+        2200,
+        0
       ]
     },
     {
@@ -338,8 +394,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
-        -240
+        2420,
+        0
       ]
     },
     {
@@ -348,7 +404,7 @@
           "__rl": true,
           "mode": "id",
           "value": "PLTNYqqoYfrt9ypd",
-          "cachedResultName": "Waterfall Contacts"
+          "cachedResultName": "Enrich Contacts"
         },
         "workflowInputs": {
           "mappingMode": "passThrough",
@@ -362,14 +418,14 @@
         }
       },
       "id": "a1b2c3d4-0016-4000-8000-000000000016",
-      "name": "Waterfall Contacts",
+      "name": "Enrich Contacts",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2420,
-        -240
+        2640,
+        0
       ],
-      "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+      "notes": "Fire-and-forget: Enrich Contacts on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row."
     },
     {
       "parameters": {
@@ -380,7 +436,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        2860,
         0
       ],
       "onError": "continueRegularOutput"
@@ -416,7 +472,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        2860,
+        3080,
         0
       ],
       "onError": "stopWorkflow",
@@ -444,6 +500,17 @@
       "main": [
         [
           {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
             "node": "Resolve Base",
             "type": "main",
             "index": 0
@@ -466,18 +533,36 @@
       "main": [
         [
           {
-            "node": "Stamp Running",
+            "node": "Launch OK?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Stamp Running": {
+    "Launch OK?": {
       "main": [
         [
           {
             "node": "DiscoLike Discover",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
             "type": "main",
             "index": 0
           }
@@ -557,14 +642,14 @@
       "main": [
         [
           {
-            "node": "Waterfall Contacts",
+            "node": "Enrich Contacts",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Waterfall Contacts": {
+    "Enrich Contacts": {
       "main": [
         [
           {

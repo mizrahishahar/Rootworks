@@ -11,9 +11,14 @@ const join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==nu
 const kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);
 const keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);
 const norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/.*$/,'');
-const seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0 };
+// DiscoLike Discover continues on error (ruled 2026-09-09: a dead API or a missing credential is a
+// logged skip, never a crash): an error item is counted here and the log names it.
+const errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };
+const seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0, providerErrors:0, providerReason:'' };
 for(const it of $input.all()){
-  const c=it.json||{}; if(!Object.keys(c).length) continue; stats.pulled++;
+  const c=it.json||{}; if(!Object.keys(c).length) continue;
+  if(c.error&&c.domain===undefined){ stats.providerErrors++; if(!stats.providerReason) stats.providerReason=errMsg(c.error).slice(0,160); continue; }
+  stats.pulled++;
   const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }
   if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);
   const addr=c.address||{};

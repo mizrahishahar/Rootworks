@@ -12,7 +12,7 @@ const view=String(f['View']||'').trim();
 const where='Launch record '+(rec.id||'?');
 if(!clientRecId) throw new Error(where+' has no Client link. Nothing was verified.');
 if(!/^app[A-Za-z0-9]{14}$/.test(base)) throw new Error('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was verified.');
-if(!table) throw new Error(where+' has no Table. Enrich Emails takes Table "People" by name. Nothing was verified.');
-if(table.toLowerCase()!=='people') throw new Error(where+' names Table "'+table+'". Enrich Emails runs on People (company inboxes are Verify Emails). Nothing was verified.');
+// Table is implied (People); ruled 2026-09-09: the launch row is Client, View, Tag.
+if(table&&table.toLowerCase()!=='people') throw new Error(where+' names Table "'+table+'". Enrich Emails runs on People (company inboxes are Verify Emails). Nothing was verified.');
 if(!view) throw new Error(where+' has no View. A People view is required by name. Nothing was verified.');
 return [{ json:{ base, clientRecId, table:'People', view, tag:String(f['Tag']||'').trim(), trigger:'form', _launchRecordId:rec.id||'', startedAt:new Date().toISOString() } }];

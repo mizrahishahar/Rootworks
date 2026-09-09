@@ -31,7 +31,8 @@ const startedAt=new Date().toISOString();
 const refuse=(reason)=>[{ json:{ refused: reason, trigger: trigger, _launchRecordId: rec.id||'', clientRecId: clientRecId, base: base, table: table, view: view, tag: tag, startedAt: startedAt } }];
 if(!clientRecId){ return refuse(where+' has no Client link. Nothing was pulled.'); }
 if(!/^app[A-Za-z0-9]{14}$/.test(base)){ return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }
-if(!table){ return refuse(where+' has no Table. This machine takes Table "Companies" by name, no default. Nothing was pulled.'); }
-if(table.toLowerCase()!=='companies'){ return refuse(where+' names Table "'+table+'". This machine sources people for companies and takes only Table "Companies". Nothing was pulled.'); }
+// Table is implied by the Rootflow (ruled 2026-09-09: the launch row is Client, View, Tag). A Table that
+// is filled and is not Companies is still refused: the Operator meant another machine.
+if(table&&table.toLowerCase()!=='companies'){ return refuse(where+' names Table "'+table+'". This machine sources people for companies and takes only Table "Companies". Nothing was pulled.'); }
 if(!view){ return refuse(where+' has no View. A Companies view is required by name, no default (the insert doors pass "Not Sourced"). Nothing was pulled.'); }
 return [{ json: { refused: '', base: base, clientRecId: clientRecId, table: 'Companies', view: view, tag: tag, domains: domains, trigger: trigger, _launchRecordId: rec.id||'', startedAt: startedAt } }];

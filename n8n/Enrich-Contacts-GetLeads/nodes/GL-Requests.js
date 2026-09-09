@@ -13,7 +13,12 @@
 // "identical 5x", discarding every page including the first, so the whole tier came back empty.
 // Every row costs one fair-use row, never cash.
 const inp=$input.first().json||{};
-const companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);
+// A domain GetLeads would refuse (no dot, illegal characters) sinks its WHOLE call (run 22808: one
+// "v12footwear" row rejected 250 domains with a 400). Such rows are skipped here and counted.
+const okDomain=(d)=>/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(String(d||''));
+const all=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);
+const companies=all.filter(c=>okDomain(c.domain));
+const badDomains=all.length-companies.length;
 const LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };
 const COLUMNS=['First Name','Last Name','Contact Full Name','Email','Email Verification Status','Current Job Title','Seniority Level','Department / Function','Contact LinkedIn URL','Cellphone','Direct Office Phone','Company Domain','Work Email Domain','Current Employer Name'];
 const groups={};
@@ -27,5 +32,6 @@ for(const k of Object.keys(groups).sort()){
     out.push({ json:{ body:{ domains:part, seniority:LEVELS[g.floor], max_per_company:g.cap, limit:5000, offset:0, columns:COLUMNS }, domains:part, cap:g.cap, floor:g.floor } });
   }
 }
-if(!out.length) return [{ json:{ _none:true } }];
+if(!out.length) return [{ json:{ _none:true, badDomains } }];
+out[0].json.badDomains=badDomains;
 return out;

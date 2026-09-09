@@ -1,0 +1,829 @@
+{
+  "updatedAt": "2026-09-09T06:54:47.042Z",
+  "createdAt": "2026-09-09T06:49:07.851Z",
+  "id": "rc2IqbRdeTHjLP6F",
+  "name": "Enrich Contacts Writer",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "1a4e-0001-4000-8000-000000000001",
+      "name": "Writer Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "The shared writer of Enrich Contacts (2026-09-09). One item: { base, peopleTableId, peopleFields, contactSourceMulti, dncDomains, provider, companies:[{recordId, domain, cap}], people:{domain:[...]} }. Reads what People already holds at these domains, merges one provider's chunk into it (held rows filled, never overwritten, first writer wins because the lanes run in priority order), cleans, drops DNC, PATCHes in tens. Answers counters only."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Held-Filters.js"
+      },
+      "id": "1a4e-0002-4000-8000-000000000002",
+      "name": "Held Filters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Writer Trigger').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Writer Trigger').first().json.peopleTableId }}"
+        },
+        "filterByFormula": "={{ $json.formula }}",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Contact Key",
+            "LinkedIn URL",
+            "Domain",
+            "Email",
+            "Contact Source",
+            "Title",
+            "Phone",
+            "Seniority",
+            "Department",
+            "Source ID"
+          ]
+        }
+      },
+      "id": "1a4e-0003-4000-8000-000000000003",
+      "name": "Read Held",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "What People already holds at this chunk's domains, one call per 100 domains, with the fill fields. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Merge-People.js"
+      },
+      "id": "1a4e-0004-4000-8000-000000000004",
+      "name": "Merge People",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json['Contact Key'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0005-4000-8000-000000000005",
+      "name": "Any People?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "notes": "Merge People answers one {_empty} item when the chunk brought nothing new and nothing to fill."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RIDktQyZoBnW2fql",
+          "cachedResultName": "Clean Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1a4e-0006-4000-8000-000000000006",
+      "name": "Clean Fields",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1100,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Apply-DNC.js"
+      },
+      "id": "1a4e-0007-4000-8000-000000000007",
+      "name": "Apply DNC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json['Contact Key'] || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0008-4000-8000-000000000008",
+      "name": "Any After DNC?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-People.js"
+      },
+      "id": "1a4e-0009-4000-8000-000000000009",
+      "name": "Chunk People",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Writer Trigger').first().json.base }}/{{ $('Writer Trigger').first().json.peopleTableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "1a4e-0010-4000-8000-000000000010",
+      "name": "Write People",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1980,
+        -240
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The one People writer: PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request, held rows carry their id), typecast: true}, 200 ms apart, so 50 rows per second. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason. Written rows are counted from the answer's records[]."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Writer-Response.js"
+      },
+      "id": "1a4e-0011-4000-8000-000000000011",
+      "name": "Writer Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Writer Trigger": {
+      "main": [
+        [
+          {
+            "node": "Held Filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Held Filters": {
+      "main": [
+        [
+          {
+            "node": "Read Held",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Held": {
+      "main": [
+        [
+          {
+            "node": "Merge People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge People": {
+      "main": [
+        [
+          {
+            "node": "Any People?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any People?": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Writer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Apply DNC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply DNC": {
+      "main": [
+        [
+          {
+            "node": "Any After DNC?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any After DNC?": {
+      "main": [
+        [
+          {
+            "node": "Chunk People",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Writer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk People": {
+      "main": [
+        [
+          {
+            "node": "Write People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write People": {
+      "main": [
+        [
+          {
+            "node": "Writer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "5fe802c2-c44e-4a3d-ac7c-2b6b644f6334",
+  "activeVersionId": "5fe802c2-c44e-4a3d-ac7c-2b6b644f6334",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-09T06:49:07.876Z",
+      "createdAt": "2026-09-09T06:49:07.876Z",
+      "role": "workflow:owner",
+      "workflowId": "rc2IqbRdeTHjLP6F",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-09T06:54:47.048Z",
+    "createdAt": "2026-09-09T06:54:47.048Z",
+    "versionId": "5fe802c2-c44e-4a3d-ac7c-2b6b644f6334",
+    "workflowId": "rc2IqbRdeTHjLP6F",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "1a4e-0001-4000-8000-000000000001",
+        "name": "Writer Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "notes": "The shared writer of Enrich Contacts (2026-09-09). One item: { base, peopleTableId, peopleFields, contactSourceMulti, dncDomains, provider, companies:[{recordId, domain, cap}], people:{domain:[...]} }. Reads what People already holds at these domains, merges one provider's chunk into it (held rows filled, never overwritten, first writer wins because the lanes run in priority order), cleans, drops DNC, PATCHes in tens. Answers counters only."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Held Filters: the chunk's domains, one OR formula per 100, for the read of what People already\n// holds there (the fill-blanks rule needs the held row's values). Domain on People is a lookup.\nconst inp=$('Writer Trigger').first().json||{};\nconst d=Array.from(new Set((inp.companies||[]).map(c=>String(c.domain||'').toLowerCase()).filter(Boolean)));\nconst esc=(s)=>String(s).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nconst out=[];\nfor(let i=0;i<d.length;i+=100){ const chunk=d.slice(i,i+100); out.push({ json:{ formula:chunk.length===1?(\"{Domain}='\"+esc(chunk[0])+\"'\"):('OR('+chunk.map(x=>\"{Domain}='\"+esc(x)+\"'\").join(',')+')') } }); }\nif(!out.length) out.push({ json:{ formula:\"{Domain}=''\" } });\nreturn out;\n"
+        },
+        "id": "1a4e-0002-4000-8000-000000000002",
+        "name": "Held Filters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Writer Trigger').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Writer Trigger').first().json.peopleTableId }}"
+          },
+          "filterByFormula": "={{ $json.formula }}",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Contact Key",
+              "LinkedIn URL",
+              "Domain",
+              "Email",
+              "Contact Source",
+              "Title",
+              "Phone",
+              "Seniority",
+              "Department",
+              "Source ID"
+            ]
+          }
+        },
+        "id": "1a4e-0003-4000-8000-000000000003",
+        "name": "Read Held",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "What People already holds at this chunk's domains, one call per 100 domains, with the fill fields. Domain on People is a lookup through the Companies link; the {Domain} filter matches its text."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Merge People (the writer helper): one provider's people for one chunk of companies, merged into\n// the register's People shape against what the base already holds. Rules (ruled 2026-09-08):\n//   Keys: Contact Key (cleaned first + last + domain), then the LinkedIn slug. A held person is\n//     UPDATED, blanks filled, nothing overwritten; two rows naming the same person merge.\n//   Priority: the lanes run in priority order (Blitz, GetLeads, QuickEnrich, Supersoniq), so the\n//     held row is always the higher-priority writer and first-writer-wins holds by construction.\n//   Email: appended, deduped, never replaced. LinkedIn URL only when its slug contains the first\n//     or last name. Contact Source: the provider added to the held list (a single value when the\n//     base still carries a single select). Seniority and Department from the provider, else from\n//     the title. The vocabularies come from the register (@@register); a map target the register\n//     does not carry fails here.\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client's rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule.\"}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"multipleSelects\",\"options\":{\"choices\":[{\"name\":\"Blitz\",\"color\":\"cyanLight2\"},{\"name\":\"GetLeads\",\"color\":\"greenLight2\"},{\"name\":\"QuickEnrich\",\"color\":\"yellowLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped the OR's second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client's rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty.\"},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Signals\",\"filter\":{\"words\":\"relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view\",\"formula\":\"AND({relevance} = 1, {Signals} != BLANK())\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Signals\",\"Signal At\",\"Build Date\"],\"sort\":{\"field\":\"Signal At\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"Blitz\":\"cyanLight2\",\"GetLeads\":\"greenLight2\",\"QuickEnrich\":\"yellowLight2\",\"Supersoniq\":\"purpleLight2\",\"ContaGen\":\"blueLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst inp=$('Writer Trigger').first().json||{};\nconst provider=String(inp.provider||'');\nconst have=new Set(inp.peopleFields||[]);\nconst multi=inp.contactSourceMulti===true;\nconst people=(inp.people&&typeof inp.people==='object')?inp.people:{};\nconst companies=Array.isArray(inp.companies)?inp.companies:[];\nlet heldRows=[]; try{ heldRows=$('Read Held').all().map(i=>i.json||{}).filter(j=>j.id); }catch(e){}\nconst titleCase=(s)=>String(s).replace(/\\w\\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());\nconst cleanFirst=(f)=>{if(!f)return'';let n=String(f).split(',')[0].trim().split(/\\s+/)[0]||'';n=n.replace(/[^A-Za-z\\-']/g,'');return n?n.charAt(0).toUpperCase()+n.slice(1).toLowerCase():'';};\nconst cleanLast=(f)=>{if(!f)return'';let p=String(f).split(',')[0].trim().split(/\\s+/);if(p.length<2)return'';return titleCase(p.slice(1).join(' ').replace(/[^A-Za-z\\-'\\s]/g,'').trim());};\nconst PEOPLE=REGISTER.tables.find(t=>t.name==='People');\nconst choices=(n)=>new Set(PEOPLE.fields.find(f=>f.name===n).options.choices.map(c=>c.name));\nconst SENIORITY=choices('Seniority'), DEPARTMENT=choices('Department');\nconst SEN={ 'executive':'Executive', 'c-suite':'C-Suite', 'c_suite':'C-Suite', 'csuite':'C-Suite', 'c-team':'C-Suite', 'cxo':'C-Suite', 'founder':'Founder', 'owner':'Owner', 'president':'President', 'vp':'VP', 'vice president':'VP', 'head':'Head', 'director':'Director', 'manager':'Manager', 'senior manager':'Manager', 'senior':'Senior', 'senior_ic':'Senior', 'staff':'Senior', 'mid_level':'Senior', 'partner':'Partner', 'evp / svp':'EVP / SVP', 'evp':'EVP / SVP', 'svp':'EVP / SVP', 'board / chair':'Board / Chair', 'board':'Board / Chair', 'chair':'Board / Chair', 'unclassified':'Unclassified', 'other':'Unclassified' };\nconst TITLE_SEN=[ [/\\b(co-?founder|founder|founding)\\b/i,'Founder'], [/\\b(owner|proprietor)\\b/i,'Owner'], [/\\b(chairman|chairwoman|chairperson|chair|board member)\\b/i,'Board / Chair'], [/\\b(chief\\s+[a-z ]+?\\s+officer|ceo|cto|cfo|coo|cmo|cro|cio|ciso|cpo|chro|cco|cso|cdo|cao)\\b/i,'C-Suite'], [/\\bpresident\\b/i,'President'], [/\\b(evp|svp|executive vice president|senior vice president)\\b/i,'EVP / SVP'], [/\\b(vp|vice president|vice-president)\\b/i,'VP'], [/\\bhead\\b/i,'Head'], [/\\bdirector\\b/i,'Director'], [/\\bmanager\\b/i,'Manager'], [/\\b(general partner|managing partner|partner)\\b/i,'Partner'], [/\\b(senior|sr\\.?|lead|principal|staff)\\b/i,'Senior'] ];\nconst mapSen=(raw,title)=>{ const t=String(title||''); for(const pair of TITLE_SEN){ if(pair[0].test(t)){ if(pair[1]==='President'&&/\\bvice/i.test(t)) continue; return pair[1]; } } return SEN[String(raw||'').trim().toLowerCase()]||'Unclassified'; };\nconst DEP={ 'executive':'Executive', 'general business & management':'Executive', 'engineering':'Engineering', 'technology':'Technology', 'it':'Technology', 'information technology':'Technology', 'r&d':'R&D', 'research & development':'R&D', 'research and development':'R&D', 'research':'R&D', 'science':'R&D', 'product':'Product', 'product management':'Product', 'data':'Data', 'data science':'Data', 'analytics':'Data', 'security':'Security', 'information security':'Security', 'design':'Design', 'art, culture and creative professionals':'Design', 'operations':'Operations', 'manufacturing & production':'Operations', 'sales':'Sales', 'sales - marketing':'Sales', 'sales & business development':'Sales', 'business development':'Sales', 'marketing':'Marketing', 'advertising & marketing':'Marketing', 'finance':'Finance', 'finance & accounting':'Finance', 'accounting':'Finance', 'human resources':'Human Resources', 'hr':'Human Resources', 'people':'Human Resources', 'customer success':'Customer Success', 'customer service':'Customer Success', 'customer/client service':'Customer Success', 'support':'Customer Success', 'project management':'Project Management', 'strategy':'Strategy', 'legal':'Legal', 'supply chain':'Supply Chain', 'supply chain & logistics':'Supply Chain', 'logistics':'Supply Chain', 'procurement':'Supply Chain', 'purchasing':'Supply Chain', 'communications':'Communications', 'public relations':'Communications', 'writing/editing':'Communications', 'community':'Community & Social', 'community & social':'Community & Social', 'social':'Community & Social', 'compliance':'Compliance & GRC', 'compliance & grc':'Compliance & GRC', 'grc':'Compliance & GRC', 'risk':'Compliance & GRC' };\nconst TITLE_DEP=[ [/\\b(ceo|founder|owner|president|chief executive|managing director|general manager)\\b/i,'Executive'], [/\\b(cto|engineer|engineering|developer|software|architect)\\b/i,'Engineering'], [/\\b(devops|sre|infrastructure|cloud|platform|it\\b|information technology|cio|sysadmin|systems)\\b/i,'Technology'], [/\\b(security|ciso|infosec)\\b/i,'Security'], [/\\b(data|analytics|bi\\b|machine learning|ai\\b)\\b/i,'Data'], [/\\b(product)\\b/i,'Product'], [/\\b(design|ux|ui\\b|creative)\\b/i,'Design'], [/\\b(sales|account executive|business development|revenue|cro)\\b/i,'Sales'], [/\\b(marketing|growth|demand|brand|content|seo|cmo)\\b/i,'Marketing'], [/\\b(finance|financial|accounting|controller|cfo|treasur)\\b/i,'Finance'], [/\\b(human resources|hr\\b|people|talent|recruit|chro)\\b/i,'Human Resources'], [/\\b(customer success|customer support|support|customer experience)\\b/i,'Customer Success'], [/\\b(legal|counsel|attorney)\\b/i,'Legal'], [/\\b(compliance|risk|grc|audit)\\b/i,'Compliance & GRC'], [/\\b(supply chain|logistics|procurement|purchasing)\\b/i,'Supply Chain'], [/\\b(project|program|pmo)\\b/i,'Project Management'], [/\\b(operations|ops\\b|coo)\\b/i,'Operations'], [/\\b(communications|pr\\b|public relations)\\b/i,'Communications'], [/\\b(strategy)\\b/i,'Strategy'] ];\nconst mapDep=(raw,title)=>{ for(const part of String(raw||'').split(/[,;|]/)){ const m=DEP[part.trim().toLowerCase()]; if(m) return m; } const t=String(title||''); for(const pair of TITLE_DEP){ if(pair[0].test(t)) return pair[1]; } return ''; };\nfor(const v of Object.values(SEN).concat(TITLE_SEN.map(x=>x[1]))){ if(!SENIORITY.has(v)) throw new Error('Merge People: Seniority \"'+v+'\" is not on the register'); }\nfor(const v of Object.values(DEP).concat(TITLE_DEP.map(x=>x[1]))){ if(!DEPARTMENT.has(v)) throw new Error('Merge People: Department \"'+v+'\" is not on the register'); }\nconst slugOf=(u)=>{ const m=String(u||'').toLowerCase().match(/linkedin\\.com\\/in\\/([^\\/?#]+)/); return m?m[1].replace(/\\/+$/,'').trim():''; };\nconst fenceOk=(slug,first,last)=>{ if(!slug) return false; const s=slug.replace(/[^a-z0-9]/g,''); const f=String(first||'').toLowerCase().replace(/[^a-z]/g,''); const l=String(last||'').toLowerCase().replace(/[^a-z]/g,''); return (f.length>=2&&s.indexOf(f)>-1)||(l.length>=3&&s.indexOf(l)>-1); };\nconst splitEmails=(s)=>String(s||'').split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.indexOf('@')>0);\nconst one=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();\nconst many=(v)=>Array.isArray(v)?v.map(x=>(x&&typeof x==='object')?String(x.name||''):String(x)).filter(Boolean):(v?[String((v&&typeof v==='object')?(v.name||''):v)].filter(Boolean):[]);\nconst heldByDomain={};\nfor(const h of heldRows){ const f=h.fields||{}; const d=one(f.Domain).toLowerCase(); if(!d) continue; (heldByDomain[d]=heldByDomain[d]||[]).push({ id:h.id, key:one(f['Contact Key']).toLowerCase(), held:true, fields:{ Title:one(f.Title), Seniority:one(f.Seniority), Department:one(f.Department), 'LinkedIn URL':one(f['LinkedIn URL']), Phone:one(f.Phone), 'Source ID':one(f['Source ID']) }, emails:splitEmails(one(f.Email)), sources:many(f['Contact Source']), changes:{}, emailChanged:false, sourceChanged:false }); }\nconst stats={ returned:0, built:0, updated:0, heldUnchanged:0, dupes:0, noKey:0, fenced:0, emailsAppended:0, singleSelectSource:!multi, coveredDomains:[] };\nconst out=[];\nfor(const c of companies){\n  const domain=String(c.domain||'').toLowerCase(); if(!domain) continue;\n  const list=people[domain]||[];\n  const heldByKey={}, heldBySlug={};\n  for(const rec of (heldByDomain[domain]||[])){ if(rec.key) heldByKey[rec.key]=rec; const s=slugOf(rec.fields['LinkedIn URL']); if(s) heldBySlug[s]=rec; }\n  const newByKey={}, newBySlug={}; const rows=[];\n  for(const person of list){\n    stats.returned++;\n    const full=String(person.name||'').trim();\n    const first=cleanFirst(full), last=cleanLast(full);\n    if(!first){ stats.noKey++; continue; }\n    const key=(first.toLowerCase()+last.toLowerCase()+domain).trim();\n    const rawLi=String(person.linkedin||'').trim(); const slug=slugOf(rawLi);\n    const li=(rawLi&&fenceOk(slug,first,last))?rawLi:''; if(rawLi&&!li) stats.fenced++;\n    const email=String(person.email||'').trim().toLowerCase();\n    const incoming={ Title:String(person.title||'').trim(), Seniority:mapSen(person.seniority, person.title), Department:mapDep(person.department, person.title), 'LinkedIn URL':li, Phone:String(person.phone||'').trim(), 'Source ID':String(person.sourceId||'').trim() };\n    let target=newByKey[key]||(li&&newBySlug[slug])||heldByKey[key]||(li&&heldBySlug[slug])||null;\n    if(!target){ target={ id:'', key, held:false, fields:incoming, emails:email?[email]:[], sources:[provider], name:full }; newByKey[key]=target; if(li) newBySlug[slug]=target; rows.push(target); stats.built++; continue; }\n    if(!target.held) stats.dupes++;\n    for(const k of Object.keys(incoming)){ const cur=String(target.fields[k]||''); const nv=incoming[k]; const blank=!cur||(k==='Seniority'&&cur==='Unclassified'); if(blank&&nv&&nv!==cur){ target.fields[k]=nv; if(target.held) target.changes[k]=nv; } }\n    if(email&&target.emails.indexOf(email)<0){ target.emails.push(email); if(target.held){ target.emailChanged=true; stats.emailsAppended++; } }\n    if(target.sources.indexOf(provider)<0){ target.sources.push(provider); if(target.held) target.sourceChanged=true; }\n  }\n  let covered=(heldByDomain[domain]||[]).length>0;\n  for(const r of rows){\n    covered=true;\n    const row={ 'Name':r.name, 'Title':r.fields.Title, 'Seniority':r.fields.Seniority, 'Department':r.fields.Department, 'Email':r.emails.join(', '), 'LinkedIn URL':r.fields['LinkedIn URL'], 'Phone':r.fields.Phone, 'Companies':[c.recordId], 'Contact Key':r.key, 'Contact Source':(multi?r.sources.slice():r.sources[0]), 'Source ID':r.fields['Source ID'], '_domain':domain };\n    if(!row.Department) delete row.Department;\n    for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }\n    out.push({ json:row });\n  }\n  for(const rec of (heldByDomain[domain]||[])){\n    const changed=Object.keys(rec.changes).length||rec.emailChanged||rec.sourceChanged;\n    if(!changed){ stats.heldUnchanged++; continue; }\n    const row=Object.assign({ '_id':rec.id, 'Contact Key':rec.key, '_domain':domain }, rec.changes);\n    if(rec.emailChanged) row['Email']=rec.emails.join(', ');\n    if(rec.sourceChanged&&multi) row['Contact Source']=rec.sources.slice();\n    if(row.Department==='') delete row.Department;\n    for(const kk of Object.keys(row)){ if(kk.charAt(0)==='_') continue; if(!have.has(kk)) delete row[kk]; }\n    if(Object.keys(row).filter(x=>x.charAt(0)!=='_'&&x!=='Contact Key').length){ out.push({ json:row }); stats.updated++; } else stats.heldUnchanged++;\n  }\n  if(covered) stats.coveredDomains.push(domain);\n}\nif(!out.length) return [{ json:{ _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+        },
+        "id": "1a4e-0004-4000-8000-000000000004",
+        "name": "Merge People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "k1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1a4e-0005-4000-8000-000000000005",
+        "name": "Any People?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          0
+        ],
+        "notes": "Merge People answers one {_empty} item when the chunk brought nothing new and nothing to fill."
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "RIDktQyZoBnW2fql",
+            "cachedResultName": "Clean Fields"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "1a4e-0006-4000-8000-000000000006",
+        "name": "Clean Fields",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1100,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Apply DNC: drops people whose domain is on the client's DNC list (read once by the Rootflow and\n// handed in), then fences the write set to exactly what the writer owns on People: Name,\n// first_name, last_name, Title, Seniority, Department, Email, LinkedIn URL, Phone, Companies,\n// Contact Key, Contact Source, Source ID. The _id carrier (a held row being filled) rides through.\nconst WRITE_FIELDS=['Name','first_name','last_name','Title','Seniority','Department','Email','LinkedIn URL','Phone','Companies','Contact Key','Contact Source','Source ID'];\nconst inp=$('Writer Trigger').first().json||{};\nconst have=new Set(inp.peopleFields||[]);\nconst allow=new Set(WRITE_FIELDS.filter(k=>have.has(k)));\nconst dnc=new Set((inp.dncDomains||[]).map(d=>String(d).toLowerCase()));\nconst domainByKey={};\ntry{ for(const it of $('Merge People').all()){ const j=it.json||{}; const k=String(j['Contact Key']||'').toLowerCase(); if(k&&j._domain) domainByKey[k]=String(j._domain).toLowerCase(); } }catch(e){}\nconst out=[];\nfor(const i of $('Clean Fields').all()){\n  const j=i.json||{};\n  if(j._empty) continue;\n  const key=String(j['Contact Key']||'').toLowerCase().trim(); if(!key) continue;\n  const d=String(j._domain||domainByKey[key]||'').toLowerCase().trim();\n  if(dnc.size&&d&&dnc.has(d)) continue;\n  const row={}; for(const k of Object.keys(j)){ if(allow.has(k)) row[k]=j[k]; }\n  if(j._id) row._id=j._id;\n  out.push({ json:row });\n}\nif(!out.length) return [{ json:{ _empty:true } }];\nreturn out;\n"
+        },
+        "id": "1a4e-0007-4000-8000-000000000007",
+        "name": "Apply DNC",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "k1",
+                "leftValue": "={{ $json['Contact Key'] || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1a4e-0008-4000-8000-000000000008",
+        "name": "Any After DNC?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk People: the survivors of Apply DNC in tens, one item per Airtable request. Write People\n// PATCHes each as {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records, typecast} at 200 ms\n// apart, ten records per request at five requests per second. A new person is a record without an\n// id (matched on Contact Key); a held person being filled (the _id carrier from Merge People) is a\n// record WITH its id, which Airtable treats as a plain update inside the same request. The Contact\n// Keys and the size ride on the item, never in the body, for the count-back.\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty&&j['Contact Key']);\nconst out=[];\nfor(let i=0;i<rows.length;i+=10){\n  const part=rows.slice(i,i+10);\n  out.push({ json: {\n    body: { performUpsert: { fieldsToMergeOn: ['Contact Key'] }, records: part.map(r=>{ const f=Object.assign({}, r); const id=f._id; delete f._id; return id?{ id:id, fields:f }:{ fields:f }; }), typecast: true },\n    keys: part.map(r=>String(r['Contact Key']).toLowerCase()),\n    updates: part.filter(r=>r._id).length,\n    size: part.length\n  } });\n}\nreturn out;\n"
+        },
+        "id": "1a4e-0009-4000-8000-000000000009",
+        "name": "Chunk People",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Writer Trigger').first().json.base }}/{{ $('Writer Trigger').first().json.peopleTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "1a4e-0010-4000-8000-000000000010",
+        "name": "Write People",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1980,
+          -240
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The one People writer: PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request, held rows carry their id), typecast: true}, 200 ms apart, so 50 rows per second. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason. Written rows are counted from the answer's records[]."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Writer Response: the last node, what the lane receives: counts only, never rows. Written rows\n// are counted from every 2xx answer's records[]; a request that was not 2xx counts every record it\n// carried as a write error with the HTTP reason (never retried: a 429 locks Airtable for 30 s).\nconst n=(v)=>Number(v)||0;\nlet merge={}; try{ merge=($('Merge People').first().json||{})._stats||{}; }catch(e){}\nconst rowsOf=(name)=>{ try{ return $(name).all().filter(i=>i.json&&!i.json._empty&&i.json['Contact Key']).length; }catch(e){ return 0; } };\nconst dnc=Math.max(0, rowsOf('Clean Fields')-rowsOf('Apply DNC'));\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nlet written=0, updatedWritten=0, writeErrors=0; const reasons=[];\nlet chunks=[], resps=[];\ntry{ chunks=$('Chunk People').all().map(i=>i.json); resps=$('Write People').all(); }catch(e){}\nresps.forEach((it,i)=>{\n  const c=chunks[i]||{ size:0, updates:0 }; const j=it.json||{};\n  if(j.error&&j.statusCode===undefined){ writeErrors+=n(c.size); if(reasons.length<5) reasons.push('People writer: '+String((j.error&&j.error.message)||j.error||'call failed').slice(0,160)); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){ written+=b.records.length; updatedWritten+=n(c.updates); if(b.records.length<n(c.size)) writeErrors+=n(c.size)-b.records.length; return; }\n  writeErrors+=n(c.size);\n  const e=b&&b.error; const why=e?(typeof e==='object'?(e.message||e.type||JSON.stringify(e)):String(e)):(typeof j.body==='string'?j.body:'');\n  if(reasons.length<5) reasons.push(('People writer HTTP '+status+' '+String(why||'')).replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim().slice(0,180)+(status===429?' (rate limited; never retried)':''));\n});\nreturn [{ json:{ returned:n(merge.returned), built:n(merge.built), updated:n(merge.updated), heldUnchanged:n(merge.heldUnchanged), dupes:n(merge.dupes), noKey:n(merge.noKey), fenced:n(merge.fenced), emailsAppended:n(merge.emailsAppended), singleSelectSource:!!merge.singleSelectSource, dnc, written, updatedWritten, writeErrors, writeRequests:resps.length, writeReasons:reasons, coveredDomains:Array.isArray(merge.coveredDomains)?merge.coveredDomains:[] } }];\n"
+        },
+        "id": "1a4e-0011-4000-8000-000000000011",
+        "name": "Writer Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Writer Trigger": {
+        "main": [
+          [
+            {
+              "node": "Held Filters",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Held Filters": {
+        "main": [
+          [
+            {
+              "node": "Read Held",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Held": {
+        "main": [
+          [
+            {
+              "node": "Merge People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge People": {
+        "main": [
+          [
+            {
+              "node": "Any People?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any People?": {
+        "main": [
+          [
+            {
+              "node": "Clean Fields",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Writer Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Fields": {
+        "main": [
+          [
+            {
+              "node": "Apply DNC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply DNC": {
+        "main": [
+          [
+            {
+              "node": "Any After DNC?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any After DNC?": {
+        "main": [
+          [
+            {
+              "node": "Chunk People",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Writer Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk People": {
+        "main": [
+          [
+            {
+              "node": "Write People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write People": {
+        "main": [
+          [
+            {
+              "node": "Writer Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

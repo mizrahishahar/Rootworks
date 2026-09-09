@@ -15,7 +15,7 @@
 // n8n hands a node failure over as {error}: a plain string ("Credentials not found") or an object with message and description. Read both shapes.
 const errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };
 const inp=$('GL Requests').first().json||{};
-const plan=$('Enrich Trigger').first().json||{};
+const plan=$('Chunk Loop').first().json||{};
 const byDomain={}; for(const c of (Array.isArray(plan.companies)?plan.companies:[])){ if(c&&c.domain) byDomain[String(c.domain).toLowerCase()]=c; }
 const st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], dropped:0, pages:0 };
 const people={};

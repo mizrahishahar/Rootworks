@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-08T21:27:16.915Z",
+  "updatedAt": "2026-09-09T06:07:59.205Z",
   "createdAt": "2026-09-08T21:21:14.962Z",
   "id": "XZS3XCFCZqR97I2R",
   "name": "Enrich Emails",
@@ -2423,9 +2423,9 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "e514f2e6-47ab-4502-ac94-c64db6021720",
-  "activeVersionId": "e514f2e6-47ab-4502-ac94-c64db6021720",
-  "triggerCount": 2,
+  "versionId": "7f0e80a9-426f-4771-a690-ede27c54e59b",
+  "activeVersionId": "7f0e80a9-426f-4771-a690-ede27c54e59b",
+  "triggerCount": 1,
   "shared": [
     {
       "updatedAt": "2026-09-08T21:21:14.968Z",
@@ -2436,27 +2436,11 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-08T21:27:16.920Z",
-    "createdAt": "2026-09-08T21:27:16.920Z",
-    "versionId": "e514f2e6-47ab-4502-ac94-c64db6021720",
+    "updatedAt": "2026-09-09T06:07:59.212Z",
+    "createdAt": "2026-09-09T06:07:59.212Z",
+    "versionId": "7f0e80a9-426f-4771-a690-ede27c54e59b",
     "workflowId": "XZS3XCFCZqR97I2R",
     "nodes": [
-      {
-        "parameters": {
-          "httpMethod": "POST",
-          "path": "launch-enrich-emails",
-          "options": {}
-        },
-        "id": "e2e00001-0000-4000-8000-000000000001",
-        "name": "Launch Webhook",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2.1,
-        "position": [
-          0,
-          0
-        ],
-        "webhookId": "b1176991-d8d5-43f6-b645-3ce8e6df805f"
-      },
       {
         "parameters": {
           "resource": "record",
@@ -2591,14 +2575,15 @@
           "responseMode": "onReceived"
         },
         "id": "e2e00006-0000-4000-8000-000000000006",
-        "name": "Record Webhook",
+        "name": "Door",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2.1,
         "position": [
           0,
           200
         ],
-        "webhookId": "5bcbc747-35b4-4211-a017-4a61e4d4376a"
+        "webhookId": "5bcbc747-35b4-4211-a017-4a61e4d4376a",
+        "notes": "One door, named after the machine: POST /webhook/enrich-emails. Body {recordId} = a Hub launch row (the single Launch automation posts it); body {baseId, clientRecordId, table, view} = an event call (Enrich Contacts after its last batch). Answers 200 on receipt."
       },
       {
         "parameters": {
@@ -3170,7 +3155,7 @@
       },
       {
         "parameters": {
-          "jsCode": "// Prep: the batch's state, one item, carried from stage to stage by name. Per row: the cleaned\n// names, the domain, the LinkedIn URL, and the candidate list built from the Email cell (every\n// address the contact providers delivered, in the order they were merged; a foreign-domain address\n// is kept last). Per domain: the address pattern the base already proves (from Status = done rows\n// at that domain whose Final Email matches one of the known shapes for that person: the majority\n// shape, at least one proof) and whether the domain is known catch-all (a done row there was\n// verified by BounceBan). Shapes: first.last, first, flast, firstlast, first_last, f.last.\nconst rows=$('Read Records').all().map(i=>i.json||{}).filter(j=>j.id);\nlet known=[]; try{ known=$('Read Known').all().map(i=>i.json||{}).filter(j=>j.id); }catch(e){}\nconst norm=(v)=>String(Array.isArray(v)?(v[0]||''):(v||'')).trim().toLowerCase();\nconst clean=(s)=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');\nconst SHAPES=['first.last','first','flast','firstlast','first_last','f.last'];\nconst shape=(sh,f,l)=>{ if(!f) return ''; if(sh==='first') return f; if(!l) return ''; if(sh==='first.last') return f+'.'+l; if(sh==='flast') return f.charAt(0)+l; if(sh==='firstlast') return f+l; if(sh==='first_last') return f+'_'+l; if(sh==='f.last') return f.charAt(0)+'.'+l; return ''; };\nconst splitEmails=(s)=>Array.from(new Set(String(s||'').split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(e))));\nconst domainOf=(e)=>e.slice(e.lastIndexOf('@')+1);\n// What the base proves per domain.\nconst proof={};\nfor(const k of known){ const f=k.fields||{}; const d=norm(f.Domain); const fe=String(f['Final Email']||'').trim().toLowerCase(); if(!d||!fe) continue; const p=proof[d]||(proof[d]={ shapes:{}, catchAll:false }); if(String(f['Email Verified By']||'')==='BounceBan') p.catchAll=true; const first=clean(f.first_name), last=clean(f.last_name); const local=fe.slice(0,fe.lastIndexOf('@')); for(const sh of SHAPES){ if(shape(sh,first,last)===local){ p.shapes[sh]=(p.shapes[sh]||0)+1; break; } } }\nconst patterns={}, domainCatchAll={};\nfor(const d of Object.keys(proof)){ const p=proof[d]; if(p.catchAll) domainCatchAll[d]=true; let best='',n=0; for(const sh of Object.keys(p.shapes)){ if(p.shapes[sh]>n){ n=p.shapes[sh]; best=sh; } } if(best) patterns[d]=best; }\nconst state={ order:[], rows:{}, patterns, domainCatchAll, stats:{ rows:rows.length, candidatesIn:0, knownRows:known.length, patternsKnown:Object.keys(patterns).length, mvCalls:0, blitzCalls:0, blitzFound:0, lmCalls:0, lmFound:0, guesses:0, catchAllDomains:0 } };\nfor(const r of rows){\n  const f=r.fields||{};\n  const domain=norm(f.Domain);\n  const first=clean(f.first_name), last=clean(f.last_name);\n  const emails=splitEmails(f.Email);\n  const own=emails.filter(e=>domain&&(domainOf(e)===domain||domainOf(e).endsWith('.'+domain)));\n  const foreign=emails.filter(e=>own.indexOf(e)<0);\n  const candidates=own.concat(foreign).map(e=>({ email:e, origin:'database', mv:'' }));\n  state.stats.candidatesIn+=candidates.length;\n  state.order.push(r.id);\n  state.rows[r.id]={ id:r.id, first, last, firstRaw:String(f.first_name||'').trim(), lastRaw:String(f.last_name||'').trim(), domain, linkedin:String(f['LinkedIn URL']||'').trim(), candidates, resolved:null, catchAll:!!domainCatchAll[domain], guessed:false, blitzAsked:false, lmAsked:false, error:'' };\n}\nstate.stats.catchAllDomains=Object.keys(domainCatchAll).length;\nreturn [{ json:state }];\n"
+          "jsCode": "// Prep: the batch's state, one item, carried from stage to stage by name. Per row: the cleaned\n// names, the domain, the LinkedIn URL, and the candidate list built from the Email cell (every\n// address the contact providers delivered, in the order they were merged; a foreign-domain address\n// is kept last). Per domain: the address pattern the base already proves (from Status = done rows\n// at that domain whose Final Email matches one of the known shapes for that person: the majority\n// shape, at least one proof) and whether the domain is known catch-all (a done row there was\n// verified by BounceBan). Shapes: first.last, first, flast, firstlast, first_last, f.last.\nconst rows=$('Read Records').all().map(i=>i.json||{}).filter(j=>j.id);\nlet known=[]; try{ known=$('Read Known').all().map(i=>i.json||{}).filter(j=>j.id); }catch(e){}\nconst norm=(v)=>String(Array.isArray(v)?(v[0]||''):(v||'')).trim().toLowerCase();\nconst clean=(s)=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'');\nconst SHAPES=['first.last','first','flast','firstlast','first_last','f.last'];\nconst shape=(sh,f,l)=>{ if(!f) return ''; if(sh==='first') return f; if(!l) return ''; if(sh==='first.last') return f+'.'+l; if(sh==='flast') return f.charAt(0)+l; if(sh==='firstlast') return f+l; if(sh==='first_last') return f+'_'+l; if(sh==='f.last') return f.charAt(0)+'.'+l; return ''; };\nconst splitEmails=(s)=>Array.from(new Set(String(s||'').split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(e))));\nconst domainOf=(e)=>e.slice(e.lastIndexOf('@')+1);\n// What the base proves per domain.\nconst proof={};\nfor(const k of known){ const f=k.fields||{}; const d=norm(f.Domain); const fe=String(f['Final Email']||'').trim().toLowerCase(); if(!d||!fe) continue; const p=proof[d]||(proof[d]={ shapes:{}, catchAll:false }); if(String(f['Email Verified By']||'')==='BounceBan') p.catchAll=true; const first=clean(f.first_name), last=clean(f.last_name); const local=fe.slice(0,fe.lastIndexOf('@')); for(const sh of SHAPES){ if(shape(sh,first,last)===local){ p.shapes[sh]=(p.shapes[sh]||0)+1; break; } } }\nconst patterns={}, domainCatchAll={};\nfor(const d of Object.keys(proof)){ const p=proof[d]; if(p.catchAll) domainCatchAll[d]=true; let best='',n=0; for(const sh of Object.keys(p.shapes)){ if(p.shapes[sh]>n){ n=p.shapes[sh]; best=sh; } } if(best) patterns[d]=best; }\nconst state={ order:[], rows:{}, patterns, domainCatchAll, stats:{ rows:rows.length, candidatesIn:0, knownRows:known.length, patternsKnown:Object.keys(patterns).length, mvCalls:0, blitzCalls:0, blitzFound:0, lmCalls:0, lmFound:0, guesses:0, catchAllDomains:0 } };\nfor(const r of rows){\n  const f=r.fields||{};\n  const domain=norm(f.Domain);\n  const first=clean(f.first_name), last=clean(f.last_name);\n  const emails=splitEmails(f.Email);\n  const own=emails.filter(e=>domain&&(domainOf(e)===domain||domainOf(e).endsWith('.'+domain)));\n  const foreign=emails.filter(e=>own.indexOf(e)<0);\n  const candidates=own.concat(foreign).map(e=>({ email:e, origin:'database', mv:'' }));\n  state.stats.candidatesIn+=candidates.length;\n  state.order.push(r.id);\n  state.rows[r.id]={ id:r.id, first, last, firstRaw:String(f.first_name||'').trim(), lastRaw:String(f.last_name||'').trim(), domain, linkedin:String(f['LinkedIn URL']||'').trim(), candidates, resolved:null, catchAll:!!domainCatchAll[domain], guessed:false, blitzAsked:false, lmAsked:false, error:'' };\n}\nstate.stats.catchAllDomains=Object.keys(domainCatchAll).length;\nreturn [{ json:state }];\n"
         },
         "id": "e2e00032-0000-4000-8000-000000000032",
         "name": "Prep",
@@ -3373,7 +3358,13 @@
         "maxTries": 3,
         "waitBetweenTries": 5000,
         "onError": "continueRegularOutput",
-        "notes": "Blitz email finder by LinkedIn profile URL (Plus plan). Header Auth credential: x-api-key, the same \"Blitz\" credential as Enrich Contacts Blitz (attach in the UI)."
+        "notes": "Blitz email finder by LinkedIn profile URL (Plus plan). Header Auth credential: x-api-key, the same \"Blitz\" credential as Enrich Contacts Blitz (attach in the UI).",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "UtqF0yZTXaZzKocn",
+            "name": "Blitz"
+          }
+        }
       },
       {
         "parameters": {
@@ -3976,7 +3967,7 @@
       },
       {
         "parameters": {
-          "jsCode": "// Build Batch Log: this batch's slice added to the run's own Hub row. The row is the accumulator\n// (static data does not survive a sub-execution): Read Log Row fetched it, the totals are added,\n// and the row is written back as Running; the parent writes the verdict after the last batch.\nconst r=$('Read Records').first().json;\nconst eid=String(r._execId);\nconst BLANK={ rows:0, done:0, verifying:0, noEmail:0, errored:0, byProvider:{}, mvCalls:0, blitzCalls:0, blitzFound:0, lmCalls:0, lmFound:0, guesses:0, catchAllDomains:0, written:0, writeErrors:0, writeWhy:[], batches:0, skips:[] };\nlet a=Object.assign({},BLANK);\ntry{ const prior=$('Read Log Row').first().json; const raw=prior&&prior.fields?prior.fields.Tally:null; if(raw){ const p=JSON.parse(String(raw)); if(p&&String(p.execId)===eid) a=Object.assign({},BLANK,p); } }catch(e){}\nlet s={}; try{ const v=$('Verdict').first().json||{}; s=v._stats||{}; }catch(e){}\nconst n=(v)=>Number(v)||0;\nfor(const k of ['rows','done','verifying','noEmail','errored','mvCalls','blitzCalls','blitzFound','lmCalls','lmFound','guesses','catchAllDomains']) a[k]+=n(s[k]);\nfor(const [k,v] of Object.entries(s.byProvider||{})) a.byProvider[k]=(a.byProvider[k]||0)+n(v);\nif(s.blitzSkipped&&a.skips.indexOf('Blitz: '+s.blitzSkipped)<0) a.skips.push('Blitz: '+s.blitzSkipped);\nif(s.lmSkipped&&a.skips.indexOf('LeadMagic: '+s.lmSkipped)<0) a.skips.push('LeadMagic: '+s.lmSkipped);\ntry{ const wc=$('Write Check').first().json||{}; a.written+=n(wc.written); a.writeErrors+=n(wc.writeErrors); for(const w of (wc.writeReasons||[])){ if(a.writeWhy.length<10&&a.writeWhy.indexOf(String(w))<0) a.writeWhy.push(String(w)); } }catch(e){}\na.batches+=1; a.execId=eid;\nconst total=n(r._total);\nconst prov=Object.entries(a.byProvider).map(([k,v])=>k+' '+v).join(', ')||'none';\nconst lines=[\n  '**Running: '+a.rows+' of '+total+' people worked in '+a.batches+' batch'+(a.batches===1?'':'es')+', '+a.done+' resolved, '+a.verifying+' waiting on BounceBan, '+a.noEmail+' no email found, '+a.errored+' errored**',\n  '', '**Table:** '+(r._tableName||'People')+' ('+(r._tableId||'')+') \u00b7 view '+(r._view||''),\n  '', '- **Resolved by provider:** '+prov,\n  '- **MillionVerifier calls:** '+a.mvCalls+'; **guesses:** '+a.guesses+'; **Blitz:** '+a.blitzCalls+' asked, '+a.blitzFound+' found; **LeadMagic:** '+a.lmCalls+' asked, '+a.lmFound+' found; **catch-all domains:** '+a.catchAllDomains,\n  '- **Rows written:** '+a.written+(a.writeErrors?', '+a.writeErrors+' refused':'')\n];\nif(a.skips.length) lines.push('', '**Skipped ('+a.skips.join('; ')+')**');\nconst row={ 'Execution ID':eid, 'Automation':'Enrich Emails', 'Status':'Running', 'Trigger':r._trigger||'form', 'Run at':r._startedAt, 'Target':(r._tableName||'People')+' ('+(r._tableId||'')+')', 'View':r._view||'', 'Records In':total, 'Records Out':a.written, 'Errors':a.errored+a.writeErrors, 'Tally':JSON.stringify(a), 'Description':lines.join('\\n'), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+eid };\nif(r._clientId) row['Client']=[r._clientId];\nreturn [{ json:row }];\n"
+          "jsCode": "// Build Batch Log: this batch's slice added to the run's own Hub row. The row is the accumulator\n// (static data does not survive a sub-execution): Read Log Row fetched it, the totals are added,\n// and the row is written back as Running; the parent writes the verdict after the last batch.\nconst r=$('Read Records').first().json;\nconst eid=String(r._execId);\nconst BLANK={ rows:0, done:0, verifying:0, noEmail:0, errored:0, byProvider:{}, mvCalls:0, blitzCalls:0, blitzFound:0, lmCalls:0, lmFound:0, guesses:0, catchAllDomains:0, written:0, writeErrors:0, writeWhy:[], batches:0, skips:[] };\nlet a=Object.assign({},BLANK);\ntry{ const prior=$('Read Log Row').first().json; const raw=prior&&prior.fields?prior.fields.Tally:null; if(raw){ const p=JSON.parse(String(raw)); if(p&&String(p.execId)===eid) a=Object.assign({},BLANK,p); } }catch(e){}\nlet s={}; try{ const v=$('Verdict').first().json||{}; s=v._stats||{}; }catch(e){}\nconst n=(v)=>Number(v)||0;\nfor(const k of ['rows','done','verifying','noEmail','errored','mvCalls','blitzCalls','blitzFound','lmCalls','lmFound','guesses','catchAllDomains']) a[k]+=n(s[k]);\nfor(const [k,v] of Object.entries(s.byProvider||{})) a.byProvider[k]=(a.byProvider[k]||0)+n(v);\nif(s.blitzSkipped&&a.skips.indexOf('Blitz: '+s.blitzSkipped)<0) a.skips.push('Blitz: '+s.blitzSkipped);\nif(s.lmSkipped&&a.skips.indexOf('LeadMagic: '+s.lmSkipped)<0) a.skips.push('LeadMagic: '+s.lmSkipped);\ntry{ const wc=$('Write Check').first().json||{}; a.written+=n(wc.written); a.writeErrors+=n(wc.writeErrors); for(const w of (wc.writeReasons||[])){ if(a.writeWhy.length<10&&a.writeWhy.indexOf(String(w))<0) a.writeWhy.push(String(w)); } }catch(e){}\na.batches+=1; a.execId=eid;\nconst total=n(r._total);\nconst prov=Object.entries(a.byProvider).map(([k,v])=>k+' '+v).join(', ')||'none';\nconst lines=[\n  '**Running: '+a.rows+' of '+total+' people worked in '+a.batches+' batch'+(a.batches===1?'':'es')+', '+a.done+' resolved, '+a.verifying+' waiting on BounceBan, '+a.noEmail+' no email found, '+a.errored+' errored**',\n  '', '**Table:** '+(r._tableName||'People')+' ('+(r._tableId||'')+') · view '+(r._view||''),\n  '', '- **Resolved by provider:** '+prov,\n  '- **MillionVerifier calls:** '+a.mvCalls+'; **guesses:** '+a.guesses+'; **Blitz:** '+a.blitzCalls+' asked, '+a.blitzFound+' found; **LeadMagic:** '+a.lmCalls+' asked, '+a.lmFound+' found; **catch-all domains:** '+a.catchAllDomains,\n  '- **Rows written:** '+a.written+(a.writeErrors?', '+a.writeErrors+' refused':'')\n];\nif(a.skips.length) lines.push('', '**Skipped ('+a.skips.join('; ')+')**');\nconst row={ 'Execution ID':eid, 'Automation':'Enrich Emails', 'Status':'Running', 'Trigger':r._trigger||'form', 'Run at':r._startedAt, 'Target':(r._tableName||'People')+' ('+(r._tableId||'')+')', 'View':r._view||'', 'Records In':total, 'Records Out':a.written, 'Errors':a.errored+a.writeErrors, 'Tally':JSON.stringify(a), 'Description':lines.join('\\n'), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+eid };\nif(r._clientId) row['Client']=[r._clientId];\nreturn [{ json:row }];\n"
         },
         "id": "e2e00064-0000-4000-8000-000000000064",
         "name": "Build Batch Log",
@@ -4041,20 +4032,43 @@
           8360,
           600
         ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "d1",
+                "leftValue": "={{ ($json.body || {}).recordId || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "5a68c591-020e-480e-8d0b-a752b829d625",
+        "name": "Launch Row?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          110,
+          100
+        ]
       }
     ],
     "connections": {
-      "Launch Webhook": {
-        "main": [
-          [
-            {
-              "node": "Fetch Launch Record",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "Fetch Launch Record": {
         "main": [
           [
@@ -4093,17 +4107,6 @@
           [
             {
               "node": "Params",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Record Webhook": {
-        "main": [
-          [
-            {
-              "node": "Event Params",
               "type": "main",
               "index": 0
             }
@@ -4812,6 +4815,35 @@
           [
             {
               "node": "Batch Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Door": {
+        "main": [
+          [
+            {
+              "node": "Launch Row?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Row?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Event Params",
               "type": "main",
               "index": 0
             }

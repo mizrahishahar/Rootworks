@@ -7,7 +7,7 @@
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "1a4e-0015-4000-8000-000000000015",
+      "id": "1a4e-0008-4000-8000-000000000008",
       "name": "Enrich Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
@@ -15,13 +15,13 @@
         0,
         0
       ],
-      "notes": "The GetLeads lane of Enrich Contacts (2026-09-09). Called once per launch with the whole company list; walks it in chunks of 500, asks GetLeads per chunk at its documented pace, hands each chunk to Enrich Contacts Writer (awaited), and answers counters to the Rootflow (no Hub row of its own: the Rootflow updates the launch row after each lane)."
+      "notes": "The GetLeads lane of Enrich Contacts (2026-09-09). Called once per launch with the whole company list; walks it in chunks of 500, hands each chunk to the GetLeads chunk worker (its own execution, awaited), accumulates counters, answers the Rootflow. Holds chunk lists and counters only, never a vendor payload, so its memory is flat at any list size."
     },
     {
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Init.js"
       },
-      "id": "1a4e-0016-4000-8000-000000000016",
+      "id": "1a4e-0009-4000-8000-000000000009",
       "name": "Lane Init",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -35,7 +35,7 @@
         "batchSize": 1,
         "options": {}
       },
-      "id": "1a4e-0017-4000-8000-000000000017",
+      "id": "1a4e-0010-4000-8000-000000000010",
       "name": "Chunk Loop",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
@@ -43,14 +43,14 @@
         440,
         0
       ],
-      "notes": "One chunk at a time. Loop output: ask the vendor, write, tick. Done output: the lane row and the answer."
+      "notes": "One chunk at a time. Loop output: the chunk worker, then tick. Done output: the answer."
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/GL-Requests.js"
+        "jsCode": "@@file:nodes/Chunk-Input.js"
       },
-      "id": "1a4e-0018-4000-8000-000000000018",
-      "name": "GL Requests",
+      "id": "1a4e-0011-4000-8000-000000000011",
+      "name": "Chunk Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -60,116 +60,11 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "n1",
-              "leftValue": "={{ $json._none === true }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "false",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1a4e-0019-4000-8000-000000000019",
-      "name": "Any GL Requests?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        880,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://app.getleads.io/api/v1/contacts/search",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body) }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 700
-            }
-          },
-          "response": {
-            "response": {
-              "fullResponse": false,
-              "neverError": false
-            }
-          },
-          "timeout": 180000
-        }
-      },
-      "id": "1a4e-0020-4000-8000-000000000020",
-      "name": "GL Search",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1100,
-        -120
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
-      "onError": "continueRegularOutput",
-      "notes": "GetLeads contact search, one call per (floor, cap) group sized so one 5,000-row page holds the whole answer (GL Requests). No node pagination: paging on a JSON body repeated the same page and aborted (run 22643). Every returned row costs one fair-use row, never cash.",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "fsDQV3D9bINmYCrD",
-          "name": "GetLeads"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/GL-Parse.js"
-      },
-      "id": "1a4e-0021-4000-8000-000000000021",
-      "name": "GL Parse",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1320,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Writer-Input.js"
-      },
-      "id": "1a4e-0022-4000-8000-000000000022",
-      "name": "Writer Input",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1540,
-        0
-      ]
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "rc2IqbRdeTHjLP6F",
-          "cachedResultName": "Enrich Contacts Writer"
+          "value": "KMfDN0TtZPG8UqKu",
+          "cachedResultName": "Enrich Contacts GetLeads Chunk"
         },
         "workflowInputs": {
           "mappingMode": "passThrough",
@@ -182,27 +77,27 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "1a4e-0023-4000-8000-000000000023",
-      "name": "Call Writer",
+      "id": "1a4e-0012-4000-8000-000000000012",
+      "name": "Call Chunk",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1760,
+        880,
         0
       ],
       "onError": "continueRegularOutput",
-      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted, the lane moves to the next chunk."
+      "notes": "Awaited. One execution per chunk; a crash comes back as an error item and is counted, the lane moves to the next chunk."
     },
     {
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Tick.js"
       },
-      "id": "1a4e-0024-4000-8000-000000000024",
+      "id": "1a4e-0013-4000-8000-000000000013",
       "name": "Lane Tick",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        1100,
         0
       ]
     },
@@ -210,7 +105,7 @@
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Response.js"
       },
-      "id": "1a4e-0025-4000-8000-000000000025",
+      "id": "1a4e-0014-4000-8000-000000000014",
       "name": "Lane Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -254,76 +149,25 @@
         ],
         [
           {
-            "node": "GL Requests",
+            "node": "Chunk Input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GL Requests": {
+    "Chunk Input": {
       "main": [
         [
           {
-            "node": "Any GL Requests?",
+            "node": "Call Chunk",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Any GL Requests?": {
-      "main": [
-        [
-          {
-            "node": "GL Search",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "GL Parse",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GL Search": {
-      "main": [
-        [
-          {
-            "node": "GL Parse",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GL Parse": {
-      "main": [
-        [
-          {
-            "node": "Writer Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Writer Input": {
-      "main": [
-        [
-          {
-            "node": "Call Writer",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Call Writer": {
+    "Call Chunk": {
       "main": [
         [
           {

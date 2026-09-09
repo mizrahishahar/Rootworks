@@ -7,7 +7,7 @@
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "1a4e-0026-4000-8000-000000000026",
+      "id": "1a4e-0015-4000-8000-000000000015",
       "name": "Enrich Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
@@ -15,13 +15,13 @@
         0,
         0
       ],
-      "notes": "The QuickEnrich lane of Enrich Contacts (2026-09-09). Called once per launch with the whole company list; walks it in chunks of 100, asks QuickEnrich per chunk at its documented pace, hands each chunk to Enrich Contacts Writer (awaited), and answers counters to the Rootflow (no Hub row of its own: the Rootflow updates the launch row after each lane)."
+      "notes": "The QuickEnrich lane of Enrich Contacts (2026-09-09). Called once per launch with the whole company list; walks it in chunks of 100, hands each chunk to the QuickEnrich chunk worker (its own execution, awaited), accumulates counters, answers the Rootflow. Holds chunk lists and counters only, never a vendor payload, so its memory is flat at any list size."
     },
     {
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Init.js"
       },
-      "id": "1a4e-0027-4000-8000-000000000027",
+      "id": "1a4e-0016-4000-8000-000000000016",
       "name": "Lane Init",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -35,7 +35,7 @@
         "batchSize": 1,
         "options": {}
       },
-      "id": "1a4e-0028-4000-8000-000000000028",
+      "id": "1a4e-0017-4000-8000-000000000017",
       "name": "Chunk Loop",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
@@ -43,14 +43,14 @@
         440,
         0
       ],
-      "notes": "One chunk at a time. Loop output: ask the vendor, write, tick. Done output: the lane row and the answer."
+      "notes": "One chunk at a time. Loop output: the chunk worker, then tick. Done output: the answer."
     },
     {
       "parameters": {
-        "jsCode": "@@file:nodes/QE-Companies.js"
+        "jsCode": "@@file:nodes/Chunk-Input.js"
       },
-      "id": "1a4e-0029-4000-8000-000000000029",
-      "name": "QE Companies",
+      "id": "1a4e-0018-4000-8000-000000000018",
+      "name": "Chunk Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -60,223 +60,11 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "n1",
-              "leftValue": "={{ $json._none === true }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "false",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1a4e-0030-4000-8000-000000000030",
-      "name": "Any QE Companies?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        880,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://app.quickenrich.io/api/employees/contact-finder",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body) }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 500
-            }
-          },
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": false
-            }
-          },
-          "timeout": 60000
-        }
-      },
-      "id": "1a4e-0031-4000-8000-000000000031",
-      "name": "QE Roster",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1100,
-        -120
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
-      "onError": "continueRegularOutput",
-      "notes": "QuickEnrich: the free roster of a domain (no emails, has_email flags and LinkedIn URLs). 120 requests a minute documented; paced at 120.",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "bHGK0aG9f2Y8kokT",
-          "name": "QuickEnrich"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/QE-Pick.js"
-      },
-      "id": "1a4e-0032-4000-8000-000000000032",
-      "name": "QE Pick",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1320,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "n1",
-              "leftValue": "={{ $json._none === true }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "false",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1a4e-0033-4000-8000-000000000033",
-      "name": "Any QE Picks?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1540,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $json.url }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/json"
-            }
-          ]
-        },
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 70
-            }
-          },
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": false
-            }
-          },
-          "timeout": 60000
-        }
-      },
-      "id": "1a4e-0034-4000-8000-000000000034",
-      "name": "QE Email",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1760,
-        -120
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
-      "onError": "continueRegularOutput",
-      "notes": "QuickEnrich: the email search per person (LinkedIn URL first, then name + domain), one credit only on a hit. 1,000 requests a minute documented; paced at about 850.",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "bHGK0aG9f2Y8kokT",
-          "name": "QuickEnrich"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/QE-Parse.js"
-      },
-      "id": "1a4e-0035-4000-8000-000000000035",
-      "name": "QE Parse",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1980,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Writer-Input.js"
-      },
-      "id": "1a4e-0036-4000-8000-000000000036",
-      "name": "Writer Input",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2200,
-        0
-      ]
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "rc2IqbRdeTHjLP6F",
-          "cachedResultName": "Enrich Contacts Writer"
+          "value": "u8abO9ygJlHkY1lU",
+          "cachedResultName": "Enrich Contacts QuickEnrich Chunk"
         },
         "workflowInputs": {
           "mappingMode": "passThrough",
@@ -289,27 +77,27 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "1a4e-0037-4000-8000-000000000037",
-      "name": "Call Writer",
+      "id": "1a4e-0019-4000-8000-000000000019",
+      "name": "Call Chunk",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2420,
+        880,
         0
       ],
       "onError": "continueRegularOutput",
-      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted, the lane moves to the next chunk."
+      "notes": "Awaited. One execution per chunk; a crash comes back as an error item and is counted, the lane moves to the next chunk."
     },
     {
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Tick.js"
       },
-      "id": "1a4e-0038-4000-8000-000000000038",
+      "id": "1a4e-0020-4000-8000-000000000020",
       "name": "Lane Tick",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        1100,
         0
       ]
     },
@@ -317,7 +105,7 @@
       "parameters": {
         "jsCode": "@@file:nodes/Lane-Response.js"
       },
-      "id": "1a4e-0039-4000-8000-000000000039",
+      "id": "1a4e-0021-4000-8000-000000000021",
       "name": "Lane Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -361,116 +149,25 @@
         ],
         [
           {
-            "node": "QE Companies",
+            "node": "Chunk Input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "QE Companies": {
+    "Chunk Input": {
       "main": [
         [
           {
-            "node": "Any QE Companies?",
+            "node": "Call Chunk",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Any QE Companies?": {
-      "main": [
-        [
-          {
-            "node": "QE Roster",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "QE Parse",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "QE Roster": {
-      "main": [
-        [
-          {
-            "node": "QE Pick",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "QE Pick": {
-      "main": [
-        [
-          {
-            "node": "Any QE Picks?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Any QE Picks?": {
-      "main": [
-        [
-          {
-            "node": "QE Email",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "QE Parse",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "QE Email": {
-      "main": [
-        [
-          {
-            "node": "QE Parse",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "QE Parse": {
-      "main": [
-        [
-          {
-            "node": "Writer Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Writer Input": {
-      "main": [
-        [
-          {
-            "node": "Call Writer",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Call Writer": {
+    "Call Chunk": {
       "main": [
         [
           {

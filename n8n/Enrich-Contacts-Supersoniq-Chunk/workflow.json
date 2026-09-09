@@ -1,0 +1,269 @@
+{
+  "name": "Enrich Contacts Supersoniq Chunk",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "1a4e-0031-4000-8000-000000000031",
+      "name": "Chunk Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "The Supersoniq chunk worker of Enrich Contacts (2026-09-09): one chunk of companies in (the lane contract plus companies), Supersoniq asked at its documented pace, the people handed to Enrich Contacts Writer (awaited), counters out. Its own execution, so its payloads die with it."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Requests.js"
+      },
+      "id": "1a4e-0033-4000-8000-000000000033",
+      "name": "SQ Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0034-4000-8000-000000000034",
+      "name": "Any SQ Requests?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "1a4e-0032-4000-8000-000000000032",
+      "name": "SQ Enrich",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        -120
+      ],
+      "retryOnFail": false,
+      "onError": "continueRegularOutput",
+      "notes": "Supersoniq companies/enrich, up to 1,000 domains a call, per_company_limit 10, seniors only, tier full so the email rides. One credit per delivered contact.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Parse.js"
+      },
+      "id": "1a4e-0035-4000-8000-000000000035",
+      "name": "SQ Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Writer-Input.js"
+      },
+      "id": "1a4e-0036-4000-8000-000000000036",
+      "name": "Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rc2IqbRdeTHjLP6F",
+          "cachedResultName": "Enrich Contacts Writer"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1a4e-0037-4000-8000-000000000037",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Response.js"
+      },
+      "id": "1a4e-0038-4000-8000-000000000038",
+      "name": "Chunk Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Chunk Trigger": {
+      "main": [
+        [
+          {
+            "node": "SQ Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Requests": {
+      "main": [
+        [
+          {
+            "node": "Any SQ Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any SQ Requests?": {
+      "main": [
+        [
+          {
+            "node": "SQ Enrich",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SQ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Enrich": {
+      "main": [
+        [
+          {
+            "node": "SQ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Writer": {
+      "main": [
+        [
+          {
+            "node": "Chunk Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "tags": [],
+  "id": "9MoLP0WW3pDeWye5"
+}

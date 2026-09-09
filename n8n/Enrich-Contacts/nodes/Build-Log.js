@@ -47,6 +47,8 @@ lines.push('- **Merge across lanes:** '+num(t.returned)+' returned; '+num(t.buil
 if(t.singleSelectSource) lines.push('- **Contact Source is a single select on this base:** only the first source per person was recorded');
 lines.push('- **Written (confirmed by Airtable):** '+num(t.written)+(num(t.writeErrors)?', '+num(t.writeErrors)+' refused':''));
 lines.push('- **Coverage:** '+cov+' of '+companiesIn+' companies with at least one person ('+pct+'%)');
+let gate=null; try{ gate=($('Supersoniq Lane Input').first().json||{}).gate||null; }catch(e){}
+if(gate) lines.push('- **Supersoniq gate:** asked '+num(gate.asked)+' of '+num(gate.companiesIn)+' companies ('+num(gate.skippedRelevant)+' already held '+num(gate.relevantMin)+' or more relevant people)');
 lines.push('- **Contacts Pulled At stamped:** '+stamped);
 lines.push('');
 if(!companiesIn) lines.push('**Emails:** not fired, nothing was pulled');

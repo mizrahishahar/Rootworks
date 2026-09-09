@@ -1,4 +1,4 @@
-// Lane Progress: after each provider lane closes, the launch row is updated in place (ruled
+// Blitz Progress (one file per node, the pull keeps them apart; same code for the four): after each provider lane closes, the launch row is updated in place (ruled
 // 2026-09-09: sub-workflows write no Hub rows; one row per run, refreshed after every provider).
 // Reads every lane that has answered so far and writes Status Running, the running funnel and a
 // Tally, on this execution's Execution ID (created here on an event run, which has no launch row).

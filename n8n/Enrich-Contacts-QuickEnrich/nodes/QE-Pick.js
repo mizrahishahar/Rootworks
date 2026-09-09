@@ -31,9 +31,12 @@ answers.forEach((it,i)=>{
     n++;
     // The search URL carries only the parameters that have a value: an empty linkedin_url next to
     // the name + domain trio is not a documented shape.
-    const q={ linkedin_url:na(p.employee_linkedin), company_url:req.domain, first_name:first, last_name:last };
+    // A roster LinkedIn value that is not a real linkedin.com/in/ address is not sent (QuickEnrich answers
+    // 422 and the search is lost); the name + domain search runs instead (run 22643, 12 such rows).
+    const liRaw=na(p.employee_linkedin); const liOk=/^https?:\/\/([a-z0-9-]+\.)?linkedin\.com\/in\/[^\/?#\s]+/i.test(liRaw)?liRaw:'';
+    const q={ linkedin_url:liOk, company_url:req.domain, first_name:first, last_name:last };
     const qs=Object.keys(q).filter(k=>q[k]).map(k=>k+'='+encodeURIComponent(q[k])).join('&');
-    out.push({ json:{ domain:req.domain, name:(first+' '+last).trim(), title:na(p.title), linkedin:na(p.employee_linkedin), hasEmail:!!p.has_email, hasPhone:!!p.has_phone,
+    out.push({ json:{ domain:req.domain, name:(first+' '+last).trim(), title:na(p.title), linkedin:liOk, hasEmail:!!p.has_email, hasPhone:!!p.has_phone,
       query:q, url:'https://app.quickenrich.io/api/employees/search?'+qs } });
   }
 });

@@ -1,0 +1,292 @@
+{
+  "updatedAt": "2026-09-09T12:36:49.047Z",
+  "createdAt": "2026-09-09T12:36:49.047Z",
+  "id": "KMfDN0TtZPG8UqKu",
+  "name": "Enrich Contacts GetLeads Chunk",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "1a4e-0012-4000-8000-000000000012",
+      "name": "Chunk Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "The GetLeads chunk worker of Enrich Contacts (2026-09-09): one chunk of companies in (the lane contract plus companies), GetLeads asked at its documented pace, the people handed to Enrich Contacts Writer (awaited), counters out. Its own execution, so its payloads die with it."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Requests.js"
+      },
+      "id": "1a4e-0013-4000-8000-000000000013",
+      "name": "GL Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0014-4000-8000-000000000014",
+      "name": "Any GL Requests?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.getleads.io/api/v1/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 700
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "1a4e-0015-4000-8000-000000000015",
+      "name": "GL Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        -120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "GetLeads contact search, one call per (floor, cap) group sized so one 5,000-row page holds the whole answer (GL Requests). No node pagination: paging on a JSON body repeated the same page and aborted (run 22643). Every returned row costs one fair-use row, never cash.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fsDQV3D9bINmYCrD",
+          "name": "GetLeads"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Parse.js"
+      },
+      "id": "1a4e-0016-4000-8000-000000000016",
+      "name": "GL Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Writer-Input.js"
+      },
+      "id": "1a4e-0017-4000-8000-000000000017",
+      "name": "Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rc2IqbRdeTHjLP6F",
+          "cachedResultName": "Enrich Contacts Writer"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1a4e-0018-4000-8000-000000000018",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Response.js"
+      },
+      "id": "1a4e-0019-4000-8000-000000000019",
+      "name": "Chunk Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Chunk Trigger": {
+      "main": [
+        [
+          {
+            "node": "GL Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Requests": {
+      "main": [
+        [
+          {
+            "node": "Any GL Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any GL Requests?": {
+      "main": [
+        [
+          {
+            "node": "GL Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Search": {
+      "main": [
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Writer": {
+      "main": [
+        [
+          {
+            "node": "Chunk Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "04b9488d-4b9c-4be1-b295-b77231132ba0",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-09T12:36:49.051Z",
+      "createdAt": "2026-09-09T12:36:49.051Z",
+      "role": "workflow:owner",
+      "workflowId": "KMfDN0TtZPG8UqKu",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

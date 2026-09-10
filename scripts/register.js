@@ -20,7 +20,9 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');
-const REGISTER_PATH = path.join(ROOT, 'n8n', 'Create-Client-Rootworks-Infrastructure', 'nodes', 'Scaffold-Register.js');
+// The register lives in the onboarding workflow, wherever the layout places it.
+const findRegister = (d) => { for (const name of fs.readdirSync(d)) { const p = path.join(d, name); if (!fs.statSync(p).isDirectory()) continue; const c = path.join(p, 'nodes', 'Scaffold-Register.js'); if (name === 'Create-Client-Rootworks-Infrastructure' && fs.existsSync(c)) return c; const deeper = findRegister(p); if (deeper) return deeper; } return ''; };
+const REGISTER_PATH = findRegister(path.join(ROOT, 'n8n'));
 
 function loadRegister() {
   const src = fs.readFileSync(REGISTER_PATH, 'utf8');

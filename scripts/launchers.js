@@ -14,7 +14,9 @@ const ROOT = path.join(__dirname, '..', 'n8n');
 const BASE = 'https://n8n.flowroots.com/webhook';
 
 const rows = [];
-for (const dir of fs.readdirSync(ROOT)) {
+// Walk every workflow folder under n8n/ (the layout groups them: rootflows/<Rootflow>/<wf>, rootworks/<wf>, ...).
+const walk = (d, acc) => { for (const name of fs.readdirSync(d)) { const p = path.join(d, name); if (!fs.statSync(p).isDirectory()) continue; if (fs.existsSync(path.join(p, 'workflow.json'))) acc.push(path.relative(ROOT, p)); else walk(p, acc); } return acc; };
+for (const dir of walk(ROOT, []).sort()) {
   const wf = path.join(ROOT, dir, 'workflow.json');
   if (!fs.existsSync(wf)) continue;
   let json;

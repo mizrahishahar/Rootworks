@@ -1,0 +1,791 @@
+{
+  "updatedAt": "2026-08-22T21:05:09.416Z",
+  "createdAt": "2026-07-31T10:55:24.246Z",
+  "id": "M0IvVrjXaGT1K6Fs",
+  "name": "Backfill Build Date (one-off)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "3ac3cdb9-5988-46a6-ad10-28cf5d193fb8",
+      "name": "Backfill Build Date Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Backfill Build Date",
+        "formDescription": "One-off. Fills Build Date on every row of an existing ClayRoots table from ingested_at, falling back to Created. Rows that already have a Build Date are left alone.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Clayroots Base ID",
+              "fieldName": "Clayroots Base ID",
+              "fieldType": "text",
+              "placeholder": "appXXXXXXXXXXXXXX",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table ID",
+              "fieldName": "Table ID",
+              "fieldType": "text",
+              "placeholder": "tblXXXXXXXXXXXXXX",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "backfill-build-date",
+          "buttonLabel": "Run backfill",
+          "ignoreBots": true,
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions"
+            }
+          }
+        }
+      },
+      "webhookId": "f2ee257c-4d76-48c4-9d48-8141ce000c9f"
+    },
+    {
+      "id": "5d3278b7-20d3-4b55-ae16-74ac56ef8eec",
+      "name": "Head Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Head-Guard.js"
+      }
+    },
+    {
+      "id": "3c90a69b-2275-4293-bc76-b54fa84f3758",
+      "name": "Fetch Table Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "19f790f3-7153-4ea0-aef2-d81bf229062d",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Check-Table.js"
+      }
+    },
+    {
+      "id": "97c9b46c-77d2-4881-9521-fb3fa5685dc8",
+      "name": "Build Date Column Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-build-date",
+              "leftValue": "={{ $json.hasBuildDate }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "914dcb22-aa2d-4971-a6b5-6eb4dd4534df",
+      "name": "Note Existing Column",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Note-Existing-Column.js"
+      }
+    },
+    {
+      "id": "150e120b-6f71-4e7f-b690-08b6137baf5b",
+      "name": "Init Loop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Init-Loop.js"
+      }
+    },
+    {
+      "id": "01e5c782-76a6-49c1-ae5a-6e627d9ffff1",
+      "name": "Create Build Date Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        340
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.baseId }}/tables/{{ $json.tableId }}/fields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"name\":\"Build Date\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a9b21b5a-ef20-46e4-870a-616be25619e8",
+      "name": "Refetch Table Schema",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        340
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Check Table').first().json.baseId }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "1a17e129-c5c6-4be3-9f09-12cb28fefa65",
+      "name": "Verify Build Date Field",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        340
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Verify-Build-Date-Field.js"
+      }
+    },
+    {
+      "id": "c81a9dcc-734b-4659-9b8a-21dd720fd7d1",
+      "name": "Fetch Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.baseUrl }}{{ $json.offset ? '&offset=' + encodeURIComponent($json.offset) : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "41875c7b-9ff9-44da-80ee-cb66d03794c4",
+      "name": "Resolve Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Resolve-Page.js"
+      }
+    },
+    {
+      "id": "07b6e3d4-56b9-4c53-b915-184c17f23c54",
+      "name": "Page Has Writes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2200,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "write-count",
+              "leftValue": "={{ $json.writeCount }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "47117a0f-22a4-4cfe-9763-fa63cf5ac4b5",
+      "name": "Split Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Split-Writes.js"
+      }
+    },
+    {
+      "id": "6555bf79-16ff-4033-9ab9-0a3823ccc37e",
+      "name": "Write Build Date",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Table').first().json.baseId }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Check Table').first().json.tableId }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6c5bcd69-d57c-49b5-8723-29a54cf217e5",
+      "name": "Page Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Page-Done.js"
+      }
+    },
+    {
+      "id": "4896d29b-b627-4f78-b31c-263b1894bff4",
+      "name": "All Pages Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3080,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "loop-done",
+              "leftValue": "={{ $json.done }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "0e8f04b2-67d4-4448-85b0-051a647105cf",
+      "name": "Resolve Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "={{ '{Clayroots Base ID} = \"' + $('Check Table').first().json.baseId + '\"' }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5e1d1ec2-4a83-4fc8-885b-e4429d568f28",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "@@file:nodes/Build-Log.js"
+      }
+    },
+    {
+      "id": "94484612-7986-4791-ab7a-c89eb5468ccb",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3740,
+        80
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "authentication": "airtableTokenApi",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Backfill Build Date Form": {
+      "main": [
+        [
+          {
+            "node": "Head Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Head Guard": {
+      "main": [
+        [
+          {
+            "node": "Fetch Table Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Table Schema": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Build Date Column Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Date Column Exists?": {
+      "main": [
+        [
+          {
+            "node": "Note Existing Column",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Build Date Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Note Existing Column": {
+      "main": [
+        [
+          {
+            "node": "Init Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Loop": {
+      "main": [
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Build Date Field": {
+      "main": [
+        [
+          {
+            "node": "Refetch Table Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refetch Table Schema": {
+      "main": [
+        [
+          {
+            "node": "Verify Build Date Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Build Date Field": {
+      "main": [
+        [
+          {
+            "node": "Init Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Page": {
+      "main": [
+        [
+          {
+            "node": "Resolve Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Page": {
+      "main": [
+        [
+          {
+            "node": "Page Has Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Has Writes?": {
+      "main": [
+        [
+          {
+            "node": "Split Writes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Page Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Writes": {
+      "main": [
+        [
+          {
+            "node": "Write Build Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Build Date": {
+      "main": [
+        [
+          {
+            "node": "Page Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Done": {
+      "main": [
+        [
+          {
+            "node": "All Pages Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Pages Done?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": {
+    "global": {}
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "pinData": null,
+  "versionId": "892add91-6ca2-4976-891b-27ce11ef8338",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-31T10:55:24.256Z",
+      "createdAt": "2026-07-31T10:55:24.256Z",
+      "role": "workflow:owner",
+      "workflowId": "M0IvVrjXaGT1K6Fs",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

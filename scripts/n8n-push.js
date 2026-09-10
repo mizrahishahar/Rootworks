@@ -83,9 +83,17 @@ if (dry) { console.log('dry run, nothing sent'); process.exit(0); }
 
 (async () => {
   if (!doc.id) {
-    // Brand-new machine: create it, then write the assigned id back into workflow.json
-    // so every later push is an update. New workflows arrive inactive with no creds
-    // attached to HTTP nodes; the Operator activates and attaches in the UI.
+    // Brand-new machine. THE APPROVAL LAW (ruled 2026-09-10): a workflow exists in n8n only with a
+    // line in n8n/layout.json, written after the Operator approved it in chat (name, group, why).
+    // A new workflow has no id yet, so its line is keyed by its exact name; the id replaces the
+    // key here once n8n assigns it. No line: no creation.
+    const layoutPath = path.join(__dirname, '..', 'n8n', 'layout.json');
+    const layout = JSON.parse(fs.readFileSync(layoutPath, 'utf8'));
+    const pendingKey = Object.keys(layout.workflows).find(k => !/^[A-Za-z0-9]{16}$/.test(k) && layout.workflows[k].name === doc.name);
+    if (!pendingKey) {
+      console.error(`REFUSED: "${doc.name}" is not in n8n/layout.json. A new workflow needs the Operator's approval first: add a line keyed by its name {name, group, rootflow?, why, approved: <date>} and push again.`);
+      process.exit(1);
+    }
     const res = await fetch(`${BASE}/api/v1/workflows`, {
       method: 'POST',
       headers: { 'X-N8N-API-KEY': apiKey(), 'Content-Type': 'application/json' },
@@ -96,7 +104,9 @@ if (dry) { console.log('dry run, nothing sent'); process.exit(0); }
     const src = JSON.parse(fs.readFileSync(path.join(dir, 'workflow.json'), 'utf8'));
     src.id = out.id;
     fs.writeFileSync(path.join(dir, 'workflow.json'), JSON.stringify(src, null, 2) + '\n');
-    console.log(`created: ${out.name} (${out.id}), id written back to workflow.json`);
+    const entry = layout.workflows[pendingKey]; delete layout.workflows[pendingKey]; layout.workflows[out.id] = entry;
+    fs.writeFileSync(layoutPath, JSON.stringify(layout, null, 2) + '\n');
+    console.log(`created: ${out.name} (${out.id}), id written back to workflow.json and to n8n/layout.json`);
     console.log('NOTE: new workflow is INACTIVE. Activate it and attach HTTP-node credentials in the UI.');
     return;
   }

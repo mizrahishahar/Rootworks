@@ -1,0 +1,439 @@
+{
+  "updatedAt": "2026-09-09T12:36:52.059Z",
+  "createdAt": "2026-09-09T12:36:52.059Z",
+  "id": "u8abO9ygJlHkY1lU",
+  "name": "Enrich Contacts QuickEnrich Chunk",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "1a4e-0020-4000-8000-000000000020",
+      "name": "Chunk Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "The QuickEnrich chunk worker of Enrich Contacts (2026-09-09): one chunk of companies in (the lane contract plus companies), QuickEnrich asked at its documented pace, the people handed to Enrich Contacts Writer (awaited), counters out. Its own execution, so its payloads die with it."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Companies.js"
+      },
+      "id": "1a4e-0021-4000-8000-000000000021",
+      "name": "QE Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0022-4000-8000-000000000022",
+      "name": "Any QE Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.quickenrich.io/api/employees/contact-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 500
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "1a4e-0023-4000-8000-000000000023",
+      "name": "QE Roster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        -120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "QuickEnrich: the free roster of a domain (no emails, has_email flags and LinkedIn URLs). 120 requests a minute documented; paced at 120.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bHGK0aG9f2Y8kokT",
+          "name": "QuickEnrich"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Pick.js"
+      },
+      "id": "1a4e-0024-4000-8000-000000000024",
+      "name": "QE Pick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a4e-0025-4000-8000-000000000025",
+      "name": "Any QE Picks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 70
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "1a4e-0026-4000-8000-000000000026",
+      "name": "QE Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        -120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "QuickEnrich: the email search per person (LinkedIn URL first, then name + domain), one credit only on a hit. 1,000 requests a minute documented; paced at about 850.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bHGK0aG9f2Y8kokT",
+          "name": "QuickEnrich"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Parse.js"
+      },
+      "id": "1a4e-0027-4000-8000-000000000027",
+      "name": "QE Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Writer-Input.js"
+      },
+      "id": "1a4e-0028-4000-8000-000000000028",
+      "name": "Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rc2IqbRdeTHjLP6F",
+          "cachedResultName": "Enrich Contacts Writer"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1a4e-0029-4000-8000-000000000029",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1980,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Response.js"
+      },
+      "id": "1a4e-0030-4000-8000-000000000030",
+      "name": "Chunk Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Chunk Trigger": {
+      "main": [
+        [
+          {
+            "node": "QE Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Companies": {
+      "main": [
+        [
+          {
+            "node": "Any QE Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any QE Companies?": {
+      "main": [
+        [
+          {
+            "node": "QE Roster",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Roster": {
+      "main": [
+        [
+          {
+            "node": "QE Pick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Pick": {
+      "main": [
+        [
+          {
+            "node": "Any QE Picks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any QE Picks?": {
+      "main": [
+        [
+          {
+            "node": "QE Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Email": {
+      "main": [
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Writer": {
+      "main": [
+        [
+          {
+            "node": "Chunk Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "bc49bbae-1969-4b24-b998-f3bda4a25e81",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-09T12:36:52.065Z",
+      "createdAt": "2026-09-09T12:36:52.065Z",
+      "role": "workflow:owner",
+      "workflowId": "u8abO9ygJlHkY1lU",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}

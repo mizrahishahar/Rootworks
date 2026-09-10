@@ -1,0 +1,2477 @@
+{
+  "updatedAt": "2026-09-10T08:02:59.482Z",
+  "createdAt": "2026-09-09T12:36:46.136Z",
+  "id": "WG46cPFf6jx91aVq",
+  "name": "Enrich Contacts Chunk",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "ec10-0001-4000-8000-000000000001",
+      "name": "Chunk Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "notes": "Enrich Contacts Chunk (2026-09-10): one chunk of companies in, the Rootflow contract on the item {base, peopleTableId, peopleFields, contactSourceMulti, dncDomains, provider, idx, count, companies:[{recordId, domain, cap, floor}]}. The provider picks the branch; the branch asks its vendor at its documented pace, parses, hands the people to Enrich Contacts Writer (awaited) and answers counters. Its own execution, so its payloads die with it."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "Blitz",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Blitz"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "GetLeads",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GetLeads"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "QuickEnrich",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "QuickEnrich"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "Supersoniq",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Supersoniq"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec10-0002-4000-8000-000000000002",
+      "name": "Provider?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        0
+      ],
+      "notes": "One branch per provider. Priority is the order the Rootflow sends chunks in, not this switch."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Companies.js"
+      },
+      "id": "ec10-0003-4000-8000-000000000003",
+      "name": "BZ Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        -450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0004-4000-8000-000000000004",
+      "name": "Any BZ Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.blitz-api.ai/v2/enrichment/domain-to-linkedin",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 120
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ec10-0005-4000-8000-000000000005",
+      "name": "BZ Domain To LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        -570
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "Blitz: the company LinkedIn page for a domain. 10 requests a second per endpoint documented; paced at 8.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UtqF0yZTXaZzKocn",
+          "name": "Blitz"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Roster-Requests.js"
+      },
+      "id": "ec10-0006-4000-8000-000000000006",
+      "name": "BZ Roster Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0007-4000-8000-000000000007",
+      "name": "Any BZ Roster?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        -450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.blitz-api.ai/v2/search/employee-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 120
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ec10-0008-4000-8000-000000000008",
+      "name": "BZ Employee Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        -570
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "Blitz: everyone at one company page, job_level filtered, max_results = the cap (50 at most, one page).",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UtqF0yZTXaZzKocn",
+          "name": "Blitz"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/BZ-Parse.js"
+      },
+      "id": "ec10-0009-4000-8000-000000000009",
+      "name": "BZ Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Requests.js"
+      },
+      "id": "ec10-0010-4000-8000-000000000010",
+      "name": "GL Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        -150
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0011-4000-8000-000000000011",
+      "name": "Any GL Requests?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.getleads.io/api/v1/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 700
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "ec10-0012-4000-8000-000000000012",
+      "name": "GL Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        -270
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "GetLeads contact search, one call per (floor, cap) group sized so one 5,000-row page holds the whole answer (GL Requests). No node pagination (paging on a JSON body repeated the same page and aborted, run 22643). Every returned row costs one fair-use row, never cash.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fsDQV3D9bINmYCrD",
+          "name": "GetLeads"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/GL-Parse.js"
+      },
+      "id": "ec10-0013-4000-8000-000000000013",
+      "name": "GL Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Companies.js"
+      },
+      "id": "ec10-0014-4000-8000-000000000014",
+      "name": "QE Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0015-4000-8000-000000000015",
+      "name": "Any QE Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.quickenrich.io/api/employees/contact-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 500
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ec10-0016-4000-8000-000000000016",
+      "name": "QE Roster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        30
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "QuickEnrich: the free roster of a domain (no emails, has_email flags and LinkedIn URLs). 120 requests a minute documented; paced at 120.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bHGK0aG9f2Y8kokT",
+          "name": "QuickEnrich"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Pick.js"
+      },
+      "id": "ec10-0017-4000-8000-000000000017",
+      "name": "QE Pick",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0018-4000-8000-000000000018",
+      "name": "Any QE Picks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 70
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ec10-0019-4000-8000-000000000019",
+      "name": "QE Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        30
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "QuickEnrich: the email search per person (a real LinkedIn URL first, else name + domain), one credit only on a hit. 1,000 requests a minute documented; paced at about 850.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bHGK0aG9f2Y8kokT",
+          "name": "QuickEnrich"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/QE-Parse.js"
+      },
+      "id": "ec10-0020-4000-8000-000000000020",
+      "name": "QE Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Relevant-Filters.js"
+      },
+      "id": "ec10-0021-4000-8000-000000000021",
+      "name": "Relevant Filters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        450
+      ],
+      "notes": "The Supersoniq gate: one formula per 100 domains for the relevant People rows at this chunk's domains."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Chunk Trigger').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Chunk Trigger').first().json.peopleTableId }}"
+        },
+        "filterByFormula": "={{ $json.formula }}",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain"
+          ]
+        }
+      },
+      "id": "ec10-0022-4000-8000-000000000022",
+      "name": "Read Relevant People",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        450
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "Relevant people already held at the chunk's domains (the free providers ran first); SQ Requests asks Supersoniq only for companies below 5. A base without a relevance rule has none, so every company passes."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Requests.js"
+      },
+      "id": "ec10-0023-4000-8000-000000000023",
+      "name": "SQ Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec10-0024-4000-8000-000000000024",
+      "name": "Any SQ Requests?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "ec10-0025-4000-8000-000000000025",
+      "name": "SQ Enrich",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1540,
+        330
+      ],
+      "retryOnFail": false,
+      "onError": "continueRegularOutput",
+      "notes": "Supersoniq companies/enrich, up to 1,000 domains a call, per_company_limit 10, seniors only (Director and up), tier full so the email rides. One credit per delivered contact.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQpoAyABVQwob0vN",
+          "name": "supersoniq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/SQ-Parse.js"
+      },
+      "id": "ec10-0026-4000-8000-000000000026",
+      "name": "SQ Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Writer-Input.js"
+      },
+      "id": "ec10-0027-4000-8000-000000000027",
+      "name": "Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rc2IqbRdeTHjLP6F",
+          "cachedResultName": "Enrich Contacts Writer"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "ec10-0028-4000-8000-000000000028",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2640,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Response.js"
+      },
+      "id": "ec10-0029-4000-8000-000000000029",
+      "name": "Chunk Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Chunk Trigger": {
+      "main": [
+        [
+          {
+            "node": "Provider?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Provider?": {
+      "main": [
+        [
+          {
+            "node": "BZ Companies",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GL Requests",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QE Companies",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Relevant Filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Companies": {
+      "main": [
+        [
+          {
+            "node": "Any BZ Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any BZ Companies?": {
+      "main": [
+        [
+          {
+            "node": "BZ Domain To LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Domain To LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "BZ Roster Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Roster Requests": {
+      "main": [
+        [
+          {
+            "node": "Any BZ Roster?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any BZ Roster?": {
+      "main": [
+        [
+          {
+            "node": "BZ Employee Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Employee Finder": {
+      "main": [
+        [
+          {
+            "node": "BZ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BZ Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Requests": {
+      "main": [
+        [
+          {
+            "node": "Any GL Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any GL Requests?": {
+      "main": [
+        [
+          {
+            "node": "GL Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Search": {
+      "main": [
+        [
+          {
+            "node": "GL Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Companies": {
+      "main": [
+        [
+          {
+            "node": "Any QE Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any QE Companies?": {
+      "main": [
+        [
+          {
+            "node": "QE Roster",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Roster": {
+      "main": [
+        [
+          {
+            "node": "QE Pick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Pick": {
+      "main": [
+        [
+          {
+            "node": "Any QE Picks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any QE Picks?": {
+      "main": [
+        [
+          {
+            "node": "QE Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Email": {
+      "main": [
+        [
+          {
+            "node": "QE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QE Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Relevant Filters": {
+      "main": [
+        [
+          {
+            "node": "Read Relevant People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Relevant People": {
+      "main": [
+        [
+          {
+            "node": "SQ Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Requests": {
+      "main": [
+        [
+          {
+            "node": "Any SQ Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any SQ Requests?": {
+      "main": [
+        [
+          {
+            "node": "SQ Enrich",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SQ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Enrich": {
+      "main": [
+        [
+          {
+            "node": "SQ Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQ Parse": {
+      "main": [
+        [
+          {
+            "node": "Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Writer": {
+      "main": [
+        [
+          {
+            "node": "Chunk Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "4dedbc55-6f6a-428a-92b3-5fd0cb84117a",
+  "activeVersionId": "4dedbc55-6f6a-428a-92b3-5fd0cb84117a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-09-09T12:36:46.146Z",
+      "createdAt": "2026-09-09T12:36:46.146Z",
+      "role": "workflow:owner",
+      "workflowId": "WG46cPFf6jx91aVq",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-10T08:02:59.485Z",
+    "createdAt": "2026-09-10T08:02:59.485Z",
+    "versionId": "4dedbc55-6f6a-428a-92b3-5fd0cb84117a",
+    "workflowId": "WG46cPFf6jx91aVq",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "ec10-0001-4000-8000-000000000001",
+        "name": "Chunk Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "notes": "Enrich Contacts Chunk (2026-09-10): one chunk of companies in, the Rootflow contract on the item {base, peopleTableId, peopleFields, contactSourceMulti, dncDomains, provider, idx, count, companies:[{recordId, domain, cap, floor}]}. The provider picks the branch; the branch asks its vendor at its documented pace, parses, hands the people to Enrich Contacts Writer (awaited) and answers counters. Its own execution, so its payloads die with it."
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.provider }}",
+                      "rightValue": "Blitz",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Blitz"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.provider }}",
+                      "rightValue": "GetLeads",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "GetLeads"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.provider }}",
+                      "rightValue": "QuickEnrich",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "QuickEnrich"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.provider }}",
+                      "rightValue": "Supersoniq",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Supersoniq"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "ec10-0002-4000-8000-000000000002",
+        "name": "Provider?",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          220,
+          0
+        ],
+        "notes": "One branch per provider. Priority is the order the Rootflow sends chunks in, not this switch."
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Companies: the Blitz provider of Enrich Contacts. Blitz keys everything on the company's\n// LinkedIn page, so the pass is two calls per company: domain-to-linkedin, then employee-finder.\n// One item per company out (the first call's input), or {_none:true}. The floor in Blitz's own\n// six job levels (C-Team, VP, Director, Manager, Staff, Other): Staff only at small companies,\n// Other always (unknown is not junior). No job_function filter: every function is asked.\nconst inp=$input.first().json||{};\n// A domain Blitz would refuse (no dot, illegal characters) is skipped here rather than answered 422.\nconst okDomain=(d)=>/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(String(d||''));\nconst companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain&&okDomain(c.domain));\nconst LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };\nconst out=companies.map(c=>({ json:{ domain:String(c.domain).toLowerCase(), cap:Math.max(1,Math.min(50,Number(c.cap)||20)), jobLevel:LEVELS[c.floor]||LEVELS.wide, body:{ domain:'https://'+String(c.domain).toLowerCase() } } }));\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "ec10-0003-4000-8000-000000000003",
+        "name": "BZ Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          -450
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0004-4000-8000-000000000004",
+        "name": "Any BZ Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          -450
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.blitz-api.ai/v2/enrichment/domain-to-linkedin",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 120
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ec10-0005-4000-8000-000000000005",
+        "name": "BZ Domain To LinkedIn",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          -570
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "Blitz: the company LinkedIn page for a domain. 10 requests a second per endpoint documented; paced at 8.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "UtqF0yZTXaZzKocn",
+            "name": "Blitz"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Roster Requests: the domain-to-linkedin answers (one per company, aligned to BZ Companies by\n// index, error items included) -> one employee-finder request per company that resolved. The cap\n// is max_results (1 to 50), one page: a cap never exceeds 50, so the second page is never needed.\n// Companies that did not resolve, and every error, are carried in _stats for BZ Parse.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst reqs=$('BZ Companies').all().map(i=>i.json||{});\nlet answers=[]; try{ answers=$('BZ Domain To LinkedIn').all(); }catch(e){}\nconst st={ resolveCalled:0, resolved:0, unresolved:0, errors:0, noKey:0, firstError:'', failReasons:[] };\nconst out=[];\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req||req._none) return;\n  st.resolveCalled++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.found===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='Blitz domain-to-linkedin: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||typeof b!=='object'){ st.errors++; const r='Blitz domain-to-linkedin HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const url=String(b.company_linkedin_url||'').trim();\n  if(!b.found||!url){ st.unresolved++; return; }\n  st.resolved++;\n  out.push({ json:{ domain:req.domain, cap:req.cap, companyLinkedin:url, body:{ company_linkedin_url:url, job_level:req.jobLevel, max_results:req.cap, page:1 } } });\n});\nif(!out.length) return [{ json:{ _none:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
+        },
+        "id": "ec10-0006-4000-8000-000000000006",
+        "name": "BZ Roster Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          -450
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0007-4000-8000-000000000007",
+        "name": "Any BZ Roster?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          -450
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.blitz-api.ai/v2/search/employee-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 120
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ec10-0008-4000-8000-000000000008",
+        "name": "BZ Employee Finder",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1760,
+          -570
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "Blitz: everyone at one company page, job_level filtered, max_results = the cap (50 at most, one page).",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "UtqF0yZTXaZzKocn",
+            "name": "Blitz"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// BZ Parse: the employee-finder answers (aligned to BZ Roster Requests by index) -> people per\n// domain, plus the provider verdict in the shared provider contract (see GL Parse). Employee\n// Finder returns no email, no seniority and no department per row: the title comes from the\n// person's current experience at this company, seniority and department are derived from the\n// title by the caller's merge. Never throws.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], resolveCalled:0, resolved:0, unresolved:0, noKey:0 };\nconst people={};\nlet first={}; try{ first=$('BZ Roster Requests').first().json||{}; }catch(e){}\nconst rs=first._stats||{};\nfor(const k of ['resolveCalled','resolved','unresolved','noKey']) st[k]=Number(rs[k])||0;\nst.errors+=Number(rs.errors)||0; if(rs.firstError&&!st.firstError) st.firstError=rs.firstError; for(const r of (rs.failReasons||[])) st.failReasons.push(r);\nlet reqs=[]; try{ reqs=$('BZ Roster Requests').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('BZ Employee Finder').all(); }catch(e){}\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req) return;\n  st.called++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.results===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='Blitz employee-finder: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||!Array.isArray(b.results)){ st.errors++; const r='Blitz employee-finder HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const list=people[req.domain]||(people[req.domain]=[]);\n  for(const p of b.results){\n    st.returned++;\n    if(list.length>=req.cap) continue;\n    const exps=Array.isArray(p.experiences)?p.experiences:[];\n    const here=exps.find(e=>e&&e.job_is_current&&(norm(e.company_domain)===req.domain||String(e.company_linkedin_url||'').replace(/\\/+$/,'')===req.companyLinkedin.replace(/\\/+$/,'')))||exps.find(e=>e&&e.job_is_current)||exps[0]||{};\n    const name=String(p.full_name||((String(p.first_name||'')+' '+String(p.last_name||'')).trim())).trim();\n    if(!name) continue;\n    list.push({ source:'Blitz', sourceId:String(p.linkedin_id||p.id||''), name:name, title:String(here.job_title||p.headline||'').trim(), seniority:'', department:'', email:'', linkedin:String(p.linkedin_url||'').trim(), phone:'' });\n    st.kept++;\n  }\n});\nlet status='ok', reason='';\nconst attempted=st.resolveCalled+st.called;\nif(st.noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the Blitz nodes'; }\nelse if(attempted&&st.errors>=attempted&&!st.kept){ status='error'; reason=st.firstError; }\nelse if(!attempted){ status='skipped'; reason='nothing to ask'; }\nreturn [{ json:{ provider:'Blitz', status, reason, stats:st, people } }];\n"
+        },
+        "id": "ec10-0009-4000-8000-000000000009",
+        "name": "BZ Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          -450
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// GL Requests: the GetLeads provider of Enrich Contacts. Input: the batch plan, one item\n// { companies:[{recordId, domain, company, band, cap, floor}] }. Output: one item per\n// POST /api/v1/contacts/search call, or one {_none:true} when there is nothing to ask.\n//\n// The floor is expressed in GetLeads' own six levels (C-Team, VP, Director, Manager, Staff, Other;\n// pulled live 2026-09-08). \"Everyone non-junior\": Staff (individual contributors) rides along\n// only at small companies, Other (unknown) always rides (unknown is not junior). No department\n// filter: every function is asked (ruled 2026-09-08, everyone who is not junior).\n//\n// One call per (floor, cap) group, sized so ONE page always holds the whole answer: domains per call =\n// floor(5,000 / cap) (cap 20: 250 domains, cap 30: 166, cap 50: 100). No node pagination: proven\n// 2026-09-09 (run 22643) that n8n paging on a JSON body repeats the same page and aborts with\n// \"identical 5x\", discarding every page including the first, so the whole tier came back empty.\n// Every row costs one fair-use row, never cash.\nconst inp=$input.first().json||{};\n// A domain GetLeads would refuse (no dot, illegal characters) sinks its WHOLE call (run 22808: one\n// \"v12footwear\" row rejected 250 domains with a 400). Such rows are skipped here and counted.\nconst okDomain=(d)=>/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(String(d||''));\nconst all=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst companies=all.filter(c=>okDomain(c.domain));\nconst badDomains=all.length-companies.length;\nconst LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };\nconst COLUMNS=['First Name','Last Name','Contact Full Name','Email','Email Verification Status','Current Job Title','Seniority Level','Department / Function','Contact LinkedIn URL','Cellphone','Direct Office Phone','Company Domain','Work Email Domain','Current Employer Name'];\nconst groups={};\nfor(const c of companies){ const floor=LEVELS[c.floor]?c.floor:'wide'; const cap=Math.max(1,Math.min(50,Number(c.cap)||20)); const k=floor+':'+String(cap).padStart(2,'0'); (groups[k]=groups[k]||{ floor, cap, list:[] }).list.push(c.domain); }\nconst out=[];\nfor(const k of Object.keys(groups).sort()){\n  const g=groups[k];\n  const per=Math.max(1,Math.floor(5000/g.cap));\n  for(let i=0;i<g.list.length;i+=per){\n    const part=g.list.slice(i,i+per);\n    out.push({ json:{ body:{ domains:part, seniority:LEVELS[g.floor], max_per_company:g.cap, limit:5000, offset:0, columns:COLUMNS }, domains:part, cap:g.cap, floor:g.floor } });\n  }\n}\nif(!out.length) return [{ json:{ _none:true, badDomains } }];\nout[0].json.badDomains=badDomains;\nreturn out;\n"
+        },
+        "id": "ec10-0010-4000-8000-000000000010",
+        "name": "GL Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          -150
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0011-4000-8000-000000000011",
+        "name": "Any GL Requests?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          -150
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.getleads.io/api/v1/contacts/search",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 700
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": false
+              }
+            },
+            "timeout": 180000
+          }
+        },
+        "id": "ec10-0012-4000-8000-000000000012",
+        "name": "GL Search",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          -270
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "GetLeads contact search, one call per (floor, cap) group sized so one 5,000-row page holds the whole answer (GL Requests). No node pagination (paging on a JSON body repeated the same page and aborted, run 22643). Every returned row costs one fair-use row, never cash.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "fsDQV3D9bINmYCrD",
+            "name": "GetLeads"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// GL Parse: every page GetLeads answered -> people per domain, plus the provider verdict. The one\n// item out is the provider contract every Enrich Contacts provider answers with:\n//   { provider, status: ok | skipped | error, reason, stats:{called, returned, kept, credits, errors,\n//     firstError, failReasons[]}, people:{ <domain>: [ {source, sourceId, name, title, seniority,\n//     department, email, linkedin, phone} ] } }\n// It never throws. A missing credential, an exhausted fair-use budget or a dead API are a status\n// on this item and a line in the caller's log; the caller moves on to the next provider (ruled\n// 2026-09-08: unlimited providers, nothing blocks on one of them).\n//\n// Rows are matched to the plan by the row's own company domain, never by call order: the node pages\n// on next_offset, so one request can answer with several items and alignment by index is not\n// safe. Column names in the REST answer are the catalog's raw names; the docs say display labels on\n// MCP and CSV, raw names on JSON, so every field is read through a normalized-key lookup that\n// accepts either spelling.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst inp=$('GL Requests').first().json||{};\nconst plan=$('Chunk Trigger').first().json||{};\nconst byDomain={}; for(const c of (Array.isArray(plan.companies)?plan.companies:[])){ if(c&&c.domain) byDomain[String(c.domain).toLowerCase()]=c; }\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], dropped:0, pages:0 };\nconst people={};\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst nk=(s)=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');\nconst pick=(row,cands)=>{ for(const c of cands){ const v=row[c]; if(v!==undefined&&v!==null&&String(v).trim()!==''&&String(v).trim()!=='N/A') return String(v).trim(); } return ''; };\nconst flat=(r)=>{ const o={}; for(const k of Object.keys(r||{})){ const v=r[k]; if(v&&typeof v==='object'&&!Array.isArray(v)){ for(const k2 of Object.keys(v)) o[nk(k2)]=v[k2]; } o[nk(k)]=v; } return o; };\nlet items=[];\nif(inp._none){ return [{ json:{ provider:'GetLeads', status:'skipped', reason:'nothing to ask', stats:st, people:{} } }]; }\ntry{ items=$('GL Search').all(); }catch(e){ items=[]; }\nlet noKey=false, budget=false;\nfor(const it of items){\n  const j=it.json||{};\n  st.pages++;\n  if(j.error&&j.contacts===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ noKey=true; continue; }\n    if(/fair.?use|not enough credits|credits_exhausted|payment required|\\b402\\b/i.test(msg)){ budget=true; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n    st.errors++; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue;\n  }\n  if(j.ok===false||(!Array.isArray(j.contacts)&&j.message)){\n    const msg=String(j.message||j.code||'answer without contacts');\n    if(/fair.?use|not enough credits|credits_exhausted/i.test(msg+' '+String(j.code||''))){ budget=true; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n    st.errors++; const r='GetLeads: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue;\n  }\n  if(!Array.isArray(j.contacts)){ st.errors++; const r='GetLeads: unreadable answer '+JSON.stringify(j).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); continue; }\n  st.credits+=Number(j.query_credits_used)||0;\n  for(const raw of j.contacts){\n    st.returned++;\n    const r=flat(raw);\n    const email=pick(r,['email','emailaddress','workemail']).toLowerCase();\n    let d=norm(pick(r,['companydomain','domain','workemaildomain','emaildomain']));\n    if(!d||!byDomain[d]){ const at=email.lastIndexOf('@'); const ed=at>-1?email.slice(at+1):''; if(ed&&byDomain[ed]) d=ed; }\n    const c=byDomain[d];\n    if(!c){ st.dropped++; continue; }\n    const list=people[d]||(people[d]=[]);\n    if(list.length>=(Number(c.cap)||50)) continue;\n    const first=pick(r,['firstname']), last=pick(r,['lastname']);\n    const name=pick(r,['contactfullname','fullname'])||((first+' '+last).trim());\n    if(!name) continue;\n    list.push({\n      source:'GetLeads', sourceId:pick(r,['contactid','id','contactuuid','personid']),\n      name:name, title:pick(r,['currentjobtitle','jobtitle','title']),\n      seniority:pick(r,['senioritylevel','seniority','joblevel']), department:pick(r,['departmentfunction','jobfunction','function']),\n      email:email, emailStatus:pick(r,['emailverificationstatus','emailstatus']),\n      linkedin:pick(r,['contactlinkedinurl','linkedinurl','linkedin']), phone:pick(r,['cellphone','directofficephone','phone'])\n    });\n    st.kept++;\n  }\n}\ntry{ st.called=$('GL Requests').all().filter(i=>i.json&&!i.json._none).length; }catch(e){ st.called=st.pages; }\nlet status='ok', reason='';\nif(noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the GetLeads node'; }\nelse if(budget&&!st.kept){ status='skipped'; reason='fair-use budget exhausted'; }\nelse if(st.errors&&!st.kept&&items.length&&st.errors>=items.length){ status='error'; reason=st.firstError; }\nif(budget&&st.kept) st.failReasons.push('GetLeads: fair-use budget hit mid-batch, later pages skipped');\nreturn [{ json:{ provider:'GetLeads', status, reason, stats:st, people } }];\n"
+        },
+        "id": "ec10-0013-4000-8000-000000000013",
+        "name": "GL Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          -150
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Companies: the QuickEnrich provider of Enrich Contacts. QuickEnrich has no seniority or\n// department filter, so it is asked for everyone (ruled 2026-09-08: insert everyone, no pressure):\n// one free contact-finder call per company for the roster, then one paid email search per person\n// up to the cap. One item per company out (the roster request), or {_none:true}.\nconst inp=$input.first().json||{};\nconst companies=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst out=companies.map(c=>({ json:{ domain:String(c.domain).toLowerCase(), cap:Math.max(1,Math.min(50,Number(c.cap)||20)), body:{ company_url:{ include:[String(c.domain).toLowerCase()], exclude:[] }, per_page:100, page:1 } } }));\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "ec10-0014-4000-8000-000000000014",
+        "name": "QE Companies",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          150
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0015-4000-8000-000000000015",
+        "name": "Any QE Companies?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          150
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.quickenrich.io/api/employees/contact-finder",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 500
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ec10-0016-4000-8000-000000000016",
+        "name": "QE Roster",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          30
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "QuickEnrich: the free roster of a domain (no emails, has_email flags and LinkedIn URLs). 120 requests a minute documented; paced at 120.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bHGK0aG9f2Y8kokT",
+            "name": "QuickEnrich"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Pick: the roster answers (aligned to QE Companies by index) -> one email-search request per\n// person, up to the cap per company, people with an email on file first. The roster is free; the\n// search costs one credit only on a hit. Everyone picked is inserted, email or not: a person the\n// roster named is a person, the email is the email Rootflow's problem. Errors ride in _stats.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst reqs=$('QE Companies').all().map(i=>i.json||{});\nlet answers=[]; try{ answers=$('QE Roster').all(); }catch(e){}\nconst st={ rosterCalled:0, rosterRows:0, errors:0, noKey:0, firstError:'', failReasons:[] };\nconst out=[]; const extra=[];\nconst na=(v)=>{ const s=String(v==null?'':v).trim(); return (s===''||s==='N/A')?'':s; };\nanswers.forEach((it,i)=>{\n  const req=reqs[i]; if(!req||req._none) return;\n  st.rosterCalled++;\n  const j=it.json||{};\n  if(j.error&&j.body===undefined&&j.data===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='QuickEnrich contact-finder: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const b=(j.body!==undefined)?j.body:j;\n  const status=Number(j.statusCode)||200;\n  if(status>=300||!b||typeof b!=='object'||!Array.isArray(b.data)){ st.errors++; const r='QuickEnrich contact-finder HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n  const rows=b.data.slice().sort((a,c)=>(c.has_email?1:0)-(a.has_email?1:0));\n  st.rosterRows+=rows.length;\n  let n=0;\n  for(const p of rows){\n    if(n>=req.cap) break;\n    const first=na(p.first_name), last=na(p.last_name);\n    if(!first) continue;\n    n++;\n    // Without a real LinkedIn URL the search needs company_url + first_name + last_name; a person\n    // with no last name gets no search (400 otherwise, run 23568: 217 such) and is still written.\n    const liRaw0=na(p.employee_linkedin); const liOk0=/^https?:\\/\\/([a-z0-9-]+\\.)?linkedin\\.com\\/in\\/[^\\/?#\\s]+/i.test(liRaw0)?liRaw0:'';\n    if(!liOk0&&!last){ extra.push({ domain:req.domain, name:first, title:na(p.title), linkedin:'' }); continue; }\n    // The search URL carries only the parameters that have a value: an empty linkedin_url next to\n    // the name + domain trio is not a documented shape.\n    // A roster LinkedIn value that is not a real linkedin.com/in/ address is not sent (QuickEnrich answers\n    // 422 and the search is lost); the name + domain search runs instead (run 22643, 12 such rows).\n    const liRaw=na(p.employee_linkedin); const liOk=/^https?:\\/\\/([a-z0-9-]+\\.)?linkedin\\.com\\/in\\/[^\\/?#\\s]+/i.test(liRaw)?liRaw:'';\n    const q={ linkedin_url:liOk, company_url:req.domain, first_name:first, last_name:last };\n    const qs=Object.keys(q).filter(k=>q[k]).map(k=>k+'='+encodeURIComponent(q[k])).join('&');\n    out.push({ json:{ domain:req.domain, name:(first+' '+last).trim(), title:na(p.title), linkedin:liOk, hasEmail:!!p.has_email, hasPhone:!!p.has_phone,\n      query:q, url:'https://app.quickenrich.io/api/employees/search?'+qs } });\n  }\n});\nif(!out.length) return [{ json:{ _none:true, _stats:st, _extra:extra } }];\nout[0].json._stats=st; out[0].json._extra=extra;\nreturn out;\n"
+        },
+        "id": "ec10-0017-4000-8000-000000000017",
+        "name": "QE Pick",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          150
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0018-4000-8000-000000000018",
+        "name": "Any QE Picks?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          150
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 70
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ec10-0019-4000-8000-000000000019",
+        "name": "QE Email",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1760,
+          30
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "QuickEnrich: the email search per person (a real LinkedIn URL first, else name + domain), one credit only on a hit. 1,000 requests a minute documented; paced at about 850.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bHGK0aG9f2Y8kokT",
+            "name": "QuickEnrich"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// QE Parse: the email-search answers (aligned to QE Pick by index) -> people per domain in the\n// shared provider contract (see GL Parse). A person whose search found nothing is still a person\n// (name, title, LinkedIn from the roster), written without an email. Seniority and department are\n// derived from the title by the caller's merge. Never throws.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], rosterCalled:0, rosterRows:0, noKey:0, emails:0 };\nconst people={};\nlet first={}; try{ first=$('QE Pick').first().json||{}; }catch(e){}\nconst rs=first._stats||{};\nfor(const k of ['rosterCalled','rosterRows','noKey']) st[k]=Number(rs[k])||0;\nst.errors+=Number(rs.errors)||0; if(rs.firstError&&!st.firstError) st.firstError=rs.firstError; for(const r of (rs.failReasons||[])) st.failReasons.push(r);\nlet picks=[]; try{ picks=$('QE Pick').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('QE Email').all(); }catch(e){}\nconst na=(v)=>{ const s=String(v==null?'':v).trim(); return (s===''||s==='N/A')?'':s; };\nanswers.forEach((it,i)=>{\n  const p=picks[i]; if(!p) return;\n  st.called++;\n  const j=it.json||{};\n  let email='', phone='', sourceId='';\n  if(j.error&&j.body===undefined&&j.data===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; return; }\n    st.errors++; const r='QuickEnrich email search: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r);\n  } else {\n    const b=(j.body!==undefined)?j.body:j;\n    const status=Number(j.statusCode)||200;\n    if(status>=300||!b||typeof b!=='object'){ st.errors++; const r='QuickEnrich email search HTTP '+status+' '+JSON.stringify(b).slice(0,120); if(!st.firstError) st.firstError=r; st.failReasons.push(r); }\n    else { const d=(b.data&&!Array.isArray(b.data))?b.data:((Array.isArray(b.data)&&b.data[0])||{}); email=na(d.email).toLowerCase(); phone=na(d.employee_phone); if(email){ st.emails++; st.credits+=1; } }\n  }\n  const list=people[p.domain]||(people[p.domain]=[]);\n  st.returned++;\n  list.push({ source:'QuickEnrich', sourceId:sourceId, name:p.name, title:p.title, seniority:'', department:'', email:email, linkedin:p.linkedin, phone:phone });\n  st.kept++;\n});\n// People the roster named but no search could be made for (no last name, no LinkedIn) are still people.\nfor(const x of (first._extra||[])){ const list=people[x.domain]||(people[x.domain]=[]); st.returned++; list.push({ source:'QuickEnrich', sourceId:'', name:x.name, title:x.title, seniority:'', department:'', email:'', linkedin:'', phone:'' }); st.kept++; }\nlet status='ok', reason='';\nconst attempted=st.rosterCalled+st.called;\nif(st.noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the QuickEnrich nodes'; }\nelse if(attempted&&st.errors>=attempted&&!st.kept){ status='error'; reason=st.firstError; }\nelse if(!attempted){ status='skipped'; reason='nothing to ask'; }\nreturn [{ json:{ provider:'QuickEnrich', status, reason, stats:st, people } }];\n"
+        },
+        "id": "ec10-0020-4000-8000-000000000020",
+        "name": "QE Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          150
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Relevant Filters (Supersoniq branch): the gate's read for this chunk, one formula per 100 domains\n// for the relevant People rows at the chunk's domains. Relevance is the People formula the client's\n// base carries (the decision-maker rule, or manually_approved when none is set).\nconst inp=$('Chunk Trigger').first().json||{};\nconst d=Array.from(new Set((inp.companies||[]).map(c=>String(c.domain||'').toLowerCase()).filter(Boolean)));\nconst esc=(s)=>String(s).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nconst out=[];\nfor(let i=0;i<d.length;i+=100){ const part=d.slice(i,i+100); out.push({ json:{ formula:\"AND({relevance}=1, \"+(part.length===1?(\"{Domain}='\"+esc(part[0])+\"'\"):('OR('+part.map(x=>\"{Domain}='\"+esc(x)+\"'\").join(',')+')'))+\")\" } }); }\nif(!out.length) out.push({ json:{ formula:\"{Domain}=''\" } });\nreturn out;\n"
+        },
+        "id": "ec10-0021-4000-8000-000000000021",
+        "name": "Relevant Filters",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          660,
+          450
+        ],
+        "notes": "The Supersoniq gate: one formula per 100 domains for the relevant People rows at this chunk's domains."
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Chunk Trigger').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Chunk Trigger').first().json.peopleTableId }}"
+          },
+          "filterByFormula": "={{ $json.formula }}",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain"
+            ]
+          }
+        },
+        "id": "ec10-0022-4000-8000-000000000022",
+        "name": "Read Relevant People",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          450
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "Relevant people already held at the chunk's domains (the free providers ran first); SQ Requests asks Supersoniq only for companies below 5. A base without a relevance rule has none, so every company passes."
+      },
+      {
+        "parameters": {
+          "jsCode": "// SQ Requests: the Supersoniq provider of Enrich Contacts. Supersoniq is the one metered source\n// (one credit per delivered contact, 90k a month), so it gets its own rule (ruled 2026-09-09): a\n// HARD cap of 10 people per company whatever the band, and seniors only (Director and up in its\n// vocabulary: Director, Head, VP, EVP / SVP, President, C-Suite, Owner, Founder, Partner,\n// Board / Chair). One POST companies/enrich per 1,000 domains, tier full so the email rides.\n// The gate (ruled 2026-09-09): Supersoniq is asked only for companies that still hold fewer than\n// RELEVANT_MIN relevant people after the free providers wrote (Read Relevant People, this chunk).\n// A base without a relevance rule has none, so every company passes; the gate counts ride in stats.\nconst RELEVANT_MIN=5;\nconst inp=$('Chunk Trigger').first().json||{};\nconst all=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain);\nconst count={};\ntry{ for(const it of $('Read Relevant People').all()){ const j=it.json||{}; if(!j.id) continue; const f=j.fields||{}; const v=f.Domain; const d=String(Array.isArray(v)?(v[0]||''):(v||'')).toLowerCase().trim(); if(d) count[d]=(count[d]||0)+1; } }catch(e){}\nconst companies=all.filter(c=>(count[String(c.domain).toLowerCase()]||0)<RELEVANT_MIN);\nconst gate={ relevantMin:RELEVANT_MIN, companiesIn:all.length, asked:companies.length, skippedRelevant:all.length-companies.length };\nconst CAP=10;\nconst SENIORS=['Director','Head','VP','EVP / SVP','President','C-Suite','Owner','Founder','Partner','Board / Chair'];\nconst domains=companies.map(c=>String(c.domain).toLowerCase());\nconst out=[];\nfor(let i=0;i<domains.length;i+=1000){\n  const part=domains.slice(i,i+1000);\n  out.push({ json:{ body:{ companies:part.map(d=>({ domain:d })), filters:{ seniority:SENIORS }, per_company_limit:CAP, tier:'full' }, domains:part, cap:CAP } });\n}\nif(!out.length) return [{ json:{ _none:true, gate } }];\nout[0].json.gate=gate;\nreturn out;\n"
+        },
+        "id": "ec10-0023-4000-8000-000000000023",
+        "name": "SQ Requests",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          450
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "n1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ec10-0024-4000-8000-000000000024",
+        "name": "Any SQ Requests?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1320,
+          450
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.supersoniq.app/partner/v1/companies/enrich",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.body }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 120000
+          }
+        },
+        "id": "ec10-0025-4000-8000-000000000025",
+        "name": "SQ Enrich",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1540,
+          330
+        ],
+        "retryOnFail": false,
+        "onError": "continueRegularOutput",
+        "notes": "Supersoniq companies/enrich, up to 1,000 domains a call, per_company_limit 10, seniors only (Director and up), tier full so the email rides. One credit per delivered contact.",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "CQpoAyABVQwob0vN",
+            "name": "supersoniq"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// SQ Parse: companies/enrich answers (aligned to SQ Requests by index; the node never errors, a\n// failure is the body) -> people per domain in the shared provider contract (see GL Parse). A\n// contact at a domain we did not send is dropped; an email whose domain is neither the company\n// domain nor a subdomain of it is blanked, the person kept. Out of credits is a skip, never an\n// error: the caller carries on with the other providers. Never throws.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst inp=$('SQ Requests').first().json||{};\nconst st={ called:0, returned:0, kept:0, credits:0, errors:0, firstError:'', failReasons:[], dropped:0, emailBlanked:0, gate:inp.gate||null };\nconst people={};\nif(inp._none){ return [{ json:{ provider:'Supersoniq', status:'skipped', reason:'nothing to ask', stats:st, people:{} } }]; }\nlet reqs=[]; try{ reqs=$('SQ Requests').all().map(i=>i.json||{}); }catch(e){}\nlet items=[]; try{ items=$('SQ Enrich').all(); }catch(e){}\nconst emailDomainOk=(email,domain)=>{ const at=String(email||'').lastIndexOf('@'); if(at<0) return false; const ed=String(email).slice(at+1).toLowerCase().trim(); return ed===domain||ed.endsWith('.'+domain); };\nlet noKey=false, noCredits=false;\nitems.forEach((it,i)=>{\n  const req=reqs[i]; if(!req) return;\n  st.called++;\n  const resp=it.json||{};\n  if(resp.error&&resp.results===undefined&&(typeof resp.error==='object'||typeof resp.error==='string')){\n    const msg=errMsg(resp.error);\n    if(/credential/i.test(msg)){ noKey=true; return; }\n    st.errors++; const r='Supersoniq: '+msg.slice(0,160); if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  if(!Array.isArray(resp.results)){\n    const txt=JSON.stringify(resp).slice(0,200);\n    if(/credit|balance|insufficient/i.test(txt)){ noCredits=true; const r='Supersoniq: '+txt; if(!st.firstError) st.firstError=r; st.failReasons.push(r); return; }\n    if(/authentication|unauthori|api key/i.test(txt)){ noKey=true; return; }\n    st.errors++; const r='Supersoniq: '+txt; if(!st.firstError) st.firstError=r; st.failReasons.push(r); return;\n  }\n  const cr=resp.credits_used!=null?resp.credits_used:(resp.credits!=null?resp.credits:((resp.usage&&resp.usage.credits_used)||0)); st.credits+=Number(cr)||0;\n  const sent=new Set(req.domains);\n  for(const r of resp.results){\n    const contacts=Array.isArray(r.contacts)?r.contacts:[];\n    for(const ct of contacts){\n      st.returned++;\n      const domain=String(ct.company_domain||'').trim().toLowerCase();\n      if(!domain||!sent.has(domain)){ st.dropped++; continue; }\n      const list=people[domain]||(people[domain]=[]);\n      if(list.length>=req.cap) continue;\n      const full=((String(ct.first_name||'')+' '+String(ct.last_name||'')).trim())||String(ct.full_name||'');\n      if(!full) continue;\n      let email=String(ct.email||'').trim().toLowerCase();\n      if(email&&!emailDomainOk(email,domain)){ email=''; st.emailBlanked++; }\n      list.push({ source:'Supersoniq', sourceId:String(ct.contact_id||ct.id||''), name:full, title:String(ct.job_title||'').trim(), seniority:String(ct.seniority||''), department:String(ct.function||''), email:email, linkedin:String(ct.linkedin_url||ct.linkedin||'').trim(), phone:'' });\n      st.kept++;\n    }\n  }\n});\nlet status='ok', reason='';\nif(noKey&&!st.kept&&!st.errors){ status='skipped'; reason='no credential on the Supersoniq node'; }\nelse if(noCredits&&!st.kept){ status='skipped'; reason='out of credits'; }\nelse if(st.errors&&items.length&&st.errors>=items.length&&!st.kept){ status='error'; reason=st.firstError; }\nreturn [{ json:{ provider:'Supersoniq', status, reason, stats:st, people } }];\n"
+        },
+        "id": "ec10-0026-4000-8000-000000000026",
+        "name": "SQ Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          450
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Writer Input: this chunk's people (from the provider's Parse node) plus the writer's contract, one\n// item for Enrich Contacts Writer. The provider on the trigger says which branch ran. An empty\n// answer still goes through the writer (one held read, zero written), so the counters stay honest.\nconst ctx=$('Chunk Trigger').first().json||{};\nconst PARSE={ Blitz:'BZ Parse', GetLeads:'GL Parse', QuickEnrich:'QE Parse', Supersoniq:'SQ Parse' };\nlet parsed={}; try{ parsed=$(PARSE[ctx.provider]).first().json||{}; }catch(e){}\nreturn [{ json:{ base:ctx.base, peopleTableId:ctx.peopleTableId, peopleFields:ctx.peopleFields||[], contactSourceMulti:ctx.contactSourceMulti===true, dncDomains:ctx.dncDomains||[], provider:ctx.provider, companies:ctx.companies||[], people:(parsed.people&&typeof parsed.people==='object')?parsed.people:{} } }];\n"
+        },
+        "id": "ec10-0027-4000-8000-000000000027",
+        "name": "Writer Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "rc2IqbRdeTHjLP6F",
+            "cachedResultName": "Enrich Contacts Writer"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "mode": "once",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "id": "ec10-0028-4000-8000-000000000028",
+        "name": "Call Writer",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          2640,
+          0
+        ],
+        "onError": "continueRegularOutput",
+        "notes": "Awaited. The writer merges this chunk into People and answers counters; a crash comes back as an error item and is counted."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk Response: the last node, what the Rootflow receives: the vendor verdict (status, reason,\n// stats, the Supersoniq gate counts when that branch ran) and the writer's counters. Never rows.\nconst ctx=$('Chunk Trigger').first().json||{};\nconst PARSE={ Blitz:'BZ Parse', GetLeads:'GL Parse', QuickEnrich:'QE Parse', Supersoniq:'SQ Parse' };\nlet p={}; try{ p=$(PARSE[ctx.provider]).first().json||{}; }catch(e){}\nlet w={}; try{ w=$('Call Writer').first().json||{}; }catch(e){}\nconst writer=(w.error&&w.written===undefined)?{ crashed:String((w.error&&w.error.message)||w.error).slice(0,160) }:w;\nreturn [{ json:{ provider:ctx.provider, parse:{ status:p.status||'error', reason:p.reason||'', stats:p.stats||{} }, writer } }];\n"
+        },
+        "id": "ec10-0029-4000-8000-000000000029",
+        "name": "Chunk Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Chunk Trigger": {
+        "main": [
+          [
+            {
+              "node": "Provider?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Provider?": {
+        "main": [
+          [
+            {
+              "node": "BZ Companies",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "GL Requests",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "QE Companies",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Relevant Filters",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Companies": {
+        "main": [
+          [
+            {
+              "node": "Any BZ Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any BZ Companies?": {
+        "main": [
+          [
+            {
+              "node": "BZ Domain To LinkedIn",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Domain To LinkedIn": {
+        "main": [
+          [
+            {
+              "node": "BZ Roster Requests",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Roster Requests": {
+        "main": [
+          [
+            {
+              "node": "Any BZ Roster?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any BZ Roster?": {
+        "main": [
+          [
+            {
+              "node": "BZ Employee Finder",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Employee Finder": {
+        "main": [
+          [
+            {
+              "node": "BZ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BZ Parse": {
+        "main": [
+          [
+            {
+              "node": "Writer Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Requests": {
+        "main": [
+          [
+            {
+              "node": "Any GL Requests?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any GL Requests?": {
+        "main": [
+          [
+            {
+              "node": "GL Search",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "GL Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Search": {
+        "main": [
+          [
+            {
+              "node": "GL Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Parse": {
+        "main": [
+          [
+            {
+              "node": "Writer Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Companies": {
+        "main": [
+          [
+            {
+              "node": "Any QE Companies?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any QE Companies?": {
+        "main": [
+          [
+            {
+              "node": "QE Roster",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Roster": {
+        "main": [
+          [
+            {
+              "node": "QE Pick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Pick": {
+        "main": [
+          [
+            {
+              "node": "Any QE Picks?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any QE Picks?": {
+        "main": [
+          [
+            {
+              "node": "QE Email",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Email": {
+        "main": [
+          [
+            {
+              "node": "QE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "QE Parse": {
+        "main": [
+          [
+            {
+              "node": "Writer Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Relevant Filters": {
+        "main": [
+          [
+            {
+              "node": "Read Relevant People",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Relevant People": {
+        "main": [
+          [
+            {
+              "node": "SQ Requests",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Requests": {
+        "main": [
+          [
+            {
+              "node": "Any SQ Requests?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any SQ Requests?": {
+        "main": [
+          [
+            {
+              "node": "SQ Enrich",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SQ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Enrich": {
+        "main": [
+          [
+            {
+              "node": "SQ Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SQ Parse": {
+        "main": [
+          [
+            {
+              "node": "Writer Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Writer Input": {
+        "main": [
+          [
+            {
+              "node": "Call Writer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call Writer": {
+        "main": [
+          [
+            {
+              "node": "Chunk Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

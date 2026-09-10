@@ -7,11 +7,12 @@
 //                          QuickEnrich, Supersoniq), the vendor calls, the parse, the writer call
 //   Enrich Contacts Writer the one merge-and-write into People (built once, not regenerated here)
 // Usage: node scripts/rootflows/build-enrich-contacts.js chunk|parent
-// Writes workflow.json into n8n/Enrich-Contacts-Chunk and n8n/Enrich-Contacts; node code lives in
+// Writes workflow.json into n8n/rootflows/Enrich-Contacts/{Enrich-Contacts-Chunk, Enrich-Contacts}; node code lives in
 // their nodes/ folders and is referenced as @@file. Push with scripts/n8n-push.js afterwards.
 const fs = require('fs');
 const path = require('path');
-const ROOT = path.resolve(__dirname, '..', '..', 'n8n');
+// The Rootflow folder under the layout: n8n/rootflows/Enrich-Contacts/<workflow>/
+const ROOT = path.resolve(__dirname, '..', '..', 'n8n', 'rootflows', 'Enrich-Contacts');
 const ERR = 'gqm6HzVNzEMQ8Ml0';
 const WRITER_ID = 'rc2IqbRdeTHjLP6F';
 const AT = { airtableTokenApi: { id: 'RZ2SX89iUyF4aEWJ', name: 'Airtable' } };

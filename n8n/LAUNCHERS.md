@@ -27,13 +27,13 @@ Do not hand-edit; rerun the script after every pull.
 | helpers/Alta-OAuth-Callback | GET https://n8n.flowroots.com/webhook/alta-oauth-callback |  | no |
 | helpers/Get-Availability | GET https://n8n.flowroots.com/webhook/availability |  | no |
 | rootflows/Discover-Discolike-Companies/Discover-Discolike-Companies | POST https://n8n.flowroots.com/webhook/discover-discolike-companies |  | no |
-| rootflows/Discover-Hiring-Companies/Insert-Hiring-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/discover-hiring-companies |  | no |
-| rootflows/Discover-Reviews-Companies/Insert-Reviews-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/discover-reviews-companies |  | no |
-| rootflows/Discover-Storeleads-Companies/Insert-Storeleads-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/discover-storeleads-companies |  | no |
+| rootflows/Discover-Hiring-Companies/Discover-Hiring-Companies | POST https://n8n.flowroots.com/webhook/discover-hiring-companies |  | no |
+| rootflows/Discover-Reviews-Companies/Discover-Reviews-Companies | POST https://n8n.flowroots.com/webhook/discover-reviews-companies |  | no |
+| rootflows/Discover-Storeleads-Companies/Discover-Storeleads-Companies | POST https://n8n.flowroots.com/webhook/discover-storeleads-companies |  | no |
 | rootflows/Enrich-Contacts/Enrich-Contacts | POST https://n8n.flowroots.com/webhook/enrich-contacts |  | no |
 | rootflows/Enrich-Emails/Enrich-Emails | POST https://n8n.flowroots.com/webhook/enrich-emails |  | no |
+| rootflows/Enrich-Phones/Enrich-Phones | POST https://n8n.flowroots.com/webhook/enrich-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |
 | rootflows/Verify-Catch-alls/Verify-Catch-alls | POST https://n8n.flowroots.com/webhook/verify-catch-alls |  | no |
-| rootflows/Waterfall-Phones/Waterfall-Phones | POST https://n8n.flowroots.com/webhook/enrich-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |
 | rootworks/Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |
 | rootworks/Create-Client-Rootworks-Infrastructure | GET https://n8n.flowroots.com/webhook/client/onboard |  | no |
 | rootworks/Create-PlusVibe-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |

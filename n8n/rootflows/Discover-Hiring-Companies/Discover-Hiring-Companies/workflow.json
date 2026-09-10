@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-06T13:51:11.611Z",
+  "updatedAt": "2026-09-10T09:32:55.183Z",
   "createdAt": "2026-07-28T09:25:51.367Z",
   "id": "9iMXBGRlPk3O6pDZ",
   "name": "Discover Hiring Companies",
@@ -1781,7 +1781,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1788948766655
+      "runStartedAt": 1789032817375
     }
   },
   "meta": {
@@ -1789,8 +1789,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "8ab599f5-0b53-48ec-a577-b2f1686fd97d",
-  "activeVersionId": "8ab599f5-0b53-48ec-a577-b2f1686fd97d",
+  "versionId": "c6375da1-3321-4604-a12f-f4298e278bd4",
+  "activeVersionId": "c6375da1-3321-4604-a12f-f4298e278bd4",
   "triggerCount": 1,
   "shared": [
     {
@@ -1802,9 +1802,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-06T13:51:11.617Z",
-    "createdAt": "2026-09-06T13:51:11.617Z",
-    "versionId": "8ab599f5-0b53-48ec-a577-b2f1686fd97d",
+    "updatedAt": "2026-09-10T09:32:55.187Z",
+    "createdAt": "2026-09-10T09:32:55.187Z",
+    "versionId": "c6375da1-3321-4604-a12f-f4298e278bd4",
     "workflowId": "9iMXBGRlPk3O6pDZ",
     "nodes": [
       {
@@ -1818,10 +1818,11 @@
         ],
         "parameters": {
           "httpMethod": "POST",
-          "path": "intent-signal",
+          "path": "discover-hiring-companies",
           "options": {}
         },
-        "webhookId": "7b43eda9-3cc8-472e-866f-6300525553a4"
+        "webhookId": "discover-hiring-companies",
+        "notes": "The one door (ruled 2026-09-10, door path = the slug of the Rootflow name): POST /webhook/discover-hiring-companies, fired by the Apify task's run webhook. This Insert runs on a scraper payload, not a launch row, so the payload IS the launch row: {signal: <Hub Signals record id>, resource: {{resource}}, tag: <optional>}. `play` is still accepted as the signal key, so an unchanged task keeps firing once its URL is updated. Table is implied (Companies). A bad payload is refused with a Hub row, never a throw."
       },
       {
         "id": "c3000000-0000-4000-8000-000000000001",
@@ -1833,7 +1834,7 @@
           0
         ],
         "parameters": {
-          "jsCode": "// Parse Launch: the Apify run webhook. Body: { play: <KB Files record id>, resource: <Apify run> }.\n// Nothing else is read from the payload; the play row carries the play. The resource object\n// carries the run's dataset (the jobs). The roles counted for Existing In Role come from the play.\nconst sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst j=$input.first().json||{};\nconst q=j.query||{}; const b=j.body||{};\nconst pick=(k)=>{ const v=(b[k]!==undefined&&b[k]!=='')?b[k]:q[k]; return (v===undefined||v===null)?'':String(v).trim(); };\nconst res=b.resource||{};\nconst cfg={\n  play: pick('play'),\n  datasetId: String(res.defaultDatasetId||''),\n  kvStoreId: String(res.defaultKeyValueStoreId||''),\n  sender: pick('sender')||'webhook'\n};\nconst missing=[];\nif(!/^rec[A-Za-z0-9]{14}$/.test(cfg.play)) missing.push('play (KB Files record id)');\nif(!cfg.datasetId) missing.push('resource.defaultDatasetId');\ncfg.config_ok=(missing.length===0);\ncfg.missing=missing;\ncfg.guard='launch';\nreturn [{ json: cfg }];\n"
+          "jsCode": "// Parse Launch: the whole contract of Discover Hiring Companies (ruled 2026-09-10). This Insert is\n// fired by a scraper payload, not by a launch row, so the payload IS the launch row and the same\n// laws hold: the minimum, nothing dead, and a bad payload refused with a Hub row that says why.\n//\n// The payload, from the Apify run webhook:\n//   { \"signal\": \"recXXXXXXXXXXXXXX\", \"tag\": \"<optional>\", \"resource\": {{resource}} }\n//\n//   signal    the Hub Signals record id. It resolves the Client (its link), and with it the\n//             Clayroots base, plus Roles, Country, Max Employees and ICP. `play` is accepted as\n//             the same key, so the task that already posts {play, resource} keeps firing.\n//   resource  the Apify run object; its defaultDatasetId is the jobs, the source this Insert runs\n//             on. `datasetId` is accepted directly for a hand-fire.\n//   tag       optional, stamped on every company landed and passed to Enrich Contacts. A signal is\n//             the Signals link, never a Tag, so this is free to be empty.\n//\n// Nothing else is read. Dropped as dead 2026-09-10: kvStoreId (never read), sender (the Trigger is\n// always the scraper webhook).\nconst sd=$getWorkflowStaticData('global');\nsd.runStartedAt=$now.toMillis();\nconst j=$input.first().json||{};\nconst q=j.query||{}; const b=j.body||{};\nconst pick=(k)=>{ const v=(b[k]!==undefined&&b[k]!=='')?b[k]:q[k]; return (v===undefined||v===null)?'':String(v).trim(); };\nconst res=b.resource||{};\nconst cfg={\n  signal: pick('signal')||pick('play'),\n  datasetId: String(res.defaultDatasetId||'')||pick('datasetId'),\n  tag: pick('tag')\n};\ncfg.play=cfg.signal; // the key the rest of the run has always read\nconst missing=[];\nif(!/^rec[A-Za-z0-9]{14}$/.test(cfg.signal)) missing.push('signal (the Hub Signals record id, \"rec...\"; sent as {signal} or {play})');\nif(!cfg.datasetId) missing.push('resource.defaultDatasetId (the Apify run\\'s dataset of jobs)');\ncfg.config_ok=(missing.length===0);\ncfg.missing=missing;\ncfg.guard='launch';\nreturn [{ json: cfg }];\n"
         }
       },
       {
@@ -1892,7 +1893,7 @@
             "mode": "id",
             "value": "tblDtJeqkUB2JFga1"
           },
-          "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'hiring')",
+          "filterByFormula": "=RECORD_ID() = '{{ $('Parse Launch').first().json.play }}'",
           "options": {}
         },
         "credentials": {
@@ -1903,7 +1904,8 @@
         },
         "executeOnce": true,
         "onError": "continueRegularOutput",
-        "alwaysOutputData": true
+        "alwaysOutputData": true,
+        "notes": "The Hub Signals row the payload names, by record id alone (ruled 2026-09-10). The old fallback (OR {Signal Type} = 'hiring') kept a retired KB play id working and could only be ambiguous once two clients run the play; an id that resolves to no row is now refused by Parse Play with the fix named. Continues on error, so a dead read is a refusal, not a crash."
       },
       {
         "id": "c3000000-0000-4000-8000-000000000003",
@@ -1915,7 +1917,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "// Parse Play: the Signals row (Hub, one row per signal) into the run's config. Typed fields,\n// no grammar: Name, Client (link), Signal Type, Roles, Country, Max Employees, ICP. Target\n// Table is retired (List Building 2.0, 2026-09-02): every signal writes the client's Companies\n// table, resolved downstream from the Client link. A signal is the Signals link on the row,\n// never a Tag: nothing here reads a Tag.\n// The upstream node searches Signals with OR(RECORD_ID() = launch play id, {Signal Type} = 'hiring'),\n// so a legacy launch id (the retired KB play row) still resolves as long as exactly ONE hiring\n// signal exists; ambiguity or no match stops the run before any paid call.\n// Who gets MESSAGED is not config here or anywhere in this machine: relevance and the views\n// on People decide that. This machine only lands company rows.\nconst launch=$('Parse Launch').first().json;\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));\nconst norm=(r)=>({ id:r.id, f:(r.fields||r) });\nconst wanted=launch.play;\nconst all=rows.map(norm);\nconst missing=[];\nlet hit=all.find(r=>r.id===wanted);\nlet legacy=false;\nif(!hit){\n  const hiring=all.filter(r=>String(r.f['Signal Type']||'')==='hiring');\n  if(hiring.length===1){ hit=hiring[0]; legacy=true; }\n  else missing.push(hiring.length===0?'no Signals row found for launch id '+wanted:'launch id '+wanted+' unknown and '+hiring.length+' hiring signals exist (ambiguous); update the Apify webhook payload to the Signals record id');\n}\nconst f=hit?hit.f:{};\nconst list=(s)=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);\nconst clientLink=Array.isArray(f['Client'])?f['Client'][0]:'';\nconst client=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\nconst roles=list(f['Roles']);\nconst country=String(f['Country']||'').trim();\nconst maxEmployees=Number(f['Max Employees'])||0;\nconst icp=String(f['ICP']||'').trim();\nif(hit){\n  if(!client) missing.push('Client link on the Signals row');\n  if(!roles.length) missing.push('Roles');\n  if(!country) missing.push('Country');\n  if(!maxEmployees) missing.push('Max Employees');\n  if(!icp) missing.push('ICP');\n}\nreturn [{ json: {\n  play: launch.play, datasetId: launch.datasetId, kvStoreId: launch.kvStoreId, sender: launch.sender,\n  play_name: f['Name']||'', signal_row: hit?hit.id:'', legacy_launch_id: legacy,\n  client, event_type: String(f['Signal Type']||'hiring'),\n  country, max_headcount: maxEmployees, icp_text: icp,\n  roles,\n  config_ok: missing.length===0, missing, guard:'play'\n}}];\n"
+          "jsCode": "// Parse Play: the Hub Signals row named by the payload, read into the run's config. Typed fields,\n// no grammar: Name, Client (link), Signal Type, Roles, Country, Max Employees, ICP. Every signal\n// writes the client's Companies table, resolved downstream from the Client link (List Building\n// 2.0); Target Table is retired. A signal is the Signals link on the row, never a Tag.\n//\n// The row is fetched by RECORD_ID() alone (ruled 2026-09-10). The old \"or the one row whose Signal\n// Type is hiring\" fallback is gone: it existed to keep a retired KB play id working, and with more\n// than one client on the play it can only be ambiguous. An id that resolves to no row is refused\n// here, before any paid call, with the fix named.\n//\n// Who gets MESSAGED is not config here or anywhere in this machine: relevance and the views on\n// People decide that. This machine only lands company rows.\nconst launch=$('Parse Launch').first().json;\nconst rows=$input.all().map(i=>i.json).filter(r=>r&&(r.id||r.fields));\nconst wanted=launch.play;\nconst all=rows.map(r=>({ id:r.id, f:(r.fields||r) }));\nconst missing=[];\nconst hit=all.find(r=>r.id===wanted)||null;\nif(!hit) missing.push('no Hub Signals row with id '+wanted+' (paste the Signals record id into the Apify task payload as {signal})');\nconst f=hit?hit.f:{};\nconst list=(s)=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);\nconst clientLink=Array.isArray(f['Client'])?f['Client'][0]:'';\nconst client=clientLink&&typeof clientLink==='object'?String(clientLink.id||''):String(clientLink||'');\nconst roles=list(f['Roles']);\nconst country=String(f['Country']||'').trim();\nconst maxEmployees=Number(f['Max Employees'])||0;\nconst icp=String(f['ICP']||'').trim();\nif(hit){\n  if(!client) missing.push('Client link on the Signals row');\n  if(!roles.length) missing.push('Roles');\n  if(!country) missing.push('Country');\n  if(!maxEmployees) missing.push('Max Employees');\n  if(!icp) missing.push('ICP');\n}\nreturn [{ json: {\n  play: launch.play, signal: launch.signal, datasetId: launch.datasetId, tag: launch.tag||'',\n  play_name: f['Name']||'', signal_row: hit?hit.id:'',\n  client, event_type: String(f['Signal Type']||'hiring'),\n  country, max_headcount: maxEmployees, icp_text: icp,\n  roles,\n  config_ok: missing.length===0, missing, guard:'play'\n}}];\n"
         }
       },
       {
@@ -2073,8 +2075,79 @@
           -160
         ],
         "parameters": {
-          "jsCode": "// Find Companies Table: the client base must already carry a table named \"Companies\"\n// (case-insensitive) and the Signals mirror: the synced table whose name ends with \"Signals\".\n// Nothing here ever creates a table; the scaffold is Onboard Client's job (List Building 2.0).\n// The columns, DNC and the upsert are the helper Insert domains to Clayroots' business (Operator\n// ruling 2026-09-02); this node only names the table for the log and describes the mirror the\n// Signals link points at. Every refusal names what is missing.\n//\n// The mirror row is matched on the signal's NAME (Operator ruling 2026-09-02). The previous match\n// was a synced \"Record ID\" column, which no client base carries: all four live mirrors were\n// audited and none had it, so every hiring and reviews signal died at this node. Name and Client\n// ride the sync on their own, so a mirror needs nothing configured, now or at onboarding.\n//\n// This node builds the mirror query and Resolve Mirror Row does the strict matching. The query is\n// deliberately PERMISSIVE and the code deliberately STRICT, so that a near miss arrives as a\n// candidate and gets refused by name instead of silently never being seen:\n//   - TRIM() so a mirror row whose Name carries stray whitespace is still a candidate.\n//   - LOWER() so a case variant is still a candidate. Airtable's \"=\" on text is case-SENSITIVE on\n//     its own, probed live against a real mirror on 2026-09-02, so without LOWER() a case-only\n//     mismatch would come back as \"no row at all\" and cost the Operator the real diagnosis.\n//     Resolve Mirror Row then applies the case-SENSITIVE rule and names what it rejected.\n// Because the code re-checks exactly, any divergence between Airtable's LOWER() and JS\n// toLowerCase() on exotic input can only ever cause a refusal, never a wrong match.\n// No field restriction is set on the query: the mirror's Companies link column is fat and grows,\n// but only matching rows are ever returned, and a \"fields\" list naming Client would 422 on a\n// mirror that does not carry it.\nconst base=$('Client Vars').first().json.base;\nconst cfg=$('Parse Play').first().json;\nconst r=$input.first().json||{};\nconst body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nif(!tables){ throw new Error('Could not read the table list for base '+base+': '+JSON.stringify(body).slice(0,200)+'. Nothing was spent or written.'); }\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='companies');\nif(!t){ throw new Error('Base '+base+' has no Companies table. Scaffold the base (Scaffold Client Base) first. Nothing was spent or written.'); }\nconst mirror=tables.find(x=>/signals$/i.test(String(x.name||'').trim()));\nif(!mirror){ throw new Error('Base '+base+' has no Signals mirror (a synced table whose name ends with \"Signals\"). Sync the Hub Signals view into the client base first. Nothing was spent or written.'); }\nconst mirrorFields=new Set((mirror.fields||[]).map(x=>x.name));\nif(!mirrorFields.has('Name')){ throw new Error('The Signals mirror '+mirror.name+' ('+mirror.id+') has no \"Name\" field, so a Hub signal cannot be resolved to a mirror row. Include Name in the synced Signals view first. Nothing was spent or written.'); }\nconst signalName=String(cfg.play_name||'').trim();\nif(!signalName){ throw new Error('The Hub signal '+cfg.signal_row+' has no Name, so there is nothing to match against the Signals mirror '+mirror.name+' ('+mirror.id+') in base '+base+'. Name the Signals row first. Nothing was spent or written.'); }\nconst esc=signalName.toLowerCase().replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nreturn [{ json: {\n  base, tableId:t.id, tableName:t.name,\n  signalsTableId:mirror.id, signalsTableName:mirror.name,\n  mirrorHasClient:mirrorFields.has('Client'),\n  signalName,\n  mirrorFilter:\"LOWER(TRIM({Name})) = '\"+esc+\"'\"\n} }];\n"
-        }
+          "jsCode": "// Find Companies Table: the client base must already carry a table named \"Companies\"\n// (case-insensitive) and the Signals mirror: the synced table whose name ends with \"Signals\".\n// Nothing here ever creates a table; the scaffold is Onboard Client's job (List Building 2.0).\n// The columns, DNC and the upsert are the helper Insert domains to Clayroots' business (Operator\n// ruling 2026-09-02); this node only names the table for the log and describes the mirror the\n// Signals link points at.\n//\n// REFUSALS, not throws (ruled 2026-09-10). A base that is not ready is an expected outcome, not a\n// crash, and it must be readable on the Hub row: every guard RETURNS `refused` with the reason,\n// Tables OK? routes it to Build Guard Fail Log, and the run closes with one row that says why.\n// Nothing was spent and nothing was written.\n//\n// The mirror row is matched on the signal's NAME (Operator ruling 2026-09-02). The previous match\n// was a synced \"Record ID\" column, which no client base carries: all four live mirrors were\n// audited and none had it, so every hiring and reviews signal died at this node. Name and Client\n// ride the sync on their own, so a mirror needs nothing configured, now or at onboarding.\n//\n// This node builds the mirror query and Resolve Mirror Row does the strict matching. The query is\n// deliberately PERMISSIVE and the code deliberately STRICT, so that a near miss arrives as a\n// candidate and gets refused by name instead of silently never being seen:\n//   - TRIM() so a mirror row whose Name carries stray whitespace is still a candidate.\n//   - LOWER() so a case variant is still a candidate. Airtable's \"=\" on text is case-SENSITIVE on\n//     its own, probed live against a real mirror on 2026-09-02, so without LOWER() a case-only\n//     mismatch would come back as \"no row at all\" and cost the Operator the real diagnosis.\n//     Resolve Mirror Row then applies the case-SENSITIVE rule and names what it rejected.\n// Because the code re-checks exactly, any divergence between Airtable's LOWER() and JS\n// toLowerCase() on exotic input can only ever cause a refusal, never a wrong match.\n// No field restriction is set on the query: the mirror's Companies link column is fat and grows,\n// but only matching rows are ever returned, and a \"fields\" list naming Client would 422 on a\n// mirror that does not carry it.\nconst base=$('Client Vars').first().json.base;\nconst cfg=$('Parse Play').first().json;\nconst r=$input.first().json||{};\nconst body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nconst refuse=(reason)=>[{ json:{ refused:reason, guard:'tables', base, client:cfg.client } }];\nif(!tables) return refuse('Could not read the table list for base '+base+': '+JSON.stringify(body).slice(0,200));\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='companies');\nif(!t) return refuse('Base '+base+' has no Companies table. Scaffold the base (Scaffold Client Base) first.');\nconst mirror=tables.find(x=>/signals$/i.test(String(x.name||'').trim()));\nif(!mirror) return refuse('Base '+base+' has no Signals mirror (a synced table whose name ends with \"Signals\"). Sync the Hub Signals view into the client base first.');\nconst mirrorFields=new Set((mirror.fields||[]).map(x=>x.name));\nif(!mirrorFields.has('Name')) return refuse('The Signals mirror '+mirror.name+' ('+mirror.id+') has no \"Name\" field, so a Hub signal cannot be resolved to a mirror row. Include Name in the synced Signals view first.');\nconst signalName=String(cfg.play_name||'').trim();\nif(!signalName) return refuse('The Hub signal '+cfg.signal_row+' has no Name, so there is nothing to match against the Signals mirror '+mirror.name+' ('+mirror.id+') in base '+base+'. Name the Signals row first.');\nconst esc=signalName.toLowerCase().replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");\nreturn [{ json: {\n  refused:'', guard:'tables',\n  base, tableId:t.id, tableName:t.name,\n  signalsTableId:mirror.id, signalsTableName:mirror.name,\n  mirrorHasClient:mirrorFields.has('Client'),\n  signalName,\n  mirrorFilter:\"LOWER(TRIM({Name})) = '\"+esc+\"'\"\n} }];\n"
+        },
+        "notes": "Resolves Companies and the Signals mirror off the base's schema. Refuses (never throws) when the base is not ready; Tables OK? routes the refusal to the one Hub row."
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000020",
+        "name": "Tables OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          860,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "t1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "The refusal gate for the base's schema: false means Find Companies Table named what is missing, and Build Guard Fail Log closes the run before any paid call."
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000021",
+        "name": "Mirror OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2510,
+          -160
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "m1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "notes": "The refusal gate for the Signals mirror row: false means Resolve Mirror Row could not map this Hub signal to exactly one mirror row, and the run closes with that reason before Apify is read."
       },
       {
         "id": "b2000000-0000-4000-8000-000000000009",
@@ -2110,6 +2183,7 @@
         },
         "executeOnce": true,
         "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
         "notes": "Candidate rows in the client base's Signals mirror for this Hub signal, fetched by LOWER(TRIM({Name})) = the signal's name, built upstream by Find Companies Table (2026-09-02: the former match was a synced Record ID column that no client base carries, so every signal died here). The query is permissive on purpose, LOWER and TRIM letting whitespace and case variants through as candidates, because Airtable's = is otherwise exact and case-sensitive (probed live). Resolve Mirror Row then does the strict exact, case-sensitive, client-scoped match and refuses anything but exactly one row, before any paid call. No fields restriction: a fields list naming Client would 422 on a mirror without that column. Companies.Signals links to the mirror row id, never to the Hub row."
       },
       {
@@ -2122,7 +2196,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "// Resolve Mirror Row: the client base's Signals mirror row this Hub signal maps to, resolved\n// BEFORE any paid call (Operator ruling 2026-09-02). No row, no relation: refuse here, nothing\n// spent, nothing written. Emits the table facts (Find Companies Table) plus the mirror row id\n// Format Companies links to.\n//\n// Matched on the signal's NAME (Operator ruling 2026-09-02, replacing a synced \"Record ID\" column\n// that no client base ever carried). Strictness is what makes name matching safe, and it is not\n// optional: exactly one row survives, or the run stops here with a named error saying what it\n// looked for and what it found. A silent wrong guess is the failure mode this check exists to\n// remove, and it is the reason name matching was accepted at all.\n//\n//   - Exact, trimmed name. Never a contains, never a fuzzy match.\n//   - CASE-SENSITIVE. The Hub row's Name and the mirror row's Name are the same string carried\n//     across by Airtable's own sync; nobody retypes it in between. So a case difference does not\n//     mean \"same signal, spelled loosely\", it means these are two different Hub rows, and\n//     resolving one to the other would be exactly the silent wrong guess. Refusing costs a named\n//     error the Operator fixes in seconds; guessing costs a paid run written against the wrong\n//     signal. The upstream query wraps the name in LOWER() on purpose, so a case-variant row\n//     arrives here as a candidate and gets refused out loud instead of never being seen.\n//   - Scoped to the client whenever the mirror carries a Client column, so two clients' signals\n//     sharing a name cannot collide. A blank Client is not evidence of another owner, so such a\n//     row stays a candidate; a Client naming a different client is, and that row is dropped.\nconst cfg=$('Parse Play').first().json;\nconst t=$('Find Companies Table').first().json;\nconst clientName=String(($('Client Vars').first().json||{}).clientName||'').trim();\nconst want=String(t.signalName||cfg.play_name||'').trim();\nconst where='the Signals mirror '+(t.signalsTableName||t.signalsTableId)+' in base '+t.base;\nconst rows=$input.all().map(i=>i.json||{}).filter(j=>j&&j.id);\nconst fieldsOf=(j)=>(j.fields&&typeof j.fields==='object')?j.fields:j;\nconst nameOf=(j)=>String(fieldsOf(j)['Name']||'').trim();\nconst clientOf=(j)=>{ const c=fieldsOf(j)['Client']; return String(Array.isArray(c)?(c[0]||''):(c||'')).trim(); };\nconst exact=rows.filter(j=>nameOf(j)===want);\nconst scoped=(t.mirrorHasClient&&clientName)?exact.filter(j=>{ const c=clientOf(j); return !c||c===clientName; }):exact;\nif(scoped.length!==1){\n  const show=(j)=>'\"'+nameOf(j)+'\"'+(clientOf(j)?' ['+clientOf(j)+']':' [no Client]')+' ('+j.id+')';\n  let found;\n  if(scoped.length===0){\n    found=rows.length===0\n      ? 'the mirror returned no row at all'\n      : 'the mirror returned '+rows.length+' near miss(es) that did not survive the exact, case-sensitive'+(t.mirrorHasClient&&clientName?', client-scoped':'')+' check: '+rows.map(show).join(', ');\n  } else {\n    found=scoped.length+' rows carry that exact name: '+scoped.map(show).join(', ');\n  }\n  throw new Error('Cannot resolve Hub signal \"'+want+'\" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire. Nothing was spent or written.');\n}\nreturn [{ json: Object.assign({}, t, { mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];\n"
+          "jsCode": "// Resolve Mirror Row: the client base's Signals mirror row this Hub signal maps to, resolved\n// BEFORE any paid call (Operator ruling 2026-09-02). No row, no relation: refuse here, nothing\n// spent, nothing written. Emits the table facts (Find Companies Table) plus the mirror row id\n// Format Companies links to. A refusal is `refused` on the item and Mirror OK? routes it to the\n// one Hub row (ruled 2026-09-10: never a throw); the Airtable read above continues on error, so a\n// dead read arrives here as \"no row at all\" and is refused with that reason.\n//\n// Matched on the signal's NAME (Operator ruling 2026-09-02, replacing a synced \"Record ID\" column\n// that no client base ever carried). Strictness is what makes name matching safe, and it is not\n// optional: exactly one row survives, or the run stops here with a named refusal saying what it\n// looked for and what it found. A silent wrong guess is the failure mode this check exists to\n// remove, and it is the reason name matching was accepted at all.\n//\n//   - Exact, trimmed name. Never a contains, never a fuzzy match.\n//   - CASE-SENSITIVE. The Hub row's Name and the mirror row's Name are the same string carried\n//     across by Airtable's own sync; nobody retypes it in between. So a case difference does not\n//     mean \"same signal, spelled loosely\", it means these are two different Hub rows, and\n//     resolving one to the other would be exactly the silent wrong guess. Refusing costs a named\n//     error the Operator fixes in seconds; guessing costs a paid run written against the wrong\n//     signal. The upstream query wraps the name in LOWER() on purpose, so a case-variant row\n//     arrives here as a candidate and gets refused out loud instead of never being seen.\n//   - Scoped to the client whenever the mirror carries a Client column, so two clients' signals\n//     sharing a name cannot collide. A blank Client is not evidence of another owner, so such a\n//     row stays a candidate; a Client naming a different client is, and that row is dropped.\nconst cfg=$('Parse Play').first().json;\nconst t=$('Find Companies Table').first().json;\nconst clientName=String(($('Client Vars').first().json||{}).clientName||'').trim();\nconst want=String(t.signalName||cfg.play_name||'').trim();\nconst where='the Signals mirror '+(t.signalsTableName||t.signalsTableId)+' in base '+t.base;\nconst rows=$input.all().map(i=>i.json||{}).filter(j=>j&&j.id);\nconst fieldsOf=(j)=>(j.fields&&typeof j.fields==='object')?j.fields:j;\nconst nameOf=(j)=>String(fieldsOf(j)['Name']||'').trim();\nconst clientOf=(j)=>{ const c=fieldsOf(j)['Client']; return String(Array.isArray(c)?(c[0]||''):(c||'')).trim(); };\nconst exact=rows.filter(j=>nameOf(j)===want);\nconst scoped=(t.mirrorHasClient&&clientName)?exact.filter(j=>{ const c=clientOf(j); return !c||c===clientName; }):exact;\nif(scoped.length!==1){\n  const show=(j)=>'\"'+nameOf(j)+'\"'+(clientOf(j)?' ['+clientOf(j)+']':' [no Client]')+' ('+j.id+')';\n  let found;\n  if(scoped.length===0){\n    found=rows.length===0\n      ? 'the mirror returned no row at all'\n      : 'the mirror returned '+rows.length+' near miss(es) that did not survive the exact, case-sensitive'+(t.mirrorHasClient&&clientName?', client-scoped':'')+' check: '+rows.map(show).join(', ');\n  } else {\n    found=scoped.length+' rows carry that exact name: '+scoped.map(show).join(', ');\n  }\n  return [{ json:{ refused:'Cannot resolve Hub signal \"'+want+'\" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire.', guard:'mirror', client:cfg.client } }];\n}\nreturn [{ json: Object.assign({}, t, { refused:'', guard:'mirror', mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];\n"
         },
         "notes": "Refuses before any paid call when the mirror row is missing."
       },
@@ -2147,7 +2221,12 @@
             "name": "Apify"
           }
         },
-        "alwaysOutputData": true
+        "alwaysOutputData": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "notes": "The source read: the Apify run's dataset of jobs. Continues on error after three tries (ruled 2026-09-10: a dead provider is a logged skip, never a crash); Filter & Qualify Jobs counts the error item as source_error, and the run closes its Hub row Failed naming Apify with nothing paid for."
       },
       {
         "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
@@ -2159,7 +2238,7 @@
           -160
         ],
         "parameters": {
-          "jsCode": "// Filter & Qualify Jobs: 100 scraped job posts in, one row per qualified company out, every\n// drop counted by reason. The full job record rides on the company row so the writer can\n// stamp it on the Companies row. _stats on the first row feeds Build Run Log.\n//\n// Drops, in order: country, staffing (name / poster title / industry), body shop, headcount,\n// no domain, hosted platform, duplicate domain. An unknown headcount passes on purpose: a blank\n// LinkedIn count is not a large company. The \"already worked\" line is gone (Operator ruling\n// 2026-09-02): a company that signals again is updated in place and re-enters the queue.\nconst cfg=$('Parse Play').first().json;\nlet items=$('Get Scraped Jobs').all().map(i=>i.json);\nif(items.length===1&&Array.isArray(items[0])) items=items[0];\nitems=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));\n\nconst badName=['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];\nconst badIndustry=['staffing','recruiting','executive search','venture capital','private equity','venture'];\nconst has=(s,list)=>{ s=String(s||'').toLowerCase(); return list.some(w=>s.includes(w)); };\n\n// Body-shop test: a real employer names itself in its own post (\"Fortreum is seeking...\",\n// \"About IO River\"). A staffing firm pastes a bare requirements list for a client it never\n// names. Verified on the 2026-08-20 dataset: 6/6. Employer-brand phrases are the second tell.\nconst LEGAL=/\\b(inc|llc|ltd|corp|corporation|co|company|solutions|technologies|technology|group|systems|services|consulting)\\b/g;\nconst BRAND=['equal opportunity','401(k)','401k','we offer','about us','who we are','our team','our mission','our company','join us','benefits'];\nfunction looksLikeBodyShop(j){\n  const desc=String(j.descriptionText||'');\n  if(!desc) return false;\n  const d=desc.toLowerCase();\n  const core=String(j.companyName||'').toLowerCase().replace(LEGAL,' ').replace(/[^a-z0-9]+/g,' ').trim().split(/\\s+/).filter(w=>w.length>=3)[0]||'';\n  if(core&&d.includes(core)) return false;\n  if(BRAND.some(w=>d.includes(w))) return false;\n  return true;\n}\n\n// A company whose \"website\" lives on a free-hosting subdomain is not a company: a personal\n// vercel.app page posting a DevOps job put its own author into the table (2026-08-31).\nconst HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com','carrd.co','notion.site','framer.website','framer.app','glitch.me','herokuapp.com','pages.dev','web.app','firebaseapp.com','squarespace.com','weebly.com','wordpress.com','godaddysites.com','mystrikingly.com','super.site'];\nconst isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));\n\nconst drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0};\n// The Signals row's Country may be a comma list (\"US, GB\"); a single value still works\n// unchanged (Operator 2026-09-01, Adelante US+UK row). Unknown country passes, as before.\nconst allowedCountries=String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);\nconst seen=new Set();\nconst out=[];\nfor(const j of items){\n  const country=(j.companyAddress&&j.companyAddress.addressCountry)||'';\n  if(country&&allowedCountries.length&&!allowedCountries.includes(String(country).toUpperCase())){ drops.country++; continue; }\n  if(has(j.companyName,badName)||has(j.jobPosterTitle,badName)){ drops.staffing_name++; continue; }\n  if(has(j.industries,badIndustry)){ drops.staffing_industry++; continue; }\n  if(looksLikeBodyShop(j)){ drops.body_shop++; continue; }\n  const emp=Number(j.companyEmployeesCount||0);\n  if(emp>cfg.max_headcount){ drops.headcount++; continue; }\n  const domain=String(j.companyWebsite||'').toLowerCase().replace('https://','').replace('http://','').replace('www.','').split('?')[0].split('#')[0].split('/')[0].trim();\n  if(!domain){ drops.no_domain++; continue; }\n  if(isHosted(domain)){ drops.hosted_platform++; continue; }\n  if(seen.has(domain)){ drops.duplicate++; continue; }\n  seen.add(domain);\n  out.push({ json: {\n    domain,\n    company: j.companyName||'',\n    headcount: emp,\n    country: country||(allowedCountries.length===1?allowedCountries[0]:''),\n    company_linkedin: j.companyLinkedinUrl||'',\n    company_website: j.companyWebsite||'',\n    job: {\n      id: String(j.id||''),\n      title: j.title||'',\n      link: j.link||'',\n      posted_at: j.postedAt||'',\n      description: j.descriptionText||'',\n      seniority: j.seniorityLevel||'',\n      function: j.jobFunction||'',\n      employment_type: j.employmentType||'',\n      industries: j.industries||'',\n      applicants: Number(j.applicantsCount)||null,\n      salary: j.salary||'',\n      poster_name: j.jobPosterName||'',\n      poster_title: j.jobPosterTitle||'',\n      poster_linkedin: j.jobPosterProfileUrl||''\n    }\n  }});\n}\nconst stats={ jobs_in: items.length, qualified: out.length, drops };\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
+          "jsCode": "// Filter & Qualify Jobs: 100 scraped job posts in, one row per qualified company out, every\n// drop counted by reason. The full job record rides on the company row so the writer can\n// stamp it on the Companies row. _stats on the first row feeds Build Run Log.\n//\n// Drops, in order: country, staffing (name / poster title / industry), body shop, headcount,\n// no domain, hosted platform, duplicate domain. An unknown headcount passes on purpose: a blank\n// LinkedIn count is not a large company. The \"already worked\" line is gone (Operator ruling\n// 2026-09-02): a company that signals again is updated in place and re-enters the queue.\n//\n// The Apify read continues on error (ruled 2026-09-10: a dead provider is a logged skip, never a\n// crash). An error item is counted as source_error, the run closes its Hub row naming Apify, and\n// nothing downstream is paid for.\nconst cfg=$('Parse Play').first().json;\nlet items=$('Get Scraped Jobs').all().map(i=>i.json);\nif(items.length===1&&Array.isArray(items[0])) items=items[0];\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nlet sourceError='';\nfor(const j of items){ if(j&&j.error&&!j.companyName&&!j.companyWebsite&&!j.title&&!sourceError) sourceError=errMsg(j.error).slice(0,160); }\nitems=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));\n\nconst badName=['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];\nconst badIndustry=['staffing','recruiting','executive search','venture capital','private equity','venture'];\nconst has=(s,list)=>{ s=String(s||'').toLowerCase(); return list.some(w=>s.includes(w)); };\n\n// Body-shop test: a real employer names itself in its own post (\"Fortreum is seeking...\",\n// \"About IO River\"). A staffing firm pastes a bare requirements list for a client it never\n// names. Verified on the 2026-08-20 dataset: 6/6. Employer-brand phrases are the second tell.\nconst LEGAL=/\\b(inc|llc|ltd|corp|corporation|co|company|solutions|technologies|technology|group|systems|services|consulting)\\b/g;\nconst BRAND=['equal opportunity','401(k)','401k','we offer','about us','who we are','our team','our mission','our company','join us','benefits'];\nfunction looksLikeBodyShop(j){\n  const desc=String(j.descriptionText||'');\n  if(!desc) return false;\n  const d=desc.toLowerCase();\n  const core=String(j.companyName||'').toLowerCase().replace(LEGAL,' ').replace(/[^a-z0-9]+/g,' ').trim().split(/\\s+/).filter(w=>w.length>=3)[0]||'';\n  if(core&&d.includes(core)) return false;\n  if(BRAND.some(w=>d.includes(w))) return false;\n  return true;\n}\n\n// A company whose \"website\" lives on a free-hosting subdomain is not a company: a personal\n// vercel.app page posting a DevOps job put its own author into the table (2026-08-31).\nconst HOSTED=['vercel.app','github.io','netlify.app','webflow.io','wixsite.com','carrd.co','notion.site','framer.website','framer.app','glitch.me','herokuapp.com','pages.dev','web.app','firebaseapp.com','squarespace.com','weebly.com','wordpress.com','godaddysites.com','mystrikingly.com','super.site'];\nconst isHosted=(d)=>HOSTED.some(h=>d===h||d.endsWith('.'+h));\n\nconst drops={country:0,staffing_name:0,staffing_industry:0,body_shop:0,headcount:0,no_domain:0,hosted_platform:0,duplicate:0};\n// The Signals row's Country may be a comma list (\"US, GB\"); a single value still works\n// unchanged (Operator 2026-09-01, Adelante US+UK row). Unknown country passes, as before.\nconst allowedCountries=String(cfg.country||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);\nconst seen=new Set();\nconst out=[];\nfor(const j of items){\n  const country=(j.companyAddress&&j.companyAddress.addressCountry)||'';\n  if(country&&allowedCountries.length&&!allowedCountries.includes(String(country).toUpperCase())){ drops.country++; continue; }\n  if(has(j.companyName,badName)||has(j.jobPosterTitle,badName)){ drops.staffing_name++; continue; }\n  if(has(j.industries,badIndustry)){ drops.staffing_industry++; continue; }\n  if(looksLikeBodyShop(j)){ drops.body_shop++; continue; }\n  const emp=Number(j.companyEmployeesCount||0);\n  if(emp>cfg.max_headcount){ drops.headcount++; continue; }\n  const domain=String(j.companyWebsite||'').toLowerCase().replace('https://','').replace('http://','').replace('www.','').split('?')[0].split('#')[0].split('/')[0].trim();\n  if(!domain){ drops.no_domain++; continue; }\n  if(isHosted(domain)){ drops.hosted_platform++; continue; }\n  if(seen.has(domain)){ drops.duplicate++; continue; }\n  seen.add(domain);\n  out.push({ json: {\n    domain,\n    company: j.companyName||'',\n    headcount: emp,\n    country: country||(allowedCountries.length===1?allowedCountries[0]:''),\n    company_linkedin: j.companyLinkedinUrl||'',\n    company_website: j.companyWebsite||'',\n    job: {\n      id: String(j.id||''),\n      title: j.title||'',\n      link: j.link||'',\n      posted_at: j.postedAt||'',\n      description: j.descriptionText||'',\n      seniority: j.seniorityLevel||'',\n      function: j.jobFunction||'',\n      employment_type: j.employmentType||'',\n      industries: j.industries||'',\n      applicants: Number(j.applicantsCount)||null,\n      salary: j.salary||'',\n      poster_name: j.jobPosterName||'',\n      poster_title: j.jobPosterTitle||'',\n      poster_linkedin: j.jobPosterProfileUrl||''\n    }\n  }});\n}\nconst stats={ jobs_in: items.length, qualified: out.length, drops, source_error: sourceError };\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nreturn out;\n"
         },
         "alwaysOutputData": false
       },
@@ -2626,7 +2705,7 @@
           -60
         ],
         "parameters": {
-          "jsCode": "// Build Run Log: the one row this run writes, per the logging standard. Status computed from\n// failed[], skips separated (hard lines, closed, ICP rejects with reasons, DNC from the helper's\n// counters, no domain), the Description is the whole funnel. Every node reference is guarded: a\n// branch that never ran reads as 0. Records Out is what the helper Insert domains to Clayroots\n// landed; the Waterfall Contacts hand-off is stated when it fired.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nlet tbl={}; try{ tbl=$('Find Companies Table').first().json||{}; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst failed=[]; const skips=[];\n\nlet fq={ jobs_in:0, qualified:0, drops:{} };\ntry{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(e){}\nconst d=fq.drops||{};\nconst dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'hosted platform '+nf(d.hosted_platform),'duplicate '+nf(d.duplicate)].join(' · ');\nconst hardDropped=Math.max(0,(fq.jobs_in||0)-(fq.qualified||0));\n// The cross-day dedupe: companies that already carried this signal, dropped before any paid call.\nlet ds={ already_signalled:0, already_signalled_domains:[], new_to_signal:fq.qualified||0 };\ntry{ const s=$('Drop Already Signalled').first().json._stats; if(s&&s.already_signalled!==undefined) ds=s; }catch(e){}\n\nlet bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];\ntry{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}\nfor(const f of (bz.failed||[])) failed.push(f);\n\nlet icp={ checked:0, yes:0, partial:0, no:0, missing:0, error:'', rejected:[] }; let polls=0;\ntry{ const s=$('Apply ICP').first().json._stats; if(s) icp=s; }catch(e){}\ntry{ polls=Number($('Poll Check').last().json.passes)||0; }catch(e){}\nif(icp.error) failed.push({ tier:'ICP check', name:'task', reason:icp.error });\n\nlet fm={ icp:0, no_domain:0, new:0, existing:0, kept:0, in_role:{ yes:0, no:0, unknown:0 }, failed:[] };\ntry{ const s=$('Format Companies').first().json._stats; if(s) fm=s; }catch(e){}\nfor(const f of (fm.failed||[])) failed.push(f);\nconst ir=fm.in_role||{};\n\n// The helper's counters: the only truth about what landed. Absent when nothing was formatted.\nlet hp=null; try{ hp=$('Read Counters').first().json||null; }catch(e){}\nconst landed=hp?Number(hp.landed||0):0;\nfor(const f of ((hp&&hp.failed)||[])) failed.push(f);\nif(hp&&fm.kept&&!landed&&!(hp.failed||[]).length&&!hp.dnc) failed.push({ tier:'Insert domains', name:nf(fm.kept)+' row(s)', reason:'formatted but the helper reported nothing landed' });\n\nlet waterfall=false; try{ waterfall=!!$('Waterfall Call').first().json; }catch(e){}\n\nif(hardDropped) skips.push(nf(hardDropped)+' failed the hard lines: '+dropLine);\nif(bz.closed) skips.push(nf(bz.closed)+' reported closed by BizData'+(closedList.length?' ('+closedList.join(', ')+')':''));\nif((icp.no||0)+(icp.missing||0)) skips.push(nf((icp.no||0)+(icp.missing||0))+' failed the ICP check');\nif(hp&&hp.dnc) skips.push(nf(hp.dnc)+' on the DNC table (helper)');\nif(fm.no_domain) skips.push(nf(fm.no_domain)+' no domain');\n\nconst errs=failed.length;\nconst status=errs?'Succeeded with errors':'Succeeded';\nconst rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);\nconst helperLine=hp?('created '+nf(hp.created)+' · updated '+nf(hp.updated)+' · DNC skipped '+nf(hp.dnc)+' · landed '+nf(landed)):'not called (nothing to land)';\nconst lines=[\n  '**'+nf(landed)+' companies landed in '+(tbl.tableName||'Companies')+' via Insert domains to Clayroots ('+nf(fm.new)+' new, '+nf(fm.existing)+' signalled again) from '+nf(fq.jobs_in)+' jobs, '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Signal:** '+(cfg.play_name||cfg.play||'')+(cfg.legacy_launch_id?' (legacy launch id, update the Apify webhook to the Signals record id)':'')+' · **Type:** '+(cfg.event_type||'')+' · **Table:** '+(tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':'')+' in '+(base||''),\n  '',\n  '**Funnel**',\n  '- **Jobs scraped:** '+nf(fq.jobs_in),\n  '- **Past the hard lines:** '+nf(fq.qualified),\n  '- **Already carrying this signal (dropped before any paid call):** '+nf(ds.already_signalled)+(ds.already_signalled?' ('+(ds.already_signalled_domains||[]).slice(0,12).join(', ')+(ds.already_signalled>12?', ...':'')+')':'')+' · new to this signal: '+nf(ds.new_to_signal),\n  '- **BizData:** matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+' · errors '+nf(bz.errors),\n  '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),\n  '- **First hire (Existing In Role):** yes '+nf(ir.yes)+' · no '+nf(ir.no)+' · unknown '+nf(ir.unknown),\n  '- **Rows formatted:** '+nf(fm.kept)+' ('+nf(fm.new)+' not yet in Companies, '+nf(fm.existing)+' existing, Signals unioned)',\n  '- **Insert domains to Clayroots:** '+helperLine,\n  '',\n  '**Contacts:** '+(waterfall?'Waterfall Contacts fired as a sub-workflow (Companies · Not Sourced · scoped to the '+nf(landed)+' domain(s) this run landed · AI-Ark · cap 150); its own run-log row carries the pull.':'Waterfall Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'\n];\nif(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\\n'+rejLines.join('\\n')+((icp.rejected||[]).length>10?'\\n- ...and '+((icp.rejected||[]).length-10)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(skips.length) lines.push('','**Skipped**\\n'+skips.map(s=>'- '+s).join('\\n'));\nconst row={\n 'Automation':'Insert Hiring domains to Clayroots',\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': fq.jobs_in||0,\n 'Records Out': landed,\n 'Errors': errs,\n 'Target': (tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':''),\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{json:row}];\n"
+          "jsCode": "// Build Run Log: the one row this run writes, per the logging standard. Status computed from\n// failed[], skips separated (hard lines, closed, ICP rejects with reasons, DNC from the helper's\n// counters, no domain), the Description is the whole funnel. Every node reference is guarded: a\n// branch that never ran reads as 0. Records Out is what the helper Insert domains to Clayroots\n// landed; the Enrich Contacts hand-off is stated when it fired. Every provider skip is named: the\n// Apify read, BizData, the ICP check and the free counts all continue on error and are counted,\n// and the row closes Failed only when the source itself could not be read.\nconst sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;\nlet cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }\nlet base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}\nlet tbl={}; try{ tbl=$('Find Companies Table').first().json||{}; }catch(e){}\nconst nf=(x)=>Number(x||0).toLocaleString('en-US');\nconst failed=[]; const skips=[];\n\nlet fq={ jobs_in:0, qualified:0, drops:{}, source_error:'' };\ntry{ const s=$('Filter & Qualify Jobs').first().json._stats; if(s) fq=s; }catch(e){}\n// Apify continues on error: a dead scrape read is a named failure on this row, never a crash.\nconst sourceDown=!!fq.source_error&&!fq.jobs_in;\nif(fq.source_error) failed.push({ tier:'Apify', name:'dataset '+(cfg.datasetId||'?'), reason:String(fq.source_error) });\nconst d=fq.drops||{};\nconst dropLine=['country '+nf(d.country),'staffing '+nf((d.staffing_name||0)+(d.staffing_industry||0)),'body shop '+nf(d.body_shop),'over max employees '+nf(d.headcount),'no domain '+nf(d.no_domain),'hosted platform '+nf(d.hosted_platform),'duplicate '+nf(d.duplicate)].join(' · ');\nconst hardDropped=Math.max(0,(fq.jobs_in||0)-(fq.qualified||0));\n// The cross-day dedupe: companies that already carried this signal, dropped before any paid call.\nlet ds={ already_signalled:0, already_signalled_domains:[], new_to_signal:fq.qualified||0 };\ntry{ const s=$('Drop Already Signalled').first().json._stats; if(s&&s.already_signalled!==undefined) ds=s; }catch(e){}\n\nlet bz={ called:0, matched:0, unknown:0, closed:0, errors:0, failed:[] }; let closedList=[];\ntry{ const f=$('Company Facts').first().json; if(f&&f._stats) bz=f._stats; closedList=(f&&f.closed)||[]; }catch(e){}\nfor(const f of (bz.failed||[])) failed.push(f);\n\nlet icp={ checked:0, yes:0, partial:0, no:0, missing:0, error:'', rejected:[] }; let polls=0;\ntry{ const s=$('Apply ICP').first().json._stats; if(s) icp=s; }catch(e){}\ntry{ polls=Number($('Poll Check').last().json.passes)||0; }catch(e){}\nif(icp.error) failed.push({ tier:'ICP check', name:'task', reason:icp.error });\n\nlet fm={ icp:0, no_domain:0, new:0, existing:0, kept:0, in_role:{ yes:0, no:0, unknown:0 }, failed:[] };\ntry{ const s=$('Format Companies').first().json._stats; if(s) fm=s; }catch(e){}\nfor(const f of (fm.failed||[])) failed.push(f);\nconst ir=fm.in_role||{};\n\n// The helper's counters: the only truth about what landed. Absent when nothing was formatted.\nlet hp=null; try{ hp=$('Read Counters').first().json||null; }catch(e){}\nconst landed=hp?Number(hp.landed||0):0;\nfor(const f of ((hp&&hp.failed)||[])) failed.push(f);\nif(hp&&fm.kept&&!landed&&!(hp.failed||[]).length&&!hp.dnc) failed.push({ tier:'Insert domains', name:nf(fm.kept)+' row(s)', reason:'formatted but the helper reported nothing landed' });\n\nlet handoff=null; try{ handoff=$('Fire Contacts').first().json||null; }catch(e){}\nconst scope=handoff?((handoff.Domains||[]).length):0;\n\nif(hardDropped) skips.push(nf(hardDropped)+' failed the hard lines: '+dropLine);\nif(bz.closed) skips.push(nf(bz.closed)+' reported closed by BizData'+(closedList.length?' ('+closedList.join(', ')+')':''));\nif((icp.no||0)+(icp.missing||0)) skips.push(nf((icp.no||0)+(icp.missing||0))+' failed the ICP check');\nif(hp&&hp.dnc) skips.push(nf(hp.dnc)+' on the DNC table (helper)');\nif(fm.no_domain) skips.push(nf(fm.no_domain)+' no domain');\n\nif(fq.source_error&&fq.jobs_in) skips.push('the Apify dataset read reported an error but returned jobs ('+fq.source_error+')');\n\nconst errs=failed.length;\nconst status=sourceDown?'Failed':(errs?'Succeeded with errors':'Succeeded');\nconst rejLines=(icp.rejected||[]).slice(0,10).map(r=>'- '+r.domain+' ('+r.fit+'): '+r.reason);\nconst helperLine=hp?('created '+nf(hp.created)+' · updated '+nf(hp.updated)+' · DNC skipped '+nf(hp.dnc)+' · landed '+nf(landed)):'not called (nothing to land)';\nconst lines=[\n  '**'+nf(landed)+' companies landed in '+(tbl.tableName||'Companies')+' via Insert domains to Clayroots ('+nf(fm.new)+' new, '+nf(fm.existing)+' signalled again) from '+nf(fq.jobs_in)+' jobs, '+errs+' error'+(errs===1?'':'s')+'**',\n  '',\n  '**Signal:** '+(cfg.play_name||cfg.signal||cfg.play||'')+' · **Type:** '+(cfg.event_type||'')+' · **Tag:** '+(cfg.tag||'none')+' · **Table:** '+(tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':'')+' in '+(base||''),\n  '**Source:** Apify dataset '+(cfg.datasetId||''),\n  '',\n  '**Funnel**',\n  '- **Jobs scraped:** '+nf(fq.jobs_in),\n  '- **Past the hard lines:** '+nf(fq.qualified),\n  '- **Already carrying this signal (dropped before any paid call):** '+nf(ds.already_signalled)+(ds.already_signalled?' ('+(ds.already_signalled_domains||[]).slice(0,12).join(', ')+(ds.already_signalled>12?', ...':'')+')':'')+' · new to this signal: '+nf(ds.new_to_signal),\n  '- **BizData:** matched '+nf(bz.matched)+' · unknown '+nf(bz.unknown)+' · closed '+nf(bz.closed)+' · errors '+nf(bz.errors),\n  '- **ICP check:** '+nf(icp.checked)+' checked in '+nf(polls)+' poll'+(polls===1?'':'s')+' · yes '+nf(icp.yes)+' · partial (kept) '+nf(icp.partial)+' · no '+nf(icp.no)+(icp.missing?' · no verdict '+nf(icp.missing):''),\n  '- **First hire (Existing In Role):** yes '+nf(ir.yes)+' · no '+nf(ir.no)+' · unknown '+nf(ir.unknown),\n  '- **Rows formatted:** '+nf(fm.kept)+' ('+nf(fm.new)+' not yet in Companies, '+nf(fm.existing)+' existing, Signals unioned)',\n  '- **Insert domains to Clayroots:** '+helperLine,\n  '',\n  '**Contacts:** '+(handoff?('Enrich Contacts fired once as a sub-workflow on Companies view \"Not Sourced\", scoped to the '+nf(scope)+' domain(s) this run landed; it writes its own launch row.'):'Enrich Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'\n];\nif(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\\n'+rejLines.join('\\n')+((icp.rejected||[]).length>10?'\\n- ...and '+((icp.rejected||[]).length-10)+' more':''));\nif(failed.length) lines.push('','**FAILED ('+failed.length+')**\\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\\n')+(failed.length>8?'\\n- ...and '+(failed.length-8)+' more':''));\nif(skips.length) lines.push('','**Skipped**\\n'+skips.map(s=>'- '+s).join('\\n'));\nconst row={\n 'Automation':'Discover Hiring Companies',\n 'Status':status,\n 'Run at': $now.toISO(),\n 'Records In': fq.jobs_in||0,\n 'Records Out': landed,\n 'Errors': errs,\n 'Target': (tbl.tableName||'Companies')+(tbl.tableId?' ('+tbl.tableId+')':''),\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000),\n 'Description': lines.join('\\n')\n};\nif(cfg.client) row['Client']=[cfg.client];\nreturn [{json:row}];\n"
         },
         "executeOnce": true,
         "onError": "continueRegularOutput"
@@ -2683,7 +2762,7 @@
           300
         ],
         "parameters": {
-          "jsCode": "// A guard tripped before any paid call: the launch payload, the Signals row, or the client row\n// is missing something. One error, the row says exactly what. 'Failed' is the Error Logger's\n// word for a crash; a guard trip is Succeeded with errors.\nlet g={};\ntry{ const p=$('Parse Play').first().json; if(p&&p.config_ok===false) g=p; }catch(e){}\nif(!g.guard){ try{ const l=$('Parse Launch').first().json; if(l&&l.config_ok===false) g=l; }catch(e){} }\nlet baseMissing=false; if(!g.guard){ try{ const c=$('Client Vars').first().json; if(c&&!c.base){ baseMissing=true; g=Object.assign({},$('Parse Play').first().json,{guard:'client'}); } }catch(e){} }\nconst what=g.guard==='launch'?'Apify webhook payload':(g.guard==='play'?'Signals row '+(g.play||''):'client row '+(g.client||''));\nconst missing=baseMissing?'Clayroots Base ID on the Hub Clients row':((g.missing||[]).join(', ')||'unknown');\nconst row={\n 'Automation':'Insert Hiring domains to Clayroots',\n 'Status':'Succeeded with errors',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': 'Companies',\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': '**Guard tripped before any paid call, 1 error**\\n\\n**Where:** '+what+'\\n\\n**Missing / unreadable:** '+missing+'\\n\\nThe Signals row needs: Client link (its Clients row carries the Clayroots Base ID), Roles, Country, Max Employees, ICP. The Apify payload needs {play: <Signals record id>, resource}. Fix and rerun.'\n};\nif(g.client) row['Client']=[g.client];\nreturn [{json:row}];\n"
+          "jsCode": "// Build Guard Fail Log: the row a refused run writes. Every guard in this Rootflow NAMES its\n// reason and routes here instead of throwing (ruled 2026-09-10), so a bad payload, an unready\n// base or an unresolvable signal is always readable on one Hub Automations row. Four guards, in\n// order: the payload (Parse Launch), the Signals row (Parse Play), the client row (Client Vars,\n// no Clayroots Base ID), the base's tables (Find Companies Table) and the mirror row (Resolve\n// Mirror Row). Nothing was pulled, nothing was spent, nothing was written, so the row closes\n// Failed with the reason, the way the reference Insert does.\nconst at=(n)=>{ try{ return $(n).first().json||{}; }catch(e){ return {}; } };\nconst launch=at('Parse Launch');\nconst play=at('Parse Play');\nconst cv=at('Client Vars');\nconst tables=at('Find Companies Table');\nconst mirror=at('Resolve Mirror Row');\nlet where='', reason='', client=play.client||'';\nif(launch.config_ok===false){ where='the Apify webhook payload'; reason=(launch.missing||[]).join(', ')||'unknown'; }\nelse if(play.config_ok===false){ where='Hub Signals row '+(play.play||''); reason=(play.missing||[]).join(', ')||'unknown'; }\nelse if(!cv.base){ where='the Hub Clients row for '+(cv.clientName||client||'this client'); reason='Clayroots Base ID is empty'; }\nelse if(tables.refused){ where='the client base '+(cv.base||''); reason=String(tables.refused); }\nelse if(mirror.refused){ where='the Signals mirror in base '+(cv.base||''); reason=String(mirror.refused); }\nelse { where='a guard'; reason='refused and no reason was recorded'; }\nconst show=(v)=>(v===''||v===null||v===undefined)?'(empty)':String(v);\nconst lines=[\n  '**Refused before anything ran: '+reason+'**',\n  '',\n  '**Where:** '+where,\n  '',\n  '**The payload as this Rootflow read it**',\n  '- **signal (Hub Signals record id):** '+show(launch.signal),\n  '- **resource.defaultDatasetId:** '+show(launch.datasetId),\n  '- **tag:** '+show(launch.tag),\n  '- **Client (from the Signals row):** '+show(client),\n  '- **Clayroots Base ID:** '+show(cv.base),\n  '',\n  '**Failures (1)**',\n  '- Launch guard: '+reason,\n  '',\n  'Apify was not read, DiscoLike was not called and nothing was written to the client base.',\n  'The contract: POST /webhook/discover-hiring-companies {signal: <Hub Signals record id>, resource: {{resource}}, tag: <optional>}. The Signals row needs Client (its Clients row carries the Clayroots Base ID), Roles, Country, Max Employees, ICP.'\n];\nconst row={\n 'Automation':'Discover Hiring Companies',\n 'Status':'Failed',\n 'Run at': $now.toISO(),\n 'Records In': 0,\n 'Records Out': 0,\n 'Errors': 1,\n 'Target': 'Companies',\n 'Trigger':'webhook',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Description': lines.join('\\n')\n};\nif(client) row['Client']=[client];\nreturn [{json:row}];\n"
         },
         "onError": "continueRegularOutput"
       },
@@ -2726,6 +2805,7 @@
         },
         "executeOnce": true,
         "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
         "notes": "One small read before formatting: the Signals links the signalled domains already hold, so the upsert unions them instead of replacing them. Kept because the helper returns counters, not rows."
       },
       {
@@ -2785,7 +2865,7 @@
           -460
         ],
         "parameters": {
-          "jsCode": "// Attach Meta: the call shape the helper Insert domains to Clayroots reads. The rows go through\n// as formatted, minus the run's own carriers (_stats and _empty stay behind for Build Run Log),\n// and the first item carries _meta {base, clientRecId, tag, domainSource, allowNew}: no Tag (a\n// signal is the Signals link, never a Tag), Domain Source = Signal, allowNew false (the Job\n// columns are register extras; nothing outside the register may be created, so a base without\n// the Hiring group is refused by the helper).\nconst cv=$('Client Vars').first().json;\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty);\nconst out=rows.map(j=>{ const r={}; for(const k of Object.keys(j)){ if(!k.startsWith('_')) r[k]=j[k]; } return { json:r }; });\nif(!out.length) return [{ json:{ _empty:true } }];\nout[0].json._meta={ base: cv.base, clientRecId: cv.clientRecId, tag:'', domainSource:'Signal', allowNew:false };\nreturn out;\n",
+          "jsCode": "// Attach Meta: the call shape the helper Insert domains to Clayroots reads. The rows go through\n// as formatted, minus the run's own carriers (_stats and _empty stay behind for Build Run Log),\n// and the first item carries _meta {base, clientRecId, tag, domainSource, allowNew}: the Tag is\n// the payload's optional one (a signal is the Signals link, so an empty Tag is the normal case),\n// Domain Source = Signal, allowNew false (the Job columns are register extras; nothing outside the\n// register may be created, so a base without the Hiring group is refused by the helper).\nconst cv=$('Client Vars').first().json;\nconst cfg=$('Parse Play').first().json;\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&!j._empty);\nconst out=rows.map(j=>{ const r={}; for(const k of Object.keys(j)){ if(!k.startsWith('_')) r[k]=j[k]; } return { json:r }; });\nif(!out.length) return [{ json:{ _empty:true } }];\nout[0].json._meta={ base: cv.base, clientRecId: cv.clientRecId, tag: cfg.tag||'', domainSource:'Signal', allowNew:false };\nreturn out;\n",
           "mode": "runOnceForAllItems"
         }
       },
@@ -2816,7 +2896,7 @@
             "waitForSubWorkflow": true
           }
         },
-        "notes": "The one landing helper (Check Columns, DNC, Clean Fields, upsert on Domain). Rows in the register shape, _meta on the first item; one counters item back. NEG4Cs7wPOwQkpnQ is a placeholder: replace with the helper workflow id after its first push."
+        "notes": "The one landing helper NEG4Cs7wPOwQkpnQ (Check Columns, DNC, Clean Fields, upsert on Domain), awaited. Rows in the register shape, _meta on the first item; one counters item back, and a helper writes no Hub row of its own."
       },
       {
         "id": "d4000000-0000-4000-8000-000000000006",
@@ -2828,7 +2908,7 @@
           -460
         ],
         "parameters": {
-          "jsCode": "// Read Counters: the one counters item the helper Insert domains to Clayroots returns, read into\n// one shape for the Any Landed? gate and Build Run Log. The helper's key names are read by alias\n// until its contract lands (created / updated / upserted, dnc, in, failed[] or an errors count);\n// landed falls back to created + updated. A Check Columns refusal never reaches here: the helper\n// throws and the run crashes into the Error Logger with nothing written. Never throws itself: an\n// unreadable item reads as zero landed and one failure, so the run still closes its row.\nconst j=$input.first().json||{};\nconst num=(...ks)=>{ for(const k of ks){ const v=j[k]; if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(isFinite(n)) return n; } } return null; };\nconst created=num('created','new','inserted')||0;\nconst updated=num('updated','existing')||0;\nlet landed=num('upserted','landed','written','out','rows_out','records_out'); if(landed===null) landed=created+updated;\nconst dnc=num('dnc','dnc_skipped','skipped_dnc','suppressed')||0;\nconst rowsIn=num('in','rows_in','received','records_in')||0;\nlet failed=[];\nif(Array.isArray(j.failed)) failed=j.failed.map(f=>(f&&typeof f==='object')?Object.assign({ tier:'Insert domains' }, f):{ tier:'Insert domains', name:'', reason:String(f) });\nelse { const e=num('errors','failed'); if(e) failed=[{ tier:'Insert domains', name:e+' row(s)', reason:'reported by the helper, no detail' }]; }\nif(!Object.keys(j).length) failed.push({ tier:'Insert domains', name:'counters', reason:'the helper returned no counters item' });\nreturn [{ json:{ rowsIn, created, updated, landed, dnc, failed, counters:j } }];\n"
+          "jsCode": "// Read Counters: the one counters item the helper Insert domains to Clayroots returns, read into\n// one shape for the Any Landed? gate and Build Run Log. The helper's key names are read by alias\n// until its contract lands (created / updated / upserted, dnc, in, failed[] or an errors count);\n// landed falls back to created + updated. A Check Columns refusal never reaches here: the helper\n// throws and the run crashes into the Error Logger with nothing written. Never throws itself: an\n// unreadable item reads as zero landed and one failure, so the run still closes its row.\nconst j=$input.first().json||{};\nconst num=(...ks)=>{ for(const k of ks){ const v=j[k]; if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(isFinite(n)) return n; } } return null; };\nconst created=num('newDomains','created','new','inserted')||0;\nconst updated=num('existingDomains','updated','existing')||0;\nlet landed=num('upserted','landed','written','out','rows_out','records_out'); if(landed===null) landed=created+updated;\nconst dnc=num('dnc','dnc_skipped','skipped_dnc','suppressed')||0;\nconst rowsIn=num('in','rows_in','received','records_in')||0;\nlet failed=[];\nif(Array.isArray(j.failed)) failed=j.failed.map(f=>(f&&typeof f==='object')?Object.assign({ tier:'Insert domains' }, f):{ tier:'Insert domains', name:'', reason:String(f) });\nelse { const e=num('errors','failed'); if(e) failed=[{ tier:'Insert domains', name:e+' row(s)', reason:'reported by the helper, no detail' }]; }\nif(!Object.keys(j).length) failed.push({ tier:'Insert domains', name:'counters', reason:'the helper returned no counters item' });\nreturn [{ json:{ rowsIn, created, updated, landed, dnc, failed, counters:j } }];\n"
         },
         "onError": "continueRegularOutput"
       },
@@ -2867,7 +2947,7 @@
       },
       {
         "id": "d4000000-0000-4000-8000-000000000008",
-        "name": "Waterfall Call",
+        "name": "Fire Contacts",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
@@ -2875,13 +2955,13 @@
           -560
         ],
         "parameters": {
-          "jsCode": "// Waterfall Call: the one event item Waterfall Contacts reads at its Sub Trigger (Event Row):\n// the same keys as a launch row. Client = the Hub Clients record, Table Companies, View\n// \"Not Sourced\", plus Domains: the domains THIS run landed, so the pull is scoped to the signal's\n// own companies and never to the whole view. Max companies 150 as the spend cap.\n//\n// Paid for 2026-09-04 to 09-06: without Domains the call meant \"source the whole Not Sourced\n// view\", which after the 09-03 migration held 20,000 old companies with no Contacts Pulled At.\n// Three mornings of 5,000-company AI-Ark sweeps, about 2,500 credits on companies the signal never\n// named. The view stays \"Not Sourced\" so a company signalled again after it was sourced is skipped.\n//\n// Tiers is \"AI-Ark\", the intent path (Operator ruling 2026-09-02). This door has no launch row to\n// read a mode off, and the intent lane is deliberately AI-Ark only: a flat five people per company\n// and the buyer seniorities only, not the full waterfall's wide net. Departments and Roles stay\n// empty on purpose: nothing about who gets MESSAGED is configured in this machine, the relevance\n// formula and the views on People do all the cutting. The Signals row's Roles field is the hiring\n// signal's job-title intent, not a contact filter, and is deliberately not read here.\n//\n// Reached only after at least one company landed; the sub-workflow runs on its own\n// (waitForSubWorkflow false) and writes its own run-log row.\nconst cv=$('Client Vars').first().json;\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst domains=[];\ntry{ for(const it of $('Format Companies').all()){ const d=norm((it.json||{}).Domain); if(d&&domains.indexOf(d)<0) domains.push(d); } }catch(e){}\nreturn [{ json:{ Client:[cv.clientRecId], Table:'Companies', View:'Not Sourced', Domains:domains, Tiers:'AI-Ark', Departments:[], Roles:[], 'Max companies':150 } }];\n"
+          "jsCode": "// Fire Contacts: one item in Enrich Contacts' event shape (its Event Row reads launch-row keys),\n// so the companies just landed get their people at once. Client, Table Companies, View Not Sourced,\n// Tag, and Domains = exactly the domains this run landed, so on a base with a backlog the contacts\n// pull is scoped to this signal's own companies and never re-sweeps the whole view. Enrich Contacts\n// writes its own launch row; nothing else is passed (ruled 2026-09-10, the hand-off is these five\n// keys for every Insert).\n//\n// Paid for 2026-09-04 to 09-06: without Domains the call meant \"source the whole Not Sourced\n// view\", which after the 09-03 migration held 20,000 old companies with no Contacts Pulled At.\n// Three mornings of 5,000-company sweeps, about 2,500 credits on companies the signal never named.\n// The view stays \"Not Sourced\" so a company signalled again after it was sourced is skipped.\n//\n// Tiers, Departments, Roles and Max companies are gone (2026-09-10): the provider lanes, the caps\n// and the floor are Enrich Contacts' own rules, read off our Employees band, and nothing about who\n// gets MESSAGED is configured in this machine. The Signals row's Roles field is the hiring signal's\n// job-title intent, not a contact filter.\n//\n// Reached only after at least one company landed; the sub-workflow runs on its own\n// (waitForSubWorkflow false) and writes its own run-log row.\nconst cv=$('Client Vars').first().json;\nconst cfg=$('Parse Play').first().json;\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst domains=[];\ntry{ for(const it of $('Format Companies').all()){ const d=norm((it.json||{}).Domain); if(d&&domains.indexOf(d)<0) domains.push(d); } }catch(e){}\nreturn [{ json:{ Client:[cv.clientRecId], Table:'Companies', View:'Not Sourced', Tag:cfg.tag||'', Domains:domains } }];\n"
         },
         "executeOnce": true
       },
       {
         "id": "d4000000-0000-4000-8000-000000000009",
-        "name": "Waterfall Contacts",
+        "name": "Enrich Contacts",
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
@@ -2893,7 +2973,7 @@
             "__rl": true,
             "mode": "id",
             "value": "PLTNYqqoYfrt9ypd",
-            "cachedResultName": "Waterfall Contacts"
+            "cachedResultName": "Enrich Contacts"
           },
           "workflowInputs": {
             "mappingMode": "passThrough",
@@ -2906,7 +2986,7 @@
             "waitForSubWorkflow": false
           }
         },
-        "notes": "Fire and continue: Waterfall Contacts runs on its own execution (Companies, Not Sourced, all three sources, cap 5000) and writes its own run-log row. Only after at least one company landed."
+        "notes": "Fire-and-forget: Enrich Contacts (PLTNYqqoYfrt9ypd) on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row. The hand-off is exactly five keys, Client, Table, View, Tag, Domains, and nothing else (ruled 2026-09-10): the provider lanes, the caps and the floor are Enrich Contacts' own rules. Only after at least one company landed."
       }
     ],
     "connections": {
@@ -3056,7 +3136,43 @@
         "main": [
           [
             {
+              "node": "Mirror OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mirror OK?": {
+        "main": [
+          [
+            {
               "node": "Get Scraped Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tables OK?": {
+        "main": [
+          [
+            {
+              "node": "Get Signal Mirror Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Guard Fail Log",
               "type": "main",
               "index": 0
             }
@@ -3338,7 +3454,7 @@
         "main": [
           [
             {
-              "node": "Get Signal Mirror Row",
+              "node": "Tables OK?",
               "type": "main",
               "index": 0
             }
@@ -3422,7 +3538,7 @@
         "main": [
           [
             {
-              "node": "Waterfall Call",
+              "node": "Fire Contacts",
               "type": "main",
               "index": 0
             }
@@ -3436,18 +3552,18 @@
           ]
         ]
       },
-      "Waterfall Call": {
+      "Fire Contacts": {
         "main": [
           [
             {
-              "node": "Waterfall Contacts",
+              "node": "Enrich Contacts",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Waterfall Contacts": {
+      "Enrich Contacts": {
         "main": [
           [
             {

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T20:21:33.860Z",
+  "updatedAt": "2026-09-10T09:32:41.795Z",
   "createdAt": "2026-07-28T07:05:08.068Z",
   "id": "UYGZblamekkSgat4",
   "name": "Discover Storeleads Companies",
@@ -827,7 +827,8 @@
   "staticData": {
     "global": {
       "slBatchState": {
-        "cap": 15,
+        "cap": 5,
+        "scopeCap": 20000,
         "qIndex": 1,
         "cursor": "",
         "batchNum": 1,
@@ -835,10 +836,29 @@
         "remaining": 0,
         "totals": {
           "pulled": 50,
-          "inserted": 15,
-          "withEmails": 15,
-          "skipped": 0
-        }
+          "kept": 5,
+          "upserted": 5,
+          "newDomains": 0,
+          "existingDomains": 5,
+          "withEmails": 5,
+          "failed": 0,
+          "skipped": 0,
+          "inactive": 0,
+          "duplicate": 0,
+          "dnc": 0
+        },
+        "failReasons": [],
+        "providerErrors": 0,
+        "providerReason": "",
+        "stoppedWhy": "",
+        "landedDomains": [
+          "embrlabs.com",
+          "vaonis.com",
+          "bestself.co",
+          "icebarrel.com",
+          "italist.com"
+        ],
+        "scopeOverflow": false
       }
     }
   },
@@ -847,8 +867,8 @@
     "builderVariant": "mcp"
   },
   "pinData": {},
-  "versionId": "b220f958-52ce-46c9-8569-71f62506a450",
-  "activeVersionId": "b220f958-52ce-46c9-8569-71f62506a450",
+  "versionId": "f1c03b2b-cfb1-40ed-a747-949187dd0083",
+  "activeVersionId": "f1c03b2b-cfb1-40ed-a747-949187dd0083",
   "triggerCount": 1,
   "shared": [
     {
@@ -860,15 +880,15 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-02T20:21:33.862Z",
-    "createdAt": "2026-09-02T20:21:33.862Z",
-    "versionId": "b220f958-52ce-46c9-8569-71f62506a450",
+    "updatedAt": "2026-09-10T09:32:41.797Z",
+    "createdAt": "2026-09-10T09:32:41.797Z",
+    "versionId": "f1c03b2b-cfb1-40ed-a747-949187dd0083",
     "workflowId": "UYGZblamekkSgat4",
     "nodes": [
       {
         "parameters": {
           "httpMethod": "POST",
-          "path": "launch-insert-storeleads-domains",
+          "path": "discover-storeleads-companies",
           "options": {}
         },
         "id": "257a3487-4dd8-4f18-b789-5e350142369f",
@@ -879,7 +899,8 @@
           0,
           0
         ],
-        "webhookId": "6f104dbd-e70f-4b91-8a37-a2da6262dd14"
+        "webhookId": "discover-storeleads-companies",
+        "notes": "The one door: POST /webhook/discover-storeleads-companies with {recordId} = the Hub launch row, fired by the single launch automation from the Automation name slugified. Launch row: Client, Tag, Max companies and the Storeleads filters (the source). Table is implied (Companies)."
       },
       {
         "parameters": {
@@ -916,51 +937,6 @@
       {
         "parameters": {
           "resource": "record",
-          "operation": "get",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblK0nCoNVvFf5SPa"
-          },
-          "id": "={{ $json.fields.Client[0] }}",
-          "options": {}
-        },
-        "id": "9222bce0-ef43-461d-bf01-94b204639d6a",
-        "name": "Resolve Base",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          440,
-          0
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "jsCode": "// Launch Params: the launch row is the whole contract. Client link resolves the base, the\n// Storeleads filter fields on the row shape the pull, Max companies is the spend cap, Tag is\n// stamped on every row landed. Any missing piece stops the run here, before a single paid call.\n//\n// The contacts pull this door fires afterwards is NOT hardcoded (ruled 2026-09-02). Tiers,\n// Departments and Roles are read off this same launch row and handed to Waterfall Contacts by\n// Fire Contacts, and Max companies serves as its cap too: the row's own spend cap bounds both\n// what this door lands and what the contacts pull then works. Blank means today's behaviour,\n// the full waterfall with no department or role filter. Tiers falls back to the older Sources\n// multi-select while launch rows still carry it.\nconst rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst clientRecId=((f['Client']||[])[0])||'';\nconst tag=((f['Tag']||'')+'').trim();\nconst maxCompanies=parseInt(f['Max companies'],10);\nif(!clientRecId){ throw new Error('Launch record '+rec.id+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on launch record '+rec.id+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!Number.isFinite(maxCompanies)||maxCompanies<1){ throw new Error('Launch record '+rec.id+' has no Max companies. It is the Storeleads spend cap and is required. Nothing was pulled.'); }\nconst list=(v)=>Array.isArray(v)?v.map(x=>String(x).trim()).filter(Boolean):((v==null||v==='')?[]:String(v).split(',').map(s=>s.trim()).filter(Boolean));\nconst text=(v)=>(v==null?'':String(v)).trim();\nconst visits=f['Min monthly visits'];\nreturn [{ json: {\n  base: base,\n  clientRecId: clientRecId,\n  tag: tag,\n  country: list(f['Country']),\n  platforms: list(f['Platforms']),\n  plan: list(f['Plan']),\n  monthlyRevenue: list(f['Monthly revenue']),\n  employees: list(f['Employees']),\n  productCount: list(f['Product count']),\n  storeAge: list(f['Store age']),\n  minMonthlyVisits: (visits==null||visits==='')?null:Number(visits),\n  category: text(f['Category']),\n  technologies: text(f['Technologies']),\n  mustHaveAppIds: text(f['Must-have app IDs']),\n  maxCompanies: maxCompanies,\n  contactsTiers: text(f['Tiers'])||(list(f['Sources']).length?'':'ContaGen -> Supersoniq -> AI-Ark'),\n  contactsSources: list(f['Sources']),\n  contactsDepartments: list(f['Departments']),\n  contactsRoles: list(f['Roles']),\n  contactsMaxCompanies: maxCompanies,\n  _launchRecordId: rec.id,\n  startedAt: new Date().toISOString()\n} }];\n"
-        },
-        "id": "20bc72fa-2486-4412-bd8c-3cdf623545b7",
-        "name": "Launch Params",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          660,
-          0
-        ]
-      },
-      {
-        "parameters": {
-          "resource": "record",
           "operation": "update",
           "base": {
             "__rl": true,
@@ -975,11 +951,12 @@
           "columns": {
             "mappingMode": "defineBelow",
             "value": {
-              "id": "={{ $json._launchRecordId }}",
+              "id": "={{ $json.id }}",
               "Status": "Running",
               "Run at": "={{ $now.toISO() }}",
               "Execution ID": "={{ $execution.id }}",
-              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}",
+              "Tally": ""
             },
             "matchingColumns": [
               "id"
@@ -995,7 +972,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          880,
+          440,
           0
         ],
         "credentials": {
@@ -1003,24 +980,121 @@
             "id": "RZ2SX89iUyF4aEWJ",
             "name": "Airtable"
           }
-        }
+        },
+        "notes": "First thing the door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. Passes the record through, so Resolve Base reads fields.Client off it."
       },
       {
         "parameters": {
-          "jsCode": "// Build SL Query: the launch row's filters become one Storeleads pull query per provider x\n// country. Max companies (already validated by Launch Params) is the spend cap the loop\n// enforces; the batch pulls only what is still short of it.\nconst lp = $('Launch Params').first().json;\nconst CMAP = {'United States':'US','United Kingdom':'GB','Canada':'CA','Australia':'AU','Ireland':'IE','Israel':'IL','Germany':'DE','France':'FR','Netherlands':'NL','usa':'US','us':'US','uk':'GB','england':'GB'};\nconst asArr=(v)=>{ if(v===undefined||v===null||v==='')return[]; if(Array.isArray(v))return v.map(x=>String(x).trim()).filter(Boolean); return String(v).split(',').map(s=>s.trim()).filter(Boolean); };\nconst toCode=(x)=>{ const s=String(x).trim(); if(CMAP[s])return CMAP[s]; if(CMAP[s.toLowerCase()])return CMAP[s.toLowerCase()]; if(/^[A-Za-z]{2}$/.test(s))return s.toUpperCase(); return ''; };\nconst ccList = Array.from(new Set(asArr(lp.country).map(toCode).filter(Boolean)));\nconst ALLOWED = ['shopify','woocommerce','bigcommerce','wix','squarespace','magento'];\nlet selP = asArr(lp.platforms).map(s=>String(s).toLowerCase()).filter(s=>ALLOWED.includes(s));\nconst planTicked = asArr(lp.plan).includes('Shopify Plus');\nif (planTicked) selP = ['shopify'];\nconst providers = selP.length ? Array.from(new Set(selP)) : ['all'];\nconst maxCompanies = parseInt(lp.maxCompanies, 10);\nif (!Number.isFinite(maxCompanies) || maxCompanies < 1) { throw new Error('Max companies is missing or not a positive number. It is the Storeleads spend cap. Nothing was pulled.'); }\nconst baseFilters = { 'f:state': 'Active' };\nif (planTicked) baseFilters['f:plan'] = 'Shopify Plus';\nconst envelope=(ticked, ORDER, MAP)=>{ const s=ticked.filter(b=>MAP[b]); if(!s.length) return [null,null]; const idxs=s.map(b=>ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); return [MAP[ORDER[idxs[0]]][0], MAP[ORDER[idxs[idxs.length-1]]][1]]; };\nconst REV_ORDER=['Under $10k','$10k-50k','$50k-100k','$100k-500k','$500k-1M','$1M+'];\nconst REV={'Under $10k':[null,1000000],'$10k-50k':[1000000,5000000],'$50k-100k':[5000000,10000000],'$100k-500k':[10000000,50000000],'$500k-1M':[50000000,100000000],'$1M+':[100000000,null]};\nconst rev=envelope(asArr(lp.monthlyRevenue),REV_ORDER,REV);\nif(rev[0]!=null)baseFilters['f:ermin']=String(rev[0]); if(rev[1]!=null)baseFilters['f:ermax']=String(rev[1]);\nconst EMP_ORDER=['1-10','11-50','51-200','200+'];\nconst EMP={'1-10':[1,10],'11-50':[11,50],'51-200':[51,200],'200+':[200,null]};\nconst emp=envelope(asArr(lp.employees),EMP_ORDER,EMP);\nif(emp[0]!=null)baseFilters['f:empcmin']=String(emp[0]); if(emp[1]!=null)baseFilters['f:empcmax']=String(emp[1]);\nconst PC_ORDER=['1-50','51-500','500+'];\nconst PC={'1-50':[1,50],'51-500':[51,500],'500+':[500,null]};\nconst pc=envelope(asArr(lp.productCount),PC_ORDER,PC);\nif(pc[0]!=null)baseFilters['f:pcmin']=String(pc[0]); if(pc[1]!=null)baseFilters['f:pcmax']=String(pc[1]);\nconst iso=(d)=>d.toISOString().slice(0,19)+'Z';\nconst now=new Date();\nconst yearsAgo=(y)=>{ const d=new Date(now.getTime()); d.setUTCFullYear(d.getUTCFullYear()-y); return d; };\nconst AGE_ORDER=['Under 1 year','1-3 years','3+ years'];\nconst AGE={'Under 1 year':[0,1],'1-3 years':[1,3],'3+ years':[3,null]};\nconst ageTicked=asArr(lp.storeAge).filter(b=>AGE[b]);\nif(ageTicked.length){ const aidx=ageTicked.map(b=>AGE_ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); const minAge=AGE[AGE_ORDER[aidx[0]]][0]; const maxAge=AGE[AGE_ORDER[aidx[aidx.length-1]]][1]; if(maxAge!=null)baseFilters['f:cratmin']=iso(yearsAgo(maxAge)); if(minAge>0)baseFilters['f:cratmax']=iso(yearsAgo(minAge)); }\nconst minVisits = parseInt(lp.minMonthlyVisits, 10);\nif (Number.isFinite(minVisits) && minVisits > 0) baseFilters['f:evmin'] = String(minVisits);\nconst catList = asArr(lp.category);\nif (catList.length) { baseFilters['f:cat'] = catList.join(','); baseFilters['f:cat:op'] = 'or'; }\nconst techList = asArr(lp.technologies);\nif (techList.length) { baseFilters['f:tech'] = techList.join(','); baseFilters['f:tech:op'] = 'and'; }\nconst appIds = asArr(lp.mustHaveAppIds);\nif (appIds.length) { baseFilters['f:an']=appIds.join(','); baseFilters['f:an:op']='and'; }\nconst fields = 'name,tld1,merchant_name,title,description,categories,country_code,city,administrative_area_level_1,estimated_sales,employee_count,rank,platform,state,plan,created_at,product_count,monthly_app_spend,apps,technologies,trustpilot,last_platform,last_platform_change_at,features,contact_info';\nconst cList = ccList.length ? ccList : [null];\nconst out=[];\nfor(const prov of providers){ for(const cc of cList){ const f = Object.assign({}, baseFilters); if(cc) f['f:cc']=cc; const pullQuery = Object.assign({}, f, { page_size: 50, sort: 'rank', fields }); out.push({ json: { _provider: prov, _country: cc||'ALL', countryCode: cc||'', _ccList: ccList, pullQuery, maxCompanies, providerCount: providers.length, countryCount: cList.length } }); } }\nreturn out;\n"
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+          "options": {}
+        },
+        "id": "9222bce0-ef43-461d-bf01-94b204639d6a",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "A launch row with no Client link asks for recMISSING and keeps going; Launch Params reads the answer defensively and refuses with the reason."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row is the whole contract of Discover Storeleads Companies (brought to\n// the Rootflows standard 2026-09-10): Client (resolves the base), Tag (optional, stamped on every\n// company landed), and the Storeleads source variables, which for this Rootflow ARE the source: an\n// Insert runs on a source, and Storeleads has no saved query, so the filter set is it. Max companies\n// is the spend cap the loop enforces, and Storeleads is metered, so it is required.\n//\n// The source variables, exactly the Hub columns Build SL Query reads: Country, Platforms, Plan,\n// Monthly revenue, Employees, Product count, Store age, Min monthly visits, Category, Technologies,\n// Must-have app IDs, Max companies. Table is implied (Companies). Nothing else is read: the contacts\n// pull this Rootflow fires afterwards is Enrich Contacts with its own rules, so the old contacts\n// parameters (Tiers, Sources, Departments, Roles) are dead and dropped.\n//\n// REFUSALS. A badly filled launch row is an expected outcome, not a crash, and it must be visible on\n// the row the Operator launched: every guard RETURNS a refusal item (`refused` carries the reason),\n// Launch OK? routes it to Build Refusal, which closes the row as Failed with the reason and the\n// link. Nothing is pulled and nothing is written.\nconst rec=$('Fetch Launch Record').first().json||{};\nconst f=rec.fields||{};\nconst cf=(($('Resolve Base').first().json||{}).fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';\nconst tag=((f['Tag']||'')+'').trim();\nconst list=(v)=>Array.isArray(v)?v.map(x=>String(x).trim()).filter(Boolean):((v==null||v==='')?[]:String(v).split(',').map(s=>s.trim()).filter(Boolean));\nconst text=(v)=>(v==null?'':String(v)).trim();\nconst maxCompanies=parseInt(f['Max companies'],10);\nconst visits=f['Min monthly visits'];\nconst src={\n  country: list(f['Country']),\n  platforms: list(f['Platforms']),\n  plan: list(f['Plan']),\n  monthlyRevenue: list(f['Monthly revenue']),\n  employees: list(f['Employees']),\n  productCount: list(f['Product count']),\n  storeAge: list(f['Store age']),\n  minMonthlyVisits: (visits==null||visits==='')?null:Number(visits),\n  category: text(f['Category']),\n  technologies: text(f['Technologies']),\n  mustHaveAppIds: text(f['Must-have app IDs'])\n};\nconst anyFilter=src.country.length||src.platforms.length||src.plan.length||src.monthlyRevenue.length||src.employees.length||src.productCount.length||src.storeAge.length||(Number.isFinite(src.minMonthlyVisits)&&src.minMonthlyVisits>0)||src.category||src.technologies||src.mustHaveAppIds;\nconst startedAt=new Date().toISOString();\nconst where='Launch record '+(rec.id||'?');\nconst shape=Object.assign({ refused:'', base, clientRecId, tag, maxCompanies: Number.isFinite(maxCompanies)?maxCompanies:null, _launchRecordId: rec.id||'', startedAt }, src);\nconst refuse=(reason)=>[{ json: Object.assign({}, shape, { refused: reason }) }];\nif(!clientRecId){ return refuse(where+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!Number.isFinite(maxCompanies)||maxCompanies<1){ return refuse(where+' has no Max companies. Storeleads is metered and it is the spend cap of this run. Nothing was pulled.'); }\nif(!anyFilter){ return refuse(where+' carries no Storeleads filter. The filter set is this Rootflow\\'s source: tick at least one of Country, Platforms, Plan, Monthly revenue, Employees, Product count, Store age, Min monthly visits, Category, Technologies, Must-have app IDs. Nothing was pulled.'); }\nreturn [{ json: shape }];\n"
+        },
+        "id": "20bc72fa-2486-4412-bd8c-3cdf623545b7",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c21",
+        "name": "Launch OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          0
+        ],
+        "notes": "The refusal gate: Launch Params names a bad launch row instead of throwing; false means refused, Build Refusal closes the row as Failed with the reason before a single metered Storeleads page is asked for."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Refusal: the row a badly filled launch writes. Launch Params names the reason instead of\n// throwing, Launch OK? routes here, and this closes the launch row (already stamped Running with\n// this Execution ID) as Failed with the reason and the link. Nothing ran, and no metered Storeleads\n// page was ever asked for.\nconst p=$('Launch Params').first().json||{};\nconst reason=String(p.refused||'the launch row was refused and no reason was recorded');\nconst show=(v)=>(v===''||v===null||v===undefined)?'(empty)':String(v);\nconst arr=(v)=>Array.isArray(v)&&v.length?v.join(', '):'(empty)';\nconst lines=[\n  '**Refused before anything ran: '+reason+'**',\n  '',\n  '**The launch row as this Rootflow read it**',\n  '- **Client:** '+show(p.clientRecId),\n  '- **Clayroots Base ID:** '+(p.base||'(empty, or the Clients row could not be read)'),\n  '- **Max companies:** '+show(p.maxCompanies),\n  '- **Tag:** '+show(p.tag),\n  '- **Country:** '+arr(p.country),\n  '- **Platforms:** '+arr(p.platforms),\n  '- **Plan:** '+arr(p.plan),\n  '- **Monthly revenue:** '+arr(p.monthlyRevenue),\n  '- **Employees:** '+arr(p.employees),\n  '- **Product count:** '+arr(p.productCount),\n  '- **Store age:** '+arr(p.storeAge),\n  '- **Min monthly visits:** '+show(p.minMonthlyVisits),\n  '- **Category:** '+show(p.category),\n  '- **Technologies:** '+show(p.technologies),\n  '- **Must-have app IDs:** '+show(p.mustHaveAppIds),\n  '',\n  '**Failures (1)**',\n  '- Launch guard: '+reason,\n  '',\n  'Storeleads was not called and nothing was written to the client base.',\n  'Fill the named field on the launch row, clear Execution ID and Status, and the launch automation fires it again.'\n];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst log={ 'Automation':'Discover Storeleads Companies', 'Status':'Failed', 'Trigger':'form', 'Errors':1, 'Run at':$now.toISO(), 'Records In':0, 'Records Out':0, 'Duration s':dur, 'Description':lines.join('\\n'), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Execution ID':String($execution.id) };\nif(p.clientRecId) log['Client']=[p.clientRecId];\nreturn [{ json: log }];\n"
+        },
+        "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c22",
+        "name": "Build Refusal",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          480
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build SL Query: the launch row's Storeleads filters, which are this Rootflow's source, become one\n// pull query per provider x country. Max companies (already validated by Launch Params) is the spend\n// cap the loop enforces; each batch pulls only what is still short of it.\nconst lp = $('Launch Params').first().json;\nconst CMAP = {'United States':'US','United Kingdom':'GB','Canada':'CA','Australia':'AU','Ireland':'IE','Israel':'IL','Germany':'DE','France':'FR','Netherlands':'NL','usa':'US','us':'US','uk':'GB','england':'GB'};\nconst asArr=(v)=>{ if(v===undefined||v===null||v==='')return[]; if(Array.isArray(v))return v.map(x=>String(x).trim()).filter(Boolean); return String(v).split(',').map(s=>s.trim()).filter(Boolean); };\nconst toCode=(x)=>{ const s=String(x).trim(); if(CMAP[s])return CMAP[s]; if(CMAP[s.toLowerCase()])return CMAP[s.toLowerCase()]; if(/^[A-Za-z]{2}$/.test(s))return s.toUpperCase(); return ''; };\nconst ccList = Array.from(new Set(asArr(lp.country).map(toCode).filter(Boolean)));\nconst ALLOWED = ['shopify','woocommerce','bigcommerce','wix','squarespace','magento'];\nlet selP = asArr(lp.platforms).map(s=>String(s).toLowerCase()).filter(s=>ALLOWED.includes(s));\nconst planTicked = asArr(lp.plan).includes('Shopify Plus');\nif (planTicked) selP = ['shopify'];\nconst providers = selP.length ? Array.from(new Set(selP)) : ['all'];\n// Max companies is guaranteed by Launch Params (a missing cap is refused on the launch row, never\n// thrown here), so this only reads it; the 1 floor is belt and braces, not a guard.\nconst maxCompanies = Math.max(1, parseInt(lp.maxCompanies, 10) || 1);\nconst baseFilters = { 'f:state': 'Active' };\nif (planTicked) baseFilters['f:plan'] = 'Shopify Plus';\nconst envelope=(ticked, ORDER, MAP)=>{ const s=ticked.filter(b=>MAP[b]); if(!s.length) return [null,null]; const idxs=s.map(b=>ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); return [MAP[ORDER[idxs[0]]][0], MAP[ORDER[idxs[idxs.length-1]]][1]]; };\nconst REV_ORDER=['Under $10k','$10k-50k','$50k-100k','$100k-500k','$500k-1M','$1M+'];\nconst REV={'Under $10k':[null,1000000],'$10k-50k':[1000000,5000000],'$50k-100k':[5000000,10000000],'$100k-500k':[10000000,50000000],'$500k-1M':[50000000,100000000],'$1M+':[100000000,null]};\nconst rev=envelope(asArr(lp.monthlyRevenue),REV_ORDER,REV);\nif(rev[0]!=null)baseFilters['f:ermin']=String(rev[0]); if(rev[1]!=null)baseFilters['f:ermax']=String(rev[1]);\nconst EMP_ORDER=['1-10','11-50','51-200','200+'];\nconst EMP={'1-10':[1,10],'11-50':[11,50],'51-200':[51,200],'200+':[200,null]};\nconst emp=envelope(asArr(lp.employees),EMP_ORDER,EMP);\nif(emp[0]!=null)baseFilters['f:empcmin']=String(emp[0]); if(emp[1]!=null)baseFilters['f:empcmax']=String(emp[1]);\nconst PC_ORDER=['1-50','51-500','500+'];\nconst PC={'1-50':[1,50],'51-500':[51,500],'500+':[500,null]};\nconst pc=envelope(asArr(lp.productCount),PC_ORDER,PC);\nif(pc[0]!=null)baseFilters['f:pcmin']=String(pc[0]); if(pc[1]!=null)baseFilters['f:pcmax']=String(pc[1]);\nconst iso=(d)=>d.toISOString().slice(0,19)+'Z';\nconst now=new Date();\nconst yearsAgo=(y)=>{ const d=new Date(now.getTime()); d.setUTCFullYear(d.getUTCFullYear()-y); return d; };\nconst AGE_ORDER=['Under 1 year','1-3 years','3+ years'];\nconst AGE={'Under 1 year':[0,1],'1-3 years':[1,3],'3+ years':[3,null]};\nconst ageTicked=asArr(lp.storeAge).filter(b=>AGE[b]);\nif(ageTicked.length){ const aidx=ageTicked.map(b=>AGE_ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); const minAge=AGE[AGE_ORDER[aidx[0]]][0]; const maxAge=AGE[AGE_ORDER[aidx[aidx.length-1]]][1]; if(maxAge!=null)baseFilters['f:cratmin']=iso(yearsAgo(maxAge)); if(minAge>0)baseFilters['f:cratmax']=iso(yearsAgo(minAge)); }\nconst minVisits = parseInt(lp.minMonthlyVisits, 10);\nif (Number.isFinite(minVisits) && minVisits > 0) baseFilters['f:evmin'] = String(minVisits);\nconst catList = asArr(lp.category);\nif (catList.length) { baseFilters['f:cat'] = catList.join(','); baseFilters['f:cat:op'] = 'or'; }\nconst techList = asArr(lp.technologies);\nif (techList.length) { baseFilters['f:tech'] = techList.join(','); baseFilters['f:tech:op'] = 'and'; }\nconst appIds = asArr(lp.mustHaveAppIds);\nif (appIds.length) { baseFilters['f:an']=appIds.join(','); baseFilters['f:an:op']='and'; }\nconst fields = 'name,tld1,merchant_name,title,description,categories,country_code,city,administrative_area_level_1,estimated_sales,employee_count,rank,platform,state,plan,created_at,product_count,monthly_app_spend,apps,technologies,trustpilot,last_platform,last_platform_change_at,features,contact_info';\nconst cList = ccList.length ? ccList : [null];\nconst out=[];\nfor(const prov of providers){ for(const cc of cList){ const f = Object.assign({}, baseFilters); if(cc) f['f:cc']=cc; const pullQuery = Object.assign({}, f, { page_size: 50, sort: 'rank', fields }); out.push({ json: { _provider: prov, _country: cc||'ALL', countryCode: cc||'', _ccList: ccList, pullQuery, maxCompanies, providerCount: providers.length, countryCount: cList.length } }); } }\nreturn out;\n"
         },
         "id": "d8fc2cb9-773c-4db3-9228-f508aceefe57",
         "name": "Build SL Query",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1100,
+          1320,
           0
         ]
       },
       {
         "parameters": {
-          "jsCode": "// Preflight: the helper's rows-less call (Insert domains to Clayroots), before the first\n// metered Storeleads page. One item carrying only _meta, with keys = the row keys Process Batch\n// (SL Batch Pull) writes: the helper's Check Columns refuses when the landing fields or the\n// Storeleads declared extras are missing on Companies (they are register fields, never created\n// here: scaffold the base with Extras = Storeleads), and creates any open key once for the run.\n// The batches then call the same helper with rows and allowNew off.\nconst p=$('Launch Params').first().json;\nconst KEYS=['Domain','Company','Description','Industry Groups','Employees','Country','State','City','Public Emails','public_emails_clean','MX Provider','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Features'];\nreturn [{ json: { _meta: { base: p.base, clientRecId: p.clientRecId, tag: p.tag||'', domainSource: 'Storeleads', allowNew: true, keys: KEYS } } }];\n",
+          "jsCode": "// Preflight: the helper's rows-less call (Insert domains to Clayroots), before the first metered\n// Storeleads page. One item carrying only _meta, with keys = the row keys Process Batch (SL Batch\n// Pull) writes: the helper's Check Columns refuses when the landing fields or the Storeleads\n// declared extras are missing on Companies (they are register fields, never created here: scaffold\n// the base with Extras = Storeleads), and creates any open key once for the run. The batches then\n// call the same helper with rows and allowNew off.\nconst p=$('Launch Params').first().json;\nconst KEYS=['Domain','Company','Description','Industry Groups','Employees','Country','State','City','public_emails_clean','Plan','Revenue Est Monthly','Store Age Years','Product Count','App Spend Mo','Key Apps','Tech Stack','Trustpilot Rating','Trustpilot Reviews','Migrated From','Social Followers','Features'];\nreturn [{ json: { _meta: { base: p.base, clientRecId: p.clientRecId, tag: p.tag||'', domainSource: 'Storeleads', allowNew: true, keys: KEYS } } }];\n",
           "mode": "runOnceForAllItems"
         },
         "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c13",
@@ -1028,7 +1102,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1320,
+          1540,
           0
         ]
       },
@@ -1056,21 +1130,21 @@
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
-          1540,
+          1760,
           0
         ],
-        "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. The batches call the same helper with rows. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+        "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. Every batch then calls the same helper with rows and allowNew off."
       },
       {
         "parameters": {
-          "jsCode": "// Init Loop State: one static-data record carries the batch loop. Counters only; rows never\n// cross the sub-workflow boundary. kept is the spend meter (rows prepared for the write,\n// what the cap counts); upserted is what actually landed (record ids returned by the helper).\nconst qs = $('Build SL Query').all().map(i => ({ provider: i.json._provider, pullQuery: i.json.pullQuery }));\nconst cap = Number($('Build SL Query').first().json.maxCompanies);\nif (!Number.isFinite(cap) || cap < 1) throw new Error('Loop cap missing: Max companies did not reach the loop. Nothing was pulled.');\nconst sd = $getWorkflowStaticData('global');\nsd.slBatchState = { cap, qIndex: 0, cursor: '', batchNum: 0, retried: false, remaining: cap, totals: { pulled: 0, kept: 0, upserted: 0, withEmails: 0, failed: 0, skipped: 0, inactive: 0, duplicate: 0, dnc: 0 }, failReasons: [] };\nreturn [{ json: { action: 'continue', qIndex: 0, cursor: '', remaining: cap, queries: qs } }];\n"
+          "jsCode": "// Init Loop State: one static-data record carries the batch loop. Counters only; the rows never\n// cross the sub-workflow boundary (the law of 2026-09-09: no execution grows with the size of the\n// list, so SL Batch Pull lands its own chunk through the shared helper and answers numbers).\n// kept is the spend meter (rows the child prepared for the write, what the cap counts); upserted is\n// what actually landed (record ids the helper's upsert returned).\n// landedDomains is the one non-counter the child sends back: the domains of this run, so the\n// contacts hand-off is scoped to this pull. Strings only, and hard-capped (SCOPE_CAP) so the state\n// cannot grow without bound; past the cap the hand-off falls back to the whole view and says so.\nconst SCOPE_CAP = 20000;\nconst qs = $('Build SL Query').all().map(i => ({ provider: i.json._provider, pullQuery: i.json.pullQuery }));\nconst cap = Math.max(1, Number($('Build SL Query').first().json.maxCompanies) || 1);\nconst sd = $getWorkflowStaticData('global');\nsd.slBatchState = { cap, scopeCap: SCOPE_CAP, qIndex: 0, cursor: '', batchNum: 0, retried: false, remaining: cap, totals: { pulled: 0, kept: 0, upserted: 0, newDomains: 0, existingDomains: 0, withEmails: 0, failed: 0, skipped: 0, inactive: 0, duplicate: 0, dnc: 0 }, failReasons: [], providerErrors: 0, providerReason: '', stoppedWhy: '', landedDomains: [], scopeOverflow: false };\nreturn [{ json: { action: 'continue', qIndex: 0, cursor: '', remaining: cap, queries: qs } }];\n"
         },
         "id": "43a55df7-156f-4fc5-b85e-14feefec66c6",
         "name": "Init Loop State",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1760,
+          1980,
           0
         ]
       },
@@ -1106,20 +1180,21 @@
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
-          1980,
+          2200,
           0
-        ]
+        ],
+        "notes": "One child execution per batch (the law of 2026-09-09: no execution grows with the size of the list). SL Batch Pull pulls up to 10 pages of 50, formats them to the register, lands them through the shared helper, and answers counters plus this batch's landed domains. The rows die with the child."
       },
       {
         "parameters": {
-          "jsCode": "// Loop Control: reads one batch summary, adds it to the running totals, and decides the next\n// move: continue (next cursor or next query), retry once after Storeleads error pages, or\n// done. A second round of error pages on the same cursor fails loud. Hard cap: 500 batches.\nconst res = $input.first().json;\nconst sd = $getWorkflowStaticData('global');\nconst st = sd.slBatchState;\nif (!st) throw new Error('Loop state missing: Init Loop State did not run');\nconst queries = $('Init Loop State').first().json.queries || [];\nst.batchNum = (st.batchNum || 0) + 1;\nif (st.batchNum > 500) throw new Error('Storeleads batch loop hit the hard cap of 500 batches. Totals so far: pulled ' + st.totals.pulled + ', kept ' + st.totals.kept + ', upserted ' + st.totals.upserted + '. Last cursor: \"' + st.cursor + '\" (query ' + (st.qIndex + 1) + '/' + queries.length + ').');\nif (res.errorPages && res.errorPages > 0) {\n  if (st.retried) {\n    throw new Error('Storeleads returned error pages twice for cursor \"' + st.cursor + '\" (provider ' + ((queries[st.qIndex] || {}).provider || '?') + ', query ' + (st.qIndex + 1) + '/' + queries.length + '). Totals so far: pulled ' + st.totals.pulled + ', kept ' + st.totals.kept + ', upserted ' + st.totals.upserted + '.');\n  }\n  st.retried = true;\n  return [{ json: { action: 'retry', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }];\n}\nst.retried = false;\nconst n = (k) => Number(res[k]) || 0;\nst.totals.pulled += n('pulled');\nst.totals.kept += n('kept');\nst.totals.upserted += n('upserted');\nst.totals.withEmails += n('withEmails');\nst.totals.failed += n('failed');\nst.totals.skipped += n('skipped');\nst.totals.inactive += n('inactive');\nst.totals.duplicate += n('duplicate');\nst.totals.dnc = (st.totals.dnc || 0) + n('dnc');\nst.failReasons = Array.isArray(st.failReasons) ? st.failReasons : [];\nfor (const x of (Array.isArray(res.failReasons) ? res.failReasons : [])) { if (st.failReasons.length < 5) st.failReasons.push(String(x)); }\nst.remaining = Math.max(0, st.cap - st.totals.kept);\nif (res.has_next_page && st.remaining > 0 && res.next_cursor) {\n  st.cursor = String(res.next_cursor);\n  return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }];\n}\nst.qIndex += 1;\nst.cursor = '';\nif (st.qIndex < queries.length && st.remaining > 0) {\n  return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: '', remaining: st.remaining } }];\n}\nreturn [{ json: Object.assign({ action: 'done' }, st.totals) }];\n"
+          "jsCode": "// Loop Control: reads one batch summary, adds it to the running totals, and decides the next move:\n// continue (next cursor or next query), retry once after Storeleads error pages, or done.\n//\n// A provider that cannot be reached is a logged skip, never a crash (the Rootflows standard): error\n// pages are retried once, and a second round on the same cursor stops THIS query with a reason\n// instead of throwing. Same for the 500-batch guard. Build Log names every stop, and the row closes\n// Failed only when nothing at all was pulled.\nconst res = $input.first().json || {};\nconst sd = $getWorkflowStaticData('global');\nconst st = sd.slBatchState;\nif (!st) throw new Error('Loop state missing: Init Loop State did not run');\nconst queries = $('Init Loop State').first().json.queries || [];\nconst provider = () => String(((queries[st.qIndex] || {}).provider) || '?');\nconst nextQuery = (why) => {\n  if (why) { st.stoppedWhy = (st.stoppedWhy ? st.stoppedWhy + '; ' : '') + why; }\n  st.qIndex += 1; st.cursor = ''; st.retried = false;\n  if (st.qIndex < queries.length && st.remaining > 0) return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: '', remaining: st.remaining } }];\n  return [{ json: Object.assign({ action: 'done' }, st.totals) }];\n};\nst.batchNum = (st.batchNum || 0) + 1;\nif (st.batchNum > 500) {\n  st.stoppedWhy = (st.stoppedWhy ? st.stoppedWhy + '; ' : '') + 'the batch loop hit its hard cap of 500 batches at cursor \"' + st.cursor + '\" (provider ' + provider() + ', query ' + (st.qIndex + 1) + '/' + queries.length + ')';\n  return [{ json: Object.assign({ action: 'done' }, st.totals) }];\n}\nif (res.errorPages && res.errorPages > 0 && !res.pulled) {\n  if (!st.retried) { st.retried = true; return [{ json: { action: 'retry', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }]; }\n  st.providerErrors = (st.providerErrors || 0) + Number(res.errorPages || 0);\n  if (!st.providerReason) st.providerReason = String(res.errorReason || 'Storeleads returned error pages twice').slice(0, 160);\n  return nextQuery('Storeleads returned error pages twice for cursor \"' + st.cursor + '\" (provider ' + provider() + ', query ' + (st.qIndex + 1) + '/' + queries.length + '), so that query was dropped');\n}\nst.retried = false;\nconst n = (k) => Number(res[k]) || 0;\nif (res.errorPages) { st.providerErrors = (st.providerErrors || 0) + n('errorPages'); if (!st.providerReason && res.errorReason) st.providerReason = String(res.errorReason).slice(0, 160); }\nfor (const k of ['pulled','kept','upserted','newDomains','existingDomains','withEmails','failed','skipped','inactive','duplicate','dnc']) { st.totals[k] = (Number(st.totals[k]) || 0) + n(k); }\nst.failReasons = Array.isArray(st.failReasons) ? st.failReasons : [];\nfor (const x of (Array.isArray(res.failReasons) ? res.failReasons : [])) { if (st.failReasons.length < 5) st.failReasons.push(String(x)); }\nst.landedDomains = Array.isArray(st.landedDomains) ? st.landedDomains : [];\nfor (const d of (Array.isArray(res.domains) ? res.domains : [])) {\n  if (st.landedDomains.length >= (st.scopeCap || 20000)) { st.scopeOverflow = true; break; }\n  st.landedDomains.push(String(d));\n}\nst.remaining = Math.max(0, st.cap - (Number(st.totals.kept) || 0));\nif (res.has_next_page && st.remaining > 0 && res.next_cursor) {\n  st.cursor = String(res.next_cursor);\n  return [{ json: { action: 'continue', qIndex: st.qIndex, cursor: st.cursor, remaining: st.remaining } }];\n}\nreturn nextQuery('');\n"
         },
         "id": "93a8b3fc-a379-43d5-9d90-3b69a2093a63",
         "name": "Loop Control",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2200,
+          2420,
           0
         ]
       },
@@ -1151,7 +1226,7 @@
         "type": "n8n-nodes-base.filter",
         "typeVersion": 2.2,
         "position": [
-          2420,
+          2640,
           -200
         ]
       },
@@ -1183,7 +1258,7 @@
         "type": "n8n-nodes-base.filter",
         "typeVersion": 2.2,
         "position": [
-          2420,
+          2640,
           0
         ]
       },
@@ -1196,7 +1271,7 @@
         "type": "n8n-nodes-base.wait",
         "typeVersion": 1.1,
         "position": [
-          2640,
+          2860,
           0
         ],
         "webhookId": "4b45af9f-7433-4825-b9ea-49973532c662"
@@ -1229,7 +1304,7 @@
         "type": "n8n-nodes-base.filter",
         "typeVersion": 2.2,
         "position": [
-          2420,
+          2640,
           200
         ]
       },
@@ -1262,20 +1337,20 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          2640,
+          2860,
           200
         ]
       },
       {
         "parameters": {
-          "jsCode": "// Fire Contacts: one item in Waterfall Contacts' event shape (Event Row reads the launch-row\n// keys), so the companies just landed get their people at once. Table Companies and View\n// \"Not Sourced\" are structural, this door always sources what it just landed. Everything else\n// comes off THIS door's own launch row (Launch Params read it): Tiers, Departments, Roles and\n// Max companies pass straight through, the row's Max companies serving as the contacts cap too.\n// Blank on the row means the full waterfall, no department filter, no role filter, which is what\n// this door always did before 2026-09-02. Waterfall Contacts writes its own run-log row.\nconst p=$('Launch Params').first().json;\nconst out={ Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', 'Max companies': p.contactsMaxCompanies, Departments: p.contactsDepartments||[], Roles: p.contactsRoles||[], Tag: p.tag||'' };\nif(p.contactsTiers) out.Tiers=p.contactsTiers;\nif((p.contactsSources||[]).length) out.Sources=p.contactsSources;\nreturn [{ json: out }];\n"
+          "jsCode": "// Fire Contacts: one item in Enrich Contacts' event shape (its Event Row reads launch-row keys), so\n// the companies just landed get their people at once. Client, Table Companies, View Not Sourced,\n// Tag, and Domains = exactly the domains this run landed, so on a base with a backlog the contacts\n// pull is scoped to this pull and never re-sweeps the whole view (ruled 2026-09-09). Enrich Contacts\n// writes its own launch row; nothing else is passed. Past the loop's scope cap the domain list was\n// not kept in full, so Domains goes empty and the whole view is worked (Build Log says so).\nconst p=$('Launch Params').first().json;\nconst st=($getWorkflowStaticData('global').slBatchState)||{};\nconst domains=st.scopeOverflow?[]:Array.from(new Set((st.landedDomains||[]).map(d=>String(d||'').trim().toLowerCase()).filter(Boolean)));\nreturn [{ json:{ Client:[p.clientRecId], Table:'Companies', View:'Not Sourced', Tag:p.tag||'', Domains:domains } }];\n"
         },
         "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c16",
         "name": "Fire Contacts",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2860,
+          3080,
           320
         ]
       },
@@ -1285,7 +1360,7 @@
             "__rl": true,
             "mode": "id",
             "value": "PLTNYqqoYfrt9ypd",
-            "cachedResultName": "Waterfall Contacts"
+            "cachedResultName": "Enrich Contacts"
           },
           "workflowInputs": {
             "mappingMode": "passThrough",
@@ -1299,27 +1374,28 @@
           }
         },
         "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c17",
-        "name": "Waterfall Contacts",
+        "name": "Enrich Contacts",
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
-          3080,
+          3300,
           320
         ],
-        "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+        "notes": "Fire-and-forget: Enrich Contacts on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row."
       },
       {
         "parameters": {
-          "jsCode": "// Build Log: one row per run on the launch row, status computed from failed[], skips\n// separated from errors, Client attached (a launched run serves exactly one client).\n// Records Out is what the helper's upserts returned record ids for, never the pre-write count.\n// The table, the columns created and the keys dropped come from the preflight call (Check\n// Base); the batch totals from the loop state.\nconst p=$('Launch Params').first().json;\nlet cfg={}; try{ cfg=$('Check Base').first().json||{}; }catch(e){}\nconst sd=$getWorkflowStaticData('global');\nconst st=(sd.slBatchState)||{};\nconst t=Object.assign({ pulled:0, kept:0, upserted:0, withEmails:0, failed:0, skipped:0, inactive:0, duplicate:0, dnc:0 }, st.totals||{});\nconst failed=[];\nfor(const r of (st.failReasons||[])) failed.push({ name:'upsert', reason:String(r).slice(0,120) });\nconst errors=Number(t.failed)||0;\nif(errors>failed.length) failed.push({ name:'upsert', reason:(errors-failed.length)+' more rows returned no record id' });\nlet fired=false; try{ fired=$('Fire Contacts').all().length>0; }catch(e){}\nlet queries=[]; try{ queries=$('Build SL Query').all().map(i=>i.json||{}); }catch(e){}\nconst providers=Array.from(new Set(queries.map(q=>q._provider).filter(Boolean)));\nconst countries=Array.from(new Set(queries.map(q=>q._country).filter(Boolean)));\nconst SKIP=new Set(['page_size','sort','fields','f:cc']);\nconst filters=Object.entries((queries[0]||{}).pullQuery||{}).filter(([k])=>!SKIP.has(k)).map(([k,v])=>k+'='+v).join(', ');\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst tableName=cfg.tableName||'Companies';\nconst lines=[\n  '**'+fmt(t.pulled)+' stores pulled, '+fmt(t.upserted)+' landed on '+tableName+'**',\n  '',\n  '**Source:** Storeleads, providers '+(providers.join(', ')||'all')+', countries '+(countries.join(', ')||'ALL')+', cap '+fmt(st.cap||p.maxCompanies),\n  '**Filters:** '+(filters||'none'),\n  '**Tag:** '+(p.tag||'none'),\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+fmt(t.pulled),\n  '- **Kept (active, unique domain, under the cap):** '+fmt(t.kept),\n  '- **Landed (record id returned):** '+fmt(t.upserted),\n  '- **With public emails:** '+fmt(t.withEmails),\n  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails))\n];\nif(Array.isArray(cfg.createdColumns)&&cfg.createdColumns.length) lines.push('- **Columns created (open fields):** '+cfg.createdColumns.join(', '));\nif(Array.isArray(cfg.droppedKeys)&&cfg.droppedKeys.length) lines.push('- **Keys dropped:** '+cfg.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?'Waterfall Contacts fired on view \"Not Sourced\" (all three sources, Max companies 5000); it writes its own row':'not fired, nothing landed'));\nconst skips=[]; if(t.skipped) skips.push(fmt(t.skipped)+' empty domain'); if(t.inactive) skips.push(fmt(t.inactive)+' inactive store'); if(t.duplicate) skips.push(fmt(t.duplicate)+' duplicate domain in the pull'); if(t.dnc) skips.push(fmt(t.dnc)+' on the DNC table');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(failed.length){ lines.push('', '**Failures**'); for(const f of failed.slice(0,10)) lines.push('- '+f.name+': '+f.reason); }\nconst log={\n  'Automation':'Insert Storeleads domains to Clayroots',\n  'Status': errors?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Errors': errors,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+(cfg.tableId||'')+')',\n  'Records In': t.pulled,\n  'Records Out': t.upserted,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
+          "jsCode": "// Build Log: one row per run, on the launch row, status computed from the batches' failures and the\n// provider verdict, skips separated from errors, Client attached (a launched run serves exactly one\n// client). Records Out is what the helper's upserts returned record ids for, never the pre-write\n// count. The table, the columns created and the keys dropped come from the preflight call (Check\n// Base); the funnel from the loop's counters.\n// A Storeleads that could not be reached (no credential, dead API, error pages twice) is a logged\n// skip, never a crash: the row closes Failed only when nothing at all could be pulled.\nconst p=$('Launch Params').first().json;\nlet cfg={}; try{ cfg=$('Check Base').first().json||{}; }catch(e){}\nconst sd=$getWorkflowStaticData('global');\nconst st=(sd.slBatchState)||{};\nconst t=Object.assign({ pulled:0, kept:0, upserted:0, newDomains:0, existingDomains:0, withEmails:0, failed:0, skipped:0, inactive:0, duplicate:0, dnc:0 }, st.totals||{});\nconst failed=[];\nfor(const r of (st.failReasons||[])) failed.push({ name:'upsert', reason:String(r).slice(0,140) });\nconst errors=Number(t.failed)||0;\nif(errors>failed.length) failed.push({ name:'upsert', reason:(errors-failed.length)+' more rows returned no record id' });\nconst providerErrors=Number(st.providerErrors)||0;\nconst providerDown=!t.pulled&&providerErrors>0;\nif(providerDown) failed.push({ name:'Storeleads', reason:'Storeleads could not be pulled: '+(st.providerReason||'error pages only') });\nlet fired=false, scope=0; try{ const fc=$('Fire Contacts').first().json||{}; fired=true; scope=(fc.Domains||[]).length; }catch(e){}\nlet queries=[]; try{ queries=$('Build SL Query').all().map(i=>i.json||{}); }catch(e){}\nconst providers=Array.from(new Set(queries.map(q=>q._provider).filter(Boolean)));\nconst countries=Array.from(new Set(queries.map(q=>q._country).filter(Boolean)));\nconst SKIP=new Set(['page_size','sort','fields','f:cc']);\nconst filters=Object.entries((queries[0]||{}).pullQuery||{}).filter(([k])=>!SKIP.has(k)).map(([k,v])=>k+'='+v).join(', ');\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst fmt=v=>Number(v||0).toLocaleString('en-US');\nconst tableName=cfg.tableName||'Companies';\nconst lines=[\n  '**'+fmt(t.pulled)+' stores pulled, '+fmt(t.upserted)+' landed on '+tableName+' ('+fmt(t.newDomains)+' new, '+fmt(t.existingDomains)+' already held and refreshed)**',\n  '',\n  '**Source:** Storeleads, providers '+(providers.join(', ')||'all')+', countries '+(countries.join(', ')||'ALL')+', cap '+fmt(st.cap||p.maxCompanies),\n  '**Filters:** '+(filters||'none'),\n  '**Tag:** '+(p.tag||'none'),\n  '**Rule:** every active store the search answers is landed on Domain; a held company is refreshed with the new pull (Domain Source kept, Tag re-stamped); DNC domains dropped',\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+fmt(t.pulled),\n  '- **Kept (active, unique domain, under the cap):** '+fmt(t.kept),\n  '- **Landed (record id returned):** '+fmt(t.upserted)+' ('+fmt(t.newDomains)+' new, '+fmt(t.existingDomains)+' already held)',\n  '- **With public emails:** '+fmt(t.withEmails),\n  '- **Without public emails:** '+fmt(Math.max(0,t.upserted-t.withEmails)),\n  '- **Batches:** '+fmt(st.batchNum)\n];\nif(Array.isArray(cfg.createdColumns)&&cfg.createdColumns.length) lines.push('- **Columns created (open fields):** '+cfg.createdColumns.join(', '));\nif(Array.isArray(cfg.droppedKeys)&&cfg.droppedKeys.length) lines.push('- **Keys dropped:** '+cfg.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?('Enrich Contacts fired once on Companies view \"Not Sourced\"'+(scope?(', scoped to the '+fmt(scope)+' domains of this pull'):(st.scopeOverflow?', unscoped: this pull is past the '+fmt(st.scopeCap)+'-domain scope cap, so the whole view is worked':', unscoped'))+'; it writes its own launch row'):'not fired, nothing landed'));\nconst skips=[];\nif(t.skipped) skips.push(fmt(t.skipped)+' empty domain');\nif(t.inactive) skips.push(fmt(t.inactive)+' inactive store');\nif(t.duplicate) skips.push(fmt(t.duplicate)+' duplicate domain in the pull');\nif(t.dnc) skips.push(fmt(t.dnc)+' on the DNC table');\nif(providerErrors&&t.pulled) skips.push(fmt(providerErrors)+' Storeleads page(s) failed ('+(st.providerReason||'no reason given')+')');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(st.stoppedWhy) lines.push('', '**Stopped early:** '+st.stoppedWhy);\nif(failed.length){ lines.push('', '**Failures ('+failed.length+')**'); for(const f of failed.slice(0,10)) lines.push('- '+f.name+': '+f.reason); }\nconst log={\n  'Automation':'Discover Storeleads Companies',\n  'Status': providerDown?'Failed':(failed.length?'Succeeded with errors':'Succeeded'),\n  'Trigger':'form',\n  'Errors': failed.length,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+(cfg.tableId||'')+')',\n  'Records In': t.pulled,\n  'Records Out': t.upserted,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
         },
         "id": "bbe8a542-faf7-4180-a63f-6e9df1732721",
         "name": "Build Log",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          3300,
+          3520,
           200
-        ]
+        ],
+        "onError": "continueRegularOutput"
       },
       {
         "parameters": {
@@ -1352,7 +1428,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          3520,
+          3740,
           200
         ],
         "onError": "stopWorkflow",
@@ -1380,6 +1456,17 @@
         "main": [
           [
             {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
               "node": "Resolve Base",
               "type": "main",
               "index": 0
@@ -1402,18 +1489,36 @@
         "main": [
           [
             {
-              "node": "Stamp Running",
+              "node": "Launch OK?",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Stamp Running": {
+      "Launch OK?": {
         "main": [
           [
             {
               "node": "Build SL Query",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Refusal": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
               "type": "main",
               "index": 0
             }
@@ -1562,14 +1667,14 @@
         "main": [
           [
             {
-              "node": "Waterfall Contacts",
+              "node": "Enrich Contacts",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Waterfall Contacts": {
+      "Enrich Contacts": {
         "main": [
           [
             {

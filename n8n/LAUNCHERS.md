@@ -33,7 +33,7 @@ Do not hand-edit; rerun the script after every pull.
 | rootflows/Enrich-Contacts/Enrich-Contacts | POST https://n8n.flowroots.com/webhook/enrich-contacts |  | no |
 | rootflows/Enrich-Emails/Enrich-Emails | POST https://n8n.flowroots.com/webhook/enrich-emails |  | no |
 | rootflows/Verify-Catch-alls/Verify-Catch-alls | POST https://n8n.flowroots.com/webhook/verify-catch-alls |  | no |
-| rootflows/Waterfall-Phones/Waterfall-Phones | POST https://n8n.flowroots.com/webhook/launch-waterfall-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |
+| rootflows/Waterfall-Phones/Waterfall-Phones | POST https://n8n.flowroots.com/webhook/enrich-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |
 | rootworks/Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |
 | rootworks/Create-Client-Rootworks-Infrastructure | GET https://n8n.flowroots.com/webhook/client/onboard |  | no |
 | rootworks/Create-PlusVibe-Report | POST https://n8n.flowroots.com/webhook/launch-pv-weekly-report |  | no |

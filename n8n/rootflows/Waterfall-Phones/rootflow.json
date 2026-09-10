@@ -1,0 +1,15 @@
+{
+  "name": "Enrich Phones",
+  "kind": "Enrich",
+  "runs_on": "Table People (implied), any View by name; the view is the scope and the spend cap, since every provider here is paid per hit",
+  "launch_row": ["Client", "View", "Tag"],
+  "reads": "first_name, last_name, Domain, Email, LinkedIn URL and Phone on the people in the view (Phone is the number Enrich Contacts already delivered: it answers for free and is never overwritten)",
+  "creates": "Final Phone, Phone Provider (single select: database, Supersoniq, AI-Ark, LeadMagic, Prospeo; a new provider mints its own choice), Phone Type (direct, toll-free), Phone Found At, Phone Status (done, no_phone_found, error). Created on first use when the base lacks them; nothing else on the row is touched",
+  "held_value": "the view decides who is worked; a worked row has its phone lane rewritten from the verdict. Phone, Email and the email lane are never written",
+  "providers": "Supersoniq (one companies/enrich resolve per distinct domain, naked tier with has_phone, up to 2.5 credits a domain; then enrich/phone unlock per matched person, 10 credits a phone on file, 25 specialty, nothing on a 404), AI-Ark mobile-phone-finder (5 credits a found number, nothing on a miss), LeadMagic mobile-finder by work email (charged per found mobile), Prospeo enrich-person with enrich_mobile (10 credits a mobile found, free on NO_MATCH). First hit wins in that order and a direct number always beats a toll-free switchboard. No credential, out of credits or a dead API is a logged skip named on the run row, never a crash; the run closes Failed only when every provider was unavailable",
+  "logs": "the launch row, accumulated per batch of 100 in Tally: numbers by provider, per provider asked and found, Supersoniq domains resolved and unlocks bought, toll-free-only, coverage, skips, write failures",
+  "memory": "batches of 100 people, each batch its own execution of the same workflow through Run Batch (awaited); no execution grows with the list",
+  "also_carries": "the Hub contact door POST /webhook/waterfall-phones, held unchanged for the lead handlers (one Hub Prospects row, answered synchronously, signature scrape from the synced Conversation Thread, writes phone + Phone Source there). It is not part of the Rootflow contract and is the Operator's to retire or move out",
+  "workflows": { "HTNr5G6vBVkbxsqF": "Enrich Phones" },
+  "declared": "2026-09-10"
+}

@@ -258,7 +258,10 @@
           "name": "Airtable"
         }
       },
-      "notes": "The one People writer: PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request, held rows carry their id), typecast: true}, 200 ms apart, so 50 rows per second. No retry: a 429 locks the base for 30 s; a request that is not 2xx counts every record in it as a write error with the reason. Written rows are counted from the answer's records[]."
+      "notes": "The one People writer: PATCH /v0/{base}/{People} with {performUpsert: {fieldsToMergeOn: [\"Contact Key\"]}, records (ten per request, held rows carry their id), typecast: true}, 200 ms apart, so 50 rows per second. The upsert is idempotent, so a request that never got an answer (connection aborted: the box dropping sockets under load, 13,907 rows lost on CaaB 2026-09-09) is retried up to three times, 3 s apart. A 429 is not an error here (neverError) and is never retried: it locks the base for 30 s. Written rows are counted from the answer records[].",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
     },
     {
       "parameters": {

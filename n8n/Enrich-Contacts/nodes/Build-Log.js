@@ -8,9 +8,11 @@ let pick={ viewRows:0, noDomain:0, duplicate:0, picked:0, outOfScope:0, scoped:0
 try{ const j=$('Pick Companies').first().json||{}; if(j._stats) pick=j._stats; }catch(e){}
 let plan={ companiesIn:0, tiers:{}, dncDomains:[] }; try{ plan=$('Plan Companies').first().json||plan; }catch(e){}
 const num=(v)=>Number(v)||0;
-const LANES=[['Blitz','Run Blitz Lane'],['GetLeads','Run GetLeads Lane'],['QuickEnrich','Run QuickEnrich Lane'],['Supersoniq','Run Supersoniq Lane']];
+// The lanes are the per-provider accumulators of this execution (static data), filled by Chunk Tick.
+const run=$getWorkflowStaticData('global').run||{ order:['Blitz','GetLeads','QuickEnrich','Supersoniq'], lanes:{} };
+const LANES=run.order.map(name=>[name,name]);
 const lanes={}; const covered={};
-for(const [name,node] of LANES){ let j=null; try{ j=$(node).first().json||null; }catch(e){} if(!j) lanes[name]={ status:'error', reason:'lane did not run' }; else if(j.error&&j.provider===undefined) lanes[name]={ status:'error', reason:'lane crashed: '+String((j.error&&j.error.message)||j.error).slice(0,160) }; else { lanes[name]=j; for(const d of (j.coveredDomains||[])) covered[d]=1; } }
+for(const [name] of LANES){ const a=run.lanes[name]; if(!a||!a.chunks&&!a.closed) { lanes[name]={ status:'error', reason:'lane did not run' }; continue; } lanes[name]={ status:a.skipped?'skipped':((a.called&&a.errors>=a.called&&!a.written)?'error':'ok'), reason:a.skipped||a.firstError||'', chunks:a.chunks, called:a.called, returned:a.returned, kept:a.kept, credits:a.credits, errors:a.errors, built:a.built, updated:a.updated, dupes:a.dupes, fenced:a.fenced, emailsAppended:a.emailsAppended, dnc:a.dnc, written:a.written, writeErrors:a.writeErrors, singleSelectSource:!!a.singleSelectSource, gate:a.gate||null }; for(const d of Object.keys(a.coveredDomains||{})) covered[d]=1; }
 const t={ returned:0, built:0, updated:0, dupes:0, fenced:0, emailsAppended:0, dnc:0, written:0, writeErrors:0, singleSelectSource:false };
 for(const name of Object.keys(lanes)){ const l=lanes[name]; for(const k of ['returned','built','updated','dupes','fenced','emailsAppended','dnc','written','writeErrors']) t[k]+=num(l[k]); if(l.singleSelectSource) t.singleSelectSource=true; }
 // stamps
@@ -37,7 +39,7 @@ const lines=[
   '**'+companiesIn+' companies in, '+num(t.built)+' people new, '+num(t.updated)+' held people filled, '+num(t.written)+' rows written into '+(cfg.peopleTableName||'People')+', '+cov+' of '+companiesIn+' covered ('+pct+'%)**',
   '',
   '**Scope:** one client, Companies view "'+p.view+'"'+(p.tag?', Tag "'+p.tag+'"':'')+(pick.scoped?', scoped to the caller\'s '+num(pick.scoped)+' domain(s)':''),
-  '**Rule:** four lanes in priority order (Blitz, GetLeads, QuickEnrich, Supersoniq), each once over every company, each chunking and pacing to its own vendor; cap and floor by the Employees value on our row ('+num(tiers.wide)+' wide, '+num(tiers.nonjunior)+' non-junior, '+num(tiers.manager)+' manager and up; Supersoniq 10 and Director and up); merge on Contact Key and LinkedIn slug, held rows filled never overwritten, emails appended; '+num((plan.dncDomains||[]).length)+' DNC domains',
+  '**Rule:** one loop over every chunk in provider priority order (Blitz, GetLeads, QuickEnrich, Supersoniq), each chunk its own execution (Enrich Contacts Chunk) paced to its vendor; cap and floor by the Employees value on our row ('+num(tiers.wide)+' wide, '+num(tiers.nonjunior)+' non-junior, '+num(tiers.manager)+' manager and up; Supersoniq 10 and Director and up); merge on Contact Key and LinkedIn slug, held rows filled never overwritten, emails appended; '+num((plan.dncDomains||[]).length)+' DNC domains',
   '',
   '**Funnel**',
   '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows'+(pick.scoped?', '+num(pick.outOfScope)+' outside the scope skipped':'')+')'
@@ -47,7 +49,7 @@ lines.push('- **Merge across lanes:** '+num(t.returned)+' returned; '+num(t.buil
 if(t.singleSelectSource) lines.push('- **Contact Source is a single select on this base:** only the first source per person was recorded');
 lines.push('- **Written (confirmed by Airtable):** '+num(t.written)+(num(t.writeErrors)?', '+num(t.writeErrors)+' refused':''));
 lines.push('- **Coverage:** '+cov+' of '+companiesIn+' companies with at least one person ('+pct+'%)');
-let gate=null; try{ gate=($('Supersoniq Lane Input').first().json||{}).gate||null; }catch(e){}
+const gate=(lanes.Supersoniq&&lanes.Supersoniq.gate)||null;
 if(gate) lines.push('- **Supersoniq gate:** asked '+num(gate.asked)+' of '+num(gate.companiesIn)+' companies ('+num(gate.skippedRelevant)+' already held '+num(gate.relevantMin)+' or more relevant people)');
 lines.push('- **Contacts Pulled At stamped:** '+stamped);
 lines.push('');
@@ -59,5 +61,5 @@ if(pick.duplicate) skips.push(num(pick.duplicate)+' duplicate domains in the vie
 if(!companiesIn) skips.push('view "'+p.view+'" had no rows to work');
 if(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');
 if(failed.length){ const byReason={}; for(const f of failed){ const k=f.tier+': '+f.reason; byReason[k]=(byReason[k]||0)+1; } lines.push('', '**Failures ('+failed.length+')**'); for(const [r,c] of Object.entries(byReason).slice(0,12)) lines.push('- '+c+' x '+r); }
-const log={ 'Automation':'Enrich Contacts', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Trigger':p.trigger||'form', 'Errors':failed.length, 'Run at':$now.toISO(), 'Target':(cfg.peopleTableName||'People')+' ('+(cfg.peopleTableId||'')+')', 'View':p.view, 'Records In':companiesIn, 'Records Out':num(t.written), 'Duration s':dur, 'Description':lines.join('\n'), 'Tally':JSON.stringify(Object.assign({}, t, { lanes, covered:cov, stamped, stampErrors, handoffs:{ fired, failed:fireFailed, skipped:viewSkips }, executionId:String($execution.id) })), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Execution ID':String($execution.id), 'Client':[p.clientRecId] };
+const log={ 'Automation':'Enrich Contacts', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Trigger':p.trigger||'form', 'Errors':failed.length, 'Run at':$now.toISO(), 'Target':(cfg.peopleTableName||'People')+' ('+(cfg.peopleTableId||'')+')', 'View':p.view, 'Records In':companiesIn, 'Records Out':num(t.written), 'Duration s':dur, 'Description':lines.join('\n').slice(0,95000), 'Tally':JSON.stringify(Object.assign({}, t, { lanes:Object.fromEntries(Object.entries(lanes).map(([k,v])=>[k,Object.assign({},v,{ coveredDomains:undefined })])), covered:cov, stamped, stampErrors, handoffs:{ fired, failed:fireFailed, skipped:viewSkips }, executionId:String($execution.id) })).slice(0,95000), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Execution ID':String($execution.id), 'Client':[p.clientRecId] };
 return [{ json:log }];

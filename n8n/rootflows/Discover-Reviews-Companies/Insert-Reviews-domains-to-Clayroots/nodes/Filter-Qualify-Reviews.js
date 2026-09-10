@@ -24,10 +24,16 @@
 //   - Staffing words / body-shop test: job-post pathologies, no review analog. Not rewritten.
 //   - Duplicate: grouping by domain IS the dedupe; the counter stays for repeated
 //     company-metadata rows.
+//   - Apify itself is a provider like any other (ruled 2026-09-10): Get Scraped Reviews continues
+//     on error, an error item is counted here as source_error with its reason, and Build Run Log
+//     names it on the run row. A dataset that cannot be read is a logged skip, never a crash.
 const cfg=$('Parse Play').first().json;
 let items=$('Get Scraped Reviews').all().map(i=>i.json);
 if(items.length===1&&Array.isArray(items[0])) items=items[0];
 items=items.filter(r=>r&&typeof r==='object');
+const errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };
+let sourceError=0, sourceReason='';
+items=items.filter(r=>{ if(r.error!==undefined&&r.rating===undefined&&r.type===undefined){ sourceError++; if(!sourceReason) sourceReason=errMsg(r.error).slice(0,160); return false; } return true; });
 
 // A company whose "website" lives on a free-hosting subdomain is not a company (hiring
 // handler's fence, reused verbatim).
@@ -82,9 +88,7 @@ for(const d of Object.keys(byDomain)){
   out.push({ json: {
     domain: d,
     company: c.name||String(meta.companyName||'').trim(),
-    headcount: 0,
     country: country,
-    company_website: 'https://'+d,
     signal: {
       count: c.reviews.length,
       latest_date: latest.publishedDate||'',
@@ -99,7 +103,7 @@ for(const d of Object.keys(byDomain)){
   }});
 }
 
-const stats={ reviews_in: reviews.length, meta_rows: metaRows, companies_in: Object.keys(byDomain).length, qualified: out.length, drops };
+const stats={ reviews_in: reviews.length, meta_rows: metaRows, companies_in: Object.keys(byDomain).length, qualified: out.length, drops, source_error: sourceError, source_reason: sourceReason };
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];
 out[0].json._stats=stats;
 return out;

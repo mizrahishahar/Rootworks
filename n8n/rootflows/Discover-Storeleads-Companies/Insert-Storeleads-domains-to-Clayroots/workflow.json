@@ -2,14 +2,14 @@
   "updatedAt": "2026-09-02T20:21:33.860Z",
   "createdAt": "2026-07-28T07:05:08.068Z",
   "id": "UYGZblamekkSgat4",
-  "name": "Insert Storeleads domains to Clayroots",
+  "name": "Discover Storeleads Companies",
   "active": true,
   "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "launch-insert-storeleads-domains",
+        "path": "discover-storeleads-companies",
         "options": {}
       },
       "id": "257a3487-4dd8-4f18-b789-5e350142369f",
@@ -20,7 +20,8 @@
         0,
         0
       ],
-      "webhookId": "6f104dbd-e70f-4b91-8a37-a2da6262dd14"
+      "webhookId": "discover-storeleads-companies",
+      "notes": "The one door: POST /webhook/discover-storeleads-companies with {recordId} = the Hub launch row, fired by the single launch automation from the Automation name slugified. Launch row: Client, Tag, Max companies and the Storeleads filters (the source). Table is implied (Companies)."
     },
     {
       "parameters": {
@@ -57,51 +58,6 @@
     {
       "parameters": {
         "resource": "record",
-        "operation": "get",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblK0nCoNVvFf5SPa"
-        },
-        "id": "={{ $json.fields.Client[0] }}",
-        "options": {}
-      },
-      "id": "9222bce0-ef43-461d-bf01-94b204639d6a",
-      "name": "Resolve Base",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        440,
-        0
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "@@file:nodes/Launch-Params.js"
-      },
-      "id": "20bc72fa-2486-4412-bd8c-3cdf623545b7",
-      "name": "Launch Params",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        660,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "record",
         "operation": "update",
         "base": {
           "__rl": true,
@@ -116,11 +72,12 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "id": "={{ $json._launchRecordId }}",
+            "id": "={{ $json.id }}",
             "Status": "Running",
             "Run at": "={{ $now.toISO() }}",
             "Execution ID": "={{ $execution.id }}",
-            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}",
+            "Tally": ""
           },
           "matchingColumns": [
             "id"
@@ -136,7 +93,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        880,
+        440,
         0
       ],
       "credentials": {
@@ -144,7 +101,104 @@
           "id": "RZ2SX89iUyF4aEWJ",
           "name": "Airtable"
         }
-      }
+      },
+      "notes": "First thing the door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. Passes the record through, so Resolve Base reads fields.Client off it."
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+        "options": {}
+      },
+      "id": "9222bce0-ef43-461d-bf01-94b204639d6a",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "A launch row with no Client link asks for recMISSING and keeps going; Launch Params reads the answer defensively and refuses with the reason."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "20bc72fa-2486-4412-bd8c-3cdf623545b7",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c21",
+      "name": "Launch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ],
+      "notes": "The refusal gate: Launch Params names a bad launch row instead of throwing; false means refused, Build Refusal closes the row as Failed with the reason before a single metered Storeleads page is asked for."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c22",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        480
+      ]
     },
     {
       "parameters": {
@@ -155,7 +209,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
+        1320,
         0
       ]
     },
@@ -169,7 +223,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
+        1540,
         0
       ]
     },
@@ -197,10 +251,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1540,
+        1760,
         0
       ],
-      "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. The batches call the same helper with rows. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+      "notes": "The helper's rows-less call, before the first metered Storeleads page: the landing fields and the Storeleads extras must exist (refused loudly if not), any open key is created once. Every batch then calls the same helper with rows and allowNew off."
     },
     {
       "parameters": {
@@ -211,7 +265,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1980,
         0
       ]
     },
@@ -247,9 +301,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1980,
+        2200,
         0
-      ]
+      ],
+      "notes": "One child execution per batch (the law of 2026-09-09: no execution grows with the size of the list). SL Batch Pull pulls up to 10 pages of 50, formats them to the register, lands them through the shared helper, and answers counters plus this batch's landed domains. The rows die with the child."
     },
     {
       "parameters": {
@@ -260,7 +315,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        2420,
         0
       ]
     },
@@ -292,7 +347,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        2420,
+        2640,
         -200
       ]
     },
@@ -324,7 +379,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        2420,
+        2640,
         0
       ]
     },
@@ -337,7 +392,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2640,
+        2860,
         0
       ],
       "webhookId": "4b45af9f-7433-4825-b9ea-49973532c662"
@@ -370,7 +425,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        2420,
+        2640,
         200
       ]
     },
@@ -403,7 +458,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2640,
+        2860,
         200
       ]
     },
@@ -416,7 +471,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
+        3080,
         320
       ]
     },
@@ -426,7 +481,7 @@
           "__rl": true,
           "mode": "id",
           "value": "PLTNYqqoYfrt9ypd",
-          "cachedResultName": "Waterfall Contacts"
+          "cachedResultName": "Enrich Contacts"
         },
         "workflowInputs": {
           "mappingMode": "passThrough",
@@ -440,14 +495,14 @@
         }
       },
       "id": "5c1d8e2a-7f3b-4a9c-9e21-3b6f0d4a8c17",
-      "name": "Waterfall Contacts",
+      "name": "Enrich Contacts",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3080,
+        3300,
         320
       ],
-      "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+      "notes": "Fire-and-forget: Enrich Contacts on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row."
     },
     {
       "parameters": {
@@ -458,9 +513,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
+        3520,
         200
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -493,7 +549,7 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.2,
       "position": [
-        3520,
+        3740,
         200
       ],
       "onError": "stopWorkflow",
@@ -521,6 +577,17 @@
       "main": [
         [
           {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
             "node": "Resolve Base",
             "type": "main",
             "index": 0
@@ -543,18 +610,36 @@
       "main": [
         [
           {
-            "node": "Stamp Running",
+            "node": "Launch OK?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Stamp Running": {
+    "Launch OK?": {
       "main": [
         [
           {
             "node": "Build SL Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
             "type": "main",
             "index": 0
           }
@@ -703,14 +788,14 @@
       "main": [
         [
           {
-            "node": "Waterfall Contacts",
+            "node": "Enrich Contacts",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Waterfall Contacts": {
+    "Enrich Contacts": {
       "main": [
         [
           {

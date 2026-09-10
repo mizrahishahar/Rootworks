@@ -1,6 +1,6 @@
-// Build SL Query: the launch row's filters become one Storeleads pull query per provider x
-// country. Max companies (already validated by Launch Params) is the spend cap the loop
-// enforces; the batch pulls only what is still short of it.
+// Build SL Query: the launch row's Storeleads filters, which are this Rootflow's source, become one
+// pull query per provider x country. Max companies (already validated by Launch Params) is the spend
+// cap the loop enforces; each batch pulls only what is still short of it.
 const lp = $('Launch Params').first().json;
 const CMAP = {'United States':'US','United Kingdom':'GB','Canada':'CA','Australia':'AU','Ireland':'IE','Israel':'IL','Germany':'DE','France':'FR','Netherlands':'NL','usa':'US','us':'US','uk':'GB','england':'GB'};
 const asArr=(v)=>{ if(v===undefined||v===null||v==='')return[]; if(Array.isArray(v))return v.map(x=>String(x).trim()).filter(Boolean); return String(v).split(',').map(s=>s.trim()).filter(Boolean); };
@@ -11,8 +11,9 @@ let selP = asArr(lp.platforms).map(s=>String(s).toLowerCase()).filter(s=>ALLOWED
 const planTicked = asArr(lp.plan).includes('Shopify Plus');
 if (planTicked) selP = ['shopify'];
 const providers = selP.length ? Array.from(new Set(selP)) : ['all'];
-const maxCompanies = parseInt(lp.maxCompanies, 10);
-if (!Number.isFinite(maxCompanies) || maxCompanies < 1) { throw new Error('Max companies is missing or not a positive number. It is the Storeleads spend cap. Nothing was pulled.'); }
+// Max companies is guaranteed by Launch Params (a missing cap is refused on the launch row, never
+// thrown here), so this only reads it; the 1 floor is belt and braces, not a guard.
+const maxCompanies = Math.max(1, parseInt(lp.maxCompanies, 10) || 1);
 const baseFilters = { 'f:state': 'Active' };
 if (planTicked) baseFilters['f:plan'] = 'Shopify Plus';
 const envelope=(ticked, ORDER, MAP)=>{ const s=ticked.filter(b=>MAP[b]); if(!s.length) return [null,null]; const idxs=s.map(b=>ORDER.indexOf(b)).filter(i=>i>=0).sort((a,b)=>a-b); return [MAP[ORDER[idxs[0]]][0], MAP[ORDER[idxs[idxs.length-1]]][1]]; };

@@ -6,9 +6,16 @@
 // no domain, hosted platform, duplicate domain. An unknown headcount passes on purpose: a blank
 // LinkedIn count is not a large company. The "already worked" line is gone (Operator ruling
 // 2026-09-02): a company that signals again is updated in place and re-enters the queue.
+//
+// The Apify read continues on error (ruled 2026-09-10: a dead provider is a logged skip, never a
+// crash). An error item is counted as source_error, the run closes its Hub row naming Apify, and
+// nothing downstream is paid for.
 const cfg=$('Parse Play').first().json;
 let items=$('Get Scraped Jobs').all().map(i=>i.json);
 if(items.length===1&&Array.isArray(items[0])) items=items[0];
+const errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };
+let sourceError='';
+for(const j of items){ if(j&&j.error&&!j.companyName&&!j.companyWebsite&&!j.title&&!sourceError) sourceError=errMsg(j.error).slice(0,160); }
 items=items.filter(j=>j&&(j.companyName||j.companyWebsite||j.title));
 
 const badName=['staffing','recruit','headhunt','talent acquisition','executive search','sourcer','consulting','outsourcing'];
@@ -79,7 +86,7 @@ for(const j of items){
     }
   }});
 }
-const stats={ jobs_in: items.length, qualified: out.length, drops };
+const stats={ jobs_in: items.length, qualified: out.length, drops, source_error: sourceError };
 if(!out.length) return [{ json: { _empty:true, _stats:stats } }];
 out[0].json._stats=stats;
 return out;

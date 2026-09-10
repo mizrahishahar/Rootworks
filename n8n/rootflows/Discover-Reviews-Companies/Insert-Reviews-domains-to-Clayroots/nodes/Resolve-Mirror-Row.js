@@ -3,9 +3,13 @@
 // spent, nothing written. Emits the table facts (Find Companies Table) plus the mirror row id
 // Format Companies links to.
 //
+// REFUSALS, not throws (ruled 2026-09-10). This node is also the single funnel for the base guards:
+// Find Companies Table's own refusal is carried through unchanged, so Mirror OK? has one place to
+// look and Build Guard Fail Log writes one Hub row that names what is wrong.
+//
 // Matched on the signal's NAME (Operator ruling 2026-09-02, replacing a synced "Record ID" column
 // that no client base ever carried). Strictness is what makes name matching safe, and it is not
-// optional: exactly one row survives, or the run stops here with a named error saying what it
+// optional: exactly one row survives, or the run refuses here with a named reason saying what it
 // looked for and what it found. A silent wrong guess is the failure mode this check exists to
 // remove, and it is the reason name matching was accepted at all.
 //
@@ -14,16 +18,15 @@
 //     across by Airtable's own sync; nobody retypes it in between. So a case difference does not
 //     mean "same signal, spelled loosely", it means these are two different Hub rows, and
 //     resolving one to the other would be exactly the silent wrong guess. Refusing costs a named
-//     error the Operator fixes in seconds; guessing costs a paid run written against the wrong
+//     reason the Operator fixes in seconds; guessing costs a paid run written against the wrong
 //     signal. The upstream query wraps the name in LOWER() on purpose, so a case-variant row
 //     arrives here as a candidate and gets refused out loud instead of never being seen.
 //   - Scoped to the client whenever the mirror carries a Client column, so two clients' signals
 //     sharing a name cannot collide. A blank Client is not evidence of another owner, so such a
 //     row stays a candidate; a Client naming a different client is, and that row is dropped.
-//
-// Reused verbatim from the hiring door.
 const cfg=$('Parse Play').first().json;
 const t=$('Find Companies Table').first().json;
+if(t.refused) return [{ json: Object.assign({}, t, { mirrorId:'', mirrorName:'' }) }];
 const clientName=String(($('Client Vars').first().json||{}).clientName||'').trim();
 const want=String(t.signalName||cfg.play_name||'').trim();
 const where='the Signals mirror '+(t.signalsTableName||t.signalsTableId)+' in base '+t.base;
@@ -43,6 +46,7 @@ if(scoped.length!==1){
   } else {
     found=scoped.length+' rows carry that exact name: '+scoped.map(show).join(', ');
   }
-  throw new Error('Cannot resolve Hub signal "'+want+'" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire. Nothing was spent or written.');
+  const reason='Cannot resolve Hub signal "'+want+'" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire. Nothing was spent or written.';
+  return [{ json: Object.assign({}, t, { refused:reason, guard:'base', mirrorId:'', mirrorName:'' }) }];
 }
-return [{ json: Object.assign({}, t, { mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];
+return [{ json: Object.assign({}, t, { refused:'', mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];

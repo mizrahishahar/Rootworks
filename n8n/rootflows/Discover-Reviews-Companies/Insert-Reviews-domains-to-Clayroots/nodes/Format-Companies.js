@@ -12,7 +12,8 @@
 // existing row an empty core value is omitted too (a signal never blanks what a landing door
 // wrote). _stats on row 0 feeds Build Run Log; zero rows emit one {_empty} placeholder so the
 // gate reaches the close.
-// Reused from Insert Hiring domains to Clayroots; the diffs: no Existing In Role, the payload columns.
+// Employees comes from BizData alone: Trustpilot carries no headcount (the dead `headcount: 0`
+// the source parse used to pass was dropped 2026-09-10).
 const t=$('Resolve Mirror Row').first().json;
 const mirrorId=t.mirrorId;
 const nowIso=new Date().toISOString();
@@ -41,7 +42,7 @@ for(const e of icpRows){
     'Domain': d,
     'Company': String(c.company||(b&&b.name)||'').trim(),
     'Country': String(addr.country||c.country||''),
-    'Employees': band((b&&b.employees)||c.headcount),
+    'Employees': band(b&&b.employees),
     'Signals': signals,
     'Signal At': nowIso,
     'ICP Reason': e.icp_reason||''

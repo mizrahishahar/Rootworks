@@ -1,11 +1,13 @@
 // Resolve Mirror Row: the client base's Signals mirror row this Hub signal maps to, resolved
 // BEFORE any paid call (Operator ruling 2026-09-02). No row, no relation: refuse here, nothing
 // spent, nothing written. Emits the table facts (Find Companies Table) plus the mirror row id
-// Format Companies links to.
+// Format Companies links to. A refusal is `refused` on the item and Mirror OK? routes it to the
+// one Hub row (ruled 2026-09-10: never a throw); the Airtable read above continues on error, so a
+// dead read arrives here as "no row at all" and is refused with that reason.
 //
 // Matched on the signal's NAME (Operator ruling 2026-09-02, replacing a synced "Record ID" column
 // that no client base ever carried). Strictness is what makes name matching safe, and it is not
-// optional: exactly one row survives, or the run stops here with a named error saying what it
+// optional: exactly one row survives, or the run stops here with a named refusal saying what it
 // looked for and what it found. A silent wrong guess is the failure mode this check exists to
 // remove, and it is the reason name matching was accepted at all.
 //
@@ -41,6 +43,6 @@ if(scoped.length!==1){
   } else {
     found=scoped.length+' rows carry that exact name: '+scoped.map(show).join(', ');
   }
-  throw new Error('Cannot resolve Hub signal "'+want+'" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire. Nothing was spent or written.');
+  return [{ json:{ refused:'Cannot resolve Hub signal "'+want+'" (row '+cfg.signal_row+', client '+(clientName||'unknown')+') to exactly one row in '+where+': '+found+'. Matching is on the exact trimmed Name, case-sensitive'+(t.mirrorHasClient?', scoped to the client':', unscoped because the mirror carries no Client column')+'. Fix the Signals sync or the duplicate name, then re-fire.', guard:'mirror', client:cfg.client } }];
 }
-return [{ json: Object.assign({}, t, { mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];
+return [{ json: Object.assign({}, t, { refused:'', guard:'mirror', mirrorId: scoped[0].id, mirrorName: nameOf(scoped[0]) }) }];

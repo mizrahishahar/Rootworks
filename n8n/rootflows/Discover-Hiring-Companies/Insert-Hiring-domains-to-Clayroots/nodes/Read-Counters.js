@@ -6,8 +6,8 @@
 // unreadable item reads as zero landed and one failure, so the run still closes its row.
 const j=$input.first().json||{};
 const num=(...ks)=>{ for(const k of ks){ const v=j[k]; if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(isFinite(n)) return n; } } return null; };
-const created=num('created','new','inserted')||0;
-const updated=num('updated','existing')||0;
+const created=num('newDomains','created','new','inserted')||0;
+const updated=num('existingDomains','updated','existing')||0;
 let landed=num('upserted','landed','written','out','rows_out','records_out'); if(landed===null) landed=created+updated;
 const dnc=num('dnc','dnc_skipped','skipped_dnc','suppressed')||0;
 const rowsIn=num('in','rows_in','received','records_in')||0;

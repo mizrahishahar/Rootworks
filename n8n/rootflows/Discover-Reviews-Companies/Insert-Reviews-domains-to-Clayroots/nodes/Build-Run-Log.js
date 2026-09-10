@@ -1,10 +1,10 @@
-// Build Run Log: the one row this run writes, per the logging standard. Status computed from
-// failed[], skips separated (hard lines, closed, ICP rejects with reasons, DNC from the helper's
-// counters, no domain), the Description is the whole funnel. Every node reference is guarded: a
-// branch that never ran reads as 0. Records Out is what the helper Insert domains to Clayroots
-// landed; the Waterfall Contacts hand-off is stated when it fired.
-// Reused from Insert Hiring domains to Clayroots; diffs: the Automation name, the source-parse
-// node name and its stats keys (reviews in place of jobs), the drop-line labels, no in-role line.
+// Build Run Log: the one Hub Automations row this run writes, per the logging standard. Status
+// computed from failed[], skips separated (hard lines, closed, ICP rejects with reasons, DNC from
+// the helper's counters, no domain), the Description is the whole funnel. Every node reference is
+// guarded: a branch that never ran reads as 0. Records Out is what the helper Insert domains to
+// Clayroots landed; the Enrich Contacts hand-off is stated when it fired.
+// Every outside call is named here when it failed: Apify (the dataset), DiscoLike BizData, the
+// DiscoLike ICP check, the landing helper. A dead provider is a logged skip, never a crash.
 const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;
 let cfg={}; try{ cfg=$('Parse Play').first().json||{}; }catch(e){ try{ cfg=$('Parse Launch').first().json||{}; }catch(e2){} }
 let base=''; try{ base=$('Client Vars').first().json.base||''; }catch(e){}
@@ -12,9 +12,11 @@ let tbl={}; try{ tbl=$('Find Companies Table').first().json||{}; }catch(e){}
 const nf=(x)=>Number(x||0).toLocaleString('en-US');
 const failed=[]; const skips=[];
 
-let fq={ reviews_in:0, meta_rows:0, companies_in:0, qualified:0, drops:{} };
+let fq={ reviews_in:0, meta_rows:0, companies_in:0, qualified:0, drops:{}, source_error:0, source_reason:'' };
 try{ const s=$('Filter & Qualify Reviews').first().json._stats; if(s) fq=s; }catch(e){}
 const d=fq.drops||{};
+// Apify is a provider: an unreadable dataset is counted, named, and closes nothing else down.
+if(fq.source_error) failed.push({ tier:'Apify', name:'dataset '+(cfg.datasetId||'?'), reason:fq.source_reason||'the run dataset could not be read' });
 const dropLine=['not negative (belt) '+nf(d.not_negative),'no domain '+nf(d.no_domain),'hosted platform '+nf(d.hosted_platform),'wrong country '+nf(d.country),'duplicate '+nf(d.duplicate)].join(' · ');
 const hardDropped=Math.max(0,(fq.companies_in||0)-(fq.qualified||0));
 // The cross-day dedupe: companies that already carried this signal, dropped before any paid call.
@@ -40,13 +42,14 @@ const landed=hp?Number(hp.landed||0):0;
 for(const f of ((hp&&hp.failed)||[])) failed.push(f);
 if(hp&&fm.kept&&!landed&&!(hp.failed||[]).length&&!hp.dnc) failed.push({ tier:'Insert domains', name:nf(fm.kept)+' row(s)', reason:'formatted but the helper reported nothing landed' });
 
-let waterfall=false; try{ waterfall=!!$('Waterfall Call').first().json; }catch(e){}
+let fired=false; let scope=0; try{ const fc=$('Fire Contacts').first().json||{}; fired=true; scope=(fc.Domains||[]).length; }catch(e){}
 
 if(hardDropped||d.not_negative||d.no_domain||d.hosted_platform) skips.push(nf(hardDropped)+' companies failed the hard lines (review rows: '+dropLine+')');
 if(bz.closed) skips.push(nf(bz.closed)+' reported closed by BizData'+(closedList.length?' ('+closedList.join(', ')+')':''));
 if((icp.no||0)+(icp.missing||0)) skips.push(nf((icp.no||0)+(icp.missing||0))+' failed the ICP check');
 if(hp&&hp.dnc) skips.push(nf(hp.dnc)+' on the DNC table (helper)');
 if(fm.no_domain) skips.push(nf(fm.no_domain)+' no domain');
+if(fq.source_error) skips.push(nf(fq.source_error)+' Apify dataset read(s) failed ('+(fq.source_reason||'no reason given')+')');
 
 const errs=failed.length;
 const status=errs?'Succeeded with errors':'Succeeded';
@@ -66,13 +69,13 @@ const lines=[
   '- **Rows formatted:** '+nf(fm.kept)+' ('+nf(fm.new)+' not yet in Companies, '+nf(fm.existing)+' existing, Signals unioned)',
   '- **Insert domains to Clayroots:** '+helperLine,
   '',
-  '**Contacts:** '+(waterfall?'Waterfall Contacts fired as a sub-workflow (Companies · Not Sourced · scoped to the '+nf(landed)+' domain(s) this run landed · AI-Ark · cap 150); its own run-log row carries the pull.':'Waterfall Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'
+  '**Contacts:** '+(fired?'Enrich Contacts fired once as a sub-workflow (Companies · view "Not Sourced" · scoped to the '+nf(scope)+' domain(s) this run landed); it writes its own launch row.':'Enrich Contacts not fired (nothing landed).')+' **Enrollment:** the deploy doors feed campaigns from the views (Signal link on Campaigns).'
 ];
 if(rejLines.length) lines.push('','**ICP rejected ('+nf((icp.rejected||[]).length)+')**\n'+rejLines.join('\n')+((icp.rejected||[]).length>10?'\n- ...and '+((icp.rejected||[]).length-10)+' more':''));
 if(failed.length) lines.push('','**FAILED ('+failed.length+')**\n'+failed.slice(0,8).map(f=>'- '+f.tier+' · '+(f.name||'?')+': '+(f.reason||'')).join('\n')+(failed.length>8?'\n- ...and '+(failed.length-8)+' more':''));
 if(skips.length) lines.push('','**Skipped**\n'+skips.map(s=>'- '+s).join('\n'));
 const row={
- 'Automation':'Insert Reviews domains to Clayroots',
+ 'Automation':'Discover Reviews Companies',
  'Status':status,
  'Run at': $now.toISO(),
  'Records In': fq.reviews_in||0,

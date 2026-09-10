@@ -2,7 +2,7 @@
   "updatedAt": "2026-09-06T13:51:11.611Z",
   "createdAt": "2026-07-28T09:25:51.367Z",
   "id": "9iMXBGRlPk3O6pDZ",
-  "name": "Insert Hiring domains to Clayroots",
+  "name": "Discover Hiring Companies",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -17,10 +17,11 @@
       ],
       "parameters": {
         "httpMethod": "POST",
-        "path": "intent-signal",
+        "path": "discover-hiring-companies",
         "options": {}
       },
-      "webhookId": "7b43eda9-3cc8-472e-866f-6300525553a4"
+      "webhookId": "discover-hiring-companies",
+      "notes": "The one door (ruled 2026-09-10, door path = the slug of the Rootflow name): POST /webhook/discover-hiring-companies, fired by the Apify task's run webhook. This Insert runs on a scraper payload, not a launch row, so the payload IS the launch row: {signal: <Hub Signals record id>, resource: {{resource}}, tag: <optional>}. `play` is still accepted as the signal key, so an unchanged task keeps firing once its URL is updated. Table is implied (Companies). A bad payload is refused with a Hub row, never a throw."
     },
     {
       "id": "c3000000-0000-4000-8000-000000000001",
@@ -91,7 +92,7 @@
           "mode": "id",
           "value": "tblDtJeqkUB2JFga1"
         },
-        "filterByFormula": "=OR(RECORD_ID() = '{{ $('Parse Launch').first().json.play }}', {Signal Type} = 'hiring')",
+        "filterByFormula": "=RECORD_ID() = '{{ $('Parse Launch').first().json.play }}'",
         "options": {}
       },
       "credentials": {
@@ -102,7 +103,8 @@
       },
       "executeOnce": true,
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "notes": "The Hub Signals row the payload names, by record id alone (ruled 2026-09-10). The old fallback (OR {Signal Type} = 'hiring') kept a retired KB play id working and could only be ambiguous once two clients run the play; an id that resolves to no row is now refused by Parse Play with the fix named. Continues on error, so a dead read is a refusal, not a crash."
     },
     {
       "id": "c3000000-0000-4000-8000-000000000003",
@@ -273,7 +275,78 @@
       ],
       "parameters": {
         "jsCode": "@@file:nodes/Find-Companies-Table.js"
-      }
+      },
+      "notes": "Resolves Companies and the Signals mirror off the base's schema. Refuses (never throws) when the base is not ready; Tables OK? routes the refusal to the one Hub row."
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000020",
+      "name": "Tables OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        860,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "t1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "The refusal gate for the base's schema: false means Find Companies Table named what is missing, and Build Guard Fail Log closes the run before any paid call."
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000021",
+      "name": "Mirror OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2510,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "m1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "The refusal gate for the Signals mirror row: false means Resolve Mirror Row could not map this Hub signal to exactly one mirror row, and the run closes with that reason before Apify is read."
     },
     {
       "id": "b2000000-0000-4000-8000-000000000009",
@@ -309,6 +382,7 @@
       },
       "executeOnce": true,
       "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
       "notes": "Candidate rows in the client base's Signals mirror for this Hub signal, fetched by LOWER(TRIM({Name})) = the signal's name, built upstream by Find Companies Table (2026-09-02: the former match was a synced Record ID column that no client base carries, so every signal died here). The query is permissive on purpose, LOWER and TRIM letting whitespace and case variants through as candidates, because Airtable's = is otherwise exact and case-sensitive (probed live). Resolve Mirror Row then does the strict exact, case-sensitive, client-scoped match and refuses anything but exactly one row, before any paid call. No fields restriction: a fields list naming Client would 422 on a mirror without that column. Companies.Signals links to the mirror row id, never to the Hub row."
     },
     {
@@ -346,7 +420,12 @@
           "name": "Apify"
         }
       },
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "The source read: the Apify run's dataset of jobs. Continues on error after three tries (ruled 2026-09-10: a dead provider is a logged skip, never a crash); Filter & Qualify Jobs counts the error item as source_error, and the run closes its Hub row Failed naming Apify with nothing paid for."
     },
     {
       "id": "6c6d4174-9265-4a6b-97fd-d828ecfe0169",
@@ -925,6 +1004,7 @@
       },
       "executeOnce": true,
       "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
       "notes": "One small read before formatting: the Signals links the signalled domains already hold, so the upsert unions them instead of replacing them. Kept because the helper returns counters, not rows."
     },
     {
@@ -1015,7 +1095,7 @@
           "waitForSubWorkflow": true
         }
       },
-      "notes": "The one landing helper (Check Columns, DNC, Clean Fields, upsert on Domain). Rows in the register shape, _meta on the first item; one counters item back. NEG4Cs7wPOwQkpnQ is a placeholder: replace with the helper workflow id after its first push."
+      "notes": "The one landing helper NEG4Cs7wPOwQkpnQ (Check Columns, DNC, Clean Fields, upsert on Domain), awaited. Rows in the register shape, _meta on the first item; one counters item back, and a helper writes no Hub row of its own."
     },
     {
       "id": "d4000000-0000-4000-8000-000000000006",
@@ -1066,7 +1146,7 @@
     },
     {
       "id": "d4000000-0000-4000-8000-000000000008",
-      "name": "Waterfall Call",
+      "name": "Fire Contacts",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -1074,13 +1154,13 @@
         -560
       ],
       "parameters": {
-        "jsCode": "@@file:nodes/Waterfall-Call.js"
+        "jsCode": "@@file:nodes/Fire-Contacts.js"
       },
       "executeOnce": true
     },
     {
       "id": "d4000000-0000-4000-8000-000000000009",
-      "name": "Waterfall Contacts",
+      "name": "Enrich Contacts",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -1092,7 +1172,7 @@
           "__rl": true,
           "mode": "id",
           "value": "PLTNYqqoYfrt9ypd",
-          "cachedResultName": "Waterfall Contacts"
+          "cachedResultName": "Enrich Contacts"
         },
         "workflowInputs": {
           "mappingMode": "passThrough",
@@ -1105,7 +1185,7 @@
           "waitForSubWorkflow": false
         }
       },
-      "notes": "Fire and continue: Waterfall Contacts runs on its own execution (Companies, Not Sourced, all three sources, cap 5000) and writes its own run-log row. Only after at least one company landed."
+      "notes": "Fire-and-forget: Enrich Contacts (PLTNYqqoYfrt9ypd) on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row. The hand-off is exactly five keys, Client, Table, View, Tag, Domains, and nothing else (ruled 2026-09-10): the provider lanes, the caps and the floor are Enrich Contacts' own rules. Only after at least one company landed."
     }
   ],
   "connections": {
@@ -1255,7 +1335,43 @@
       "main": [
         [
           {
+            "node": "Mirror OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror OK?": {
+      "main": [
+        [
+          {
             "node": "Get Scraped Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Guard Fail Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tables OK?": {
+      "main": [
+        [
+          {
+            "node": "Get Signal Mirror Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Guard Fail Log",
             "type": "main",
             "index": 0
           }
@@ -1537,7 +1653,7 @@
       "main": [
         [
           {
-            "node": "Get Signal Mirror Row",
+            "node": "Tables OK?",
             "type": "main",
             "index": 0
           }
@@ -1621,7 +1737,7 @@
       "main": [
         [
           {
-            "node": "Waterfall Call",
+            "node": "Fire Contacts",
             "type": "main",
             "index": 0
           }
@@ -1635,18 +1751,18 @@
         ]
       ]
     },
-    "Waterfall Call": {
+    "Fire Contacts": {
       "main": [
         [
           {
-            "node": "Waterfall Contacts",
+            "node": "Enrich Contacts",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Waterfall Contacts": {
+    "Enrich Contacts": {
       "main": [
         [
           {

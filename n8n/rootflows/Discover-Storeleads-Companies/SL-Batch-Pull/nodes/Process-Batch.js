@@ -1,13 +1,25 @@
+// Process Batch: the Storeleads pages of ONE batch become Companies rows in the register's shape.
+// This runs in the child execution, so the payloads die here: only counters and the batch's landed
+// domains go back to the parent loop (the law of 2026-09-09, no execution grows with the list).
+//
+// SL Batch HTTP never errors (neverError), so a dead API or a missing credential arrives as pages
+// without a domains array: they are counted as errorPages with a reason and the run moves on, a
+// logged skip instead of a crash (the Rootflows standard).
+//
+// The row keys are exactly the ones the parent's Preflight declared to the helper. What the helper
+// owns is not written here: Domain Source (create only), Tag (from _meta), public_emails_clean's
+// cleaning, the DNC drop, the upsert on Domain.
 const inp = $('Batch Input').first().json;
 const remaining = Math.max(0, Number(inp.remaining) || 0);
-const runId = String(inp.runId || '');
-const tag = String(inp.tag || '').trim();
-const buildDate = String(inp.submittedAt || '').slice(0,10) || new Date().toISOString().slice(0,10);
 const pages = $input.all().map(i => i.json);
-let errorPages = 0; let pulled = 0; let nextCursor = ''; let hasNext = false;
+let errorPages = 0; let errorReason = ''; let pulled = 0; let nextCursor = ''; let hasNext = false;
 const raw = [];
 for (const p of pages) {
-  if (!p || !Array.isArray(p.domains)) { errorPages++; continue; }
+  if (!p || !Array.isArray(p.domains)) {
+    errorPages++;
+    if (!errorReason) { const e = (p && (p.error || p.message)) || ''; errorReason = String(typeof e === 'object' ? (e.message || JSON.stringify(e)) : (e || 'Storeleads answered without a domains array')).slice(0, 160); }
+    continue;
+  }
   pulled += p.domains.length;
   raw.push(...p.domains);
   nextCursor = (p.next_cursor === undefined || p.next_cursor === null) ? nextCursor : String(p.next_cursor);
@@ -19,13 +31,13 @@ const SOC={instagram:'IG',tiktok:'TT',facebook:'FB',youtube:'YT',pinterest:'PIN'
 const BLACK=new Set(['hr','careers','career','jobs','job','legal','privacy','noreply','no-reply','donotreply','abuse','postmaster','compliance','recruiting','recruitment','press','media','unsubscribe','webmaster','admin','info-security']);
 const emailsFrom=(ci)=>{const out=[];for(const c of (Array.isArray(ci)?ci:[])){if(!c||typeof c!=='object')continue;for(const k in c){const v=c[k];if(typeof v==='string'&&v.includes('@')&&!/\s/.test(v)){out.push(v.replace(/^mailto:/i,'').trim());}}}return out;};
 const keepPublic=(arr)=>arr.filter(e=>{const lp=e.split('@')[0].toLowerCase().split('+')[0];return !BLACK.has(lp);});
-const seen = new Set(); const out = []; let withEmails = 0; let skipped = 0;
+const seen = new Set(); const out = []; let withEmails = 0; let skipped = 0; let inactive = 0; let duplicate = 0;
 for (const d of raw) {
   if (out.length >= remaining) break;
   const dom = String(d.tld1 || '').trim().toLowerCase();
   if (!dom) { skipped++; continue; }
-  if (seen.has(dom)) continue;
-  if (String(d.state || '') !== 'Active') continue;
+  if (seen.has(dom)) { duplicate++; continue; }
+  if (String(d.state || '') !== 'Active') { inactive++; continue; }
   seen.add(dom);
   const apps = Array.isArray(d.apps) ? d.apps : [];
   const techs = Array.isArray(d.technologies) ? d.technologies : [];
@@ -41,7 +53,7 @@ for (const d of raw) {
   const emails = Array.from(new Set(keepPublic(emailsFrom(ci)).map(e=>e.toLowerCase().trim())));
   if (emails.length) withEmails++;
   out.push({
-    Domain: dom, Company: companyName, company_clean: companyName,
+    Domain: dom, Company: companyName,
     public_emails_clean: emails.length?emails.join(', '):'',
     'Industry Groups': Array.isArray(d.categories) ? d.categories.join(' | ') : '',
     Employees: band(d.employee_count),
@@ -56,8 +68,7 @@ for (const d of raw) {
     'Trustpilot Rating': (tp&&tp.avg_rating!=null)?Number(tp.avg_rating):null,
     'Trustpilot Reviews': (tp&&tp.review_count!=null)?Number(tp.review_count):null,
     'Migrated From': migrated, 'Social Followers': socParts.slice(0,5).join(' / '),
-    Features: Array.isArray(d.features)?d.features.slice(0,5).join(', '):'',
-    segment: emails.length?'has_public':'no_public', Source: 'Storeleads', Tag: tag
+    Features: Array.isArray(d.features)?d.features.slice(0,5).join(', '):''
   });
 }
-return [{ json: { next_cursor: hasNext ? nextCursor : '', has_next_page: hasNext, pulled, inserted: out.length, withEmails, errorPages, skipped, rows: out } }];
+return [{ json: { next_cursor: hasNext ? nextCursor : '', has_next_page: hasNext, pulled, kept: out.length, withEmails, errorPages, errorReason, skipped, inactive, duplicate, rows: out } }];

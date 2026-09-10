@@ -10,8 +10,9 @@
 //   STEP 2 (filter): for the survivors, in batches of 10, fetch only 1-2 star reviews
 //     tagged customer_service within the lookback window. Silent stores cost nothing.
 //   OUTPUT: one dataset of review rows + company metadata rows, the exact shape the
-//     n8n handler (Insert Reviews domains to Clayroots) parses. The scheduled task's
-//     webhook posts { play, resource } to the handler; this actor never calls n8n itself.
+//     n8n Rootflow (Discover Reviews Companies, POST /webhook/discover-reviews-companies)
+//     parses. The scheduled task's webhook posts { play, resource } to that door; this
+//     actor never calls n8n itself.
 //
 // Both children are blackfalcondata/trustpilot-reviews-scraper, the actor proven live.
 // Batch size 10 is that actor's hard companyDomains cap - never raise it.

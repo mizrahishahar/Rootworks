@@ -32,15 +32,11 @@
               "type": "string"
             },
             {
-              "name": "tableId",
-              "type": "string"
-            },
-            {
               "name": "baseId",
               "type": "string"
             },
             {
-              "name": "buildName",
+              "name": "clientRecId",
               "type": "string"
             },
             {
@@ -52,20 +48,13 @@
               "type": "number"
             },
             {
-              "name": "submittedAt",
-              "type": "string"
-            },
-            {
-              "name": "runId",
-              "type": "string"
-            },
-            {
               "name": "tag",
               "type": "string"
             }
           ]
         }
-      }
+      },
+      "notes": "One execution per batch of Discover Storeleads Companies. Exactly what the parent's Pull Batch passes: the query, the provider, the cursor, the client's base and record id, the page budget, what is left of the cap, the Tag. The table is not passed: the helper resolves Companies in the base itself."
     },
     {
       "id": "8a10deb8-ca63-4d03-aa4e-2f6f8286376c",
@@ -143,12 +132,12 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
+            "typeValidation": "loose",
             "version": 2
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.inserted }}",
+              "leftValue": "={{ $json.kept || 0 }}",
               "operator": {
                 "type": "number",
                 "operation": "gt"
@@ -175,44 +164,32 @@
     },
     {
       "id": "d9f75b28-1d9a-4d5b-9a59-3e9e9cd2ef52",
-      "name": "Upsert Domains",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
+      "name": "Insert Domains",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
       "position": [
         1100,
         -100
       ],
       "parameters": {
-        "resource": "record",
-        "operation": "upsert",
-        "base": {
+        "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $('Batch Input').first().json.baseId }}"
+          "value": "NEG4Cs7wPOwQkpnQ",
+          "cachedResultName": "Insert domains to Clayroots"
         },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Batch Input').first().json.tableId }}"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
+        "workflowInputs": {
+          "mappingMode": "passThrough",
           "value": {},
-          "matchingColumns": [
-            "Domain"
-          ],
+          "matchingColumns": [],
           "schema": []
         },
+        "mode": "once",
         "options": {
-          "typecast": true
+          "waitForSubWorkflow": true
         }
       },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
+      "notes": "The shared landing helper, the same one the parent preflighted and the same one Discover Discolike Companies uses: column check, DNC dropped, Clean Fields, upsert on Domain in tens (a held company is refreshed with the new pull, Domain Source kept, Tag re-stamped), counters back. It writes no Hub row; Batch Summary hands its numbers to the parent loop."
     },
     {
       "id": "abdf44ea-0181-4ca2-b5e1-23d0dafda2fe",
@@ -225,35 +202,8 @@
       ],
       "parameters": {
         "jsCode": "@@file:nodes/Batch-Summary.js"
-      }
-    },
-    {
-      "id": "95627baf-31c6-4f62-8ccf-81565d315b24",
-      "name": "Clean Fields",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        1040,
-        100
-      ],
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "RIDktQyZoBnW2fql",
-          "cachedResultName": "Clean Fields"
-        },
-        "workflowInputs": {
-          "mappingMode": "passThrough",
-          "value": {},
-          "matchingColumns": [],
-          "schema": []
-        },
-        "mode": "once",
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      }
+      },
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -312,29 +262,18 @@
       "main": [
         [
           {
-            "node": "Clean Fields",
+            "node": "Insert Domains",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upsert Domains": {
+    "Insert Domains": {
       "main": [
         [
           {
             "node": "Batch Summary",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Clean Fields": {
-      "main": [
-        [
-          {
-            "node": "Upsert Domains",
             "type": "main",
             "index": 0
           }

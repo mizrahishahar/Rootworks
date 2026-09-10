@@ -14,24 +14,24 @@ Do not hand-edit; rerun the script after every pull.
 | archive/AI-Ark-Export---Clayroots | POST https://n8n.flowroots.com/webhook/launch-aiark-contacts | Clayroots Base ID, Build name, AI-Ark contacts CSV (file), Domains Table ID, Existing Table ID, Tag | **yes - launch on Waiting** |
 | archive/Airtable-Ops-one-off | POST https://n8n.flowroots.com/webhook/get-view-meta <br> POST https://n8n.flowroots.com/webhook/add-fields-to-table <br> POST https://n8n.flowroots.com/webhook/patch-records <br> POST https://n8n.flowroots.com/webhook/create-records <br> POST https://n8n.flowroots.com/webhook/list-records |  | no |
 | archive/Alta-Ops-one-off | POST https://n8n.flowroots.com/webhook/alta-list-prospects <br> POST https://n8n.flowroots.com/webhook/alta-persons <br> POST https://n8n.flowroots.com/webhook/alta-pause-prospects |  | no |
+| archive/Append-fields-to-table | POST https://n8n.flowroots.com/webhook/launch-domain-merge | Clayroots Base ID, Table, Key column, Fields to attach, Domain CSV (file) | **yes - launch on Waiting** |
 | archive/Backfill-Intent-Fields-one-off | POST https://n8n.flowroots.com/webhook/backfill-intent-fields |  | no |
+| archive/Clean-Company-Names-on-table | GET https://n8n.flowroots.com/webhook/clean-company-names-run | Clayroots Base ID, Table ID | no |
 | archive/Contagen---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-contagen-supersoniq | Clayroots Base ID, Build name, ContaGen contacts CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
 | archive/Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
 | archive/HeyReach-Ops-one-off | POST https://n8n.flowroots.com/webhook/heyreach-call |  | no |
+| archive/Stamp-Tag-on-table | GET https://n8n.flowroots.com/webhook/stamp-tag-on-table-run | Clayroots Base ID, Table ID, Tag, Build Date filter (optional) | no |
 | archive/Storeleads-Domains---Supersoniq---Clayroots | POST https://n8n.flowroots.com/webhook/launch-storeleads-contacts | Clayroots Base ID, Build name, Storeleads domains CSV (file), Contact location, Existing Table ID, Tag | **yes - launch on Waiting** |
 | archive/Verify-Emails | POST https://n8n.flowroots.com/webhook/launch-verify-emails | Clayroots Base ID, Table, Max Rows, View | no |
 | archive/Waterfall-Emails | POST https://n8n.flowroots.com/webhook/waterfall-record <br> POST https://n8n.flowroots.com/webhook/launch-waterfall-emails | Clayroots Base ID, Table, Max Rows, View | no |
 | helpers/Alta-OAuth-Callback | GET https://n8n.flowroots.com/webhook/alta-oauth-callback |  | no |
 | helpers/Get-Availability | GET https://n8n.flowroots.com/webhook/availability |  | no |
-| rootflows/Append-Fields/Append-fields-to-table | POST https://n8n.flowroots.com/webhook/launch-domain-merge | Clayroots Base ID, Table, Key column, Fields to attach, Domain CSV (file) | **yes - launch on Waiting** |
-| rootflows/Clean-Company-Names/Clean-Company-Names-on-table | GET https://n8n.flowroots.com/webhook/clean-company-names-run | Clayroots Base ID, Table ID | no |
 | rootflows/Discover-Discolike-Companies/Discover-Discolike-Companies | POST https://n8n.flowroots.com/webhook/discover-discolike-companies |  | no |
 | rootflows/Discover-Hiring-Companies/Insert-Hiring-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/intent-signal |  | no |
 | rootflows/Discover-Reviews-Companies/Insert-Reviews-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/service-reviews-intent-signal |  | no |
 | rootflows/Discover-Storeleads-Companies/Insert-Storeleads-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-storeleads-domains |  | no |
 | rootflows/Enrich-Contacts/Enrich-Contacts | POST https://n8n.flowroots.com/webhook/enrich-contacts |  | no |
 | rootflows/Enrich-Emails/Enrich-Emails | POST https://n8n.flowroots.com/webhook/enrich-emails |  | no |
-| rootflows/Stamp-Tag/Stamp-Tag-on-table | GET https://n8n.flowroots.com/webhook/stamp-tag-on-table-run | Clayroots Base ID, Table ID, Tag, Build Date filter (optional) | no |
 | rootflows/Verify-Catch-alls/Verify-Catch-alls | POST https://n8n.flowroots.com/webhook/verify-catch-alls |  | no |
 | rootflows/Waterfall-Phones/Waterfall-Phones | POST https://n8n.flowroots.com/webhook/launch-waterfall-phones <br> POST https://n8n.flowroots.com/webhook/waterfall-phones |  | no |
 | rootworks/Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |

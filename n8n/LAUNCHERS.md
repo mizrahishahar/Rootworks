@@ -12,7 +12,6 @@ Do not hand-edit; rerun the script after every pull.
 | Machine | Fire | Fields | Attachment |
 |---|---|---|---|
 | AI-Ark-Export---Clayroots | POST https://n8n.flowroots.com/webhook/launch-aiark-contacts | Clayroots Base ID, Build name, AI-Ark contacts CSV (file), Domains Table ID, Existing Table ID, Tag | **yes - launch on Waiting** |
-| AI-Ark-Export-Callback | POST https://n8n.flowroots.com/webhook/ai-ark-export-noop |  | no |
 | AI-Ark-Ops-one-off | POST https://n8n.flowroots.com/webhook/ai-ark-read-exports |  | no |
 | Airtable-Ops-one-off | POST https://n8n.flowroots.com/webhook/get-view-meta <br> POST https://n8n.flowroots.com/webhook/add-fields-to-table <br> POST https://n8n.flowroots.com/webhook/patch-records <br> POST https://n8n.flowroots.com/webhook/create-records <br> POST https://n8n.flowroots.com/webhook/list-records |  | no |
 | Allocate-inboxes-in-PlusVibe-by-tags | POST https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag |  | no |
@@ -30,6 +29,7 @@ Do not hand-edit; rerun the script after every pull.
 | Deploy-View-to-HeyReach-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-heyreach |  | no |
 | Deploy-View-to-PlusVibe-Campaign | POST https://n8n.flowroots.com/webhook/deploy-view-to-campaign |  | no |
 | Discolike-Domains---Clayroots | POST https://n8n.flowroots.com/webhook/launch-discolike-domains | Clayroots Base ID, Build name, CSV (file), Existing Table ID, Tag | **yes - launch on Waiting** |
+| Discover-Discolike-Companies | POST https://n8n.flowroots.com/webhook/discover-discolike-companies |  | no |
 | Enrich-Contacts | POST https://n8n.flowroots.com/webhook/enrich-contacts |  | no |
 | Enrich-Emails | POST https://n8n.flowroots.com/webhook/enrich-emails |  | no |
 | Enrich-Qualify-new-lead-from-Alta | POST https://n8n.flowroots.com/webhook/alta-dave-new-reply |  | no |
@@ -40,7 +40,6 @@ Do not hand-edit; rerun the script after every pull.
 | Handle-another-meeting-for-flowroots | POST https://n8n.flowroots.com/webhook/9851c15f-256a-425c-9771-8690be97bf8b |  | no |
 | Handle-new-discovery-for-flowroots | POST https://n8n.flowroots.com/webhook/34c8c9bb-e57d-4115-a0f8-d2c906e4dec8 |  | no |
 | HeyReach-Ops-one-off | POST https://n8n.flowroots.com/webhook/heyreach-call |  | no |
-| Insert-Discolike-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-discolike-domains |  | no |
 | Insert-Hiring-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/intent-signal |  | no |
 | Insert-Reviews-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/service-reviews-intent-signal |  | no |
 | Insert-Storeleads-domains-to-Clayroots | POST https://n8n.flowroots.com/webhook/launch-insert-storeleads-domains |  | no |

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T20:20:54.074Z",
+  "updatedAt": "2026-09-09T07:32:51.012Z",
   "createdAt": "2026-09-01T22:29:57.704Z",
   "id": "w9Mi3fwVt3G43Ug5",
   "name": "Discover Discolike Companies",
@@ -680,8 +680,8 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
-  "activeVersionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
+  "versionId": "a850d21a-5927-49cb-8717-77bedadff042",
+  "activeVersionId": "a850d21a-5927-49cb-8717-77bedadff042",
   "triggerCount": 1,
   "shared": [
     {
@@ -693,15 +693,15 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-02T20:20:54.076Z",
-    "createdAt": "2026-09-02T20:20:54.076Z",
-    "versionId": "188e56dc-06f0-4cda-a028-2077a0418b9e",
+    "updatedAt": "2026-09-09T07:32:51.014Z",
+    "createdAt": "2026-09-09T07:32:51.014Z",
+    "versionId": "a850d21a-5927-49cb-8717-77bedadff042",
     "workflowId": "w9Mi3fwVt3G43Ug5",
     "nodes": [
       {
         "parameters": {
           "httpMethod": "POST",
-          "path": "launch-insert-discolike-domains",
+          "path": "discover-discolike-companies",
           "options": {}
         },
         "id": "a1b2c3d4-0001-4000-8000-000000000001",
@@ -712,7 +712,8 @@
           0,
           0
         ],
-        "webhookId": "insert-discolike-domains"
+        "webhookId": "discover-discolike-companies",
+        "notes": "The one door (ruled 2026-09-09): POST /webhook/discover-discolike-companies with {recordId} = the Hub launch row, fired by the single launch automation from the Automation name slugified. Launch row: Client, Query ID, Tag. Table is implied (Companies)."
       },
       {
         "parameters": {
@@ -749,51 +750,6 @@
       {
         "parameters": {
           "resource": "record",
-          "operation": "get",
-          "base": {
-            "__rl": true,
-            "mode": "id",
-            "value": "appQG6dK0FIOhTxOl"
-          },
-          "table": {
-            "__rl": true,
-            "mode": "id",
-            "value": "tblK0nCoNVvFf5SPa"
-          },
-          "id": "={{ $json.fields.Client[0] }}",
-          "options": {}
-        },
-        "id": "a1b2c3d4-0003-4000-8000-000000000003",
-        "name": "Resolve Base",
-        "type": "n8n-nodes-base.airtable",
-        "typeVersion": 2.2,
-        "position": [
-          440,
-          0
-        ],
-        "credentials": {
-          "airtableTokenApi": {
-            "id": "RZ2SX89iUyF4aEWJ",
-            "name": "Airtable"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "jsCode": "// Launch Params: the launch row is the whole contract. Client link resolves the base,\n// Query ID names the saved DiscoLike query, Tag is stamped on every row landed.\n// Any missing piece stops the run here, before a single paid call.\n//\n// The contacts pull this door fires afterwards is NOT hardcoded (ruled 2026-09-02). Tiers,\n// Departments and Max companies are read off this same launch row and handed to Waterfall\n// Contacts by Fire Contacts, so what the Operator asked for on the row is what the contacts\n// pull does. Blank on the row means today's behaviour: the full waterfall, no department\n// filter, a 5,000-company cap. Tiers falls back to the older Sources multi-select while launch\n// rows still carry it, exactly as Waterfall Contacts' own Launch Params does.\nconst rec=$('Fetch Launch Record').first().json;\nconst f=rec.fields||{};\nconst cf=($('Resolve Base').first().json.fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst clientRecId=((f['Client']||[])[0])||'';\nconst queryId=((f['Query ID']||'')+'').trim();\nconst tag=((f['Tag']||'')+'').trim();\nif(!clientRecId){ throw new Error('Launch record '+rec.id+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ throw new Error('Client on launch record '+rec.id+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryId)){ throw new Error('Query ID \"'+queryId+'\" is not a saved DiscoLike query id (uuid). Save the query in DiscoLike first. Nothing was pulled.'); }\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst FULL='ContaGen -> Supersoniq -> AI-Ark';\nconst tiers=((f['Tiers']||'')+'').trim();\nconst srcRaw=arr(f['Sources']).map(s=>String(s).trim()).filter(Boolean);\nconst departments=arr(f['Departments']).map(s=>String(s).trim()).filter(Boolean);\nconst roles=arr(f['Roles']).map(s=>String(s).trim()).filter(Boolean);\nconst maxRaw=Math.floor(Number(f['Max companies'])||0);\nreturn [{ json: {\n  base: base,\n  clientRecId: clientRecId,\n  queryId: queryId,\n  tag: tag,\n  contactsTiers: tiers||(srcRaw.length?'':FULL),\n  contactsSources: srcRaw,\n  contactsDepartments: departments,\n  contactsRoles: roles,\n  contactsMaxCompanies: maxRaw>0?maxRaw:5000,\n  _launchRecordId: rec.id,\n  startedAt: new Date().toISOString()\n} }];\n"
-        },
-        "id": "a1b2c3d4-0004-4000-8000-000000000004",
-        "name": "Launch Params",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          660,
-          0
-        ]
-      },
-      {
-        "parameters": {
-          "resource": "record",
           "operation": "update",
           "base": {
             "__rl": true,
@@ -808,11 +764,12 @@
           "columns": {
             "mappingMode": "defineBelow",
             "value": {
-              "id": "={{ $json._launchRecordId }}",
+              "id": "={{ $json.id }}",
               "Status": "Running",
               "Run at": "={{ $now.toISO() }}",
               "Execution ID": "={{ $execution.id }}",
-              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}",
+              "Tally": ""
             },
             "matchingColumns": [
               "id"
@@ -828,7 +785,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          880,
+          440,
           0
         ],
         "credentials": {
@@ -836,7 +793,104 @@
             "id": "RZ2SX89iUyF4aEWJ",
             "name": "Airtable"
           }
-        }
+        },
+        "notes": "First thing the door does, ahead of every guard: the row carries the Execution ID and link from the moment the POST lands, so a refusal or a crash can always be read back on the row the Operator launched. Passes the record through, so Resolve Base reads fields.Client off it."
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+          "options": {}
+        },
+        "id": "a1b2c3d4-0003-4000-8000-000000000003",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          0
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "A launch row with no Client link asks for recMISSING and keeps going; Launch Params reads the answer defensively and refuses with the reason."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row is the whole contract of Discover Discolike Companies (ruled\n// 2026-09-09): Client (resolves the base), Query ID (the saved DiscoLike query: an Insert runs on\n// a source, and the query is the source), Tag (optional, stamped on every company landed). Table is\n// implied (Companies). Nothing else is read: the contacts pull it fires afterwards is Enrich\n// Contacts with its own rules; no Tiers, Sources, Departments, Roles or Max companies.\n//\n// REFUSALS. A badly filled launch row is an expected outcome, not a crash, and it must be visible on\n// the row the Operator launched: every guard RETURNS a refusal item (`refused` carries the reason),\n// Launch OK? routes it to Build Refusal, which closes the row as Failed with the reason and the\n// link. Nothing is pulled and nothing is written.\nconst rec=$('Fetch Launch Record').first().json||{};\nconst f=rec.fields||{};\nconst cf=(($('Resolve Base').first().json||{}).fields)||{};\nconst base=((cf['Clayroots Base ID']||'')+'').trim();\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';\nconst queryId=((f['Query ID']||'')+'').trim();\nconst tag=((f['Tag']||'')+'').trim();\nconst startedAt=new Date().toISOString();\nconst where='Launch record '+(rec.id||'?');\nconst refuse=(reason)=>[{ json:{ refused: reason, base, clientRecId, queryId, tag, _launchRecordId: rec.id||'', startedAt } }];\nif(!clientRecId){ return refuse(where+' has no Client link. Nothing was pulled.'); }\nif(!/^app[A-Za-z0-9]{14}$/.test(base)){ return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was pulled.'); }\nif(!queryId){ return refuse(where+' has no Query ID. This Rootflow runs on a saved DiscoLike query; paste its id. Nothing was pulled.'); }\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryId)){ return refuse('Query ID \"'+queryId+'\" is not a saved DiscoLike query id (uuid). Save the query in DiscoLike first. Nothing was pulled.'); }\nreturn [{ json:{ refused:'', base, clientRecId, queryId, tag, _launchRecordId: rec.id||'', startedAt } }];\n"
+        },
+        "id": "a1b2c3d4-0004-4000-8000-000000000004",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "l1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "a1b2c3d4-0101-4000-8000-000000000101",
+        "name": "Launch OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          0
+        ],
+        "notes": "The refusal gate: Launch Params names a bad launch row instead of throwing; false means refused, Build Refusal closes the row as Failed with the reason before DiscoLike is called."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Refusal: the row a badly filled launch writes. Launch Params names the reason instead of\n// throwing, Launch OK? routes here, and this closes the launch row (already stamped Running with\n// this Execution ID) as Failed with the reason and the link. Nothing ran.\nconst p=$('Launch Params').first().json||{};\nconst reason=String(p.refused||'the launch row was refused and no reason was recorded');\nconst show=(v)=>(v===''||v===null||v===undefined)?'(empty)':String(v);\nconst lines=[\n  '**Refused before anything ran: '+reason+'**',\n  '',\n  '**The launch row as this Rootflow read it**',\n  '- **Client:** '+show(p.clientRecId),\n  '- **Clayroots Base ID:** '+(p.base||'(empty, or the Clients row could not be read)'),\n  '- **Query ID:** '+show(p.queryId),\n  '- **Tag:** '+show(p.tag),\n  '',\n  '**Failures (1)**',\n  '- Launch guard: '+reason,\n  '',\n  'DiscoLike was not called and nothing was written to the client base.',\n  'Fill the named field on the launch row, clear Execution ID and Status, and the launch automation fires it again.'\n];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst log={ 'Automation':'Discover Discolike Companies', 'Status':'Failed', 'Trigger':'form', 'Errors':1, 'Run at':$now.toISO(), 'Records In':0, 'Records Out':0, 'Duration s':dur, 'Description':lines.join('\\n'), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Execution ID':String($execution.id) };\nif(p.clientRecId) log['Client']=[p.clientRecId];\nreturn [{ json: log }];\n"
+        },
+        "id": "a1b2c3d4-0102-4000-8000-000000000102",
+        "name": "Build Refusal",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          400
+        ]
       },
       {
         "parameters": {
@@ -899,7 +953,7 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.4,
         "position": [
-          1100,
+          1320,
           0
         ],
         "alwaysOutputData": true,
@@ -908,11 +962,13 @@
             "id": "jreseZ3JAhJNgkk0",
             "name": "Discolike API"
           }
-        }
+        },
+        "onError": "continueRegularOutput",
+        "notes": "GET /v1/discover on the saved query (inclusion_query_id), 500 a page, every page, 4.5 s apart; free inside DiscoLike 90-day cache. Header Auth credential Discolike API. Continues on error: no credential or a dead API is a logged skip on the launch row (Format Companies counts the error items), never a crash."
       },
       {
         "parameters": {
-          "jsCode": "// Format Companies: one DiscoLike discover profile in, one Companies row out, in the\n// register's shape. Employees accepts both a band (\"51-200\") and a number. Rows with no domain\n// are counted and dropped; duplicate domains within the pull collapse to one. Nothing here\n// reads the base: the column check, the open-field rule, DNC, Clean Fields, Domain Source and\n// Tag belong to the helper (Insert domains to Clayroots), which gets its contract as _meta on\n// the first row. _stats rides on the first row for the log; the helper strips every \"_\" key.\nconst p=$('Launch Params').first().json;\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==null?'':String(a));\nconst kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);\nconst keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0 };\nfor(const it of $input.all()){\n  const c=it.json||{}; if(!Object.keys(c).length) continue; stats.pulled++;\n  const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }\n  if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);\n  const addr=c.address||{};\n  out.push({ json: {\n    'Domain': d,\n    'Company': String(c.name||'').trim(),\n    'Description': String(c.description||''),\n    'Industry Groups': kv(c.industry_groups),\n    'Business Model': kv(c.business_model),\n    'Employees': band(c.employees),\n    'Revenue Range': String(c.revenue_range||''),\n    'Keywords': keys(c.keywords),\n    'Country': String(addr.country||''), 'State': String(addr.state||''), 'City': String(addr.city||''),\n    'Street': String(addr.street||''), 'Zip': String(addr.zip||''),\n    'Phones': join(c.phones), 'Public Emails': join(c.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(c.social_urls),\n    'MX Provider': String(c.mx_provider||''), 'Redirect Domain': String(c.redirect_domain||'')\n  } });\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nout[0].json._meta={ base:p.base, clientRecId:p.clientRecId, tag:p.tag||'', domainSource:'DiscoLike', allowNew:true };\nreturn out;\n",
+          "jsCode": "// Format Companies: one DiscoLike discover profile in, one Companies row out, in the\n// register's shape. Employees accepts both a band (\"51-200\") and a number. Rows with no domain\n// are counted and dropped; duplicate domains within the pull collapse to one. Nothing here\n// reads the base: the column check, the open-field rule, DNC, Clean Fields, Domain Source and\n// Tag belong to the helper (Insert domains to Clayroots), which gets its contract as _meta on\n// the first row. _stats rides on the first row for the log; the helper strips every \"_\" key.\nconst p=$('Launch Params').first().json;\nconst BANDS=['1-10','11-50','51-200','201-500','501-1000','1001-5000','5001-10000','10001+'];\nconst band=(v)=>{ const s=String(v==null?'':v).trim(); if(!s) return ''; if(BANDS.indexOf(s)>-1) return s; const n=Number(s.replace(/[,\\s]/g,'')); if(!isFinite(n)||n<=0) return ''; if(n<=10) return '1-10'; if(n<=50) return '11-50'; if(n<=200) return '51-200'; if(n<=500) return '201-500'; if(n<=1000) return '501-1000'; if(n<=5000) return '1001-5000'; if(n<=10000) return '5001-10000'; return '10001+'; };\nconst join=(a)=>Array.isArray(a)?a.filter(Boolean).map(String).join(', '):(a==null?'':String(a));\nconst kv=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.entries(o).map(([k,v])=>k+':'+(typeof v==='number'?v.toFixed(2):v)).join(', '):join(o);\nconst keys=(o)=>o&&typeof o==='object'&&!Array.isArray(o)?Object.keys(o).join(', '):join(o);\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\n// DiscoLike Discover continues on error (ruled 2026-09-09: a dead API or a missing credential is a\n// logged skip, never a crash): an error item is counted here and the log names it.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst seen=new Set(); const out=[]; const stats={ pulled:0, no_domain:0, duplicate:0, providerErrors:0, providerReason:'' };\nfor(const it of $input.all()){\n  const c=it.json||{}; if(!Object.keys(c).length) continue;\n  if(c.error&&c.domain===undefined){ stats.providerErrors++; if(!stats.providerReason) stats.providerReason=errMsg(c.error).slice(0,160); continue; }\n  stats.pulled++;\n  const d=norm(c.domain); if(!d){ stats.no_domain++; continue; }\n  if(seen.has(d)){ stats.duplicate++; continue; } seen.add(d);\n  const addr=c.address||{};\n  out.push({ json: {\n    'Domain': d,\n    'Company': String(c.name||'').trim(),\n    'Description': String(c.description||''),\n    'Industry Groups': kv(c.industry_groups),\n    'Business Model': kv(c.business_model),\n    'Employees': band(c.employees),\n    'Revenue Range': String(c.revenue_range||''),\n    'Keywords': keys(c.keywords),\n    'Country': String(addr.country||''), 'State': String(addr.state||''), 'City': String(addr.city||''),\n    'Street': String(addr.street||''), 'Zip': String(addr.zip||''),\n    'Phones': join(c.phones), 'Public Emails': join(c.public_emails), 'public_emails_clean': '',\n    'Social URLs': join(c.social_urls),\n    'MX Provider': String(c.mx_provider||''), 'Redirect Domain': String(c.redirect_domain||'')\n  } });\n}\nif(!out.length) return [{ json: { _empty:true, _stats:stats } }];\nout[0].json._stats=stats;\nout[0].json._meta={ base:p.base, clientRecId:p.clientRecId, tag:p.tag||'', domainSource:'DiscoLike', allowNew:true };\nreturn out;\n",
           "mode": "runOnceForAllItems"
         },
         "id": "a1b2c3d4-0009-4000-8000-000000000009",
@@ -920,7 +976,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1320,
+          1540,
           0
         ],
         "alwaysOutputData": true
@@ -955,7 +1011,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          1540,
+          1760,
           0
         ]
       },
@@ -983,10 +1039,10 @@
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
-          1760,
-          -120
+          1980,
+          0
         ],
-        "notes": "The landing helper: column check, open fields, DNC, Clean Fields, upsert on Domain (Domain Source on create only, Tag on every row). Counters come back. TODO: push n8n/Insert-domains-to-Clayroots first, then paste its assigned id into workflowId.value here."
+        "notes": "The shared landing helper: column check (the register fields must exist; custom keys in the pull are created as columns and their People lookups), DNC dropped, Clean Fields, upsert on Domain in tens (a held company is refreshed with the new pull, Domain Source kept, Tag re-stamped), counters back."
       },
       {
         "parameters": {
@@ -1017,21 +1073,21 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          1980,
-          -120
+          2200,
+          0
         ]
       },
       {
         "parameters": {
-          "jsCode": "// Fire Contacts: one item in Waterfall Contacts' event shape (Event Row reads the launch-row\n// keys), so the companies just landed get their people at once. Table Companies and View\n// \"Not Sourced\" are structural, this door always sources what it just landed. Everything else\n// comes off THIS door's own launch row (Launch Params read it): Tiers, Departments, Roles and\n// Max companies pass straight through, so the Operator's row is what the contacts pull obeys.\n// Blank on the row means the full waterfall, no department filter, no role filter and a\n// 5,000-company cap, which is what this door always did before 2026-09-02.\n// Waterfall Contacts writes its own run-log row.\nconst p=$('Launch Params').first().json;\nconst out={ Client: [p.clientRecId], Table: 'Companies', View: 'Not Sourced', 'Max companies': p.contactsMaxCompanies, Departments: p.contactsDepartments||[], Roles: p.contactsRoles||[], Tag: p.tag||'' };\nif(p.contactsTiers) out.Tiers=p.contactsTiers;\nif((p.contactsSources||[]).length) out.Sources=p.contactsSources;\nreturn [{ json: out }];\n"
+          "jsCode": "// Fire Contacts: one item in Enrich Contacts' event shape (its Event Row reads launch-row keys),\n// so the companies just landed get their people at once. Client, Table Companies, View Not Sourced,\n// Tag, and Domains = exactly the domains this run landed, so on a base with a backlog the contacts\n// pull is scoped to this pull and never re-sweeps the whole view (ruled 2026-09-09). Enrich\n// Contacts writes its own launch row; nothing else is passed.\nconst p=$('Launch Params').first().json;\nlet domains=[];\ntry{ domains=$('Format Companies').all().map(i=>String((i.json||{}).Domain||'').trim().toLowerCase()).filter(Boolean); }catch(e){}\nreturn [{ json:{ Client:[p.clientRecId], Table:'Companies', View:'Not Sourced', Tag:p.tag||'', Domains:Array.from(new Set(domains)) } }];\n"
         },
         "id": "a1b2c3d4-0013-4000-8000-000000000013",
         "name": "Fire Contacts",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2200,
-          -240
+          2420,
+          0
         ]
       },
       {
@@ -1040,7 +1096,7 @@
             "__rl": true,
             "mode": "id",
             "value": "PLTNYqqoYfrt9ypd",
-            "cachedResultName": "Waterfall Contacts"
+            "cachedResultName": "Enrich Contacts"
           },
           "workflowInputs": {
             "mappingMode": "passThrough",
@@ -1054,25 +1110,25 @@
           }
         },
         "id": "a1b2c3d4-0016-4000-8000-000000000016",
-        "name": "Waterfall Contacts",
+        "name": "Enrich Contacts",
         "type": "n8n-nodes-base.executeWorkflow",
         "typeVersion": 1.3,
         "position": [
-          2420,
-          -240
+          2640,
+          0
         ],
-        "notes": "Fire and forget: the landed companies get their people at once. Waterfall Contacts writes its own run-log row."
+        "notes": "Fire-and-forget: Enrich Contacts on Companies view Not Sourced, scoped to the Domains this run landed; it writes its own launch row."
       },
       {
         "parameters": {
-          "jsCode": "// Build Log: one row per run on the launch row, status computed from the helper's failed[],\n// skips separated from errors, Client attached (a launched run serves exactly one client).\n// The funnel is the pull's own counts plus the helper's counters (Insert domains to Clayroots).\nconst p=$('Launch Params').first().json;\nlet stats={ pulled:0, no_domain:0, duplicate:0 };\ntry{ const f=$('Format Companies').first().json||{}; if(f._stats) stats=f._stats; }catch(e){}\nlet h=null; try{ h=$('Insert Domains').first().json||null; }catch(e){}\nlet fired=false; try{ fired=$('Fire Contacts').all().length>0; }catch(e){}\nconst n=(v)=>Number(v)||0;\nconst failed=(h&&Array.isArray(h.failed))?h.failed.slice():[];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst tableName=(h&&h.tableName)||'Companies';\nconst lines=[\n  '**'+stats.pulled+' companies pulled, '+n(h&&h.upserted)+' landed on '+tableName+'**',\n  '',\n  '**Source:** DiscoLike saved query '+p.queryId,\n  '**Tag:** '+(p.tag||'none'),\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+stats.pulled,\n  '- **Handed to the helper:** '+n(h&&h.in),\n  '- **Landed (record id returned):** '+n(h&&h.upserted)+' ('+n(h&&h.newDomains)+' new, '+n(h&&h.existingDomains)+' already held)',\n  '- **With public emails:** '+n(h&&h.withEmails)\n];\nif(h&&Array.isArray(h.createdColumns)&&h.createdColumns.length) lines.push('- **Columns created (open fields):** '+h.createdColumns.join(', '));\nif(h&&Array.isArray(h.droppedKeys)&&h.droppedKeys.length) lines.push('- **Keys dropped:** '+h.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?'Waterfall Contacts fired on view \"Not Sourced\" (all three sources, Max companies 5000); it writes its own row':'not fired, nothing landed'));\nconst skips=[];\nif(stats.no_domain) skips.push(stats.no_domain+' no domain');\nif(stats.duplicate) skips.push(stats.duplicate+' duplicate domain in the pull');\nif(h&&n(h.dnc)) skips.push(n(h.dnc)+' on the DNC table');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(failed.length){ const byReason={}; for(const f of failed){ byReason[f.reason]=(byReason[f.reason]||0)+1; } lines.push('', '**Failures ('+failed.length+')**'); for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r); }\nconst log={\n  'Automation':'Insert Discolike domains to Clayroots',\n  'Status': failed.length?'Succeeded with errors':'Succeeded',\n  'Trigger':'form',\n  'Errors': failed.length,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+((h&&h.tableId)||'')+')',\n  'Records In': stats.pulled,\n  'Records Out': n(h&&h.upserted),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
+          "jsCode": "// Build Log: one row per run, on the launch row, status computed from the helper's failed[] and the\n// provider verdict, skips separated from errors, Client attached. The funnel is the pull's own\n// counts plus the helper's counters (Insert domains to Clayroots). A DiscoLike that could not be\n// reached (no credential, dead API) is a logged skip, never a crash: the row closes as Failed only\n// when nothing could be pulled for that reason.\nconst p=$('Launch Params').first().json;\nlet stats={ pulled:0, no_domain:0, duplicate:0, providerErrors:0, providerReason:'' };\ntry{ const f=$('Format Companies').first().json||{}; if(f._stats) stats=Object.assign(stats, f._stats); }catch(e){}\nlet h=null; try{ h=$('Insert Domains').first().json||null; }catch(e){}\nlet fired=false, scope=0; try{ const fc=$('Fire Contacts').first().json||{}; fired=true; scope=(fc.Domains||[]).length; }catch(e){}\nconst n=(v)=>Number(v)||0;\nconst failed=(h&&Array.isArray(h.failed))?h.failed.slice():[];\nconst providerDown=!stats.pulled&&stats.providerErrors>0;\nif(providerDown) failed.push({ name:'DiscoLike', reason:'DiscoLike could not be pulled: '+stats.providerReason });\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst tableName=(h&&h.tableName)||'Companies';\nconst lines=[\n  '**'+stats.pulled+' companies pulled, '+n(h&&h.upserted)+' landed on '+tableName+' ('+n(h&&h.newDomains)+' new, '+n(h&&h.existingDomains)+' already held and refreshed)**',\n  '',\n  '**Source:** DiscoLike saved query '+p.queryId,\n  '**Tag:** '+(p.tag||'none'),\n  '**Rule:** every company the query answers is landed on Domain; a held company is refreshed with the new pull (Domain Source kept, Tag re-stamped); custom columns in the pull land as columns; DNC domains dropped',\n  '',\n  '**Funnel**',\n  '- **Pulled:** '+stats.pulled,\n  '- **Handed to the helper:** '+n(h&&h.in),\n  '- **Landed (record id returned):** '+n(h&&h.upserted)+' ('+n(h&&h.newDomains)+' new, '+n(h&&h.existingDomains)+' already held)',\n  '- **With public emails:** '+n(h&&h.withEmails)\n];\nif(h&&Array.isArray(h.createdColumns)&&h.createdColumns.length) lines.push('- **Columns created:** '+h.createdColumns.join(', '));\nif(h&&Array.isArray(h.droppedKeys)&&h.droppedKeys.length) lines.push('- **Keys dropped:** '+h.droppedKeys.map(d=>d.key+' ('+d.why+')').join(', '));\nlines.push('', '**Contacts:** '+(fired?('Enrich Contacts fired once on Companies view \"Not Sourced\", scoped to the '+scope+' domains of this pull; it writes its own launch row'):'not fired, nothing landed'));\nconst skips=[];\nif(stats.no_domain) skips.push(stats.no_domain+' no domain');\nif(stats.duplicate) skips.push(stats.duplicate+' duplicate domain in the pull');\nif(h&&n(h.dnc)) skips.push(n(h.dnc)+' on the DNC table');\nif(stats.providerErrors&&stats.pulled) skips.push(stats.providerErrors+' DiscoLike page(s) failed ('+stats.providerReason+')');\nif(skips.length) lines.push('', '**Skipped ('+skips.join(', ')+')**');\nif(failed.length){ const byReason={}; for(const f of failed){ byReason[f.reason]=(byReason[f.reason]||0)+1; } lines.push('', '**Failures ('+failed.length+')**'); for(const [r,c] of Object.entries(byReason).slice(0,10)) lines.push('- '+c+' x '+r); }\nconst log={\n  'Automation':'Discover Discolike Companies',\n  'Status': providerDown?'Failed':(failed.length?'Succeeded with errors':'Succeeded'),\n  'Trigger':'form',\n  'Errors': failed.length,\n  'Run at': $now.toISO(),\n  'Target': tableName+' ('+((h&&h.tableId)||'')+')',\n  'Records In': stats.pulled,\n  'Records Out': n(h&&h.upserted),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id),\n  'Client': [p.clientRecId]\n};\nreturn [{ json: log }];\n"
         },
         "id": "a1b2c3d4-0014-4000-8000-000000000014",
         "name": "Build Log",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2640,
+          2860,
           0
         ],
         "onError": "continueRegularOutput"
@@ -1108,7 +1164,7 @@
         "type": "n8n-nodes-base.airtable",
         "typeVersion": 2.2,
         "position": [
-          2860,
+          3080,
           0
         ],
         "onError": "stopWorkflow",
@@ -1136,6 +1192,17 @@
         "main": [
           [
             {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
               "node": "Resolve Base",
               "type": "main",
               "index": 0
@@ -1158,18 +1225,36 @@
         "main": [
           [
             {
-              "node": "Stamp Running",
+              "node": "Launch OK?",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Stamp Running": {
+      "Launch OK?": {
         "main": [
           [
             {
               "node": "DiscoLike Discover",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Refusal": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
               "type": "main",
               "index": 0
             }
@@ -1249,14 +1334,14 @@
         "main": [
           [
             {
-              "node": "Waterfall Contacts",
+              "node": "Enrich Contacts",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Waterfall Contacts": {
+      "Enrich Contacts": {
         "main": [
           [
             {

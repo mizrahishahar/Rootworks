@@ -10,7 +10,7 @@ A machine is one or more n8n workflows doing one job. It is one of six types, it
 | Deploy   | moves rows from a view into a sender and stamps them                                                     | `n8n/deploys/`   |
 | Handler  | one event from outside, one lead moved                                                                   | `n8n/handlers/`  |
 | Manager  | reads state on a schedule, reports to Slack, changes what its permissions allow. Works on set standards. | `n8n/managers/`  |
-| Helper   | called by the others, no run of its own                                                                  | `n8n/helpers/`   |
+| Helper   | called by the others, no run/logs of its own                                                             | `n8n/helpers/`   |
 | Add-on   | fired by a machine at a hook, one more thing                                                             | `n8n/addons/`    |
 
 `n8n/archive/` is off. A workflow that is off and has no card lands there; a workflow that is on and has no card is flagged UNAPPROVED in the index.

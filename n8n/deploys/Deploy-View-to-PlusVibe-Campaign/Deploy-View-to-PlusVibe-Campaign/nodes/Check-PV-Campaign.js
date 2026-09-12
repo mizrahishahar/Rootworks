@@ -14,7 +14,7 @@ if (!D.abort) {
   }
   const hit = camps.find(x => String(x.id || x._id) === D.target);
   if (!hit) { D.abort = 'campaign not found'; D.errors.push('campaign ' + D.target + ' not found in workspace ' + D.ws + ' (' + camps.length + ' campaigns listed); nothing was sent'); }
-  else { D.campName = hit.camp_name || hit.name || D.campName || D.target; }
+  else { D.campName = hit.camp_name || hit.name || D.campName || D.target; D.pvStatus = String(hit.status || ''); }
 }
 const ready = !D.abort && !!p.ready;
 return [{ json: { ready: ready, abort: !!D.abort, body: ready ? p.body : null, wait: 0 } }];

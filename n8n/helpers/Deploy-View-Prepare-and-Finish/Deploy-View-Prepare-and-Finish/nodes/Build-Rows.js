@@ -17,6 +17,8 @@ if (D.abort) { return [{ json: { ready: false, abort: true } }]; }
 const rowsArr = D.viewRows || [];
 D.rowsTotal = rowsArr.length;
 if (!rowsArr.length) {
+  // An empty view is the dry case the Campaigns Manager reads: nothing left to give.
+  D.leftInView = 0;
   D.abort = isPV ? 'view empty or not found' : 'view empty';
   D.errors.push(isPV ? ('view empty or not found: "' + (D.view || '') + '"; nothing was sent') : ('view "' + D.view + '" returned no rows; nothing was sent'));
   D.viewRows = null;
@@ -95,6 +97,9 @@ for (const r of rowsArr) {
   if (missVars.length) { for (const m of missVars) { D.varMisses[m] = (D.varMisses[m] || 0) + 1; } rec.skip = 'missing ' + missVars.join(', ').slice(0, 120); continue; }
   // Convention (never-block) columns ride along when visible and filled, never skip a row.
   for (const col of (plan.rideCols || [])) { const v = val(f[col.name]); if (v && cv[col.key] === undefined) cv[col.key] = v.slice(0, isPV ? 2000 : 4000); }
+  // Eligible: the row survived every gate above; only the caps stand between it and the send.
+  D.eligible = (D.eligible || 0) + 1;
+  if (D.capFull) { rec.skip = 'stage total full (' + (D.stage || '?') + ')'; continue; }
   if (isPV) {
     if (D.maxRows && leads.length >= D.maxRows) { rec.skip = 'over the run cap of ' + D.maxRows + ' rows'; continue; }
     const lead = { email: String(f['Final Email'] || '').trim() };
@@ -147,6 +152,10 @@ for (const r of rowsArr) {
   }
 }
 D.viewRows = null;
+// Left in View (Campaigns Manager standard, 2026-09-12): what the view could still give after this
+// run, eligible rows minus the rows queued to send. Zero means the view is dry; the manager reads
+// it off the run row. A stage total that is already full leaves every eligible row in the view.
+D.leftInView = Math.max(0, (D.eligible || 0) - (isPV ? leads.length : pushes.length));
 const skipCounts = {};
 for (const id of Object.keys(D.rows)) { const s = D.rows[id].skip; if (s) { const key = s.indexOf('DNC:') === 0 ? 'DNC' : s; skipCounts[key] = (skipCounts[key] || 0) + 1; } }
 D.skipCounts = skipCounts;

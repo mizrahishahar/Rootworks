@@ -16,6 +16,23 @@ if (!D.abort) {
     D.hubCampaignRid = hit.id || '';
     D.campName = String(f['Campaign'] || D.target);
     const seq = String((f['Sequencer'] && f['Sequencer'].name) || f['Sequencer'] || '');
+    // The stage caps (Campaigns Manager standard, 2026-09-12). A launch row that leaves Max Rows
+    // blank on a campaign that carries a Stage gets its cap here: the sender's daily cap, or the
+    // stage total minus the leads the campaign already holds (Leads, synced by the manager's lanes),
+    // whichever is smaller. A stage total already full sends nothing and says so; a row without a
+    // Stage keeps the old meaning of blank, unlimited. A row that names Max Rows keeps its number.
+    D.stage = String((f['Stage'] && f['Stage'].name) || f['Stage'] || '').trim();
+    if (!D.maxRows && D.stage) {
+      const STAGE_TOTAL = { Test: 1000, Scale: 3000, Run: null };
+      const DAILY_CAP = { 'PlusVibe': 1000, 'Email Bison': 1000, 'Alta': 150, 'HeyReach': 150 };
+      const total = STAGE_TOTAL[D.stage];
+      const held = Math.max(0, Math.floor(Number(f['Leads']) || 0));
+      const daily = DAILY_CAP[D.sender] || 1000;
+      if (total === null || total === undefined) D.maxRows = daily;
+      else if (held >= total) { D.maxRows = 0; D.capFull = true; D.warnings.push('stage ' + D.stage + ' total of ' + total + ' already held (' + held + ' leads in the campaign); nothing sent, the view keeps its rows'); }
+      else D.maxRows = Math.min(daily, total - held);
+      D.capNote = D.capFull ? ('stage ' + D.stage + ' full') : ('stage ' + D.stage + ': cap ' + D.maxRows + ' (daily ' + daily + ', total ' + (total === null ? 'none' : total) + ', held ' + held + ')');
+    }
     // Email Bison: like PlusVibe, the campaign's existence is proven by the door's own GET, so a
     // missing Hub row only warns; a Hub row sequenced by someone else is a wrong Target, refused.
     if (D.sender === 'Email Bison' && seq && seq !== 'Email Bison') { D.abort = 'not an Email Bison campaign'; D.errors.push('campaign "' + D.campName + '" is sequenced by ' + seq + ', not Email Bison'); }

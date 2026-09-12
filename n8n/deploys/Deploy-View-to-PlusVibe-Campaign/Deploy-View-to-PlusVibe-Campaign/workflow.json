@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T22:09:56.071Z",
+  "updatedAt": "2026-09-12T15:00:21.584Z",
   "createdAt": "2026-08-08T20:41:34.889Z",
   "id": "JuWIbF6YCeRibhyg",
   "name": "Deploy View to PlusVibe Campaign",
@@ -495,6 +495,103 @@
         }
       },
       "notes": "Mode finish, awaited, error left to travel: stamps Deploy Error and the Campaigns links on the source rows, writes the Lead Lists receipt and writes this run's Hub row, upserted on this execution's id. A failed log write crashes it, and with it this run."
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000001",
+      "name": "Plan Resume",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Plan-Resume.js"
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000002",
+      "name": "Resume?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1125,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.resume === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000003",
+      "name": "PV Activate Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1350,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.plusvibe.ai/api/v1/campaign/activate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d4000000-0000-4000-8000-000000000004",
+      "name": "Collect Resume",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1575,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Resume.js"
+      }
     }
   ],
   "connections": {
@@ -686,7 +783,7 @@
       "main": [
         [
           {
-            "node": "Close Deploy",
+            "node": "Plan Resume",
             "type": "main",
             "index": 0
           }
@@ -705,6 +802,57 @@
         [
           {
             "node": "Finish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Resume": {
+      "main": [
+        [
+          {
+            "node": "Resume?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume?": {
+      "main": [
+        [
+          {
+            "node": "PV Activate Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Activate Campaign": {
+      "main": [
+        [
+          {
+            "node": "Collect Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Resume": {
+      "main": [
+        [
+          {
+            "node": "Close Deploy",
             "type": "main",
             "index": 0
           }
@@ -750,8 +898,8 @@
     "builderVariant": "mcp"
   },
   "pinData": null,
-  "versionId": "09c26c45-e44d-44ef-9eab-588d86e14863",
-  "activeVersionId": "09c26c45-e44d-44ef-9eab-588d86e14863",
+  "versionId": "6d3576eb-2e05-470f-9ee0-281a9f331836",
+  "activeVersionId": "6d3576eb-2e05-470f-9ee0-281a9f331836",
   "triggerCount": 1,
   "shared": [
     {
@@ -763,9 +911,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-02T22:09:56.073Z",
-    "createdAt": "2026-09-02T22:09:56.073Z",
-    "versionId": "09c26c45-e44d-44ef-9eab-588d86e14863",
+    "updatedAt": "2026-09-12T15:00:21.587Z",
+    "createdAt": "2026-09-12T15:00:21.587Z",
+    "versionId": "6d3576eb-2e05-470f-9ee0-281a9f331836",
     "workflowId": "JuWIbF6YCeRibhyg",
     "nodes": [
       {
@@ -900,7 +1048,7 @@
         ],
         "parameters": {
           "mode": "runOnceForAllItems",
-          "jsCode": "// Check PV Campaign: the target must exist in the client's workspace, proven by the workspace's\n// own campaign listing, before a single lead is uploaded. This is the one campaign check the\n// shared machine cannot do: PlusVibe's campaign list is a PlusVibe call, and the Hub row is only\n// the description of a campaign, not proof that it is there.\n// The name PlusVibe itself carries wins for the run log and the receipt.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst p = $('Load State').first().json;\nif (!D.abort) {\n  const camps = [];\n  for (const it of $input.all()) {\n    const j = it.json || {};\n    const arr = Array.isArray(j) ? j : (Array.isArray(j.campaigns) ? j.campaigns : (Array.isArray(j.data) ? j.data : ((j.id || j._id) ? [j] : [])));\n    for (const x of arr) { if (x && (x.id || x._id)) camps.push(x); }\n  }\n  const hit = camps.find(x => String(x.id || x._id) === D.target);\n  if (!hit) { D.abort = 'campaign not found'; D.errors.push('campaign ' + D.target + ' not found in workspace ' + D.ws + ' (' + camps.length + ' campaigns listed); nothing was sent'); }\n  else { D.campName = hit.camp_name || hit.name || D.campName || D.target; }\n}\nconst ready = !D.abort && !!p.ready;\nreturn [{ json: { ready: ready, abort: !!D.abort, body: ready ? p.body : null, wait: 0 } }];\n"
+          "jsCode": "// Check PV Campaign: the target must exist in the client's workspace, proven by the workspace's\n// own campaign listing, before a single lead is uploaded. This is the one campaign check the\n// shared machine cannot do: PlusVibe's campaign list is a PlusVibe call, and the Hub row is only\n// the description of a campaign, not proof that it is there.\n// The name PlusVibe itself carries wins for the run log and the receipt.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst p = $('Load State').first().json;\nif (!D.abort) {\n  const camps = [];\n  for (const it of $input.all()) {\n    const j = it.json || {};\n    const arr = Array.isArray(j) ? j : (Array.isArray(j.campaigns) ? j.campaigns : (Array.isArray(j.data) ? j.data : ((j.id || j._id) ? [j] : [])));\n    for (const x of arr) { if (x && (x.id || x._id)) camps.push(x); }\n  }\n  const hit = camps.find(x => String(x.id || x._id) === D.target);\n  if (!hit) { D.abort = 'campaign not found'; D.errors.push('campaign ' + D.target + ' not found in workspace ' + D.ws + ' (' + camps.length + ' campaigns listed); nothing was sent'); }\n  else { D.campName = hit.camp_name || hit.name || D.campName || D.target; D.pvStatus = String(hit.status || ''); }\n}\nconst ready = !D.abort && !!p.ready;\nreturn [{ json: { ready: ready, abort: !!D.abort, body: ready ? p.body : null, wait: 0 } }];\n"
         }
       },
       {
@@ -1257,6 +1405,103 @@
           }
         },
         "notes": "Mode finish, awaited, error left to travel: stamps Deploy Error and the Campaigns links on the source rows, writes the Lead Lists receipt and writes this run's Hub row, upserted on this execution's id. A failed log write crashes it, and with it this run."
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000001",
+        "name": "Plan Resume",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          900,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Plan Resume: a campaign PlusVibe had marked COMPLETED does not start again when leads land in it\n// (proven on Adelante, 2026-09-12: 74 leads sat uncontacted after completion). When this run put\n// new leads into a COMPLETED campaign, it is activated again, so a live-fed campaign that ran dry\n// for a few days is not silently dead from then on. Anything else passes straight to the close.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst resume = !D.abort && D.pvStatus === 'COMPLETED' && (D.uploadedNew || 0) > 0;\nreturn [{ json: { resume, body: resume ? { workspace_id: D.ws, campaign_id: D.target } : null } }];\n"
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000002",
+        "name": "Resume?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1125,
+          400
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.resume === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000003",
+        "name": "PV Activate Campaign",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1350,
+          400
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.plusvibe.ai/api/v1/campaign/activate",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "d4000000-0000-4000-8000-000000000004",
+        "name": "Collect Resume",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1575,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Resume: the activate call answered. Success is recorded on the run row; a refusal is an\n// error on the run, named, because a campaign left COMPLETED with fresh leads is exactly the silent\n// failure this exists to end.\nconst sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id; const D = sd[dk];\nconst j = ($input.first() || {}).json || {};\nconst hasWrap = Object.prototype.hasOwnProperty.call(j, 'body');\nconst rb = hasWrap ? j.body : j;\nconst status = Number(j.statusCode || 0);\nconst ok = status >= 200 && status < 300 && !(rb && rb.error);\nif (ok) D.resumed = 'yes (' + (D.uploadedNew || 0) + ' new leads)';\nelse D.errors.push('campaign was COMPLETED and could not be activated after the upload (status ' + (status || '?') + '): ' + JSON.stringify(rb || j.error || {}).slice(0, 200));\nreturn [{ json: { resumed: ok } }];\n"
+        }
       }
     ],
     "connections": {
@@ -1448,7 +1693,7 @@
         "main": [
           [
             {
-              "node": "Close Deploy",
+              "node": "Plan Resume",
               "type": "main",
               "index": 0
             }
@@ -1467,6 +1712,57 @@
           [
             {
               "node": "Finish",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Resume": {
+        "main": [
+          [
+            {
+              "node": "Resume?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resume?": {
+        "main": [
+          [
+            {
+              "node": "PV Activate Campaign",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Deploy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Activate Campaign": {
+        "main": [
+          [
+            {
+              "node": "Collect Resume",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Resume": {
+        "main": [
+          [
+            {
+              "node": "Close Deploy",
               "type": "main",
               "index": 0
             }

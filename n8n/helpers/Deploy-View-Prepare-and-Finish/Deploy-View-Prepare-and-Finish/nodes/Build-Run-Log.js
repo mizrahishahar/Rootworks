@@ -27,6 +27,9 @@ if (isPV) {
   md.push('**Table:** ' + (D.tableName || D.table || '?') + ' (' + (D.tableId || '?') + ')');
   md.push('**View:** ' + (D.view || '?'));
   if (D.viewLink) md.push('**Link:** ' + D.viewLink);
+  if (D.capNote) md.push('**Cap:** ' + D.capNote);
+  if (D.leftInView !== undefined && D.leftInView !== null) md.push('**Left in view after this run:** ' + fmt(D.leftInView));
+  if (D.resumed) md.push('**Campaign was COMPLETED; activated again after the upload:** ' + D.resumed);
   md.push('**Dedupe mode:** ' + (D.sender === 'Email Bison' ? 'Email Bison (patch existing leads; a lead already In Sequence elsewhere is refused by the sender)' : (D.dedupe || 'Strict')));
   if (D.campsStamped) md.push('**Campaigns links stamped:** ' + fmt(D.campsStamped) + ' (this list = filter Campaigns has the campaign)');
   const P = D.pv;
@@ -108,6 +111,10 @@ const row = {
   'Execution Link': 'https://n8n.flowroots.com/workflow/' + (D.wfId || $workflow.id) + '/executions/' + String(D.execId || $execution.id),
   'Description': D.finalDescription.slice(0, 95000)
 };
+// Left in View is a number only when the view was actually read (an empty view reads as 0, the
+// dry case); a refusal before the read leaves it blank so the manager never mistakes a bad launch
+// row for a dry view.
+if (D.leftInView !== undefined && D.leftInView !== null) row['Left in View'] = D.leftInView;
 // On a launch row, Automation and Target are LAUNCH PARAMETERS the feed or the Operator wrote, and
 // the upsert must not overwrite them: Target holds the campaign id this run was told to deploy
 // into, and a run that rewrote it as a description destroyed the record of what it was asked to do

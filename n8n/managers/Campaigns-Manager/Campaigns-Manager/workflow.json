@@ -1,0 +1,1604 @@
+{
+  "updatedAt": "2026-09-12T14:56:10.609Z",
+  "createdAt": "2026-09-12T14:54:33.748Z",
+  "id": "jqDCcjD4Fjrp2Sk2",
+  "name": "Campaigns Manager",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "c3000000-0000-4000-8000-000000000001",
+      "name": "Daily 11:00 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 11,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000002",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1344,
+        240
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-campaigns-manager",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "c3000000-0000-4000-8000-0000000000ff"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000003",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1120,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000004",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        240
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000005",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000006",
+      "name": "Get Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "{Client} != ''",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Client"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000007",
+      "name": "Get Campaigns",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "filterByFormula": "{Stage} != ''",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Campaign",
+            "Campaign ID",
+            "Sequencer",
+            "Channel",
+            "Status",
+            "Stage",
+            "Leads",
+            "Contacted",
+            "Positive Replies (PV)",
+            "Live View ID",
+            "Client",
+            "Last Sent"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000008",
+      "name": "Get Deploy Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "filterByFormula": "AND(OR({Automation}='Deploy View to Campaign',{Automation}='Deploy View to PlusVibe Campaign',{Automation}='Deploy View to Alta Campaign',{Automation}='Deploy View to Email Bison Campaign',{Automation}='Deploy View to HeyReach Campaign'), IS_AFTER({Run at}, DATEADD(NOW(), -10, 'days')))",
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Automation",
+            "Target",
+            "Left in View",
+            "Run at",
+            "Records Out"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000009",
+      "name": "Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Decide.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000010",
+      "name": "Any Updates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000011",
+      "name": "Update Stage",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -96
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbVPakE4n16ob7Y"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Stage": "={{ $json.Stage }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000012",
+      "name": "Collect Updates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Updates.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000013",
+      "name": "Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Messages.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000014",
+      "name": "Any Messages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000015",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2016,
+        -96
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.channel }}"
+        },
+        "messageType": "text",
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "webhookId": "c3000000-0000-4000-8000-0000000000fe"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000016",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000017",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Daily 11:00 IL": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clients": {
+      "main": [
+        [
+          {
+            "node": "Get Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Get Deploy Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Deploy Rows": {
+      "main": [
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide": {
+      "main": [
+        [
+          {
+            "node": "Any Updates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Updates?": {
+      "main": [
+        [
+          {
+            "node": "Update Stage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stage": {
+      "main": [
+        [
+          {
+            "node": "Collect Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Updates": {
+      "main": [
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          {
+            "node": "Any Messages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Messages?": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Slack": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Daily 11:00 IL": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "launch": {
+        "recordId": "rec8BaMwjMHGa7QHJ",
+        "trigger": "form",
+        "clientFilter": "recN79He6wwPKogUR",
+        "startedAt": 1789224993057
+      },
+      "results": [
+        {
+          "clientRecId": "recN79He6wwPKogUR",
+          "client": "Adelante",
+          "testProgress": [
+            {
+              "rid": "recQt6FCH7Gpl8kXi",
+              "name": "2026-09-07 - US+UK DTC - Service Reviews - pitch-led",
+              "campaignId": "6a9ec5aa7b96cf92305b624e",
+              "sender": "PlusVibe",
+              "lane": "Email",
+              "status": "ACTIVE",
+              "stage": "Test",
+              "leads": 14,
+              "contacted": 13,
+              "positives": 0,
+              "liveView": "viwK6rXZjtiIPWXiy",
+              "clientId": "recN79He6wwPKogUR",
+              "lastSent": "2026-09-11T14:04:38.245Z",
+              "perPositive": null,
+              "tags": []
+            }
+          ],
+          "testReady": [],
+          "scaleProgress": [
+            {
+              "rid": "recJ34AbAHIOj83J7",
+              "name": "2026-08-24 - US DTC - Agent Demo - pitch-led",
+              "campaignId": "6a8c4e9b41c5fc42f21be297",
+              "sender": "PlusVibe",
+              "lane": "Email",
+              "status": "ACTIVE",
+              "stage": "Scale",
+              "leads": 1480,
+              "contacted": 1360,
+              "positives": 1,
+              "liveView": "",
+              "clientId": "recN79He6wwPKogUR",
+              "lastSent": "2026-09-11T11:38:31.349Z",
+              "perPositive": 1360,
+              "tags": [
+                "NO VIEW"
+              ]
+            },
+            {
+              "rid": "recxh2DCHII7XDkuS",
+              "name": "2026-08-24 - US DTC - EBITDA - offer-led",
+              "campaignId": "6a8c4e9997f47b5aa13f15a3",
+              "sender": "PlusVibe",
+              "lane": "Email",
+              "status": "ACTIVE",
+              "stage": "Scale",
+              "leads": 2904,
+              "contacted": 2630,
+              "positives": 1,
+              "liveView": "",
+              "clientId": "recN79He6wwPKogUR",
+              "lastSent": "2026-09-11T11:57:11.843Z",
+              "perPositive": 2630,
+              "tags": [
+                "NO VIEW"
+              ]
+            }
+          ],
+          "scaleReady": [],
+          "run": [
+            {
+              "rid": "rec75h03yKR9pbyiA",
+              "name": "2026-08-06 - UK DTC - Trustpilot Under 4.2 - Pitch-led",
+              "campaignId": "6a748fbe78b225f68c366604",
+              "sender": "PlusVibe",
+              "lane": "Email",
+              "status": "ACTIVE",
+              "stage": "Run",
+              "leads": 1699,
+              "contacted": 1694,
+              "positives": 8,
+              "liveView": "",
+              "clientId": "recN79He6wwPKogUR",
+              "lastSent": "2026-09-11T06:03:37.925Z",
+              "perPositive": 212,
+              "tags": [
+                "NO VIEW"
+              ]
+            }
+          ],
+          "paused": [
+            {
+              "rid": "rect3YvfwhZ9C1Ntj",
+              "name": "2026-08-06 - UK DTC - No Trustpilot - Offer-led",
+              "campaignId": "6a748fc20beeb7c5646381da",
+              "sender": "PlusVibe",
+              "lane": "Email",
+              "status": "PAUSED",
+              "stage": "Test",
+              "leads": 2714,
+              "contacted": 2092,
+              "positives": 2,
+              "liveView": "",
+              "clientId": "recN79He6wwPKogUR",
+              "lastSent": "2026-09-07T07:01:18.262Z",
+              "perPositive": 1046,
+              "tags": []
+            }
+          ],
+          "moved": [],
+          "failed": [],
+          "messageLines": 8
+        }
+      ],
+      "updates": [],
+      "failed": [],
+      "scope": "one client (on demand)",
+      "managed": 5,
+      "standard": {
+        "stageTotal": {
+          "Test": 1000,
+          "Scale": 3000,
+          "Run": null
+        },
+        "line": {
+          "Test": 1000,
+          "Scale": 3000
+        },
+        "positives": {
+          "Email": 1,
+          "LinkedIn": 3
+        },
+        "inPlayStages": [
+          "Test",
+          "Scale",
+          "Run"
+        ],
+        "notInPlayStatus": [
+          "PAUSED",
+          "DRAFT",
+          "STOPPED"
+        ]
+      },
+      "updated": 0,
+      "messages": 1
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "dae82c73-0651-4786-ba92-b90ea58f44dc",
+  "activeVersionId": "dae82c73-0651-4786-ba92-b90ea58f44dc",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-09-12T14:54:33.755Z",
+      "createdAt": "2026-09-12T14:54:33.755Z",
+      "role": "workflow:owner",
+      "workflowId": "jqDCcjD4Fjrp2Sk2",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-12T14:56:10.612Z",
+    "createdAt": "2026-09-12T14:56:10.612Z",
+    "versionId": "dae82c73-0651-4786-ba92-b90ea58f44dc",
+    "workflowId": "jqDCcjD4Fjrp2Sk2",
+    "nodes": [
+      {
+        "id": "c3000000-0000-4000-8000-000000000001",
+        "name": "Daily 11:00 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -448,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "days",
+                "daysInterval": 1,
+                "triggerAtHour": 11,
+                "triggerAtMinute": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000002",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1344,
+          240
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-campaigns-manager",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "c3000000-0000-4000-8000-0000000000ff"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000003",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1120,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000004",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -896,
+          240
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000005",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -224,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId  = the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger   = 'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter = the launch row's Client link (one record id) to scope the run to one client; '' = all clients\nconst sd = $getWorkflowStaticData('global');\nlet launch = null;\ntry { const r = $('Fetch Launch Record').first().json; if (r && r.id) launch = r; } catch (e) {}\nconst f = (launch && launch.fields) || launch || {};\nconst cl = Array.isArray(f.Client) && f.Client.length ? f.Client[0] : '';\nconst clientFilter = (cl && typeof cl === 'object') ? String(cl.id || '') : String(cl || '');\nsd.launch = { recordId: launch ? String(launch.id) : '', trigger: launch ? 'form' : 'schedule', clientFilter, startedAt: $now.toMillis() };\nsd.results = []; sd.updates = []; sd.failed = [];\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000006",
+        "name": "Get Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "{Client} != ''",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Client"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000007",
+        "name": "Get Campaigns",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          224,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "filterByFormula": "{Stage} != ''",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Campaign",
+              "Campaign ID",
+              "Sequencer",
+              "Channel",
+              "Status",
+              "Stage",
+              "Leads",
+              "Contacted",
+              "Positive Replies (PV)",
+              "Live View ID",
+              "Client",
+              "Last Sent"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000008",
+        "name": "Get Deploy Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "AND(OR({Automation}='Deploy View to Campaign',{Automation}='Deploy View to PlusVibe Campaign',{Automation}='Deploy View to Alta Campaign',{Automation}='Deploy View to Email Bison Campaign',{Automation}='Deploy View to HeyReach Campaign'), IS_AFTER({Run at}, DATEADD(NOW(), -10, 'days')))",
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Automation",
+              "Target",
+              "Left in View",
+              "Run at",
+              "Records Out"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000009",
+        "name": "Decide",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Decide: the standard, applied once over every campaign that carries a Stage.\n// Reads only what the Hub already holds: the Campaigns rows the syncs wrote at 07:00, and the\n// newest deploy row per campaign (Left in View, written by the deploy doors). Never a platform.\n// Writes nothing here: it plans the Stage moves (Test to Scale, Test to Killed, never Run) and\n// the per-client report blocks into static data; Update Stage and Build Messages consume them.\n// The numbers below are the card's standard block (managers/Campaigns-Manager/card.json); a change\n// there is a change here, in the same commit.\nconst STANDARD = {\n  stageTotal: { Test: 1000, Scale: 3000, Run: null },\n  line: { Test: 1000, Scale: 3000 },\n  positives: { Email: 1, LinkedIn: 3 },\n  inPlayStages: ['Test', 'Scale', 'Run'],\n  notInPlayStatus: ['PAUSED', 'DRAFT', 'STOPPED'],\n};\nconst sd = $getWorkflowStaticData('global');\nconst launch = sd.launch || {};\nconst cf = String(launch.clientFilter || '');\nconst nm = v => (v && typeof v === 'object') ? String(v.name || '') : String(v || '');\nconst num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };\nconst items = name => { try { return $(name).all().map(i => i.json).filter(j => j && j.id); } catch (e) { return []; } };\n\n// Clients: id -> name\nconst clientName = {};\nfor (const j of items('Get Clients')) { const f = j.fields || j; clientName[j.id] = String(f['Client'] || j.id); }\n\n// Newest deploy row per campaign id (Target on a scheduled launch row is the campaign id).\nconst newestDeploy = {};\nfor (const j of items('Get Deploy Rows')) {\n  const f = j.fields || j;\n  const target = String(f['Target'] || '').trim();\n  if (!target) continue;\n  const at = Date.parse(f['Run at'] || '') || 0;\n  if (!newestDeploy[target] || at > newestDeploy[target].at) {\n    const liv = f['Left in View'];\n    newestDeploy[target] = { at, leftInView: (liv === undefined || liv === null || liv === '') ? null : num(liv), runAt: f['Run at'] || '' };\n  }\n}\n\n// Campaigns with a Stage, scoped by the client filter on a launched run.\nconst camps = [];\nfor (const j of items('Get Campaigns')) {\n  const f = j.fields || j;\n  const clientIds = (Array.isArray(f['Client']) ? f['Client'] : []).map(c => (c && typeof c === 'object') ? String(c.id || '') : String(c || '')).filter(Boolean);\n  if (cf && !clientIds.includes(cf)) continue;\n  const stage = nm(f['Stage']);\n  if (!stage || stage === 'Killed') continue;\n  const channel = nm(f['Channel']);\n  camps.push({\n    rid: j.id,\n    name: String(f['Campaign'] || j.id),\n    campaignId: String(f['Campaign ID'] || '').trim(),\n    sender: nm(f['Sequencer']) || '?',\n    lane: channel === 'Email' ? 'Email' : 'LinkedIn',\n    status: nm(f['Status']),\n    stage,\n    leads: num(f['Leads']),\n    contacted: num(f['Contacted']),\n    positives: num(f['Positive Replies (PV)']),\n    liveView: String(f['Live View ID'] || '').trim(),\n    clientId: clientIds[0] || '',\n    lastSent: f['Last Sent'] || '',\n  });\n}\nsd.scope = cf ? (camps.length ? 'one client (on demand)' : 'client filter matched no managed campaign') : 'all clients';\nsd.managed = camps.length;\n\n// Shared views: two in-play campaigns drinking from one Live View ID.\nconst inPlay = c => STANDARD.inPlayStages.includes(c.stage) && !STANDARD.notInPlayStatus.includes(c.status);\nconst viewUse = {};\nfor (const c of camps) if (inPlay(c) && c.liveView) viewUse[c.liveView] = (viewUse[c.liveView] || 0) + 1;\n\nconst byClient = {};\nconst updates = [];\nfor (const c of camps) {\n  const key = c.clientId || '(no client)';\n  const R = byClient[key] || (byClient[key] = { clientRecId: c.clientId, client: clientName[c.clientId] || (c.clientId ? c.clientId : '(no client)'), testProgress: [], testReady: [], scaleProgress: [], scaleReady: [], run: [], paused: [], moved: [], failed: [] });\n  c.perPositive = c.positives ? Math.round(c.contacted / c.positives) : null;\n  c.tags = [];\n  if (!inPlay(c)) {\n    if (c.status === 'PAUSED') R.paused.push(c);\n    continue;\n  }\n  if (!c.liveView) c.tags.push('NO VIEW');\n  else if (viewUse[c.liveView] > 1) c.tags.push('SHARED VIEW');\n  const d = c.campaignId ? newestDeploy[c.campaignId] : null;\n  if (d && d.leftInView === 0) c.tags.push('DRY since ' + String(d.runAt).slice(0, 10));\n  if (c.lane === 'LinkedIn') c.tags.push('LINKEDIN');\n  const need = STANDARD.positives[c.lane];\n  if (c.stage === 'Test') {\n    if (c.contacted >= STANDARD.line.Test) {\n      if (c.positives >= need) { c.verdict = 'moved to Scale'; updates.push({ id: c.rid, Stage: 'Scale', name: c.name, client: R.client }); }\n      else { c.verdict = 'killed'; updates.push({ id: c.rid, Stage: 'Killed', name: c.name, client: R.client }); }\n      R.testReady.push(c); R.moved.push(c);\n    } else R.testProgress.push(c);\n  } else if (c.stage === 'Scale') {\n    if (c.contacted >= STANDARD.line.Scale) R.scaleReady.push(c); else R.scaleProgress.push(c);\n  } else R.run.push(c);\n}\nfor (const k of Object.keys(byClient)) byClient[k].scaleReady.sort((a, b) => (a.perPositive || 1e9) - (b.perPositive || 1e9));\nsd.results = Object.keys(byClient).map(k => byClient[k]).sort((a, b) => a.client.localeCompare(b.client));\nsd.updates = updates;\nsd.standard = STANDARD;\nif (!updates.length) return [{ json: { _none: true } }];\nreturn updates.map(u => ({ json: { id: u.id, Stage: u.Stage } }));\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000010",
+        "name": "Any Updates?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          896,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000011",
+        "name": "Update Stage",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1120,
+          -96
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblbVPakE4n16ob7Y"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Stage": "={{ $json.Stage }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000012",
+        "name": "Collect Updates",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Updates: the Stage writes came back; a failed write is an error on the run, named by\n// campaign, and the report still says what the standard decided. Emits one item so the chain\n// continues into the messages whether there were updates or none.\nconst sd = $getWorkflowStaticData('global');\nconst updates = sd.updates || [];\nlet results = [];\ntry { results = $('Update Stage').all().map(i => i.json || {}); } catch (e) {}\nsd.updated = 0;\nupdates.forEach((u, i) => {\n  const r = results[i] || {};\n  if (r.error || (r.id && r.id !== u.id)) sd.failed.push(u.client + ': could not set Stage ' + u.Stage + ' on \"' + u.name + '\": ' + JSON.stringify(r.error || r).slice(0, 160));\n  else sd.updated++;\n});\nreturn [{ json: { updated: sd.updated, planned: updates.length } }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000013",
+        "name": "Build Messages",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Messages: one Slack message per client, the same shape every day. Bold stage headers,\n// code blocks with aligned columns, tags at the end of a line. Empty sections are left out; a\n// client with nothing in play gets no message.\nconst sd = $getWorkflowStaticData('global');\nconst CHANNEL = 'C0B8Q745KT8'; // #flowroots-campaigns\nconst S = sd.standard || { line: { Test: 1000, Scale: 3000 } };\nconst fmt = v => Number(v || 0).toLocaleString('en-US');\nconst pad = (s, n) => { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s.padEnd(n); };\nconst rpad = (s, n) => String(s == null ? '' : s).padStart(n);\nconst tags = c => c.tags && c.tags.length ? '  [' + c.tags.join('] [') + ']' : '';\nconst per = c => c.perPositive ? '1 per ' + fmt(c.perPositive) : '';\n\nconst NAME = 58;\nconst line = (c, over) => pad(c.name, NAME) + '  ' + pad(c.sender, 11) + rpad(fmt(c.contacted) + (over ? ' / ' + fmt(over) : ''), 15) + rpad(fmt(c.positives), 5) + '  ' + pad(per(c), 12) + tags(c);\nconst readyLine = c => pad(c.name, NAME) + '  ' + pad(c.sender, 11) + rpad(fmt(c.contacted), 15) + rpad(fmt(c.positives), 5) + '  ' + pad(per(c), 12) + (c.verdict ? '  ' + c.verdict : '') + tags(c);\nconst block = rows => '```\\n' + rows.join('\\n') + '\\n```';\nconst header = pad('campaign', NAME) + '  ' + pad('sender', 11) + rpad('contacted', 15) + rpad('pos', 5) + '  ' + pad('rate', 12);\n\nconst today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });\nconst out = [];\nfor (const R of sd.results || []) {\n  const parts = ['*' + R.client.toUpperCase() + ' · campaigns · ' + today + '*'];\n  if (R.testProgress.length) parts.push('*TEST · in progress*', block([header].concat(R.testProgress.map(c => line(c, S.line.Test)))));\n  if (R.testReady.length) parts.push('*TEST · ready*', block(R.testReady.map(readyLine)));\n  if (R.scaleProgress.length) parts.push('*SCALE · in progress*', block([header].concat(R.scaleProgress.map(c => line(c, S.line.Scale)))));\n  if (R.scaleReady.length) parts.push('*SCALE · ready, ranked*', block([header].concat(R.scaleReady.map(readyLine))));\n  if (R.run.length) parts.push('*RUN*', block([header].concat(R.run.map(c => line(c)))));\n  if (R.paused.length) parts.push('*PAUSED BY HAND*', block(R.paused.map(c => pad(c.name, NAME) + '  ' + pad(c.sender, 11) + rpad(fmt(c.contacted), 15) + rpad(fmt(c.positives), 5) + '  ' + pad(per(c), 12) + '  set Killed or unpause')));\n  if (parts.length === 1) continue;\n  R.messageLines = parts.length - 1;\n  out.push({ json: { channel: CHANNEL, text: parts.join('\\n'), client: R.client } });\n}\nsd.messages = out.length;\nif (!out.length) return [{ json: { _none: true } }];\nreturn out;\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000014",
+        "name": "Any Messages?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1792,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000015",
+        "name": "Post to Slack",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          2016,
+          -96
+        ],
+        "parameters": {
+          "authentication": "accessToken",
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.channel }}"
+          },
+          "messageType": "text",
+          "text": "={{ $json.text }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false,
+            "mrkdwn": true
+          }
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "webhookId": "c3000000-0000-4000-8000-0000000000fe"
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000016",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Run Log: the run's one Hub row. Status computed from failed[], skips separate, the\n// Description a human reads at a glance: scope, per client what is in play and what moved.\nconst sd = $getWorkflowStaticData('global');\nconst launch = sd.launch || {};\nconst results = sd.results || [];\nconst failed = (sd.failed || []).slice();\nconst updates = sd.updates || [];\n\nlet posted = 0;\ntry {\n  for (const it of $('Post to Slack').all()) { const j = it.json || {}; if (j._none) continue; if (j.error) failed.push('Slack post failed: ' + JSON.stringify(j.error).slice(0, 160)); else if (j.ok || j.ts || j.message) posted++; }\n} catch (e) {}\n\nconst lines = results.map(R => {\n  const inPlay = R.testProgress.length + R.testReady.length + R.scaleProgress.length + R.scaleReady.length + R.run.length;\n  const moved = R.moved.map(c => '\"' + c.name + '\" ' + c.verdict).join(', ');\n  const dry = [].concat(R.testProgress, R.scaleProgress, R.run).filter(c => (c.tags || []).some(t => t.indexOf('DRY') === 0 || t === 'NO VIEW' || t === 'SHARED VIEW')).map(c => '\"' + c.name + '\" ' + c.tags.filter(t => t !== 'LINKEDIN').join(', ')).join('; ');\n  return '- **' + R.client + ':** ' + inPlay + ' in play (Test ' + (R.testProgress.length + R.testReady.length) + ', Scale ' + (R.scaleProgress.length + R.scaleReady.length) + ', Run ' + R.run.length + '), ' + R.scaleReady.length + ' ready to judge, ' + R.paused.length + ' paused by hand' + (moved ? '. Moved: ' + moved : '') + (dry ? '. Flags: ' + dry : '');\n});\n\nconst parts = [\n  '**' + (sd.managed || 0) + ' managed campaign(s) across ' + results.length + ' client(s), ' + (sd.updated || 0) + ' stage move(s), ' + posted + ' message(s) posted**',\n  '**Scope:** ' + (sd.scope || 'all clients'),\n  '**Slack:** ' + (posted ? posted + ' message(s) to #flowroots-campaigns' : 'nothing posted'),\n].concat(lines);\nif (!results.length) parts.push('**Skipped (1, ' + (launch.clientFilter ? 'client filter matched no managed campaign' : 'no campaign carries a Stage') + ')**');\nif (failed.length) parts.push('', '**Errors**', ...failed.map(f => '- ' + f));\n\nconst row = {\n  'Automation': 'Campaigns Manager',\n  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n  'Run at': $now.toISO(),\n  'Records In': sd.managed || 0,\n  'Records Out': sd.updated || 0,\n  'Errors': failed.length,\n  'Target': 'Campaigns',\n  'Trigger': launch.trigger || 'schedule',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  'Duration s': Math.round(($now.toMillis() - (launch.startedAt || $now.toMillis())) / 1000),\n  'Description': parts.join('\\n'),\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif (launch.clientFilter) row['Client'] = [launch.clientFilter];\nreturn [{ json: row }];\n"
+        }
+      },
+      {
+        "id": "c3000000-0000-4000-8000-000000000017",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2464,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      }
+    ],
+    "connections": {
+      "Daily 11:00 IL": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Clients": {
+        "main": [
+          [
+            {
+              "node": "Get Campaigns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Campaigns": {
+        "main": [
+          [
+            {
+              "node": "Get Deploy Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Deploy Rows": {
+        "main": [
+          [
+            {
+              "node": "Decide",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Decide": {
+        "main": [
+          [
+            {
+              "node": "Any Updates?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Updates?": {
+        "main": [
+          [
+            {
+              "node": "Update Stage",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Collect Updates",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Stage": {
+        "main": [
+          [
+            {
+              "node": "Collect Updates",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Updates": {
+        "main": [
+          [
+            {
+              "node": "Build Messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Messages": {
+        "main": [
+          [
+            {
+              "node": "Any Messages?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Messages?": {
+        "main": [
+          [
+            {
+              "node": "Post to Slack",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Post to Slack": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

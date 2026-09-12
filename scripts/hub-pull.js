@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Rootworks Hub schema puller.
 // Compiles the live Flowroots Hub schema (tables, fields, types, select choices,
-// field descriptions) into SCHEMA.md at the repo root. Generated from truth; never hand-edited.
+// field descriptions) into HUB-SCHEMA.md at the repo root. Generated from truth; never hand-edited.
+// The client bases are not here: CLAYROOTS-SCHEMA.md is their one definition, hand-written, changed rarely.
 //
 // Usage: node scripts/hub-pull.js
 // Auth: AIRTABLE_API_KEY env var, or ~/.config/rootworks/airtable-api-key
@@ -32,10 +33,10 @@ const clean = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').
   const { tables } = await res.json();
 
   const lines = [
-    '# Flowroots Hub - schema',
+    '# HUB-SCHEMA',
     '',
-    `Compiled from the live base (\`${BASE_ID}\`) by \`scripts/hub-pull.js\`. Do not hand-edit.`,
-    'This file is what the tables ARE; what they mean lives in their own descriptions and the hub skill.',
+    `Compiled from the live Flowroots Hub (\`${BASE_ID}\`) by \`scripts/hub-pull.js\`. Do not hand-edit.`,
+    'This file is what the Hub tables ARE; what they mean lives in their own descriptions and the hub skill. The client bases are CLAYROOTS-SCHEMA.md.',
     '',
   ];
 
@@ -55,10 +56,7 @@ const clean = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').
     lines.push('');
   }
 
-  // The client-bases half (the field register) follows the Hub half in the same file, compiled by
-  // scripts/register.js from Scaffold-Register.js. One compiled truth of the database, one file.
-  const register = require('./register');
   fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(path.join(OUT, 'SCHEMA.md'), lines.join('\n').replace(/\s+$/, '') + '\n\n' + register.compile(register.loadRegister()));
-  console.log(`${tables.length} Hub tables + the client-bases register -> SCHEMA.md`);
+  fs.writeFileSync(path.join(OUT, 'HUB-SCHEMA.md'), lines.join('\n').replace(/\s+$/, '') + '\n');
+  console.log(`${tables.length} Hub tables -> HUB-SCHEMA.md`);
 })().catch((e) => { console.error(e.message); process.exit(1); });

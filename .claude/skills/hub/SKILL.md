@@ -9,7 +9,7 @@ description: The Flowroots Hub, the application's one database. Reading and writ
 
 The one Airtable base (`appQG6dK0FIOhTxOl`) that is the database of the application: the client registry, the CRM, the client knowledge base, the run log. State is read from it live, never from a copy in a file.
 
-**Structure is never described in prose, here or anywhere.** The full schema, every table, field, description and select option, is compiled from the live base into [[SCHEMA]] at the repo root by `scripts/hub-pull.js`. Read it there; regenerate it when the base changed. A field's own description in the schema is where its meaning lives.
+**Structure is never described in prose, here or anywhere.** The full schema, every table, field, description and select option, is compiled from the live base into [[HUB-SCHEMA]] at the repo root by `scripts/hub-pull.js`. Read it there; regenerate it when the base changed. A field's own description in the schema is where its meaning lives.
 
 ## The laws
 

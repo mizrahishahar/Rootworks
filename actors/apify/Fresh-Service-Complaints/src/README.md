@@ -13,7 +13,7 @@ Both children are `blackfalcondata/trustpilot-reviews-scraper` (categories mode 
 ## Deploy
 
 ```
-cd Rootworks/apify/Fresh-Service-Complaints
+cd Rootworks/actors/apify/Fresh-Service-Complaints/src
 apify push
 ```
 

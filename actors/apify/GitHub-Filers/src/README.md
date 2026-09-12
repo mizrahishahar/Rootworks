@@ -77,7 +77,7 @@ Two defects the real data exposed, both fixed before the first deploy: `Amazon W
 ## Deploy
 
 ```
-cd Rootworks/apify/GitHub-Filers
+cd Rootworks/actors/apify/GitHub-Filers/src
 apify push
 ```
 
@@ -98,4 +98,4 @@ Without a token the run is capped at 60 requests an hour, which is enough to tes
 
 ## Not built yet
 
-The n8n door. A workflow needs the Operator's approval in chat and a line in `n8n/layout.json` before it can exist.
+The n8n door. A workflow needs the Operator's approval in chat and a card naming it before it can exist.

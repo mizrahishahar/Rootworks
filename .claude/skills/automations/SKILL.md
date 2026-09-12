@@ -13,7 +13,7 @@ The application's heavy work runs on n8n, and this skill is the only door to it.
 
 - **[[INDEX]]** (`n8n/INDEX.md`) is the compiled catalogue: every live machine, what it does, when to use it. A name missing from it is retired.
 - **`n8n/<machine>/`** is the machine's actual source, compiled from the live instance: the graph in `workflow.json`, every code node as a real `.js` file. What a machine will do to a table is read there, before firing, never remembered.
-- **[[LAUNCHERS]]** (`n8n/LAUNCHERS.md`) is the answer to "what can I launch": every webhook-launchable machine, its fire-ready URL, the fields it needs, and whether it takes an attachment. Compiled from the trigger nodes by `node scripts/launchers.js`; rerun after every pull.
+- **`n8n/INDEX.md`** is the answer to "what can I launch": every machine, its type, its door (the fire-ready path), what it does. Generated from the cards and the trigger nodes by `node scripts/n8n/pull.js`.
 
 Facts about a machine come from the code, always. A remembered field list, webhook path, or behavior is not a fact.
 

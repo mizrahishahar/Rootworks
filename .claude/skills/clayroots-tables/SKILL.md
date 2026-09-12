@@ -43,3 +43,9 @@ The filter cell is written as the tree it is: "Where ALL of the following are tr
 ## This folder
 
 Every file here opens with a line saying what it teaches. List the folder, read what the job needs; on anything that writes to a base, read all of it first. A wrong filter silently drops the wrong rows, and a wrong field poisons every row after it.
+
+
+
+## The schema (2026-09-12)
+
+What a base starts from, its core fields and its standard views, is CLAYROOTS-SCHEMA.md at the repo root; every other column belongs to the Rootflow that writes it and its card names it. This skill is the craft on top of that base: views, formulas, counts. It does not define fields.

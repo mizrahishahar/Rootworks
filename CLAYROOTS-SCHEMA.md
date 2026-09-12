@@ -4,8 +4,6 @@ The base every ClayRoots instance starts from. The template base **CLAYROOTS SCH
 
 A field is here when a standard view filters or sorts on it, or a link needs it. Everything else is brought by the Rootflow that writes it, created on first use. A column nobody declared is the Operator's.
 
-Onboarding: duplicate the template, one Clients row on the Hub, one Slack channel.
-
 ## Tables
 
 | Table | Primary | One row per |

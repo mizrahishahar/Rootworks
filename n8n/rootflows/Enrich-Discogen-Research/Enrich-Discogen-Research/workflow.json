@@ -1,0 +1,1479 @@
+{
+  "name": "Enrich Discogen Research",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enrich-discogen-research",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "edr1-0001-4000-8000-000000000001",
+      "name": "Door",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "notes": "The one door. {recordId} from the Hub launch automation opens a launch-row run; any other body is the record door (baseId, clientRecordId, view, prompt, outputField, outputType, webSearch, evidence, overwrite, maxCompanies, tag). Answers 200 on receipt; the run carries on alone."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.body || {}).recordId || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0002-4000-8000-000000000002",
+      "name": "Launch Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "edr1-0003-4000-8000-000000000003",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Tally": "",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "edr1-0004-4000-8000-000000000004",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+        "options": {}
+      },
+      "id": "edr1-0005-4000-8000-000000000005",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "edr1-0006-4000-8000-000000000006",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Event-Params.js"
+      },
+      "id": "edr1-0007-4000-8000-000000000007",
+      "name": "Event Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Params.js"
+      },
+      "id": "edr1-0008-4000-8000-000000000008",
+      "name": "Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0009-4000-8000-000000000009",
+      "name": "Launch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        200
+      ],
+      "notes": "The refusal gate: a bad launch row is closed Failed with the reason (Build Refusal), nothing read, nothing paid."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "edr1-0010-4000-8000-000000000010",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "edr1-0011-4000-8000-000000000011",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0012-4000-8000-000000000012",
+      "name": "Table OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "edr1-0013-4000-8000-000000000013",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0014-4000-8000-000000000014",
+      "name": "Columns OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.toCreate || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0015-4000-8000-000000000015",
+      "name": "Any Columns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Columns.js"
+      },
+      "id": "edr1-0016-4000-8000-000000000016",
+      "name": "Plan Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "edr1-0017-4000-8000-000000000017",
+      "name": "Create Columns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3300,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The own columns, created on first use through the meta API: Output Field at Output Type, and with Evidence on the Evidence and Confidence companions."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "edr1-0018-4000-8000-000000000018",
+      "name": "Reread Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3520,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Verify-Columns.js"
+      },
+      "id": "edr1-0019-4000-8000-000000000019",
+      "name": "Verify Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Resolve Table').first().json.tableId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Resolve Table').first().json.viewId }}"
+          },
+          "fields": "={{ $('Check Columns').first().json.fetchFields }}"
+        }
+      },
+      "id": "edr1-0020-4000-8000-000000000020",
+      "name": "Fetch Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3960,
+        -100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "notes": "Every row of the view, Domain and the own columns only, so a 10,000-row view stays light."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Pick-Rows.js"
+      },
+      "id": "edr1-0021-4000-8000-000000000021",
+      "name": "Pick Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0022-4000-8000-000000000022",
+      "name": "Rows OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4400,
+        -100
+      ],
+      "notes": "The spend gate: more domains than Max companies is a refusal on the row."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Make-Tasks.js"
+      },
+      "id": "edr1-0023-4000-8000-000000000023",
+      "name": "Make Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0024-4000-8000-000000000024",
+      "name": "Any Tasks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.discolike.com/v1/discogen/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "edr1-0025-4000-8000-000000000025",
+      "name": "DG Submit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5060,
+        -200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "POST /v1/discogen/process: the Prompt against every domain of the chunk, context website, web_search per the row, the account's default LLM and search provider. One task per 10,000 domains, never split smaller, never parallel. Header Auth credential Discolike API. No credential, 400 (no provider on the account), 402 or a dead API is an error on the task, never a crash."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Init-Tasks.js"
+      },
+      "id": "edr1-0026-4000-8000-000000000026",
+      "name": "Init Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5280,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Poll-Input.js"
+      },
+      "id": "edr1-0027-4000-8000-000000000027",
+      "name": "Poll Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.discolike.com/v1/discogen/status/{{ $json.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "edr1-0028-4000-8000-000000000028",
+      "name": "DG Poll",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5720,
+        -200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "jreseZ3JAhJNgkk0",
+          "name": "Discolike API"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "GET /v1/discogen/status/{task_id}, one call per open task per round."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Poll-Gate.js"
+      },
+      "id": "edr1-0029-4000-8000-000000000029",
+      "name": "Poll Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5940,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._loop }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0030-4000-8000-000000000030",
+      "name": "Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6160,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json._nextWaitSec }}",
+        "unit": "seconds"
+      },
+      "id": "edr1-0031-4000-8000-000000000031",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6380,
+        -320
+      ],
+      "webhookId": "edr1-0032-4000-8000-000000000032",
+      "notes": "The poll wait: 30 s at first, 60 after two minutes, 120 after ten, 300 after thirty; the loop runs up to eight hours."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Results.js"
+      },
+      "id": "edr1-0033-4000-8000-000000000033",
+      "name": "Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6600,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edr1-0034-4000-8000-000000000034",
+      "name": "Any Writes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6820,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Rows.js"
+      },
+      "id": "edr1-0035-4000-8000-000000000035",
+      "name": "Chunk Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Params').first().json.base }}/{{ $('Resolve Table').first().json.tableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "edr1-0036-4000-8000-000000000036",
+      "name": "Write Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7260,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "PATCH ten rows a request, typecast on (a Single select mints its choices), 200 ms apart."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Write-Check.js"
+      },
+      "id": "edr1-0037-4000-8000-000000000037",
+      "name": "Write Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7480,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "edr1-0038-4000-8000-000000000038",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7700,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "edr1-0039-4000-8000-000000000039",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "edr1-0040-4000-8000-000000000040",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7920,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow",
+      "notes": "The one Hub row: the launch row on a Hub launch (Execution ID stamped at the trigger), a new row on an event call. Fails loudly into the Error Logger."
+    }
+  ],
+  "connections": {
+    "Door": {
+      "main": [
+        [
+          {
+            "node": "Launch Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Row?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Event Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Params": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Params": {
+      "main": [
+        [
+          {
+            "node": "Launch OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch OK?": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
+            "node": "Table OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Table OK?": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Columns OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Columns OK?": {
+      "main": [
+        [
+          {
+            "node": "Any Columns?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Columns?": {
+      "main": [
+        [
+          {
+            "node": "Plan Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Columns": {
+      "main": [
+        [
+          {
+            "node": "Create Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Columns": {
+      "main": [
+        [
+          {
+            "node": "Reread Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reread Meta": {
+      "main": [
+        [
+          {
+            "node": "Verify Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Columns": {
+      "main": [
+        [
+          {
+            "node": "Fetch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Rows": {
+      "main": [
+        [
+          {
+            "node": "Pick Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Rows": {
+      "main": [
+        [
+          {
+            "node": "Rows OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows OK?": {
+      "main": [
+        [
+          {
+            "node": "Make Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Tasks": {
+      "main": [
+        [
+          {
+            "node": "Any Tasks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Tasks?": {
+      "main": [
+        [
+          {
+            "node": "DG Submit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DG Submit": {
+      "main": [
+        [
+          {
+            "node": "Init Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Tasks": {
+      "main": [
+        [
+          {
+            "node": "Poll Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Input": {
+      "main": [
+        [
+          {
+            "node": "DG Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DG Poll": {
+      "main": [
+        [
+          {
+            "node": "Poll Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Gate": {
+      "main": [
+        [
+          {
+            "node": "Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending?": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Poll Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Results": {
+      "main": [
+        [
+          {
+            "node": "Any Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Writes?": {
+      "main": [
+        [
+          {
+            "node": "Chunk Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Check": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "tags": [],
+  "id": "4TmRZVHPpqBTVDx1"
+}

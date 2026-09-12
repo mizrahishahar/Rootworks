@@ -41,6 +41,22 @@ const arg = (n, d) => { const i = args.indexOf('--' + n); return i === -1 ? d : 
 
 const SIZE = parseInt(arg('size', '1000'), 10);
 const SPLIT = parseInt(arg('split', '70'), 10);           // % with NO infra owner
+// DMs per company. 1 = the original one-per-company list. Andy asked on
+// 2026-09-11 for several per company "so we leave nothing for dead" and learn
+// which seat picks up; the agreed shape is 1,000 rows at about 3 per company.
+const PER = parseInt(arg('per-company', '1'), 10);
+// --dms-only drops individual contributors that pass relevance on "staff /
+// principal / lead / founding engineer". At depth 3 they filled 141 of 1,000
+// rows; they are reachable people, but not decision makers.
+const DMS_ONLY = args.includes('--dms-only');
+const IC = /^(senior |sr\.? |staff |lead |principal |founding )?(software |full[- ]?stack |backend |back[- ]end |frontend |front[- ]end |data |ml |machine learning |ai |qa |quality assurance |mobile |ios |android )?(engineer|developer|programmer)\b/i;
+// Hands-on infra engineers (DevOps Engineer, SRE, Cloud Engineer, Platform
+// Engineer...) are people who DO infrastructure, not people who BUY it. In
+// --dms-only they go unless the title carries a leadership word. Found 66 of
+// them in the first DMs-only build, 17 as the top contact at their company.
+// Architects stay: Andy named "platform architecture" as a target seat.
+const INFRA_IC = /devops|dev ops|\bsre\b|site reliability|reliability eng|cloud (engineer|ops|operations)|platform engineer|infrastructure engineer|infra engineer|systems? engineer|sysadmin|system administrator|network engineer|release engineer|build engineer|production engineer|kubernetes/i;
+const LEADER = /\b(head|lead|manager|director|dir|vp|vice president|chief|cto|founder|owner|architect)\b/i;
 const MIN_CONTACTS = parseInt(arg('min-contacts', '0'), 10);
 const OUT = arg('out', path.join(process.env.HOME, 'Downloads', `andy-call-list-${new Date().toISOString().slice(0, 10)}.csv`));
 
@@ -207,6 +223,9 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
     ? `dialed guard: ${guard.rows} rows read, ${guard.slugs.size} LinkedIn slugs, ${guard.emails.size} emails from ${path.basename(guard.file)}`
     : 'dialed guard: NO CSV FOUND — relying on the Dialed checkbox alone');
   let blockedByGuard = 0;
+  let oversized = 0;
+  let noName = 0;
+  let icDropped = 0;
 
   const people = [];
   for (const r of raw) {
@@ -217,6 +236,11 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
     const band = String(first(f[F.employees]) && first(f[F.employees]).name || first(f[F.employees]));
     const title = f[F.title] || '';
     if (!allowed(title, band)) continue;
+    // FullEnrich matches on First Name + Last Name + Website + LinkedIn. A row
+    // with one name ("Jiang", "Sanny") fails its matcher, so it never ships.
+    if (!String(f[F.firstName] || '').trim() || !String(f[F.lastName] || '').trim()) { noName++; continue; }
+    if (DMS_ONLY && IC.test(title.trim())) { icDropped++; continue; }
+    if (DMS_ONLY && INFRA_IC.test(title) && !LEADER.test(title)) { icDropped++; continue; }
     const ratio = String(first(f[F.ratio]));
     const infra = parseInt(ratio.split(':')[0], 10);
     const dev = parseInt(ratio.split(':')[1], 10);
@@ -225,8 +249,13 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
     // staff at all. That is thin evidence, not a lean team, and it is exactly
     // the mistake in 274 rows of Dwayne's file. Never sell it as no-infra-owner.
     if (infra === 0 && dev === 0) continue;
+    // Our Employees band says 1-50, but GetLeads sees 75+ technical staff: the
+    // band is wrong (doit.com read 67:127 as a "1-10" company). Wrong size is
+    // wrong ICP, so the company is out rather than pitched as a small team.
+    if (infra + dev > 75) { oversized++; continue; }
     const sen = first(f[F.seniority]);
     people.push({
+      slug,
       domain: String(first(f[F.domain])).toLowerCase(),
       noInfra: infra === 0,
       rank: rank(title),
@@ -244,50 +273,102 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
     });
   }
   console.log(`${blockedByGuard} blocked as already dialed (missed by the Dialed checkbox)`);
+  console.log(`${oversized} dropped: company band says 1-50 but 75+ technical staff on record`);
+  console.log(`${noName} dropped: missing first or last name (FullEnrich cannot match them)`);
+  if (DMS_ONLY) console.log(`${icDropped} dropped: individual contributors (--dms-only)`);
   console.log(`${people.length} pass the per-band title rule`);
 
-  // one per company, best-ranked wins
-  const best = new Map();
+  // ---------- group by company, keep the best PER people in each ----------
+  const byCo = new Map();
   for (const p of people) {
     if (!p.domain) continue;
-    const cur = best.get(p.domain);
-    if (!cur || p.rank < cur.rank || (p.rank === cur.rank && p.contacts > cur.contacts)) best.set(p.domain, p);
+    if (!byCo.has(p.domain)) byCo.set(p.domain, []);
+    byCo.get(p.domain).push(p);
   }
-  const unique = [...best.values()];
-  console.log(`${unique.length} unique companies after one-per-company`);
+  const companies = [];
+  for (const [domain, list] of byCo) {
+    // The same person can sit twice under two emails: dedupe by LinkedIn slug, then by name.
+    const seen = new Set();
+    const uniq = [];
+    for (const p of list.sort((a, b) => a.rank - b.rank)) {
+      const k1 = p.slug || '';
+      const k2 = String(p.row.Name).toLowerCase().replace(/[^a-z]/g, '');
+      if ((k1 && seen.has(k1)) || (k2 && seen.has(k2))) continue;
+      if (k1) seen.add(k1);
+      if (k2) seen.add(k2);
+      uniq.push(p);
+    }
+    const take = uniq.slice(0, PER);
+    companies.push({ domain, noInfra: take[0].noInfra, people: take, bestRank: take[0].rank, contacts: take[0].contacts });
+  }
+  const depthHist = {};
+  for (const c of companies) depthHist[c.people.length] = (depthHist[c.people.length] || 0) + 1;
+  console.log(`${companies.length} companies with at least one DM | depth available (DMs, capped at ${PER}):`,
+    Object.entries(depthHist).map(([k, v]) => `${k}=${v}`).join('  '));
 
-  const no = unique.filter((p) => p.noInfra).sort((a, b) => a.rank - b.rank || b.contacts - a.contacts);
-  const has = unique.filter((p) => !p.noInfra).sort((a, b) => a.rank - b.rank || b.contacts - a.contacts);
-  console.log(`  no infra owner ${no.length} | has infra owner ${has.length}`);
+  // Deepest companies first: with several DMs per account, an account where we
+  // hold three right seats beats three accounts where we hold one each.
+  const order = (a, b) => b.people.length - a.people.length || a.bestRank - b.bestRank || b.contacts - a.contacts;
+  const no = companies.filter((c) => c.noInfra).sort(order);
+  const has = companies.filter((c) => !c.noInfra).sort(order);
+  console.log(`  no infra owner ${no.length} companies | has infra owner ${has.length} companies`);
 
+  function fill(pool, want) {
+    const rows = [];
+    let used = 0;
+    for (const c of pool) {
+      if (rows.length >= want) break;
+      const room = want - rows.length;
+      c.people.slice(0, room).forEach((p, i) => rows.push({ p, c, i }));
+      used++;
+    }
+    return { rows, used };
+  }
+
+  // The split is a target, the size is the deliverable: if one bucket runs dry,
+  // top up from the other rather than hand over a short file.
   const wantNo = Math.round(SIZE * SPLIT / 100);
-  const wantHas = SIZE - wantNo;
-  let takeNo = no.slice(0, wantNo);
-  let takeHas = has.slice(0, wantHas);
-
-  // The split is a target, the size is the deliverable. If one bucket runs dry,
-  // top the list up from the other rather than handing over a short file. The
-  // infra-owner side is the scarce one and stays fully drained either way.
-  const short = SIZE - (takeNo.length + takeHas.length);
-  if (short > 0) {
-    const moreNo = no.slice(takeNo.length, takeNo.length + short);
-    takeNo = takeNo.concat(moreNo);
-    const stillShort = SIZE - (takeNo.length + takeHas.length);
-    if (stillShort > 0) takeHas = takeHas.concat(has.slice(takeHas.length, takeHas.length + stillShort));
-    console.log(`  topped up ${short} rows from the deeper bucket to reach ${SIZE}`);
+  const a = fill(no, wantNo);
+  const b = fill(has, SIZE - a.rows.length);
+  const gap = SIZE - a.rows.length - b.rows.length;
+  if (gap > 0) {
+    const extra = fill(no.slice(a.used), gap);
+    a.rows.push(...extra.rows);
+    console.log(`  topped up ${extra.rows.length} rows from the no-infra bucket to reach ${SIZE}`);
   }
-  if (takeNo.length + takeHas.length < SIZE) {
-    console.log(`  !! pool exhausted: ${takeNo.length + takeHas.length} of ${SIZE} (no-infra ${no.length}, has-infra ${has.length})`);
-  }
+  const picked = [...a.rows, ...b.rows];
+  if (picked.length < SIZE) console.log(`  !! pool exhausted: ${picked.length} of ${SIZE}`);
 
-  const picked = [...takeNo, ...takeHas];
-  const cols = Object.keys(picked[0].row);
+  // Group each company's rows together, primary contact first.
+  const perDomain = {};
+  for (const x of picked) perDomain[x.c.domain] = (perDomain[x.c.domain] || 0) + 1;
+  picked.sort((x, y) => (x.c.domain < y.c.domain ? -1 : x.c.domain > y.c.domain ? 1 : x.i - y.i));
+  // FullEnrich's upload template is exactly: First Name, Last Name, Website,
+  // LinkedIn Profile URL (checked against their example.csv, 2026-09-12). Those
+  // four lead under FullEnrich's own names; every other column rides along. Our
+  // empty Phone column is dropped because FullEnrich writes its own phone columns.
+  const out = picked.map((x) => {
+    const { first_name, last_name, Domain, 'LinkedIn URL': li, Phone, ...rest } = x.p.row;
+    return {
+      'First Name': first_name,
+      'Last Name': last_name,
+      Website: Domain,
+      'LinkedIn Profile URL': li,
+      ...rest,
+      'Contact Priority': x.i + 1,
+      'DMs At Company': perDomain[x.c.domain],
+    };
+  });
+
+  const cols = Object.keys(out[0]);
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const csv = [cols.join(','), ...picked.map((p) => cols.map((c) => esc(p.row[c])).join(','))].join('\n');
-  fs.writeFileSync(OUT, csv);
+  fs.writeFileSync(OUT, [cols.join(','), ...out.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n'));
 
-  const actual = Math.round(100 * takeNo.length / picked.length);
+  const rowsNo = picked.filter((x) => x.c.noInfra).length;
+  const nCo = Object.keys(perDomain).length;
+  const coNo = new Set(picked.filter((x) => x.c.noInfra).map((x) => x.c.domain)).size;
   console.log(`\nwrote ${picked.length} rows to ${OUT}`);
-  console.log(`  ${takeNo.length} no infra owner (${actual}%) | ${takeHas.length} has infra owner (${100 - actual}%)`);
-  console.log(`  ${new Set(picked.map((p) => p.domain)).size} distinct companies`);
+  console.log(`  ${nCo} companies, ${(picked.length / nCo).toFixed(2)} DMs per company on average`);
+  console.log(`  rows: ${rowsNo} no infra owner (${Math.round(100 * rowsNo / picked.length)}%) | ${picked.length - rowsNo} has infra owner`);
+  console.log(`  companies: ${coNo} no infra owner | ${nCo - coNo} has infra owner`);
 })().catch((e) => { console.error(e); process.exit(1); });

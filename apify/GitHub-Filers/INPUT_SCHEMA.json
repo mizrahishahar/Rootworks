@@ -1,0 +1,78 @@
+{
+  "title": "GitHub Filers",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "repos": {
+      "title": "Watched repos",
+      "type": "array",
+      "description": "owner/name, one per line. This is the watchlist and it lives here, in the task input, the way the Trustpilot actor's categories do. Pick repos only a company running the thing in production would file on.",
+      "editor": "stringList",
+      "prefill": [
+        "hashicorp/terraform-provider-aws",
+        "argoproj/argo-cd",
+        "cert-manager/cert-manager"
+      ]
+    },
+    "lookbackDays": {
+      "title": "Lookback days",
+      "type": "integer",
+      "description": "How far back to read on a first run. After that the actor's own cursor per repo takes over and only genuinely new filings are read.",
+      "default": 7,
+      "minimum": 1,
+      "maximum": 90
+    },
+    "events": {
+      "title": "Event types",
+      "type": "array",
+      "description": "issue, pr, or both. The GitHub endpoint returns pull requests alongside issues, so this is our filter.",
+      "editor": "stringList",
+      "default": ["issue", "pr"]
+    },
+    "excludeOrgs": {
+      "title": "Extra vendor orgs to exclude",
+      "type": "array",
+      "description": "Every watched repo's owner is excluded automatically. Add anything else whose staff should never count as a prospect, e.g. a vendor that maintains a repo it does not own.",
+      "editor": "stringList",
+      "default": []
+    },
+    "maxPagesPerRepo": {
+      "title": "Max pages per repo",
+      "type": "integer",
+      "description": "100 filings a page. The run stops early anyway once it reaches filings older than the cursor.",
+      "default": 5,
+      "minimum": 1,
+      "maximum": 20
+    },
+    "maxCompanies": {
+      "title": "Max companies per run",
+      "type": "integer",
+      "description": "Hard cap on the dataset, so a bad watchlist can never flood the door.",
+      "default": 500,
+      "minimum": 1
+    },
+    "userCacheDays": {
+      "title": "Filer cache days",
+      "type": "integer",
+      "description": "A filer's employer is looked up once and remembered this long, so a daily run spends almost no requests on people it already knows.",
+      "default": 30,
+      "minimum": 1
+    },
+    "bodyMaxChars": {
+      "title": "Issue body cap",
+      "type": "integer",
+      "description": "The body is the copy ammunition, but Airtable long text dies at 100,000 characters. Keep it well under.",
+      "default": 4000,
+      "minimum": 200,
+      "maximum": 50000
+    },
+    "githubToken": {
+      "title": "GitHub token",
+      "type": "string",
+      "description": "A read-only PAT on a dedicated machine account, never the account that owns the Rootworks repo. Falls back to the GITHUB_TOKEN environment variable. Without one the run is capped at 60 requests an hour.",
+      "editor": "textfield",
+      "isSecret": true
+    }
+  },
+  "required": ["repos"]
+}

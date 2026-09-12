@@ -11,14 +11,14 @@ Written 2026-09-06 out of the Dave.io recovery: 60 mailboxes, 40 disconnected, 0
 
 ## Definitions
 
-| Term | Meaning |
-|---|---|
-| `active` | Mailboxes sending right now: the ones carrying the `active` tag |
-| Not active | Every other mailbox in the client's workspace: allocated, warming, in no campaign |
-| Capacity | The sum of the mailboxes' own daily limits. Provider-agnostic: a Google mailbox carries 25, a Microsoft one 3, the sum is the number |
-| Batch | One purchase or allocation, tagged `{client}-{n}` in order |
-| Pool | The Flowroots workspace: warmed mailboxes with zero cold sends |
-| Siblings | A client's other `active` domains, sending the same campaigns in the same window |
+| Term       | Meaning                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `active`   | Mailboxes sending right now: the ones carrying the `active` tag                                                                      |
+| Not active | Every other mailbox in the client's workspace: allocated, warming, in no campaign                                                    |
+| Capacity   | The sum of the mailboxes' own daily limits. Provider-agnostic: a Google mailbox carries 25, a Microsoft one 3, the sum is the number |
+| Batch      | One purchase or allocation, tagged `{client}-{n}` in order                                                                           |
+| Pool       | The Flowroots workspace: warmed mailboxes with zero cold sends                                                                       |
+| Siblings   | A client's other `active` domains, sending the same campaigns in the same window                                                     |
 
 ## Capacity
 

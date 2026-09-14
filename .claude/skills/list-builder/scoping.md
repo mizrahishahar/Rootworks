@@ -12,18 +12,15 @@ One sentence, specifically true for everyone the list should return. If the sent
 
 A build arrives as a hand-off: the offer, who to reach, which source opens the build, any domains already in hand, prior results. The brief names the opening, company-first (a discovery source) or contact-first (a contact database). The source's own skill shapes the query; this call carries the judgment that stays constant across sources: how many lists.
 
-## Sizing: the ratios that back-calc a list
+## Sizing
 
-Directional; niches swing them hard (trades run far hotter than SaaS):
-
-- about 1 meeting per 5,000 sends, 1 positive per 750, 1% reply, bounce under 3%. Judge nothing under about 5,000 sends; trust an angle at 10 to 15 positives.
-- build 1,500 to 2,500 leads per test cohort, 1,000 to 2,000 per native segment, and hold 10,000 to 15,000 verified to run a month without re-sourcing.
+A list is sized by what the campaign standard says a campaign consumes through its stages, and by the refill it will need before the pool runs dry. No ratio lives here: count the source before the pull and the base after it, and read the real numbers.
 
 ## Where the TAM lives
 
 - **Match the source to the niche.** Profile-anchored tools cover a fraction of blue-collar, SMB, private and international markets; web-indexed discovery reaches the long tail. Never trust one source to hold a whole market.
-- **The floor:** under about 1,000 reachable prospects, cold email breaks; pivot toward ABM or calling.
-- For firms under about 10 employees, add public and role emails alongside personal ones.
+- **The floor:** a market too thin to run the standard's stages is not a cold email market; pivot toward ABM or calling.
+- At very small firms, add public and role emails alongside personal ones.
 
 ## Depth vs breadth
 

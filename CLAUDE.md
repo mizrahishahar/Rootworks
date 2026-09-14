@@ -20,7 +20,7 @@ Know your own faculties; they are bigger than they look from any one session.
 | Domain | Schema | Standard | Skill |
 |---|---|---|---|
 | a client's base: views, counts, AI fields | CLAYROOTS-SCHEMA | lists | clayroots |
-| who a campaign reaches | CLAYROOTS-SCHEMA | lists | lists |
+| who a campaign reaches | CLAYROOTS-SCHEMA | lists | list-builder |
 | finding companies and research | | lists | discolike |
 | launching and reading machines | N8N-SCHEMA, HUB-SCHEMA | | automations |
 | the Hub | HUB-SCHEMA | | hub |

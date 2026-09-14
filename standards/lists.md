@@ -58,12 +58,3 @@ Each step is run by a Rootflow, a machine that adds to the ClayRoots base, launc
 
 - a gateway is a mail provider whose value contains one of: proofpoint, barracuda, mimecast, sophos, mailroute, spamhero, appriver, spamexperts
 - sendable is everything that is not a gateway, never an allow-list
-
-```json
-{
-  "people_per_company": { "1-50": 20, "51-500": 30, "501+": 50 },
-  "floor": { "1-50": "non-junior with senior ICs", "51-500": "non-junior", "501+": "manager and up" },
-  "segment_fixed_clauses": ["relevance = 1", "Status = done"],
-  "gateway_providers": ["proofpoint", "barracuda", "mimecast", "sophos", "mailroute", "spamhero", "appriver", "spamexperts"]
-}
-```

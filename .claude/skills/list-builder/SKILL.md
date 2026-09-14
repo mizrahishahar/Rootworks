@@ -1,5 +1,5 @@
 ---
-name: lists
+name: list-builder
 type: skill
 vertical: [list-building]
 description: Decides who a campaign reaches. Scoping a brief into lists, the relevance rule and its formula, the segment set and its priority, and which machine to call for each step. Use when scoping, judging relevance, or segmenting any list. Views and counts are the clayroots skill; sources are their own skills.

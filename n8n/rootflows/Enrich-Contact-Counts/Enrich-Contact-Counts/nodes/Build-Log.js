@@ -11,11 +11,11 @@ rs=rs||{ called:0, counted:0, errors:0, credits:0, firstError:'', failReasons:[]
 let w={ written:0, writeErrors:0, writeRequests:0, failed:[], writeReasons:[] }; try{ w=Object.assign(w,$('Write Check').first().json||{}); }catch(e){}
 const n=(v)=>Number(v)||0;
 let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}
-const failedCount=n(rs.errors)+n(w.writeErrors)+(n(rs.noKey)?1:0)+(lookupFail?1:0);
 const created=(c.toCreate||[]);
 // The People mirror: a lookup of the count column, planned by Plan Lookup and created by Create Lookup.
 let lookupLine='none needed (already there)'; let lookupFail='';
 try{ const pl=$('Plan Lookup').first().json||{}; if(pl.note) lookupLine='not created: '+pl.note; else if(!pl._none){ let ans={}; try{ ans=$('Create Lookup').first().json||{}; }catch(e){} if(ans.id&&ans.type==='multipleLookupValues') lookupLine='created on People as a lookup of Companies'; else { lookupLine='the create was refused'; lookupFail='People lookup "'+p.outputField+'" was not created: '+JSON.stringify(ans).slice(0,160); } } }catch(e){}
+const failedCount=n(rs.errors)+n(w.writeErrors)+(n(rs.noKey)?1:0)+(lookupFail?1:0);
 const what=p.titles.length?('people titled '+p.titles.join(', ')+(p.excludeTitles.length?' (excluding '+p.excludeTitles.join(', ')+')':'')):'everyone GetLeads holds at the domain';
 const lines=[
   '**'+(n(rs.positive)+n(rs.zero))+' of '+n(ps.domains)+' companies counted into "'+p.outputField+'", '+n(rs.unknown)+' unknown to GetLeads (blank), '+n(w.written)+' rows written'+(failedCount?', '+failedCount+' errors':'')+'**',

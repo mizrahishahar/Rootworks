@@ -1,39 +1,8 @@
----
-type: playbook
-vertical: [copy]
-channel: [email]
-sources: standard list
----
-
 # Local
 
-For local-service businesses, proximity is the easiest opener there is. You are a neighbor who noticed them, not a vendor blasting a list. Plain and human beats slick every time here.
+## Description
 
-## The play
-
-Be the neighbor who noticed.
-
-Open on the locality, warm and conversational ("saw your {{business}} over in {{city}}, looks like you're doing solid work"), then a nearby proof in their own terms ("helped another shop in {{city}} book 15 jobs in month one"). Plain, no corporate polish, trades smell it instantly. Casual throughout, the tone of a referral between locals.
-
-## Needs
-
-- A city-based list of owners, filtered by city and industry, refreshed monthly.
-- A nearby proof: a result for a similar business in or near the city.
-- Vars: `{{business}}`, `{{city}}`.
-
-## Subject lines
-
-Local and plain.
-
-- {{business}} in {{city}}
-- quick one from a neighbor
-
-## Touches
-
-Two touches.
-
-- **Touch 1** - the locality opener. 2 to 4 variants, depending on the size of the list.
-- **Touch 2** - the follow-up. 2 variants.
+For local-service businesses, proximity is the opener. A neighbor who noticed them, not a vendor blasting a list: the locality first, then a nearby proof in their own terms, plain and casual, the tone of a referral between locals. Trades smell polish instantly.
 
 ## Template
 
@@ -45,9 +14,9 @@ Two touches.
 >
 > {the CTA}
 
-**Touch 2** - the follow-up, body only, threads under Touch 1. Excuse-led per the house doctrine: the excuse here is a second local proof or a neighborly nudge, then the offer repeated plainly and a lighter re-ask.
+**Touch 2**, threaded
 
-> {the excuse: a second local proof, or a nudge}
+> {a second local proof, or a neighborly nudge}
 >
 > {the offer repeated plainly} {a lighter re-ask}
 

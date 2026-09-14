@@ -1,45 +1,12 @@
----
-type: playbook
-vertical: [copy]
-channel: [linkedin]
-sources: standard list
----
-
 # Tye Frankel
 
-A relationship-first LinkedIn DM framework. Not a pitch sequence, a conversation: you throw rope, build trust, and let an invited opening carry you to a call. Manual, 5 to 15 messages, 4-6/10 enthusiasm throughout. For hand-picked, high-value ICP where a booked call is worth an hour of real conversation.
+## Description
 
-## The play
-
-Build trust, earn the invitation to pitch.
-
-- **Pre-DM touchpoints** on every accepted connection: endorse two skills, like a post, comment tagging their name, follow the company page. Signals human, not bot.
-- **Multi-thread opening**, sent as separate short messages, no periods, casual and non-needy. Mix personal and business, then a soft pain-point seed.
-- **Restrained compliments, 4-6/10** - "solid case study, 3.2X ROI is good for e-com FB ads", never "I love your work!". Specificity proves research; restraint signals you have seen better.
-- **Mirror, resonate, reflect, then ask** - acknowledge the reply, relate, then the next question. Never interrogate.
-- **Authority observations, not pitches** - drop credibility in their context.
-- **Pry pain points** gently throughout; a small signal is enough to pry wide open.
-- **The "what do you mean?" cheat code** - drop a proprietary phrase tied to their pain. They ask what it is. Define it, link it to a common problem, drop proof, soft-pitch the call: "would be down to run you through it sometime."
-
-## Needs
-
-- An optimized profile (the landing page that pre-sells) and a light content presence.
-- 2-3 proprietary phrases, each tied to a specific ICP pain, that make a prospect ask "what do you mean?"
-- 1-2 sales assets to drop contextually (a case study, a short video, a doc).
-
-## Touches
-
-A manual conversation, not a fixed sequence. Connection-gated.
-
-- **Pre-DM** - endorse, like, comment, follow. Signal human.
-- **Opener** - multi-thread: personal + business + a pain seed. Earn a reply.
-- **Build** - restrained compliment, mirror, authority observation. Build trust.
-- **Pry** - pain-point questions woven in. Find the wedge.
-- **Pitch** - the proprietary-phrase opening, then a soft call ask.
+A relationship-first LinkedIn conversation for hand-picked, high-value readers, where a booked call is worth an hour of real talk. Manual, 5 to 15 messages, enthusiasm held at 4 to 6 out of 10. Before the first DM, signal human on the accepted connection: endorse two skills, like a post, comment, follow the company. Open multi-threaded in separate short messages, personal and business, no periods, non-needy. Compliments restrained and specific ("3.2X ROI is good for e-com FB ads"). Mirror, relate, then ask; never interrogate. Drop authority as observations in their context, pry pain gently, and use the proprietary phrase tied to their pain so they ask "what do you mean?", which is the invitation to define it, link it to a common problem, drop proof and soft-pitch the call.
 
 ## Template
 
-**Multi-thread opener** (separate messages)
+**Opener**, separate messages
 
 > Hey {{first_name}}
 >

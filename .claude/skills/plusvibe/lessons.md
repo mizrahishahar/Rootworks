@@ -1,41 +1,67 @@
-Teaches: the MCP surface by job, and the lessons already paid for.
+Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 
 # The MCP, and the lessons
 
-## Actions (MCP)
+## The surface, by job
 
 | Job | Tools |
 |---|---|
-| Read a campaign | `list_campaigns(campaign_id)` for config AND the full sequences with live spintax; `get_campaign_variations` for per-step variation stats (no bodies); `get_campaign_detailed_stats` / `get_analytics_stats` for numbers; `get_campaign_emails` for sent mail |
-| Build / edit | `create_campaign` (draft), `patch_campaign_update` (sequences + accounts), `set_campaign_schedule`, `launch_campaign`, `pause_campaign` |
-| Leads | `add_leads_to_campaign` with `skip_if_in_workspace:true`; `update_lead_variables` to backfill a variable on existing leads. Bulk loads go through the Deploy automation, never hand uploads |
-| Inbox | `get_emails`, `reply_to_email`, `save_email_as_draft` |
+| Read a campaign | `list_campaigns(campaign_id)` for config and the full sequences with live spintax; `get_campaign_variations` for per-step variation stats; `get_campaign_detailed_stats` / `get_analytics_stats` for numbers by date; `get_campaign_emails` for sent mail |
+| Build / edit | `create_campaign` (draft), `patch_campaign_update` (sequences, accounts, the advanced schedule, the flags), `launch_campaign`, `pause_campaign` |
+| Leads | `add_leads_to_campaign` with `skip_if_in_workspace:true`; `update_lead_variables` to backfill a variable. Bulk loads go through the Deploy, never a hand upload |
+| Inbox | `get_email_threads(workspace_id, lead)`, `reply_to_email`, `save_email_as_draft` |
+| Accounts | `list_email_accounts`, `bulk_update_email_accounts`, `bulk_assign_tags`, `check_email_account_health`, `get_warmup_stats` |
 
-## Gotchas, paid for
+## Campaign traps
 
 - `patch_campaign_update` requires `first_wait_time` whenever sequences or accounts are sent (`0` for a normal parent).
 - Sequence `wait_time` is in DAYS, not minutes. Body must be HTML. Schedule day keys are 1-7 (Mon=1), only active days as `true`.
+- `create_campaign` takes `camp_name`, not `name`.
 - Custom variables store with a `custom_` prefix: upload `site_detail`, reference `{{custom_site_detail}}`, or it renders blank.
-- `is_overwrite:true` has no skip guard and re-contacts excluded leads; on a backfill, `leads_uploaded` should be ~0.
-- **Variants are not locked tracks.** Each step draws its variation independently (a lead can get 1B then 2A), so a real angle test needs one campaign per angle, never A/B variants inside one.
-- The sender does not dedup across campaigns: the same person in two campaigns is mailed twice. `ws_last_sent_at` reads null on a freshly loaded lead, so it is never a dedup check.
 - `{{sender_signature}}` renders the inbox's signature field, blank if empty.
-- Hebrew ships wrapped in a `dir='rtl'` container. The reply editor scrambles Hebrew (no RTL control): save Hebrew replies as `dir=rtl` drafts for the Operator to review and send.
-- Open counts mean nothing unless the campaign had open tracking on, and scanners inflate them even then.
-- The unibox lead list is workspace-wide by default; filter by campaign or a lead read can belong to a different campaign than assumed.
-- Read-backs are the only proof: the API returns success while silently dropping accounts that no longer exist.
-- On any MCP error, stop and ask the Operator to refresh; never retry in a loop.
-- **The stringified-args fault, and how to read it.** The MCP transport intermittently stringifies every non-string argument, so `patch_campaign_update` rejects `sequences` ("expected array, received string") and `first_wait_time` ("expected number, received string"). Reads with string-only args keep working the whole time, which makes the connection look healthy. Cheapest probe: `list_campaigns` with `limit` as a number; if it comes back "expected number, received string", every write that carries an array or a number is dead. An Operator refresh clears it. It clears per server, not globally: PlusVibe came back while Airtable stayed broken in the same minute, and Airtable's version of the failure reads `Input validation error` (local, pre-dispatch) rather than `MCP error -32602` (server-side).
-- **Never edit a sequence body in the PlusVibe UI's source view.** `ctrl+a` does not select inside that code area; the typed text is appended to the existing body instead of replacing it. The character counter is the tell (952 → 1917). Undo does not reverse it. Nothing reaches the server until "Save All", so the escape is to close the tab and discard the unsaved state. Copy edits belong in `patch_campaign_update` with the full sequences array, always.
-- **The gateway fence has a native switch: `send_seg_email` (SEG = Secure Email Gateway).** It reads back on the campaign object, 1 = send to gateway-protected domains, 0 = skip them. Adelante's UK campaigns run it at 0 and hold 1.1-1.2% lifetime bounce. **It is NOT settable through the MCP**: it is absent from `patch_campaign_update`, `create_campaign` and `update_workspace_settings`, and passing it to `patch_campaign_update` anyway returns `{"status":"success"}` while silently dropping it. UI only. Read the flag on every campaign before launch; a new campaign defaults to 1.
-- **Turning the fence on destroys no leads.** `send_seg_email: 0` skips gateway leads at send time; they stay enrolled. So the skip is measurable for free after the first run as `lead_count` minus `lead_contacted_count`, which is the cheapest way to size gateway exposure when the list table carries no MX column.
-- **A contacts table can carry `MX Provider` and have it empty on every row**, which makes the deploy-view gateway fence unbuildable without anyone noticing. `USA DTC - Contacts` had it blank across all 29,177. Prove a field is present-but-empty rather than absent by filtering `isNotEmpty` on it: an absent column errors with "Unknown column name or id", an empty one returns 0 cleanly.
-- **Two markets on one inbox pool starve each other by CLOCK ORDER, not by campaign.** PlusVibe already round-robins fairly between campaigns sharing a pool: three UK campaigns on the same 40 inboxes split a saturated day 350 / 353 / 292. What starves a market is that its window opens later. Adelante's UK campaigns ran 07:00-14:00 Europe/London (02:00-09:00 ET) against US campaigns on 07:00-10:00 + 15:00-18:00 ET, so UK had a five-hour head start and seven hours to drain the pool's whole 1,000/day before US opened. Diagnose by comparing windows in one converted timezone, never by campaign order.
-- **The window length is the throttle, and it is the only one that self-reallocates.** Max throughput is `inboxes × (window minutes ÷ sending_gap)`. At 40 inboxes on an 8-minute gap: 60 min ≈ 300 sends, 90 ≈ 450, 120 ≈ 600. Above the crossover (here ~7 hours) the mailbox daily limit binds instead and the window stops governing anything. Shrinking the window rations a shared pool WITHOUT per-campaign daily limits, which matters because a per-campaign limit is a static allocation: when one campaign ends its slice dies with it and nobody picks it up. A window is shared by every campaign in that market, so a campaign ending frees its share to its siblings the same day. Never raise inbox daily limits to buy capacity; the inbox limit is the rest mechanism.
-- **There is no hourly send breakdown in the MCP.** `get_campaign_detailed_stats` is daily granularity. To calibrate a window, read `email_sent_today` off the campaign object (`list_campaigns`) at the window close: it is a live running counter, per campaign.
-- **PlusVibe is NOT the MCP server named "emailbison".** *1 Sep 2026.* Two email-sender MCPs live in the session. The `emailbison` server is a different EmailBison instance holding only the DuoDiv workspace, and it silently ignores `workspace_id` and `search`, so it perfectly impersonates "PlusVibe with an access problem." The real PlusVibe MCP is the connector whose `get_workspaces` returns account shahar@flowroots.com with the `Flowroots X {client}` workspaces, ids matching the registry's PlusVibe Workspace ID field. Probe with `get_workspaces` FIRST; if the workspace names aren't Flowroots X clients, you are on the wrong server. An hour of a "blocked" pre-call reminder was this.
-- **Inbox mechanics, paid for the same day:** `get_email_threads(workspace_id, lead: <email>)` filters cleanly by lead. `reply_to_email` requires `reply_to_id` (the message id being replied to), `subject`, `from` (the thread's eaccount), `to`, and an HTML `body`. Read the thread back and grep for the returned message id; that is the proof.
-- **Check the per-domain cap before activating.** A contacts-table deploy routinely lands several people from one company in the same campaign (3 at one domain, 2 at another, in a single build). `is_max_lead_domain_per_day` defaults to 0, so they can all be mailed the same morning. Stop-on-reply does not save you: it only fires after someone replies. Set `is_max_lead_domain_per_day: "yes"` and `max_lead_domain_per_day: 1` as part of the pre-launch check.
-- **`unsub_blocklist` resets to 0 on any `patch_campaign_update` that omits it.** *1 Sep 2026, Dave.io lean-teams build.* Every sequences-or-accounts patch silently zeroed the flag set minutes earlier; the read-back caught it three times. Re-send `unsub_blocklist: "yes"` on (or after) the LAST patch of a build, and make it part of the final read-back checklist. Flag params on patch are the strings "yes"/"no", not 1/0, and `use_adv_schedule` on patch is a real boolean.
-- **The advanced schedule is settable ONLY through `patch_campaign_update`, with its own shape.** `set_campaign_schedule` accepts `use_adv_schedule`/`adv_schedule` and silently drops them (returns success, campaign reads back `use_adv_schedule: false`), in both day-name and 1-7 key shapes. The write that lands: `patch_campaign_update` with `use_adv_schedule: true` and `adv_schedule: {timezone, daily_limit, daily_limit_new_lead, windows: {Monday: [{from,to},...], ...}}` — key `timezone` (not `tz`), both limits required, weekday NAMES. Verified landed by read-back.
-- **`create_campaign` takes `camp_name`, not `name`.** `set_campaign_schedule` needs `start_date` and a `schedules` array of `{timing:{from,to}, days:{"1":true,...}, timezone}` with NO `name` key inside the entries.
+- `is_overwrite:true` has no skip guard and re-contacts excluded leads; on a backfill, `leads_uploaded` should be ~0.
+- **Variants are not locked tracks.** Each step draws its variation independently (a lead can get 1B then 2A).
+- The sender does not dedup across campaigns: the same person in two campaigns is mailed twice. `ws_last_sent_at` reads null on a freshly loaded lead, never a dedup check.
+- **`unsub_blocklist` resets to 0 on any `patch_campaign_update` that omits it.** *1 Sep 2026.* Re-send `"yes"` on the last patch of a build and confirm it in the read-back. Flag params on patch are the strings "yes"/"no", not 1/0; `use_adv_schedule` on patch is a real boolean.
+- **The advanced schedule lands only through `patch_campaign_update`**: `use_adv_schedule: true` and `adv_schedule: {timezone, daily_limit, daily_limit_new_lead, windows: {Monday: [{from,to}], ...}}`, key `timezone` not `tz`, both limits required, weekday names. `set_campaign_schedule` accepts the same keys and silently drops them.
+- **`send_seg_email` (the gateway fence, 1 = send to gateway-protected domains, 0 = skip) is UI only.** Absent from every write tool; passing it returns success and drops it. A new campaign defaults to 1. Read it on every campaign before launch.
+- Turning the fence on destroys no leads: skipped leads stay enrolled, so gateway exposure reads for free as `lead_count` minus `lead_contacted_count`.
+- `is_max_lead_domain_per_day` defaults to 0; a contacts-table deploy lands several people from one company in one morning without it.
+- **A COMPLETED campaign does not start again when leads land in it.** *12 Sep 2026, Adelante: 74 leads sat uncontacted after completion.* The PlusVibe deploy door activates it after an upload; a hand upload into a COMPLETED campaign must be followed by `launch_campaign`.
+- **Never edit a sequence body in the UI's source view.** `ctrl+a` does not select inside it; typed text is appended, undo does not reverse it. Close the tab and discard. Copy edits go through `patch_campaign_update` with the full sequences array.
+- Open counts mean nothing unless tracking was on, and scanners inflate them even then.
+- There is no hourly send breakdown. `get_campaign_detailed_stats` is daily; `email_sent_today` on the campaign object is the live counter.
+- **Two markets on one inbox pool starve each other by clock order.** PlusVibe round-robins fairly between campaigns on a pool; what starves a market is a window that opens later. Compare windows in one converted timezone, never by campaign order.
+- **The window length is the only throttle that self-reallocates.** Throughput is inboxes × (window minutes ÷ sending gap). A per-campaign daily limit is a static slice that dies with the campaign; a window is shared by every campaign in it. Never raise inbox daily limits to buy capacity.
+
+## Inbox and thread traps
+
+- Hebrew ships wrapped in a `dir='rtl'` container. The reply editor scrambles Hebrew: save Hebrew replies as `dir=rtl` drafts for the Operator to send.
+- The unibox lead list is workspace-wide by default; filter by campaign or a lead read belongs to a different campaign than assumed.
+- `reply_to_email` requires `reply_to_id`, `subject`, `from` (the thread's eaccount), `to`, and an HTML `body`. Read the thread back and find the returned message id; that is the proof.
+
+## Account and tag traps
+
+- **Tags never move senders.** *23 Aug 2026.* A campaign's sender list is an explicit set of accounts and no tag operation changes it; `camp_count` on a tag is how many campaigns wear it as a label. Tag work is safe around live sends and inert: after any `active` change, every live campaign's sender list is rewritten and read back (`allocate_inboxes_by_tag` does this per client per tag and returns the diff). Do not trust an inbox's `cmps` array; it goes stale.
+- **`set_campaign_email_accounts` merges; it does not replace.** Removals go one at a time through `remove_campaign_email_account`, then `get_campaign_email_accounts`. Accounts in ERROR reject campaign edits with "Email not found"; reconnect first.
+- **`update_email_account` is a full overwrite.** Any omitted field is wiped: it has erased a signature, a last name and all tags in one call. `bulk_update_email_accounts` and `bulk_assign_tags` are the safe paths.
+- `warmup_reply_rate` on the bulk update is a fraction 0 to 1; send 0.35, the account reads back 35. Rampup fields do not persist while slow-rampup is off.
+- **`custom_domain` (the tracking domain) cannot be cleared by the API.** A provider export writes it on import; only the UI removes it.
+- Deleted accounts come back with their old ids, tags and campaign memberships when a provider re-exports them, into whichever workspace the provider integration is bound to. Read back after every import.
+- `bulk_reconnect_email_accounts` holds only while the provider side is paid and live. *6 Sep 2026:* forty reconnects flipped to ACTIVE and fell back to ERROR within a minute.
+- `move_email_accounts_to_workspace` works within one organisation and carries tags across as foreign ids; unassign the source workspace's tags before moving back.
+- **Nothing on the platform tells you where mail landed.** No placement field, no dashboard. `7d_overall_warmup_health` is a blended, undocumented score. Every check is a proxy on one axis.
+- `total_reply_count` on the email-stats endpoint already excludes OOO; subtracting `total_ooo_reply_count` again goes negative. *6 Sep 2026.*
+
+## Transport traps
+
+- **The stringified-args fault.** The MCP transport intermittently stringifies every non-string argument: `patch_campaign_update` rejects `sequences` ("expected array, received string"), `first_wait_time` ("expected number"). Reads with string-only args keep working, so the connection looks healthy. Probe: `list_campaigns` with `limit` as a number. An Operator refresh clears it, per server, not globally.
+- **PlusVibe is not the MCP server named `emailbison`.** *1 Sep 2026.* That is a different EmailBison instance holding only DuoDiv; it silently ignores `workspace_id` and `search`. The real PlusVibe MCP is the one whose `get_workspaces` returns shahar@flowroots.com with the `Flowroots X {client}` workspaces. Probe with `get_workspaces` first.
+
+## Fleet checks
+
+- **SURBL is checked by DNS, the whole fleet in one pass.** `dig +noall +answer @8.8.8.8 a.com.multi.surbl.org b.com.multi.surbl.org surbl-org-permanent-test-point.com.multi.surbl.org google.com.multi.surbl.org`. No record is clean; `127.0.0.x` is listed.
+- **Run the controls in the same pass.** The test point must come back listed (`127.0.0.254`) and google.com clean. A refused resolver can answer listed for everything.
+- **Query 8.8.8.8 or 9.9.9.9, never the default resolver.** *25 Aug 2026.* The machine's own resolver and 1.1.1.1 fail SURBL, and the failure reads as clean.
+- **A clearance tag is not a gateway pool.** A tag marking inboxes that earned replies says nothing about SURBL; Piper's `info-ok` domains were all listed.
+- **`updated_at` on an account is not a status history.** *10 Sep 2026.* It moves on any edit. The API carries no error text and no error date; the time an account went to ERROR is read from when its campaigns stopped sending.

@@ -1,23 +1,28 @@
 ---
 name: plusvibe
 type: skill
-vertical: [infrastructure, email]
-description: Everything about PlusVibe, the email sender. Campaigns, the deployment standard, sequences and spintax on the platform, schedules, inboxes and limits, leads, variables, stats, the inbox, and every gotcha paid for. Use for any deploy, redeploy, edit, read, or question that touches PlusVibe.
+vertical: [platform, email]
+description: PlusVibe, the main email sender. What it is for us, how it is reached, and the lessons it has already cost us. Use before any read, build, edit, deploy or inbox action on PlusVibe.
 ---
 
 # PlusVibe
 
-The main email sender we use. One workspace per client; the workspace id lives on the client's registry row, and nothing platform-side is ever hardcoded per client.
+The main email sender. One workspace per client; the workspace id lives on the client's registry row, and nothing platform-side is ever hardcoded per client.
 
-**You operate this platform yourself, through its MCP, and the MCP is reliable for it.** Reading campaigns, building them, editing sequences and schedules, managing inboxes and tags, pulling stats, working mail: all of it is yours to do directly. The exceptions where the Operator's hands are needed are named where they occur.
+You operate it yourself through its MCP, and the MCP is the mechanics: what a setting is and how to set it is in the tool descriptions, not here. What is here is what the MCP will not tell you.
 
-## The laws here
+## Where the rest lives
 
-- **Draft, show, wait.** Campaign settings are shown for approval before building (they often get changed), campaigns are built as drafts, and the Operator flips them live. Nothing launches unasked, nothing sends toward a prospect without an approved draft.
-- **Read-backs are the only proof.** The API returns success while silently dropping settings, accounts, and leads. After any write, read the object back and confirm what actually landed: sequence, variables, schedule, accounts, enrolled counts. Never trust the success response.
+- What a campaign must carry, on any sender: [[campaigns]]
+- What the fleet must look like, on any provider: [[infrastructure]]
+- How to write, judge and launch copy: `cold-email-copywriter`
+- How to work a reply: `inbox-manager`
+
+## The two laws that are facts about this platform
+
+- **Read-backs are the only proof.** The API returns success while silently dropping settings, accounts and leads. After any write, read the object back and confirm what landed.
 - **On any MCP error, stop and ask the Operator to refresh.** Never retry in a loop.
-- **The copy is not invented here.** Whatever the approved deploy-ready sequence says is what sends; the sender never edits words.
 
 ## This folder
 
-Every file opens with a line saying what it teaches. `deployment-standard.md` is the house standard any campaign on the platform is held to, whatever the job that touches it. `inbox-management.md` is the tag standard, the inbox pools, why deliverability is a black box and how to react when it breaks, and the SURBL check. `lessons.md` is the MCP surface and every trap it has already cost us.
+`lessons.md`: the MCP surface by job, then every trap paid for, dated. Read it before touching the platform. When a lesson stops being true, delete it.

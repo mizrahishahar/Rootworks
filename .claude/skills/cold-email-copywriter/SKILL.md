@@ -2,7 +2,7 @@
 name: cold-email-copywriter
 type: skill
 vertical: [copy]
-description: Writes cold outbound copy that earns replies. The offer, the reader, the angle, the anatomy of a cold email, specificity and variables, the follow-up, the rules, and how copy is shown and flagged. Use for writing, refining, or judging any cold email or LinkedIn opener. Offers are graded in offer.md, approved sequences are spun in spintax.md, angles live in playbooks/.
+description: Writes cold outbound copy that earns replies. The offer, the reader, the angle, the anatomy of a cold email, specificity and variables, the follow-up, the rules, and how copy is shown and flagged. Use for writing, refining, or judging any cold email or LinkedIn opener. Offers are graded in offer.md, approved sequences are spun in spintax.md, the templates live in playbooks/.
 ---
 
 # Cold email copywriter
@@ -13,7 +13,7 @@ Everything here is craft. It holds whatever sender, database or tool is under it
 
 ## The laws
 
-**1. Consistency.** The whole email argues one thing. The offer to this reader, the outcome, the mechanism, the proof, the risk reversal, the CTA: one argument, no seams. Every variant carries the same argument in a different angle; every follow-up collects on the same outcome; every spintax option says the same thing. The reader cannot name a seam, but feels it, and trust dies there.
+**1. Consistency.** The whole email argues one thing. The offer to this reader, the outcome, the mechanism, the proof, the risk reversal, the CTA: one argument, no seams. Every variant carries the same argument in a different angle; the follow-up collects on the same outcome; every spintax option says the same thing. The reader cannot name a seam, but feels it, and trust dies there.
 
 The classic break and the fix:
 
@@ -52,16 +52,18 @@ Before writing bodies, show the shape and get a yes. It costs two minutes and pr
 | Line | What it says |
 |---|---|
 | Reader | who, from which list |
-| Angle | the playbook, and per variant the opener it runs on |
+| Playbook | the template, and per variant the opener it runs on |
 | Outcome | the one result, in the reader's units, with its number when honest |
 | Mechanism | the how, in one clause |
 | Proof | which result, and how close it is to this reader |
 | Risk reversal | the guarantee or the free slice, in its sharpest true words |
 | CTA | what the yes buys, and the words |
 | Variables | each token, the fact it carries, its fallback |
-| Touches | how many, spacing, what each one adds |
+| Follow-up | what the one follow-up adds |
 
 **One campaign or several.** Split where the argument changes, never where the data changes. A CFO at 200 people and a founder at 15 hear different outcomes from the same offer: two campaigns. Two groups that differ only in vocabulary or a variable: one campaign. Variants test angles at one reader; they never serve two readers.
+
+**Playbooks are templates.** Each one in `playbooks/` is a description, a template and examples, nothing more. Choose on what we actually hold for this reader (a signal, a matched proof, a free deliverable, a built thing, an asset), never on what sounds best. A different playbook is a different campaign, never a variant.
 
 ## The anatomy
 
@@ -109,14 +111,14 @@ Levels, from strongest to weakest:
 
 Every variable is declared with the fact it carries and a fallback that still reads as a sentence. A variable that could be wrong about the reader is worse than none. Never nest a variable inside a spun slot.
 
-## The follow-ups
+## The follow-up
 
-The first email gets the strongest signal, the closest proof, the clearest outcome. A non-reply means that angle did not land, so the second touch does not repeat it: it threads under the first, opens with a reason to exist (a held-back detail, a second proof, a true deadline, a different outcome from the same offer) and re-asks. Shorter than the one before. Two touches by default, three at most; then leave them alone for two months and come back when their world may have changed. Never "following up", "circling back", "checking in", never a reference to the earlier email.
+One follow-up. Never two. It threads under the first email, and it exists because a non-reply means the first angle did not land: it opens with a reason to be there (a held-back detail, a second proof, a true deadline, the same offer arguing a different outcome), and re-asks. Shorter than the first email. Never "following up", "circling back", "checking in", never a reference to the earlier email. After it, the reader is left alone; a return comes months later, with a new campaign, when their world may have changed.
 
 ## Rules
 
 - Openers never: "most [industry] struggle with", "if you're like most", "are you tired of", "imagine if", "did you know", "I hope this finds you well", "I came across", "quick question" with no question.
-- The unsubscribe line promises to stop on an explicit reply, never on silence. "A one-word no is enough and I'll step out of your inbox", never "I'll take silence as a no".
+- The door-out line promises to stop on an explicit reply, never on silence. "A one-word no is enough and I'll step out of your inbox", never "I'll take silence as a no".
 - No em dashes. No links, bold or images in the body. No greeting before the name in the subject.
 - The company is named the way they name it, cleaned; the reader's first name in their own language.
 - Speak to the person: "you", never "[industry] companies". Match the words to the title: trucks and crews to the owner, net revenue to the CFO, the stack to the engineer.
@@ -134,13 +136,13 @@ Run on every email, silently, and rewrite before showing, never footnote:
 6. CTA worth taking alone, a one-word yes
 7. 50 to 90 words, reads aloud like a person
 8. Every variable declared with a fallback; nothing the list does not hold
-9. Follow-ups threaded, adding something, never re-introducing
+9. The follow-up threaded, adding something, never re-introducing
 10. Rules above, all of them
 
 ## How copy is shown
 
 - **Shape first**, as the table above. Words only after the yes.
-- Then the sequence, every variant, every touch. One heading per touch. The variant line carries the letter, the angle in two words, and the subject, `·`-separated. Body as a blockquote. `---` between touches, never between variants.
+- Then the sequence, every variant, both touches. One heading per touch. The variant line carries the letter, the angle in two words, and the subject, `·`-separated. Body as a blockquote. `---` between touches, never between variants.
 - **Never print the same body twice.** Variants sharing a body and differing by subject stack their lines above the one body.
 - Clean copy: real tokens as the row carries them, no signature, no spintax inline. Spintax is its own artifact (`spintax.md`).
 - **Reprint the whole sequence on every refinement.** A line that reads well alone can break the email around it.
@@ -164,6 +166,10 @@ Run on every email, silently, and rewrite before showing, never footnote:
 
 > the body.
 ```
+
+## After the yes
+
+An approved sequence becomes a campaign by the order of acts in `launching.md`: built as a draft on the sender, read back, given its Hub row and its copy, bound to a segment with Stage Test. What the campaign must carry on any sender, its stages and its lines, is the standard [[campaigns]]; nothing here restates it.
 
 ## What this skill flags on its own
 

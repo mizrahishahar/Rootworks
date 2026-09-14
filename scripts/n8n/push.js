@@ -8,12 +8,18 @@
 //   node scripts/n8n/push.js n8n/<type>/<Machine>/<Workflow> --dry      print the payload summary, send nothing
 //
 // Directives inside a code file:
-//   @@file:nodes/X.js   (in workflow.json) the node's code is that file
-//   // @@register       (a line in a code file) the field register is inlined at that line as
-//                       `const REGISTER = <JSON>;`, evaluated from
-//                       n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js at
-//                       push time. n8n-pull.js strips the constant and restores the directive on
-//                       the way back.
+//   @@file:nodes/X.js        (in workflow.json) the node's code is that file
+//   // @@register            (a line in a code file) the field register is inlined at that line as
+//                            `const REGISTER = <JSON>;`, evaluated from
+//                            n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js at
+//                            push time. n8n-pull.js strips the constant and restores the directive on
+//                            the way back.
+//   // @@standard:<name>     (a line in a code file) the json block that closes standards/<name>.md is
+//                            inlined at that line as `const STANDARD = /* @@standard:<name> */ <JSON>;`.
+//                            A machine consumes its standard and never holds a copy: the page is the
+//                            one place a number lives, and every push carries the page as it is now.
+//                            The push refuses when the page, or its json block, is missing or invalid.
+//                            n8n-pull.js restores the directive on the way back.
 //
 // Auth: N8N_API_KEY env var, or ~/.config/rootworks/n8n-api-key (one line).
 // The key never lives in this repo.
@@ -24,6 +30,8 @@ const { loadRegister } = require('./register');
 
 const BASE = process.env.N8N_URL || 'https://n8n.flowroots.com';
 const REGISTER_DIRECTIVE = /^\/\/ @@register$/gm;
+const STANDARD_DIRECTIVE = /^\/\/ @@standard:([a-z0-9-]+)$/gm;
+const STANDARDS_DIR = path.join(__dirname, '..', '..', 'standards');
 
 function apiKey() {
   if (process.env.N8N_API_KEY) return process.env.N8N_API_KEY.trim();
@@ -34,9 +42,33 @@ function apiKey() {
   }
 }
 
+// The json block that closes a standards page: the last ```json fence in the file.
+const standardCache = {};
+function loadStandard(name) {
+  if (standardCache[name]) return standardCache[name];
+  const file = path.join(STANDARDS_DIR, `${name}.md`);
+  if (!fs.existsSync(file)) {
+    console.error(`REFUSED: // @@standard:${name} names standards/${name}.md, which does not exist.`);
+    process.exit(1);
+  }
+  const text = fs.readFileSync(file, 'utf8');
+  const blocks = [...text.matchAll(/```json\s*\n([\s\S]*?)\n```/g)];
+  if (!blocks.length) {
+    console.error(`REFUSED: standards/${name}.md has no json block for the machines to read.`);
+    process.exit(1);
+  }
+  let json;
+  try { json = JSON.parse(blocks[blocks.length - 1][1]); } catch (e) {
+    console.error(`REFUSED: the json block in standards/${name}.md does not parse: ${e.message}`);
+    process.exit(1);
+  }
+  standardCache[name] = JSON.stringify(json);
+  return standardCache[name];
+}
+
 const dirArg = process.argv[2];
 const dry = process.argv.includes('--dry');
-if (!dirArg) { console.error('Usage: node tools/n8n/push.js n8n/<workflow-slug> [--dry]'); process.exit(1); }
+if (!dirArg) { console.error('Usage: node scripts/n8n/push.js n8n/<type>/<Machine>/<Workflow> [--dry]'); process.exit(1); }
 
 const dir = path.resolve(dirArg);
 const doc = JSON.parse(fs.readFileSync(path.join(dir, 'workflow.json'), 'utf8'));
@@ -44,6 +76,7 @@ const doc = JSON.parse(fs.readFileSync(path.join(dir, 'workflow.json'), 'utf8'))
 let inlined = 0;
 let registerLine = null;
 const registered = [];
+const standardized = [];
 for (const node of doc.nodes || []) {
   for (const [param, value] of Object.entries(node.parameters || {})) {
     if (typeof value === 'string' && value.startsWith('@@file:')) {
@@ -55,6 +88,12 @@ for (const node of doc.nodes || []) {
         code = code.replace(REGISTER_DIRECTIVE, () => registerLine);
         registered.push(node.name);
       }
+      REGISTER_DIRECTIVE.lastIndex = 0;
+      code = code.replace(STANDARD_DIRECTIVE, (_, name) => {
+        standardized.push(`${node.name} <- standards/${name}.md`);
+        return `const STANDARD = /* @@standard:${name} */ ${loadStandard(name)};`;
+      });
+      STANDARD_DIRECTIVE.lastIndex = 0;
       node.parameters[param] = code;
       inlined++;
     }
@@ -79,6 +118,7 @@ if (registered.length) {
   console.log(`register inlined (${registerLine.length} chars) into: ${registered.join(', ')}`);
   if (dry) console.log(`  ${registerLine.slice(0, 200)}...`);
 }
+if (standardized.length) console.log(`standard inlined: ${standardized.join(', ')}`);
 if (dry) { console.log('dry run, nothing sent'); process.exit(0); }
 
 (async () => {

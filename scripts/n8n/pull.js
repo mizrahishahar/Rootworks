@@ -51,7 +51,10 @@ const CODE_PARAMS = {
 // The push inlines the field register as one `const REGISTER = {...};` line wherever a node file
 // carries `// @@register`. The source keeps the directive, never the inlined copy.
 const REGISTER_LINE = /^const REGISTER = \{.*\};$/gm;
-const restoreDirective = (code) => code.replace(REGISTER_LINE, '// @@register');
+// Same for a standard: `const STANDARD = /* @@standard:<name> */ {...};` goes back to `// @@standard:<name>`,
+// so the page in standards/ stays the one place its numbers live.
+const STANDARD_LINE = /^const STANDARD = \/\* @@standard:([a-z0-9-]+) \*\/ \{.*\};$/gm;
+const restoreDirective = (code) => code.replace(REGISTER_LINE, '// @@register').replace(STANDARD_LINE, (_, name) => `// @@standard:${name}`);
 
 // Every card in the tree: n8n/<type folder>/<Machine>/card.json. Returns [{card, dir}] and the
 // id -> card index. A card whose type is unknown, or that names no workflows, stops the pull.

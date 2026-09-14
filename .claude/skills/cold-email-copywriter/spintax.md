@@ -1,66 +1,58 @@
-Teaches: how to add spintax to an approved sequence without touching its meaning, and the exact four-block rendering the Operator reviews.
+Teaches: how an approved sequence is varied so no two sends read the same, without moving its meaning, and how the result is shown.
 
 # Spintax
 
-Spintax exists so identical bodies never land twice. It runs on approved copy, after the words are final, and it must never shift what a single sentence means.
+Spintax runs on approved copy, after the words are final, and it must never shift what a sentence argues. It is not decoration: identical bodies across thousands of sends are a fingerprint, and a fingerprint is what gets a campaign filtered. Variation is now part of deliverability, so it is heavy.
 
-## The shape
+## The standard
 
-- **Three options to a slot.** Two is thin, one is a pin (see below).
-- **Two (min) to four slots per email.** One spin is decoration: the body still lands byte-identical on every send.
-- **Phrase-level, never function-word.** `Hey|Hi|Hello` and `fast|quickly` are junk and have been rejected before. Spin clauses, not particles: the result, the reason, the ask, the qualifier.
-- **Name every slot for what it does**: `the build`, `the ask`, `the negation`, `the qualifier`, `the result`, `the CTA`. The Operator edits slots by name, so an unnamed slot is an unreviewable slot.
-- **A pinned slot is one option.** When the Operator says a line stays fixed, it leaves the table and joins the never-spun list. Do not argue it back to three.
+| Element | Variation |
+|---|---|
+| Subject line | 20 options |
+| Unsubscribe line | 20 options |
+| Signature block | several shapes of the name and, in place of a title, spun social-proof lines |
+| The whole email | 3 to 4 versions of the body |
+| Inside a body | a slot every five words or so, 3 options each |
 
-## Never spin
+The subject, the unsubscribe line and the signature carry the most weight because they are the lines every send shares. The body versions are the same argument told in different sentences, not different arguments.
 
-Numbers. Names. The guarantee. The offer sentence's meaning. The meaning of the CTA. Any P.S. Any phrase carrying a term being tested this round. Anything the Operator pinned. Hebrew bodies (they ship unspun, RTL-wrapped).
+## The shape of a slot
 
-A spin that shifts meaning is worse than no spin.
+- **Three options to a slot.** Two is thin; one is a pin.
+- **Phrase-level, never function-word.** `Hey|Hi|Hello` and `fast|quickly` are junk. Spin the clause: the result, the reason, the ask, the qualifier.
+- **Each option is self-contained.** No option depends on what a neighbouring slot picks. Where a sentence's grammar makes independent slots risky, spin the whole sentence as one slot with full alternatives.
+- **Name every slot for what it does:** `the build`, `the ask`, `the qualifier`, `the result`. The Operator edits slots by name.
+- **A pinned line is one option** and leaves the table.
 
-## The checks, every option, before it is offered
+## Never spun
 
-This is the contract. An option that has not passed all six has not been written yet.
+Numbers. Names. The guarantee. The meaning of the offer sentence. The meaning of the CTA. Any P.S. Anything the Operator pinned. Any variable: a slot whose every option carries a variable is restructured so the variable sits outside it, or left fixed and said so.
 
-1. **Substitution.** Render the option inside its full sentence and read the whole sentence. Not the option alone.
-2. **Grammar lock.** If the host sentence sets up a construction, every option must satisfy it. `If we could X, would this be worth sharing more?` is a conditional, so every option in that slot begins with *would*. `open to hearing more about it?` reads fine alone and is broken English in the slot.
-3. **Antecedent.** No option introduces a pronoun with nothing to point at. `teams without a full infra team on it`: on what?
-4. **Repetition.** No option doubles a noun already in the sentence. `teams carrying production infra without a full team on it` reads as team-team.
-5. **Register.** Same plainness as the base. Do not reach for a fancier verb to manufacture difference: `send it across`, `send it through` are worse than `send it over`, not different from it.
-6. **Distinctness.** Genuinely another way of saying it, not a synonym swap. If options 2 and 3 are option 1 with a word moved, the slot has one option.
+## The checks, on every option, before it is offered
 
-Where a word is load-bearing, it appears in **all three** options. If the ask is for feedback, every option says feedback.
+1. **Substitution.** Render the option inside its full sentence and read the whole sentence.
+2. **Grammar lock.** If the host sentence sets up a construction, every option satisfies it: a conditional slot begins with "would" in every option.
+3. **Antecedent.** No pronoun with nothing to point at.
+4. **Repetition.** No option doubles a noun already in the sentence.
+5. **Register.** Same plainness as the base; no fancier verb to manufacture difference.
+6. **Distinctness.** Genuinely another way to say it, not a word moved. Where a word is load-bearing, it appears in every option.
+7. **Consistency.** Every option still argues the same thing. A spin that shifts meaning is worse than no spin.
 
-## Merge variables
+An option not rendered inside its sentence has not been written yet.
 
-**Never nest a merge variable inside `{{random}}`.** No campaign on our senders does it and it has never been tested. If every option for a slot contains a variable, that slot does not get spun: restructure the sentence so the variable sits outside the spin, or leave the slot fixed and say so.
+## How it is shown
 
-## How to show it
+Four blocks, in order. Copy and spintax are reviewed separately, never mixed.
 
-Four blocks, in this order. The Operator reviews copy and spintax separately, so never mix them.
-
-**1. The sequence, clean.** No spintax inline. Where one body runs against several subjects, stack the variant lines above the body they share:
-
-```
-**Variant A**  ·  *body A*  ·  *Subject:* your cloud costs
-**Variant C**  ·  *body A*  ·  *Subject:* {{first_name}} <> Sean
-
-> the body, once
-```
-
-**2. A slot table per email.** Base first, so the default read is obvious. Rendered as a real markdown table, never inside a code fence:
+1. **The sequence, clean.** No spintax inline.
+2. **A slot table per email.** Base first. A real markdown table, never inside a code fence.
 
 | Slot | Option 1 (base) | Option 2 | Option 3 |
 |---|---|---|---|
 | the build | ... | ... | ... |
 | the ask | ... | ... | ... |
 
-**3. The never-spun list.** One line, everything fixed, named.
+3. **The never-spun list.** One line, everything fixed, named. A spam-check line when the copy was revised for it: which trigger words are gone, confirmed absent from bodies, P.S. lines and every option.
+4. **The deploy-ready sequence,** spintax inline in the sender's own syntax, one block per variant, ready to paste. This is the handover: whatever it says is what sends, so blocks 1 to 3 and block 4 must say the same thing.
 
-Add a **spam check** line when the copy was revised for it: which trigger words are gone, confirmed absent from bodies, P.S. lines *and* every spintax option.
-
-**4. The deploy-ready sequence, spintax inline.** `{{random|a|b|c}}` in place, one block per variant, ready to paste. This is the handover artifact: the deployer never invents copy, so whatever this block says is what sends. Blocks 1 to 3 are for review, block 4 is for the sender, and they must say the same thing.
-
-## Done when
-
-The sequence is shown clean, every slot is tabled and named, the never-spun list is stated, the deploy-ready block is produced, and every option has been substituted into its sentence and read. If an option was not rendered, it was not offered.
+Done when every slot is tabled and named, the never-spun list is stated, every option has been read inside its sentence, and the deploy-ready block exists.

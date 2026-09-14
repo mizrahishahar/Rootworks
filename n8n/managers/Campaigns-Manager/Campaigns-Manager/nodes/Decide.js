@@ -65,7 +65,8 @@ for (const j of items('Get Campaigns')) {
     clientId: clientIds[0] || '',
     lastSent: f['Last Sent'] || '',
   };
-  if (stage) camps.push(c); else unmanaged.push(c);
+  // Without a Stage only a campaign still sending or paused is a decision; COMPLETED is finished.
+  if (stage) camps.push(c); else if (c.clientId && (c.status === 'ACTIVE' || c.status === 'PAUSED')) unmanaged.push(c);
 }
 sd.scope = cf ? ((camps.length || unmanaged.length) ? 'one client (on demand)' : 'client filter matched no campaign') : 'all clients';
 sd.managed = camps.length;

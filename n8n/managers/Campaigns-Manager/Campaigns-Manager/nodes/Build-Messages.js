@@ -38,7 +38,8 @@ for (const R of sd.results || []) {
   const inPlay = R.testProgress.length + R.testReady.length + R.scaleProgress.length + R.scaleReady.length + R.run.length;
   if (!inPlay && !R.paused.length && !R.unmanaged.length) continue;
   for (const c of R.fed || []) if (!c.tags.includes('FED')) c.tags.push('FED');
-  const parts = ['*' + R.client.toUpperCase() + '*  ·  ' + today + '  ·  ' + inPlay + ' in play  ·  ' + (R.fed || []).length + ' fed today'];
+  // A dot in a client name reads as a link to Slack; a word joiner after it keeps the name plain.
+  const parts = ['*' + R.client.toUpperCase().replace(/\./g, '.⁠') + '*  ·  ' + today + '  ·  ' + inPlay + ' in play  ·  ' + (R.fed || []).length + ' fed today'];
   parts.push('', ':test_tube: *TEST*');
   parts.push(...phase('in progress', R.testProgress.map(c => card(c, S.line.Test))));
   parts.push(...phase('ready', R.testReady.map(c => card(c, null, c.verdict === 'killed' ? 'KILLED' : 'MOVED TO SCALE'))));
@@ -51,7 +52,7 @@ for (const R of sd.results || []) {
   parts.push(...(R.paused.length ? R.paused.map(c => card(c, null, 'set Killed or unpause') + '\n') : ['_none_']));
   if (R.unmanaged.length) {
     parts.push('', ':white_circle: *NO STAGE*', '_sending or paused on the sender, not managed until a Stage is set_', '');
-    parts.push(...R.unmanaged.map(c => card(c, null, c.status === 'PAUSED' || c.status === 'COMPLETED' ? c.status.toLowerCase() + ', set a Stage or leave it' : 'set a Stage') + '\n'));
+    parts.push(...R.unmanaged.map(c => card(c, null, c.status === 'PAUSED' ? 'paused, set a Stage' : 'sending, set a Stage') + '\n'));
   }
   out.push({ json: { channel: CHANNEL, text: parts.join('\n').replace(/\n{3,}/g, '\n\n'), client: R.client } });
 }

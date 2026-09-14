@@ -1,4 +1,4 @@
-# Service Complaints Feed
+# Trustpilot Service Complaints
 
 A custom Apify actor: the front half of the Trustpilot service-reviews signal. Settled 2026-09-06 after the static-list architecture failed at load (1,500-domain runs crashed 2026-09-01; the 51k-universe design is dead, never revive it).
 

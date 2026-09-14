@@ -41,6 +41,7 @@ Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 - Hebrew ships wrapped in a `dir='rtl'` container. The reply editor scrambles Hebrew: save Hebrew replies as `dir=rtl` drafts for the Operator to send.
 - The unibox lead list is workspace-wide by default; filter by campaign or a lead read belongs to a different campaign than assumed.
 - `reply_to_email` requires `reply_to_id`, `subject`, `from` (the thread's eaccount), `to`, and an HTML `body`. Read the thread back and find the returned message id; that is the proof.
+- **A thread whose sending inbox was deleted cannot be replied to.** *14 Sep 2026, Move PLNR:* `reply_to_email` answers "Email Account has been deleted" for every thread on a retired persona domain (moveplnrteam.com, moveplnrpro.com and the rest of the old fleet). Before drafting into an old thread, `list_email_accounts(email=<the thread's eaccount>)`; an empty answer means the thread is dead. The move is `compose_new_email` with the lead's `lead_id` and `camp_id`, from the SAME persona name on the live fleet (sarahjohnson.c@hellomoveplnr.com for Sarah), subject "Re: <original>", so the reader sees the same person from a new address. A fleet rotation orphans every open conversation this way; the inbox queue should be swept the day it happens.
 
 ## Account and tag traps
 

@@ -92,6 +92,7 @@ People behind a secure email gateway are never mixed into a normal send. One of 
 - plain text, always
 - no open tracking, no link tracking
 - no links in the body
+- exactly one blank line between every part of the email: each paragraph, the signature and the P.S. No empty spacer lines
 
 **Variables**
 - every token in the copy exists on the sender before the campaign is built

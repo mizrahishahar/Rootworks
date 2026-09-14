@@ -12,22 +12,25 @@ const rpad = (s, n) => String(s == null ? '' : s).padStart(n);
 const title = c => String(c.name || '').replace(/^\d{4}-\d{2}-\d{2}\s*-\s*/, '').split(/\s+-\s+/).join(', ');
 const tagText = c => (c.tags || []).filter(t => t !== 'LINKEDIN').map(t => t.replace(/^DRY since (\d{4})-(\d{2})-(\d{2})$/, (m, y, mo, d) => 'DRY ' + d + '/' + mo)).join(' · ');
 const rate = c => c.perPositive ? '1 per ' + fmt(c.perPositive) : '';
-// One campaign is one unit, the same in every stage: the name on its own line, never cut; the
-// numbers on the line under it in words; a Run campaign adds a third line, its last weeks.
+// One campaign is one card: its name in bold as Slack text with its tag beside it, then its own
+// block. In progress and paused: one line of numbers. Run: the all-time row and the last weeks,
+// row under row. Scale ready is a comparison, so it is one block for the whole phase, ranked.
 const pos = c => c.positives === 1 ? '1 positive' : fmt(c.positives) + ' positives';
-const unit = (c, over, tail) => {
-  const nums = [fmt(c.contacted) + (over ? ' of ' + fmt(over) : '') + ' contacted', pos(c)];
-  if (c.perPositive) nums.push('1 per ' + fmt(c.perPositive));
-  const t = [tagText(c), tail].filter(Boolean).join('   ');
-  const rows = [title(c), '    ' + nums.join('     ') + (t ? '     ' + t : '')];
-  if (c.stage === 'Run') {
-    if (c.weeks && c.weeks.length) rows.push('    ' + c.weeks.map(w => w.label + '  ' + fmt(w.contacted) + ' / ' + fmt(w.positives)).join('      '));
-    else rows.push('    (no weekly series from this sender)');
-  }
-  return rows.join('\n');
+const chips = (c, tail) => [tagText(c) ? '`' + tagText(c).split(' · ').join('`  `') + '`' : '', tail ? '`' + tail + '`' : ''].filter(Boolean).join('  ');
+const heading = (c, tail) => '*' + title(c) + '*' + (chips(c, tail) ? '   ' + chips(c, tail) : '');
+const block = rows => '```\n' + rows.join('\n') + '\n```';
+const numsLine = (c, over) => [fmt(c.contacted) + (over ? ' of ' + fmt(over) : '') + ' contacted', pos(c)].concat(c.perPositive ? ['1 per ' + fmt(c.perPositive)] : []).join('     ');
+const card = (c, over, tail) => [heading(c, tail), block([numsLine(c, over)])].join('\n');
+const runRow = (label, contacted, positives) => pad(label, 10) + rpad(fmt(contacted), 7) + ' contacted' + rpad(fmt(positives), 6) + (positives === 1 ? ' positive ' : ' positives') + (positives ? '     1 per ' + fmt(Math.round(contacted / positives)) : '');
+const runCard = c => {
+  const rows = [runRow('all time', c.contacted, c.positives)];
+  if (c.weeks && c.weeks.length) for (const w of c.weeks) rows.push(runRow(w.label, w.contacted, w.positives));
+  else rows.push('(no weekly series from this sender)');
+  return [heading(c), block(rows)].join('\n');
 };
-const block = units => '```\n' + units.join('\n\n') + '\n```';
-const phase = (label, units) => units.length ? ['_' + label + '_', block(units)] : ['_' + label + ':_ none'];
+// Scale ready: one block, best first, so the ranking reads as a table.
+const rankedBlock = list => block(list.map((c, i) => rpad(String(i + 1) + '.', 3) + ' ' + pad(title(c), 42) + rpad('1 per ' + (c.perPositive ? fmt(c.perPositive) : 'none'), 14) + rpad(fmt(c.contacted) + ' contacted', 18) + rpad(pos(c), 14)));
+const phase = (label, cards) => cards.length ? ['_' + label + '_', ''].concat(cards.map(x => x + '\n')) : ['_' + label + ':_ none'];
 
 const today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
 const out = [];
@@ -36,15 +39,15 @@ for (const R of sd.results || []) {
   if (!inPlay && !R.paused.length) continue;
   const parts = ['*' + R.client.toUpperCase() + '*  ·  ' + today + '  ·  ' + inPlay + ' in play'];
   parts.push('', ':test_tube: *TEST*');
-  parts.push(...phase('in progress', R.testProgress.map(c => unit(c, S.line.Test))));
-  parts.push(...phase('ready', R.testReady.map(c => unit(c, null, c.verdict === 'killed' ? 'KILLED' : 'MOVED TO SCALE'))));
+  parts.push(...phase('in progress', R.testProgress.map(c => card(c, S.line.Test))));
+  parts.push(...phase('ready', R.testReady.map(c => card(c, null, c.verdict === 'killed' ? 'KILLED' : 'MOVED TO SCALE'))));
   parts.push('', ':rocket: *SCALE*');
-  parts.push(...phase('in progress', R.scaleProgress.map(c => unit(c, S.line.Scale))));
-  parts.push(...phase('ready, best first', R.scaleReady.map(c => unit(c, null, 'RUN OR KILLED'))));
-  parts.push('', ':large_green_circle: *RUN*');
-  parts.push(R.run.length ? block(R.run.map(c => unit(c, null))) : '_none_');
-  parts.push('', ':double_vertical_bar: *PAUSED BY HAND*');
-  parts.push(R.paused.length ? block(R.paused.map(c => unit(c, null, 'set Killed or unpause'))) : '_none_');
+  parts.push(...phase('in progress', R.scaleProgress.map(c => card(c, S.line.Scale))));
+  parts.push(...(R.scaleReady.length ? ['_ready, best first: Run or Killed_', rankedBlock(R.scaleReady)] : ['_ready:_ none']));
+  parts.push('', ':large_green_circle: *RUN*', '');
+  parts.push(...(R.run.length ? R.run.map(c => runCard(c) + '\n') : ['_none_']));
+  parts.push('', ':double_vertical_bar: *PAUSED BY HAND*', '');
+  parts.push(...(R.paused.length ? R.paused.map(c => card(c, null, 'set Killed or unpause') + '\n') : ['_none_']));
   out.push({ json: { channel: CHANNEL, text: parts.join('\n'), client: R.client } });
 }
 sd.messages = out.length;

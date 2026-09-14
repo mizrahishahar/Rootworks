@@ -60,7 +60,7 @@ A view is dry when the last run left nothing in it.
 
 People behind a secure email gateway are never mixed into a normal send. One of two ways, chosen per campaign:
 
-- **Two campaigns.** A gateway segment view feeds its own campaign, sent from the clean inboxes. The main campaign runs on a view without them and with the sender set to skip gateway-protected domains
+- **Two campaigns.** A gateway segment view feeds its own campaign. The main campaign runs on a view without them and with the sender set to skip gateway-protected domains
 - **One campaign.** The sender is set to skip gateway-protected domains, and they are not reached
 
 ## What every campaign carries, on any sender

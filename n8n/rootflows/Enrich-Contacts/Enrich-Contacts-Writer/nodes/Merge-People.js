@@ -9,7 +9,13 @@
 //     base still carries a single select). Seniority and Department from the provider, else from
 //     the title. The vocabularies come from the register (@@register); a map target the register
 //     does not carry fails here.
+//   Profile columns (since 2026-09-14): Headline, About, Role Description, Role Start Date, Person
+//     City, Person Country, Education, Skills, Languages, Prior Employer, Prior Title arrive in the
+//     person's `extra`, keyed by column. Same fill rule as Title: a held value stands, a blank is
+//     filled, nothing is overwritten. A blank never travels (an empty string in a date column is a
+//     refused write).
 // @@register
+const PROFILE=['Headline','About','Role Description','Role Start Date','Person City','Person Country','Education','Skills','Languages','Prior Employer','Prior Title'];
 const inp=$('Writer Trigger').first().json||{};
 const provider=String(inp.provider||'');
 const have=new Set(inp.peopleFields||[]);
@@ -37,7 +43,7 @@ const splitEmails=(s)=>String(s||'').split(/[,;\s]+/).map(e=>e.trim().toLowerCas
 const one=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();
 const many=(v)=>Array.isArray(v)?v.map(x=>(x&&typeof x==='object')?String(x.name||''):String(x)).filter(Boolean):(v?[String((v&&typeof v==='object')?(v.name||''):v)].filter(Boolean):[]);
 const heldByDomain={};
-for(const h of heldRows){ const f=h.fields||{}; const d=one(f.Domain).toLowerCase(); if(!d) continue; (heldByDomain[d]=heldByDomain[d]||[]).push({ id:h.id, key:one(f['Contact Key']).toLowerCase(), held:true, fields:{ Title:one(f.Title), Seniority:one(f.Seniority), Department:one(f.Department), 'LinkedIn URL':one(f['LinkedIn URL']), Phone:one(f.Phone), 'Source ID':one(f['Source ID']) }, emails:splitEmails(one(f.Email)), sources:many(f['Contact Source']), changes:{}, emailChanged:false, sourceChanged:false }); }
+for(const h of heldRows){ const f=h.fields||{}; const d=one(f.Domain).toLowerCase(); if(!d) continue; const hf={ Title:one(f.Title), Seniority:one(f.Seniority), Department:one(f.Department), 'LinkedIn URL':one(f['LinkedIn URL']), Phone:one(f.Phone), 'Source ID':one(f['Source ID']) }; for(const k of PROFILE) hf[k]=one(f[k]); (heldByDomain[d]=heldByDomain[d]||[]).push({ id:h.id, key:one(f['Contact Key']).toLowerCase(), held:true, fields:hf, emails:splitEmails(one(f.Email)), sources:many(f['Contact Source']), changes:{}, emailChanged:false, sourceChanged:false }); }
 const stats={ returned:0, built:0, updated:0, heldUnchanged:0, dupes:0, noKey:0, fenced:0, emailsAppended:0, singleSelectSource:!multi, coveredDomains:[] };
 const out=[];
 for(const c of companies){
@@ -56,6 +62,8 @@ for(const c of companies){
     const li=(rawLi&&fenceOk(slug,first,last))?rawLi:''; if(rawLi&&!li) stats.fenced++;
     const email=String(person.email||'').trim().toLowerCase();
     const incoming={ Title:String(person.title||'').trim(), Seniority:mapSen(person.seniority, person.title), Department:mapDep(person.department, person.title), 'LinkedIn URL':li, Phone:String(person.phone||'').trim(), 'Source ID':String(person.sourceId||'').trim() };
+    const extra=(person.extra&&typeof person.extra==='object')?person.extra:{};
+    for(const k of PROFILE){ let v=String(extra[k]==null?'':extra[k]).trim(); if(k==='Role Start Date'&&!/^\d{4}-\d{2}-\d{2}$/.test(v)) v=''; incoming[k]=v; }
     let target=newByKey[key]||(li&&newBySlug[slug])||heldByKey[key]||(li&&heldBySlug[slug])||null;
     if(!target){ target={ id:'', key, held:false, fields:incoming, emails:email?[email]:[], sources:[provider], name:full }; newByKey[key]=target; if(li) newBySlug[slug]=target; rows.push(target); stats.built++; continue; }
     if(!target.held) stats.dupes++;
@@ -67,6 +75,7 @@ for(const c of companies){
   for(const r of rows){
     covered=true;
     const row={ 'Name':r.name, 'Title':r.fields.Title, 'Seniority':r.fields.Seniority, 'Department':r.fields.Department, 'Email':r.emails.join(', '), 'LinkedIn URL':r.fields['LinkedIn URL'], 'Phone':r.fields.Phone, 'Companies':[c.recordId], 'Contact Key':r.key, 'Contact Source':(multi?r.sources.slice():r.sources[0]), 'Source ID':r.fields['Source ID'], '_domain':domain };
+    for(const k of PROFILE){ if(r.fields[k]) row[k]=r.fields[k]; }
     if(!row.Department) delete row.Department;
     for(const k of Object.keys(row)){ if(k.charAt(0)==='_') continue; if(!have.has(k)) delete row[k]; }
     out.push({ json:row });

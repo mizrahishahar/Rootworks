@@ -3,7 +3,10 @@
 // routes here, and this closes the launch row (already stamped Running with this Execution ID)
 // as Failed with the reason and the link. Nothing ran: the guards sit ahead of every call.
 const p=$('Launch Params').first().json||{};
-const reason=String(p.refused||'the launch row was refused and no reason was recorded');
+// Two guards route here: Launch Params (a bad launch row) and Check Columns (a profile column held
+// at a foreign type on People). Whichever spoke names the reason.
+let colRefused=''; try{ colRefused=String(($('Check Columns').first().json||{}).refused||''); }catch(e){}
+const reason=String(p.refused||colRefused||'the launch row was refused and no reason was recorded');
 const show=(v)=>(v===''||v===null||v===undefined||v===0)?'(empty)':String(v);
 const lines=[
   '**Refused before anything ran: '+reason+'**',

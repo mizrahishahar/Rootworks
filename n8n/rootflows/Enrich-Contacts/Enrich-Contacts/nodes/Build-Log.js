@@ -44,6 +44,8 @@ const lines=[
   '**Funnel**',
   '- **Companies in:** '+companiesIn+' ('+num(pick.viewRows)+' view rows'+(pick.scoped?', '+num(pick.outOfScope)+' outside the scope skipped':'')+')'
 ];
+let createdCols=[]; try{ createdCols=($('Verify Columns').first().json||{}).created||[]; }catch(e){}
+if(createdCols.length) lines.push('- **Columns created on People this run:** '+createdCols.join(', '));
 for(const [name] of LANES) lines.push(line(name));
 lines.push('- **Merge across lanes:** '+num(t.returned)+' returned; '+num(t.built)+' new rows; '+num(t.updated)+' held rows filled ('+num(t.emailsAppended)+' emails appended); '+num(t.dupes)+' same-person merges; '+num(t.fenced)+' LinkedIn URLs rejected by the name fence; '+num(t.dnc)+' on the DNC list');
 if(t.singleSelectSource) lines.push('- **Contact Source is a single select on this base:** only the first source per person was recorded');

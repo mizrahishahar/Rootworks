@@ -12,6 +12,11 @@
 // 2026-09-09 (run 22643) that n8n paging on a JSON body repeats the same page and aborts with
 // "identical 5x", discarding every page including the first, so the whole tier came back empty.
 // Every row costs one fair-use row, never cash.
+//
+// Since 2026-09-14 the profile columns ride on every row (headline, about, role description, dates,
+// location, education, skills, languages), which makes a row several times heavier; a call carries
+// half the domains it used to (floor(2,500 / cap)) so a page stays light on the box. Fair-use cost
+// is per row and unchanged.
 const inp=$input.first().json||{};
 // A domain GetLeads would refuse (no dot, illegal characters) sinks its WHOLE call (run 22808: one
 // "v12footwear" row rejected 250 domains with a 400). Such rows are skipped here and counted.
@@ -20,13 +25,13 @@ const all=(Array.isArray(inp.companies)?inp.companies:[]).filter(c=>c&&c.domain)
 const companies=all.filter(c=>okDomain(c.domain));
 const badDomains=all.length-companies.length;
 const LEVELS={ wide:['C-Team','VP','Director','Manager','Staff','Other'], nonjunior:['C-Team','VP','Director','Manager','Other'], manager:['C-Team','VP','Director','Manager'] };
-const COLUMNS=['First Name','Last Name','Contact Full Name','Email','Email Verification Status','Current Job Title','Seniority Level','Department / Function','Contact LinkedIn URL','Cellphone','Direct Office Phone','Company Domain','Work Email Domain','Current Employer Name'];
+const COLUMNS=['First Name','Last Name','Contact Full Name','Email','Email Verification Status','Current Job Title','Seniority Level','Department / Function','Contact LinkedIn URL','Cellphone','Direct Office Phone','Company Domain','Work Email Domain','Current Employer Name','Profile Headline','About Me','Current Role Description','Current Role Start Date','Work City','Work Country Code','Education','Skills','Languages'];
 const groups={};
 for(const c of companies){ const floor=LEVELS[c.floor]?c.floor:'wide'; const cap=Math.max(1,Math.min(50,Number(c.cap)||20)); const k=floor+':'+String(cap).padStart(2,'0'); (groups[k]=groups[k]||{ floor, cap, list:[] }).list.push(c.domain); }
 const out=[];
 for(const k of Object.keys(groups).sort()){
   const g=groups[k];
-  const per=Math.max(1,Math.floor(5000/g.cap));
+  const per=Math.max(1,Math.floor(2500/g.cap));
   for(let i=0;i<g.list.length;i+=per){
     const part=g.list.slice(i,i+per);
     out.push({ json:{ body:{ domains:part, seniority:LEVELS[g.floor], max_per_company:g.cap, limit:5000, offset:0, columns:COLUMNS }, domains:part, cap:g.cap, floor:g.floor } });

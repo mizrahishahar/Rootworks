@@ -1,8 +1,9 @@
 // Apply DNC: drops people whose domain is on the client's DNC list (read once by the Rootflow and
 // handed in), then fences the write set to exactly what the writer owns on People: Name,
 // first_name, last_name, Title, Seniority, Department, Email, LinkedIn URL, Phone, Companies,
-// Contact Key, Contact Source, Source ID. The _id carrier (a held row being filled) rides through.
-const WRITE_FIELDS=['Name','first_name','last_name','Title','Seniority','Department','Email','LinkedIn URL','Phone','Companies','Contact Key','Contact Source','Source ID'];
+// Contact Key, Contact Source, Source ID, and the eleven profile columns. The _id carrier (a held
+// row being filled) rides through.
+const WRITE_FIELDS=['Name','first_name','last_name','Title','Seniority','Department','Email','LinkedIn URL','Phone','Companies','Contact Key','Contact Source','Source ID','Headline','About','Role Description','Role Start Date','Person City','Person Country','Education','Skills','Languages','Prior Employer','Prior Title'];
 const inp=$('Writer Trigger').first().json||{};
 const have=new Set(inp.peopleFields||[]);
 const allow=new Set(WRITE_FIELDS.filter(k=>have.has(k)));

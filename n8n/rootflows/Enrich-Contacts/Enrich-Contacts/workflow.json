@@ -808,6 +808,187 @@
         }
       },
       "notes": "The launch row refreshed after each provider closed: Status Running, the running funnel, Tally; on Execution ID (created here on an event run)."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "c4d50001-0050-4000-8000-000000000050",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -200
+      ],
+      "notes": "The eleven profile columns Enrich Contacts brings to People (Headline, About, Role Description, Role Start Date, Person City, Person Country, Education, Skills, Languages, Prior Employer, Prior Title): missing ones are planned for creation, a column held at a foreign type refuses the launch on the row. Nothing is retyped or renamed."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "l1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0051-4000-8000-000000000051",
+      "name": "Columns OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        -200
+      ],
+      "notes": "False means a profile column is held at a foreign type; Build Refusal closes the row before anything is read or paid for."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.toCreate || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4d50001-0052-4000-8000-000000000052",
+      "name": "Any Columns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        -200
+      ],
+      "notes": "Nothing to create: straight to the companies read."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Columns.js"
+      },
+      "id": "c4d50001-0053-4000-8000-000000000053",
+      "name": "Plan Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -400
+      ],
+      "notes": "One meta-API create per missing profile column."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c4d50001-0054-4000-8000-000000000054",
+      "name": "Create Columns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2640,
+        -400
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The profile columns People lacks, created on first use through the meta API, one call per column at 300 ms."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Launch Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c4d50001-0055-4000-8000-000000000055",
+      "name": "Reread Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2860,
+        -400
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The base meta again, after the creates: verify by values, never by a success response."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Verify-Columns.js"
+      },
+      "id": "c4d50001-0056-4000-8000-000000000056",
+      "name": "Verify Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -400
+      ],
+      "notes": "Every planned column must now show on People, or the run stops by name before a company is read."
     }
   ],
   "connections": {
@@ -932,7 +1113,7 @@
       "main": [
         [
           {
-            "node": "Read Companies View",
+            "node": "Check Columns",
             "type": "main",
             "index": 0
           }
@@ -1181,6 +1362,97 @@
         [
           {
             "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Columns OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Columns OK?": {
+      "main": [
+        [
+          {
+            "node": "Any Columns?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Columns?": {
+      "main": [
+        [
+          {
+            "node": "Plan Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Companies View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Columns": {
+      "main": [
+        [
+          {
+            "node": "Create Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Columns": {
+      "main": [
+        [
+          {
+            "node": "Reread Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reread Meta": {
+      "main": [
+        [
+          {
+            "node": "Verify Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Columns": {
+      "main": [
+        [
+          {
+            "node": "Read Companies View",
             "type": "main",
             "index": 0
           }

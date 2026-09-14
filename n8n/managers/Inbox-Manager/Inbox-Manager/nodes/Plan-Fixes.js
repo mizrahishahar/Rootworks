@@ -105,17 +105,24 @@ const byDomain = {};
 for (const a of managed) (byDomain[domainOf(a)] = byDomain[domainOf(a)] || []).push(a);
 const groups = {};
 const settings = [];
+// Which settings are being set back, by setting name, for the report: "minutes between sends 8, standard 11 to 15"
+// counts as "minutes between sends".
+const settingsWhat = {};
+const settingName = (text) => String(text).split(',')[0].replace(/ [\d.]+%?$/, '');
 for (const members of Object.values(byDomain)) {
   members.sort((x, y) => String(x.email).localeCompare(String(y.email)));
   members.forEach((a, position) => {
     if (up(a.status) !== 'ACTIVE') return;
-    if (!driftOf(a).some(x => x.fix)) return;
+    const fixable = driftOf(a).filter(x => x.fix);
+    if (!fixable.length) return;
     const body = profileFor(a, position);
     const key = JSON.stringify(body);
     (groups[key] = groups[key] || { body, ids: [] }).ids.push(String(a.id));
     settings.push(String(a.id));
+    for (const x of fixable) settingsWhat[settingName(x.text)] = (settingsWhat[settingName(x.text)] || 0) + 1;
   });
 }
+sd.cw.settingsWhat = settingsWhat;
 
 const chunk = (ids) => { const out = []; for (let i = 0; i < ids.length; i += 100) out.push(ids.slice(i, i + 100)); return out; };
 const calls = [];

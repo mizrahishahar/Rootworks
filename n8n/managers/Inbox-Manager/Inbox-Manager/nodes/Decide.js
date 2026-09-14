@@ -139,11 +139,21 @@ const tried = (ids) => (live ? ids.filter(id => byId[id]) : []);
 const reconnectTried = tried(plan.reconnect);
 const warmupTried = tried(plan.warmup);
 const settingsTried = tried(plan.settings);
+const domainsOf = (ids) => [...new Set(ids.map(id => byId[id] && byId[id].domain).filter(Boolean))].sort();
+// What no correction can reach (the tracking domain, a missing signature...), counted by setting, for the report.
+const notFixable = {};
+for (const i of inboxes) for (const x of i.drift) if (!x.fix && !x.warmupOff) notFixable[x.text] = (notFixable[x.text] || 0) + 1;
 const changes = {
   live,
-  reconnect: { planned: plan.reconnect.length, tried: reconnectTried.length, held: reconnectTried.filter(id => !DISC.includes(byId[id].status)).length },
-  warmup: { planned: plan.warmup.length, tried: warmupTried.length, on: warmupTried.filter(id => byId[id].warmupStatus === 'ACTIVE').length },
-  settings: { planned: plan.settings.length, tried: settingsTried.length, fixed: settingsTried.filter(id => !byId[id].drift.some(x => x.fix)).length },
+  reconnect: {
+    planned: plan.reconnect.length, tried: reconnectTried.length,
+    held: reconnectTried.filter(id => !DISC.includes(byId[id].status)).length,
+    plannedDomains: domainsOf(plan.reconnect),
+    stillDown: domainsOf(reconnectTried.filter(id => DISC.includes(byId[id].status))),
+  },
+  warmup: { planned: plan.warmup.length, tried: warmupTried.length, on: warmupTried.filter(id => byId[id].warmupStatus === 'ACTIVE').length, domains: domainsOf(plan.warmup) },
+  settings: { planned: plan.settings.length, tried: settingsTried.length, fixed: settingsTried.filter(id => !byId[id].drift.some(x => x.fix)).length, what: scratch.settingsWhat || {} },
+  notFixable,
 };
 
 // ---------- the Monday read ----------

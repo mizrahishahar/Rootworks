@@ -4,7 +4,7 @@
 const sd = $getWorkflowStaticData('global');
 const prep = $('Prep Stat Calls').all().map(i => i.json);
 const res = $input.all().map(i => (i && i.json) || {});
-const out = { ok: true, failedPages: 0, start: (prep[0] && prep[0].start) || '', end: (prep[0] && prep[0].end) || '', byInbox: {} };
+const out = { ok: true, pages: prep.filter(p => !p._none).length, failedPages: 0, start: (prep[0] && prep[0].start) || '', end: (prep[0] && prep[0].end) || '', byInbox: {} };
 if (prep.length === 1 && prep[0]._none) { sd.cw.stats = out; return [{ json: { pages: 0 } }]; }
 prep.forEach((p, i) => {
   const r = res[i] || {};

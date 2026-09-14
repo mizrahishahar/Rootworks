@@ -21,14 +21,15 @@ const lines = results.map(r => {
   const ch = r.changes || {};
   const a = r.allocation || {};
   if (a.skipped) skipped.push(r.client + ': campaign senders, ' + a.skipped);
-  const verb = r.live ? '' : 'would ';
+  // A dry run's planned corrections carry "(not applied)", the same marker as the Slack report.
+  const na = r.live ? '' : ' (not applied)';
   const bits = [
     r.inboxes + ' inbox(es)', (r.domains || []).length + ' domain(s)', (r.domains || []).filter(d => d.flags.length).length + ' flagged',
     (r.emergencies || []).length + ' emergency inbox(es)',
   ];
-  if (ch.reconnect && ch.reconnect.planned) bits.push(verb + 'reconnect ' + (r.live ? ch.reconnect.held + '/' + ch.reconnect.tried : ch.reconnect.planned));
-  if (ch.warmup && ch.warmup.planned) bits.push(verb + 'warmup on ' + (r.live ? ch.warmup.on + '/' + ch.warmup.tried : ch.warmup.planned));
-  if (ch.settings && ch.settings.planned) bits.push(verb + 'settings back ' + (r.live ? ch.settings.fixed + '/' + ch.settings.tried : ch.settings.planned));
+  if (ch.reconnect && ch.reconnect.planned) bits.push('reconnect ' + (r.live ? ch.reconnect.held + ' held of ' + ch.reconnect.tried : ch.reconnect.planned + na));
+  if (ch.warmup && ch.warmup.planned) bits.push('warmup on ' + (r.live ? ch.warmup.on + ' of ' + ch.warmup.tried : ch.warmup.planned + na));
+  if (ch.settings && ch.settings.planned) bits.push('settings back ' + (r.live ? ch.settings.fixed + ' of ' + ch.settings.tried : ch.settings.planned + na));
   if (a.campaigns != null) bits.push('senders ' + a.changed + ' campaign(s) changed, +' + a.added + ' -' + a.removed);
   return '- **' + r.client + ':** ' + bits.join(', ');
 });

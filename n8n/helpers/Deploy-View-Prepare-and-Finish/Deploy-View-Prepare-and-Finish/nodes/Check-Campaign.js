@@ -16,18 +16,19 @@ if (!D.abort) {
     D.hubCampaignRid = hit.id || '';
     D.campName = String(f['Campaign'] || D.target);
     const seq = String((f['Sequencer'] && f['Sequencer'].name) || f['Sequencer'] || '');
-    // The stage caps (Campaigns Manager standard, 2026-09-12). A launch row that leaves Max Rows
-    // blank on a campaign that carries a Stage gets its cap here: the sender's daily cap, or the
-    // stage total minus the leads the campaign already holds (Leads, synced by the manager's lanes),
-    // whichever is smaller. A stage total already full sends nothing and says so; a row without a
-    // Stage keeps the old meaning of blank, unlimited. A row that names Max Rows keeps its number.
+    // The stage caps (standards/campaigns.md, Feeding). A launch row that leaves Max Rows blank on a
+    // campaign that carries a Stage gets its cap here: the channel's run cap, or the stage total
+    // minus the leads the campaign already holds (Leads, synced), whichever is smaller. The cap is
+    // read off the row's Channel, never the sender's name: email 1,000, anything else 150. A stage
+    // total already full sends nothing and says so; a row without a Stage keeps the old meaning of
+    // blank, unlimited. A row that names Max Rows keeps its number.
     D.stage = String((f['Stage'] && f['Stage'].name) || f['Stage'] || '').trim();
     if (!D.maxRows && D.stage) {
       const STAGE_TOTAL = { Test: 1000, Scale: 3000, Run: null };
-      const DAILY_CAP = { 'PlusVibe': 1000, 'Email Bison': 1000, 'Alta': 150, 'HeyReach': 150 };
+      const channel = String((f['Channel'] && f['Channel'].name) || f['Channel'] || '').trim();
       const total = STAGE_TOTAL[D.stage];
       const held = Math.max(0, Math.floor(Number(f['Leads']) || 0));
-      const daily = DAILY_CAP[D.sender] || 1000;
+      const daily = channel === 'Email' ? 1000 : 150;
       if (total === null || total === undefined) D.maxRows = daily;
       else if (held >= total) { D.maxRows = 0; D.capFull = true; D.warnings.push('stage ' + D.stage + ' total of ' + total + ' already held (' + held + ' leads in the campaign); nothing sent, the view keeps its rows'); }
       else D.maxRows = Math.min(daily, total - held);

@@ -102,5 +102,5 @@ People behind a secure email gateway are never mixed into a normal send. One of 
 ## The record
 
 - every campaign on a sender has exactly one row in the Hub, matched on the sender's campaign id
-- the row carries the copy as the client would read it: spintax stripped, no mechanics
+- the row carries the copy as approved, before spintax, the way the client would read it
 - a campaign is built when it has been read back from the sender and matches what was approved. The sender says success while dropping settings

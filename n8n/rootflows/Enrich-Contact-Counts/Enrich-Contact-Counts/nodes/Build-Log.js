@@ -11,8 +11,11 @@ rs=rs||{ called:0, counted:0, errors:0, credits:0, firstError:'', failReasons:[]
 let w={ written:0, writeErrors:0, writeRequests:0, failed:[], writeReasons:[] }; try{ w=Object.assign(w,$('Write Check').first().json||{}); }catch(e){}
 const n=(v)=>Number(v)||0;
 let dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}
-const failedCount=n(rs.errors)+n(w.writeErrors)+(n(rs.noKey)?1:0);
+const failedCount=n(rs.errors)+n(w.writeErrors)+(n(rs.noKey)?1:0)+(lookupFail?1:0);
 const created=(c.toCreate||[]);
+// The People mirror: a lookup of the count column, planned by Plan Lookup and created by Create Lookup.
+let lookupLine='none needed (already there)'; let lookupFail='';
+try{ const pl=$('Plan Lookup').first().json||{}; if(pl.note) lookupLine='not created: '+pl.note; else if(!pl._none){ let ans={}; try{ ans=$('Create Lookup').first().json||{}; }catch(e){} if(ans.id&&ans.type==='multipleLookupValues') lookupLine='created on People as a lookup of Companies'; else { lookupLine='the create was refused'; lookupFail='People lookup "'+p.outputField+'" was not created: '+JSON.stringify(ans).slice(0,160); } } }catch(e){}
 const what=p.titles.length?('people titled '+p.titles.join(', ')+(p.excludeTitles.length?' (excluding '+p.excludeTitles.join(', ')+')':'')):'everyone GetLeads holds at the domain';
 const lines=[
   '**'+(n(rs.positive)+n(rs.zero))+' of '+n(ps.domains)+' companies counted into "'+p.outputField+'", '+n(rs.unknown)+' unknown to GetLeads (blank), '+n(w.written)+' rows written'+(failedCount?', '+failedCount+' errors':'')+'**',
@@ -25,13 +28,14 @@ const lines=[
   '- **Counts:** '+n(rs.positive)+' companies with people ('+n(rs.sum)+' in total), '+n(rs.zero)+' with none, '+n(rs.unknown)+' unknown to GetLeads',
   '- **Calls:** '+n(rs.called)+' counts'+(n(rs.coverageCalled)?', '+n(rs.coverageCalled)+' coverage checks on zeros ('+n(rs.coverageZero)+' real zeros, '+n(rs.coverageUnknown)+' unknown)':''),
   '- **Rows written (confirmed by Airtable):** '+n(w.written)+(n(w.writeErrors)?', '+n(w.writeErrors)+' refused':''),
-  '- **Column created on first use:** '+(created.length?created.join(', '):'none (already there)')
+  '- **Column created on first use:** '+(created.length?created.join(', '):'none (already there)'),
+  '- **People lookup "'+p.outputField+'":** '+lookupLine
 ];
 const skips=[];
 if(n(ps.noDomain)) skips.push(n(ps.noDomain)+' rows with no Domain');
 if(!n(ps.inView)) skips.push('the view had no rows');
 if(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');
-const fails=[].concat(n(rs.noKey)?['no credential on the GetLeads node ('+n(rs.noKey)+' calls)']:[], (rs.failReasons||[]).map(x=>'count: '+x), (w.writeReasons||[]).map(x=>'write: '+x));
+const fails=[].concat(n(rs.noKey)?['no credential on the GetLeads node ('+n(rs.noKey)+' calls)']:[], lookupFail?[lookupFail]:[], (rs.failReasons||[]).map(x=>'count: '+x), (w.writeReasons||[]).map(x=>'write: '+x));
 if(fails.length){ lines.push('', '**Failures ('+failedCount+')**'); for(const x of fails.slice(0,12)) lines.push('- '+x); if(n(rs.notWritten)) lines.push('- '+n(rs.notWritten)+' rows left untouched because their count errored'); }
 const log={
   'Execution ID': String($execution.id),

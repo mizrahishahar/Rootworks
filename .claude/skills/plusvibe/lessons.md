@@ -17,6 +17,7 @@ Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 - `patch_campaign_update` requires `first_wait_time` whenever sequences or accounts are sent (`0` for a normal parent).
 - Sequence `wait_time` is in DAYS, not minutes. Body must be HTML. Schedule day keys are 1-7 (Mon=1), only active days as `true`.
 - `create_campaign` takes `camp_name`, not `name`.
+- Spintax is `{{random|option one|option two|option three}}`, and it works in the subject line as well as the body (Operator confirmed 2026-09-14). Not `{a|b}`.
 - Custom variables store with a `custom_` prefix: upload `site_detail`, reference `{{custom_site_detail}}`, or it renders blank.
 - `{{sender_signature}}` renders the inbox's signature field, blank if empty.
 - `is_overwrite:true` has no skip guard and re-contacts excluded leads; on a backfill, `leads_uploaded` should be ~0.
@@ -24,7 +25,7 @@ Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 - The sender does not dedup across campaigns: the same person in two campaigns is mailed twice. `ws_last_sent_at` reads null on a freshly loaded lead, never a dedup check.
 - **`unsub_blocklist` resets to 0 on any `patch_campaign_update` that omits it.** *1 Sep 2026.* Re-send `"yes"` on the last patch of a build and confirm it in the read-back. Flag params on patch are the strings "yes"/"no", not 1/0; `use_adv_schedule` on patch is a real boolean.
 - **The advanced schedule lands only through `patch_campaign_update`**: `use_adv_schedule: true` and `adv_schedule: {timezone, daily_limit, daily_limit_new_lead, windows: {Monday: [{from,to}], ...}}`, key `timezone` not `tz`, both limits required, weekday names. `set_campaign_schedule` accepts the same keys and silently drops them.
-- **`send_seg_email` (the gateway fence, 1 = send to gateway-protected domains, 0 = skip) is UI only.** Absent from every write tool; passing it returns success and drops it. A new campaign defaults to 1. Read it on every campaign before launch.
+- **`send_seg_email` (the gateway fence, 1 = send to gateway-protected domains, 0 = skip) lands through `patch_campaign_update` as the string "no"/"yes".** *14 Sep 2026, Adelante:* patched "no", read back 0. Earlier it was dropped by every write tool; the MCP now carries it. A new campaign still defaults to 1. Read it on every campaign before launch.
 - Turning the fence on destroys no leads: skipped leads stay enrolled, so gateway exposure reads for free as `lead_count` minus `lead_contacted_count`.
 - `is_max_lead_domain_per_day` defaults to 0; a contacts-table deploy lands several people from one company in one morning without it.
 - **A COMPLETED campaign does not start again when leads land in it.** *12 Sep 2026, Adelante: 74 leads sat uncontacted after completion.* The PlusVibe deploy door activates it after an upload; a hand upload into a COMPLETED campaign must be followed by `launch_campaign`.

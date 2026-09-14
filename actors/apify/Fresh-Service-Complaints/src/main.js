@@ -6,7 +6,7 @@
 //     SIZE FILTER: skip any store whose total review count is above maxCompanyTotalReviews
 //     (the review-firehose giants: IKEA, Fabletics, Vinted, Overstock...). Cutting them
 //     here, before spending, means the budget reaches deeper into the mid-market where
-//     Adelante's real DTC buyers live, and no IKEA ever reaches the handler.
+//     the real DTC buyers live, and no IKEA ever reaches the handler.
 //   STEP 2 (filter): for the survivors, in batches of 10, fetch only 1-2 star reviews
 //     tagged customer_service within the lookback window. Silent stores cost nothing.
 //   OUTPUT: one dataset of review rows + company metadata rows, the exact shape the

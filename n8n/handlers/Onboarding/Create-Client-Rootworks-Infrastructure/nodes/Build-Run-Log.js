@@ -1,8 +1,9 @@
 // Build Run Log: one row per onboarding, upserted on Execution ID back onto the launch row that
-// started it, to the logging standard. Status is computed from failed[] (a scaffold create that
-// failed, a clash, an unresolved table id, a registry write that did not come back with a record);
-// skips (what the template already carried, what waits for a mirror, a launch row that named no
-// contacts) are separate lines and never errors.
+// started it, to the logging standard. Status is computed from failed[] (an unresolved table id, a
+// registry write that did not come back with a record, a Drive or Slack step that answered nothing);
+// skips (a launch row that named no contacts, a share link not yet pasted) are separate lines and
+// never errors. There is no scaffold pass any more (2026-09-14): the template is complete and a
+// duplicate is the whole base.
 //
 // The Description is deliberately two halves. The first says what the machine did. The second is
 // the Operator's checklist: the four acts no API can perform, each with the exact thing to do and
@@ -35,10 +36,6 @@ if (!regRec) {
   const e = (upBody && upBody.error) || (up && up.error) || '';
   failed.push('Registry: the Clients upsert returned no record' + (e ? ': ' + (typeof e === 'object' ? (e.message || JSON.stringify(e)) : String(e)).slice(0, 200) : ''));
 }
-const S = sd.scaffold || null;
-if (!S) failed.push('scaffold state missing: Scaffold Init never ran');
-for (const f of (S && S.failed) || []) failed.push(f);
-
 const emails = v.emails || [];
 const skips = [];
 if (!(p.contactIds || []).length) skips.push('Drive share: the launch row named no Contact, so the Shared folder was shared with nobody');
@@ -56,26 +53,8 @@ const lines = [
   '- **Slack:** ' + (v.channelName || '') + (channelFound ? ' already existed (' : ' created (') + (channelId || 'none') + ')' + (inviteError ? ', Operator NOT invited' : ', Operator invited'),
   '- **Registry:** Clients row ' + (regRec || '(none)') + ' ' + (regRec ? (created ? 'created' : 'filled in place') : 'NOT written') + ', fields set: ' + ((reg.written || []).join(', ') || 'none'),
   '- **Table ids resolved from the base:** Companies ' + (reg.companiesTableId || '(none)') + ', People ' + (reg.peopleTableId || '(none)'),
+  '- **Base:** the duplicated template as it is; nothing added, the template is the whole base',
 ];
-if (S) {
-  const c = S.created || [];
-  const nFields = c.filter(x => x.name !== '(table)').length;
-  const nTables = c.filter(x => x.name === '(table)').length;
-  lines.push('', '**Scaffold** (base ' + S.base + ', ' + S.pass + ' schema pass' + (S.pass === 1 ? '' : 'es') + ', ' + nFields + ' field' + (nFields === 1 ? '' : 's') + ' and ' + nTables + ' table' + (nTables === 1 ? '' : 's') + ' created)');
-  lines.push('**Extras picked:** ' + ((S.extras || []).length ? S.extras.join(', ') : 'none, the register core only, which the template already carries'));
-  for (const T of ['Companies', 'People', 'DNC']) {
-    const tbl = c.find(x => x.table === T && x.name === '(table)');
-    const withTable = c.filter(x => x.table === T && x.name !== '(table)' && (x.how === 'base' || x.how === 'withTable')).map(x => x.name);
-    const added = c.filter(x => x.table === T && x.name !== '(table)' && x.how === 'field').map(x => x.name);
-    let how = tbl ? 'created (the base did not carry it)' : (S.seen[T + '.(table)'] === 'existed' ? 'came with the template' : 'not created');
-    if (withTable.length) how += ', ' + withTable.length + ' fields (' + withTable.join(', ') + ')';
-    if (added.length) how += '; fields added (' + added.length + '): ' + added.join(', ');
-    if (!withTable.length && !added.length) how += '; nothing added';
-    lines.push('- **' + T + ':** ' + how);
-  }
-  lines.push('', 'Skipped (' + S.existed.length + ', already on the base, left alone): ' + (S.existed.length ? S.existed.length + ' register columns' : 'nothing pre-existed'));
-  if (S.skipped.length) { lines.push('', 'Skipped (' + S.skipped.length + ', not creatable yet):'); for (const s of S.skipped) lines.push('- ' + s); }
-}
 if (skips.length) { lines.push('', 'Skipped (' + skips.length + '):'); for (const s of skips) lines.push('- ' + s); }
 if (failed.length) { lines.push('', '**Failed (' + failed.length + ')**'); for (const f of failed) lines.push('- ' + f); }
 

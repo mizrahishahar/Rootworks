@@ -15,4 +15,4 @@ for (const item of $input.all()) {
 }
 const sections = ['Offer & info source', 'Infrastructure', 'List building', 'Outreach', 'Sequencer', 'Copy', 'Scheduler', 'Inbox management', 'Automations', 'Communication'];
 const overrides = '# Overrides - ' + clientName + '\n\n' + sections.map((s) => '## ' + s).join('\n\n') + '\n';
-return [{ json: { clientName, slug, channelName, emails, overrides, extras: p.extras || [], base: p.base || '' } }];
+return [{ json: { clientName, slug, channelName, emails, overrides, base: p.base || '' } }];

@@ -1,28 +1,18 @@
 #!/usr/bin/env node
-// Rootworks field register compiler.
-// Compiles the client-bases half of SCHEMA.md (below the @@register-section marker) from the one
-// field register, n8n/Create-Client-Rootworks-Infrastructure/nodes/Scaffold-Register.js: per
-// table, every field with its type, options (select choices with their colors), and kind, the
-// declared extras groups, the views (filter, fields, sort), then the On People rule and the
-// palettes. Generated from the register; never hand-edited. hub-pull.js writes the Hub half and
-// calls this for the rest, so `node scripts/hub-pull.js` refreshes both; this script alone
-// refreshes only the register half.
-//
-// Also the loader the other scripts share: loadRegister() evaluates the register file in a
-// sandbox (it is an n8n Code node, so it ends with a top-level return) and hands back its data.
-// n8n-push.js inlines it wherever a node carries `// @@register`; register-audit.js reads a base
-// against it.
-//
-// Usage: node scripts/register.js
+// The field register loader, on its way out.
+// The scaffold pass is gone (2026-09-14): the template base is the whole base and CLAYROOTS-SCHEMA
+// is its definition. Four Code nodes still inline a field vocabulary through `// @@register`
+// (Insert domains Check Columns, Deploy Prepare Plan Contract, Enrich Contacts Writer Merge People,
+// Sync Not Interested Check Columns); loadRegister() feeds them from register-source.js beside this
+// file, the former Scaffold Register node kept only for that. When those four carry their own
+// lists, this file and register-source.js go. The SCHEMA compile below is dead already.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..', '..');
-// The register lives in the onboarding workflow, wherever the layout places it.
-const findRegister = (d) => { for (const name of fs.readdirSync(d)) { const p = path.join(d, name); if (!fs.statSync(p).isDirectory()) continue; const c = path.join(p, 'nodes', 'Scaffold-Register.js'); if (name === 'Create-Client-Rootworks-Infrastructure' && fs.existsSync(c)) return c; const deeper = findRegister(p); if (deeper) return deeper; } return ''; };
-const REGISTER_PATH = findRegister(path.join(ROOT, 'n8n'));
+const REGISTER_PATH = path.join(__dirname, 'register-source.js');
 
 function loadRegister() {
   const src = fs.readFileSync(REGISTER_PATH, 'utf8');

@@ -1,0 +1,2806 @@
+{
+  "updatedAt": "2026-09-14T15:43:16.134Z",
+  "createdAt": "2026-09-14T15:43:16.134Z",
+  "id": "hkO27n2idhK6HfWS",
+  "name": "Enrich Contact Counts",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enrich-contact-counts",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "ecc1-0001-4000-8000-000000000001",
+      "name": "Door",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "enrich-contact-counts",
+      "notes": "POST /webhook/enrich-contact-counts. {recordId} from the Hub launch automation, or the record door body {baseId, clientRecordId, view, outputField, titles, excludeTitles}. Answers 200 on receipt."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.body || {}).recordId || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0002-4000-8000-000000000002",
+      "name": "Launch Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "id": "ecc1-0003-4000-8000-000000000003",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Tally": "",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "ecc1-0004-4000-8000-000000000004",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+        "options": {}
+      },
+      "id": "ecc1-0005-4000-8000-000000000005",
+      "name": "Resolve Base",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Launch-Params.js"
+      },
+      "id": "ecc1-0006-4000-8000-000000000006",
+      "name": "Launch Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Event-Params.js"
+      },
+      "id": "ecc1-0007-4000-8000-000000000007",
+      "name": "Event Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Params.js"
+      },
+      "id": "ecc1-0008-4000-8000-000000000008",
+      "name": "Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0009-4000-8000-000000000009",
+      "name": "Launch OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        200
+      ],
+      "notes": "The refusal gate: false means a badly filled launch, Build Refusal closes the row before anything is asked."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ecc1-0010-4000-8000-000000000010",
+      "name": "Check Table",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1760,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The base meta: tables, fields, views."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Resolve-Table.js"
+      },
+      "id": "ecc1-0011-4000-8000-000000000011",
+      "name": "Resolve Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0012-4000-8000-000000000012",
+      "name": "Table OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Check-Columns.js"
+      },
+      "id": "ecc1-0013-4000-8000-000000000013",
+      "name": "Check Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.refused || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0014-4000-8000-000000000014",
+      "name": "Columns OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.toCreate || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0015-4000-8000-000000000015",
+      "name": "Any Columns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Columns.js"
+      },
+      "id": "ecc1-0016-4000-8000-000000000016",
+      "name": "Plan Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ecc1-0017-4000-8000-000000000017",
+      "name": "Create Columns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3300,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The Output Field, created on first use through the meta API as a whole number."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ecc1-0018-4000-8000-000000000018",
+      "name": "Reread Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3520,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "notes": "The base meta again, after the create: verify by values."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Verify-Columns.js"
+      },
+      "id": "ecc1-0019-4000-8000-000000000019",
+      "name": "Verify Columns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Params').first().json.base }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Resolve Table').first().json.tableId }}"
+        },
+        "returnAll": true,
+        "options": {
+          "view": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Resolve Table').first().json.viewId }}"
+          },
+          "fields": "={{ $('Check Columns').first().json.fetchFields }}"
+        }
+      },
+      "id": "ecc1-0020-4000-8000-000000000020",
+      "name": "Fetch Rows",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3960,
+        -100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "alwaysOutputData": true,
+      "notes": "Every row of the view, Domain only, so a 10,000-row view stays light."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Pick-Rows.js"
+      },
+      "id": "ecc1-0021-4000-8000-000000000021",
+      "name": "Pick Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Make-Asks.js"
+      },
+      "id": "ecc1-0022-4000-8000-000000000022",
+      "name": "Make Asks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._none === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0023-4000-8000-000000000023",
+      "name": "Any Asks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4620,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.getleads.io/api/v1/contacts/search/count",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 400
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ecc1-0024-4000-8000-000000000024",
+      "name": "GL Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        -200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fsDQV3D9bINmYCrD",
+          "name": "GetLeads"
+        }
+      },
+      "notes": "One free count per domain with the titles, 400 ms apart (GetLeads tolerates about 3 calls a second; the one-off measured it). A 429 is retried three times 5 s apart, then carried as an error on the domain."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Count-Results.js"
+      },
+      "id": "ecc1-0025-4000-8000-000000000025",
+      "name": "Count Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.coverage || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0026-4000-8000-000000000026",
+      "name": "Any Coverage?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        -200
+      ],
+      "notes": "Zeros with Titles get one more free call with no titles: unknown company, or a real zero."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Coverage-Asks.js"
+      },
+      "id": "ecc1-0027-4000-8000-000000000027",
+      "name": "Coverage Asks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.getleads.io/api/v1/contacts/search/count",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 400
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ecc1-0028-4000-8000-000000000028",
+      "name": "GL Coverage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5720,
+        -300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fsDQV3D9bINmYCrD",
+          "name": "GetLeads"
+        }
+      },
+      "notes": "The coverage check on every titled zero: everyone at the domain. 0 means GetLeads does not know the company and the cell stays blank."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Results.js"
+      },
+      "id": "ecc1-0029-4000-8000-000000000029",
+      "name": "Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5940,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ecc1-0030-4000-8000-000000000030",
+      "name": "Any Writes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6160,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Chunk-Rows.js"
+      },
+      "id": "ecc1-0031-4000-8000-000000000031",
+      "name": "Chunk Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6380,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Params').first().json.base }}/{{ $('Resolve Table').first().json.tableId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "ecc1-0032-4000-8000-000000000032",
+      "name": "Write Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        6600,
+        -200
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Ten rows per PATCH, 200 ms apart, typecast on. Verified by the count-back, never by the status."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Write-Check.js"
+      },
+      "id": "ecc1-0033-4000-8000-000000000033",
+      "name": "Write Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6820,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Log.js"
+      },
+      "id": "ecc1-0034-4000-8000-000000000034",
+      "name": "Build Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Refusal.js"
+      },
+      "id": "ecc1-0035-4000-8000-000000000035",
+      "name": "Build Refusal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "ecc1-0036-4000-8000-000000000036",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        7260,
+        100
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Door": {
+      "main": [
+        [
+          {
+            "node": "Launch Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Row?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Event Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Resolve Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Base": {
+      "main": [
+        [
+          {
+            "node": "Launch Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Params": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Params": {
+      "main": [
+        [
+          {
+            "node": "Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Params": {
+      "main": [
+        [
+          {
+            "node": "Launch OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch OK?": {
+      "main": [
+        [
+          {
+            "node": "Check Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Table": {
+      "main": [
+        [
+          {
+            "node": "Resolve Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Table": {
+      "main": [
+        [
+          {
+            "node": "Table OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Table OK?": {
+      "main": [
+        [
+          {
+            "node": "Check Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Columns": {
+      "main": [
+        [
+          {
+            "node": "Columns OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Columns OK?": {
+      "main": [
+        [
+          {
+            "node": "Any Columns?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Refusal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Columns?": {
+      "main": [
+        [
+          {
+            "node": "Plan Columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Columns": {
+      "main": [
+        [
+          {
+            "node": "Create Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Columns": {
+      "main": [
+        [
+          {
+            "node": "Reread Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reread Meta": {
+      "main": [
+        [
+          {
+            "node": "Verify Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Columns": {
+      "main": [
+        [
+          {
+            "node": "Fetch Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Rows": {
+      "main": [
+        [
+          {
+            "node": "Pick Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Rows": {
+      "main": [
+        [
+          {
+            "node": "Make Asks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Asks": {
+      "main": [
+        [
+          {
+            "node": "Any Asks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Asks?": {
+      "main": [
+        [
+          {
+            "node": "GL Count",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Count": {
+      "main": [
+        [
+          {
+            "node": "Count Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Results": {
+      "main": [
+        [
+          {
+            "node": "Any Coverage?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Coverage?": {
+      "main": [
+        [
+          {
+            "node": "Coverage Asks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coverage Asks": {
+      "main": [
+        [
+          {
+            "node": "GL Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GL Coverage": {
+      "main": [
+        [
+          {
+            "node": "Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Results": {
+      "main": [
+        [
+          {
+            "node": "Any Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Writes?": {
+      "main": [
+        [
+          {
+            "node": "Chunk Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Check": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refusal": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "56cd3565-5a87-404b-a781-974ea9f77756",
+  "activeVersionId": "56cd3565-5a87-404b-a781-974ea9f77756",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-09-14T15:43:16.143Z",
+      "createdAt": "2026-09-14T15:43:16.143Z",
+      "role": "workflow:owner",
+      "workflowId": "hkO27n2idhK6HfWS",
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-09-14T15:43:16.149Z",
+    "createdAt": "2026-09-14T15:43:16.149Z",
+    "versionId": "56cd3565-5a87-404b-a781-974ea9f77756",
+    "workflowId": "hkO27n2idhK6HfWS",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "enrich-contact-counts",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "id": "ecc1-0001-4000-8000-000000000001",
+        "name": "Door",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          200
+        ],
+        "webhookId": "enrich-contact-counts",
+        "notes": "POST /webhook/enrich-contact-counts. {recordId} from the Hub launch automation, or the record door body {baseId, clientRecordId, view, outputField, titles, excludeTitles}. Answers 200 on receipt."
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ ($json.body || {}).recordId || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0002-4000-8000-000000000002",
+        "name": "Launch Row?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          220,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "id": "ecc1-0003-4000-8000-000000000003",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Tally": "",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "ecc1-0004-4000-8000-000000000004",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "id": "={{ (($json.fields || {}).Client || [])[0] || 'recMISSING' }}",
+          "options": {}
+        },
+        "id": "ecc1-0005-4000-8000-000000000005",
+        "name": "Resolve Base",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Launch Params: the launch row is the contract. Client (resolves the base), View (a Companies view\n// by name, required) and the three fields this Rootflow reads on Automations: Output Field (the\n// number column it writes, created on first use), Titles (the job titles to count; blank counts\n// everyone GetLeads holds at the domain) and Exclude Titles (subtracted at the source). Table is\n// implied (Companies); a filled Table that is not Companies is refused. No Tag: this machine\n// creates no rows. No cap: the count endpoint costs no credits.\n//\n// REFUSALS: a badly filled row is an expected outcome, not a crash. Every guard returns a refusal\n// item (`refused` carries the reason); Launch OK? routes it to Build Refusal, which closes the row\n// Failed with the reason. Nothing is read or asked before the guards pass.\nconst rec=$('Fetch Launch Record').first().json||{};\nconst f=rec.fields||{};\nconst cf=(($('Resolve Base').first().json||{}).fields)||{};\nconst base=String(cf['Clayroots Base ID']||'').trim();\nconst arr=(v)=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);\nconst clientRecId=(arr(f['Client']).map(x=>(x&&typeof x==='object')?x.id:x)[0])||'';\nconst table=String(f['Table']||'').trim();\nconst view=String(f['View']||'').trim();\nconst outputField=String(f['Output Field']||'').trim();\nconst list=(v)=>Array.from(new Set(String(v==null?'':v).split(/[\\n,;]+/).map(x=>x.trim()).filter(Boolean)));\nconst titles=list(f['Titles']);\nconst excludeTitles=list(f['Exclude Titles']);\nconst startedAt=new Date().toISOString();\nconst where='Launch record '+(rec.id||'?');\nconst p={ refused:'', base, clientRecId, table:'Companies', view, outputField, titles, excludeTitles, trigger:'form', _launchRecordId:rec.id||'', startedAt };\nconst refuse=(r)=>[{ json:Object.assign({},p,{ refused:r, table:table||'Companies' }) }];\nif(!clientRecId) return refuse(where+' has no Client link. Nothing was asked.');\nif(!/^app[A-Za-z0-9]{14}$/.test(base)) return refuse('Client on '+where.toLowerCase()+' has no valid Clayroots Base ID. Nothing was asked.');\nif(table&&table.toLowerCase()!=='companies') return refuse(where+' names Table \"'+table+'\". GetLeads counts per domain, so this machine runs on Companies only. Nothing was asked.');\nif(!view) return refuse(where+' has no View. A Companies view is required by name. Nothing was asked.');\nif(!outputField) return refuse(where+' has no Output Field. Name the number column the count goes into. Nothing was asked.');\nif(!titles.length&&excludeTitles.length) return refuse(where+' has Exclude Titles but no Titles. Excluding from everyone is not a count this machine makes. Nothing was asked.');\nreturn [{ json:p }];\n"
+        },
+        "id": "ecc1-0006-4000-8000-000000000006",
+        "name": "Launch Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Event Params: the record door. Any caller may POST {baseId, clientRecordId, view, outputField,\n// titles, excludeTitles} (titles as a list or a comma string); the same contract as the launch row,\n// the same refusals, no launch row and no Running stamp (the close creates the run row on\n// Execution ID). The door answers 200 on receipt and the run carries on alone.\nconst b=($input.first().json||{}).body||{};\nconst s=(v)=>String(v==null?'':v).trim();\nconst list=(v)=>Array.from(new Set((Array.isArray(v)?v:String(v==null?'':v).split(/[\\n,;]+/)).map(x=>String(x).trim()).filter(Boolean)));\nconst base=s(b.baseId||b.base);\nconst table=s(b.table)||'Companies';\nconst view=s(b.view);\nconst outputField=s(b.outputField||b.output_field);\nconst titles=list(b.titles);\nconst excludeTitles=list(b.excludeTitles||b.exclude_titles);\nconst startedAt=new Date().toISOString();\nconst p={ refused:'', base, clientRecId:s(b.clientRecordId||b.clientRecId), table:'Companies', view, outputField, titles, excludeTitles, trigger:'event', _launchRecordId:'', startedAt };\nconst refuse=(r)=>[{ json:Object.assign({},p,{ refused:r, table }) }];\nif(!/^app[A-Za-z0-9]{14}$/.test(base)) return refuse('Record door: no valid baseId in the body. Nothing was asked.');\nif(table.toLowerCase()!=='companies') return refuse('Record door: Table \"'+table+'\" is not Companies. Nothing was asked.');\nif(!view) return refuse('Record door: no view in the body. Nothing was asked.');\nif(!outputField) return refuse('Record door: no outputField in the body. Nothing was asked.');\nif(!titles.length&&excludeTitles.length) return refuse('Record door: excludeTitles without titles. Nothing was asked.');\nreturn [{ json:p }];\n"
+        },
+        "id": "ecc1-0007-4000-8000-000000000007",
+        "name": "Event Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          440,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Params: one shape for both entries. Whichever entry ran wrote its item; this re-emits it so every\n// node after reads $('Params') and never cares which door opened the run.\nlet p=null;\ntry{ p=$('Launch Params').first().json; }catch(e){}\nif(!p||(!p.base&&!p.refused)){ try{ p=$('Event Params').first().json; }catch(e){} }\nif(!p) throw new Error('Enrich Contact Counts: no entry produced launch parameters.');\nreturn [{ json:p }];\n"
+        },
+        "id": "ecc1-0008-4000-8000-000000000008",
+        "name": "Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0009-4000-8000-000000000009",
+        "name": "Launch OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          200
+        ],
+        "notes": "The refusal gate: false means a badly filled launch, Build Refusal closes the row before anything is asked."
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "ecc1-0010-4000-8000-000000000010",
+        "name": "Check Table",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1760,
+          100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The base meta: tables, fields, views."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Resolve Table: Companies by name in the base meta just read, the view by name or id. A base\n// without Companies or without the view is refused on the row (Table OK? routes to Build Refusal).\n// Field names and types travel for the column check. Nothing here creates.\nconst p=$('Params').first().json;\nconst r=$input.first().json||{}; const body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nconst refuse=(why)=>[{ json:{ refused:why } }];\nif(!tables) return refuse('Could not read the table list for base '+p.base+': '+JSON.stringify(body).slice(0,200)+'. Nothing was asked.');\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='companies');\nif(!t) return refuse('Base '+p.base+' has no Companies table. Nothing was asked.');\nconst v=(t.views||[]).find(x=>x.id===p.view||String(x.name||'').trim()===p.view);\nif(!v) return refuse('Companies ('+t.id+') in base '+p.base+' has no view \"'+p.view+'\". Nothing was asked.');\nconst types={}; for(const f of (t.fields||[])) types[f.name]=f.type;\nreturn [{ json:{ refused:'', tableId:t.id, tableName:t.name, viewId:v.id, viewName:v.name, fieldNames:(t.fields||[]).map(f=>f.name), fieldTypes:types } }];\n"
+        },
+        "id": "ecc1-0011-4000-8000-000000000011",
+        "name": "Resolve Table",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          100
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0012-4000-8000-000000000012",
+        "name": "Table OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2200,
+          100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Check Columns: the requirement (Domain, written by the Inserts) and the one column this run owns:\n// Output Field as a whole number, created on first use when Companies lacks it. A column that\n// exists as anything but a number (text, a formula, a select) belongs to someone else and the run\n// is refused on the row; it never retypes, never renames. Also emits the field list the row read\n// asks for, so a 10,000-row view does not carry every column.\nconst p=$('Params').first().json;\nconst t=$('Resolve Table').first().json;\nconst have=t.fieldTypes||{};\nconst refuse=(why)=>[{ json:{ refused:why } }];\nif(!('Domain' in have)) return refuse('Companies ('+t.tableId+') in base '+p.base+' has no Domain column. An Insert Rootflow owes it. Nothing was asked.');\nconst own={ name:p.outputField, type:'number', options:{ precision:0 } };\nif((own.name in have)&&have[own.name]!=='number') return refuse('Companies ('+t.tableId+') already holds \"'+own.name+'\" as '+have[own.name]+' (this run writes a number). A column at another type is not this run\\'s to write; pick another Output Field. Nothing was asked.');\nconst toCreate=(own.name in have)?[]:[own];\nconst url='https://api.airtable.com/v0/meta/bases/'+p.base+'/tables/'+t.tableId+'/fields';\nreturn [{ json:{ refused:'', base:p.base, tableId:t.tableId, own:[own.name], toCreate:toCreate.map(f=>f.name), creates:toCreate.map(f=>({ url, body:f })), fetchFields:['Domain'] } }];\n"
+        },
+        "id": "ecc1-0013-4000-8000-000000000013",
+        "name": "Check Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.refused || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0014-4000-8000-000000000014",
+        "name": "Columns OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ ($json.toCreate || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0015-4000-8000-000000000015",
+        "name": "Any Columns?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2860,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Plan Columns: one meta-API call per own field the table lacks. Runs only when there is something\n// to create; the IF before it routes an empty plan straight to the row read.\nconst c=$('Check Columns').first().json;\nreturn (c.creates||[]).map(x=>({ json:x }));\n"
+        },
+        "id": "ecc1-0016-4000-8000-000000000016",
+        "name": "Plan Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3080,
+          -200
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.url }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 300
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "ecc1-0017-4000-8000-000000000017",
+        "name": "Create Columns",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3300,
+          -200
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The Output Field, created on first use through the meta API as a whole number."
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $('Params').first().json.base }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "ecc1-0018-4000-8000-000000000018",
+        "name": "Reread Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3520,
+          -200
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "notes": "The base meta again, after the create: verify by values."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Verify Columns: the base meta read again after the create. The own column must now show;\n// anything still missing stops the run by name before a row is read (a crash here is a real\n// defect: the meta API accepted a create it did not perform).\nconst c=$('Check Columns').first().json;\nconst r=$input.first().json||{}; const body=(r.body!==undefined)?r.body:r;\nconst tables=(body&&Array.isArray(body.tables))?body.tables:null;\nif(!tables) throw new Error('Could not re-read the table list for base '+c.base+' after creating the column: '+JSON.stringify(body).slice(0,200)+'.');\nconst names=new Set((((tables.find(t=>t.id===c.tableId))||{}).fields||[]).map(f=>f.name));\nconst still=(c.toCreate||[]).filter(n=>!names.has(n));\nif(still.length){ let why=''; try{ why=$('Create Columns').all().map(i=>JSON.stringify(i.json).slice(0,200)).join(' | '); }catch(e){} throw new Error('Enrich Contact Counts created a column the base does not show: '+still.join(', ')+'. Airtable answered: '+why); }\nreturn [{ json:{ created:c.toCreate.slice() } }];\n"
+        },
+        "id": "ecc1-0019-4000-8000-000000000019",
+        "name": "Verify Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3740,
+          -200
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Params').first().json.base }}"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Resolve Table').first().json.tableId }}"
+          },
+          "returnAll": true,
+          "options": {
+            "view": {
+              "__rl": true,
+              "mode": "id",
+              "value": "={{ $('Resolve Table').first().json.viewId }}"
+            },
+            "fields": "={{ $('Check Columns').first().json.fetchFields }}"
+          }
+        },
+        "id": "ecc1-0020-4000-8000-000000000020",
+        "name": "Fetch Rows",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3960,
+          -100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "alwaysOutputData": true,
+        "notes": "Every row of the view, Domain only, so a 10,000-row view stays light."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Pick Rows: every row of the view is asked. A count is a measurement, so a row already holding a\n// number is counted again and overwritten; there is no Overwrite switch. A row without a Domain is\n// skipped and counted; several rows on one domain share one ask and all receive the number. One\n// item out: the plan, or {_none} when nothing is left to ask.\nconst norm=(d)=>String(d||'').trim().toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst rows=$input.all().map(i=>i.json||{}).filter(j=>j.id);\nconst st={ inView:rows.length, noDomain:0, asked:0, domains:0 };\nconst byDomain={};\nfor(const r of rows){\n  const f=r.fields||{};\n  const d=norm(f.Domain); if(!d){ st.noDomain++; continue; }\n  st.asked++;\n  (byDomain[d]=byDomain[d]||[]).push(String(r.id));\n}\nconst domains=Object.keys(byDomain);\nst.domains=domains.length;\nif(!domains.length) return [{ json:{ _none:true, refused:'', stats:st } }];\nreturn [{ json:{ refused:'', stats:st, byDomain, domains } }];\n"
+        },
+        "id": "ecc1-0021-4000-8000-000000000021",
+        "name": "Pick Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4180,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Make Asks: one free count call per domain, POST /contacts/search/count {domains:[d], job_titles,\n// exclude_job_titles}. Verified 2026-09-09 on the one-off (scripts/one-off/infra-ratio.js): the\n// count endpoint answers {ok, total_matching, credits_used:0}; /contacts/search is the one that\n// bills, and it is never called here. With no Titles the call carries only the domain, and the\n// answer is everyone GetLeads holds there.\nconst p=$('Params').first().json;\nconst pick=$('Pick Rows').first().json||{};\nif(pick._none) return [{ json:{ _none:true } }];\nconst out=[];\nfor(const d of (pick.domains||[])){\n  const body={ domains:[d] };\n  if(p.titles.length) body.job_titles=p.titles;\n  if(p.excludeTitles.length) body.exclude_job_titles=p.excludeTitles;\n  out.push({ json:{ domain:d, body } });\n}\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "ecc1-0022-4000-8000-000000000022",
+        "name": "Make Asks",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4400,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json._none === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0023-4000-8000-000000000023",
+        "name": "Any Asks?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4620,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.getleads.io/api/v1/contacts/search/count",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 400
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ecc1-0024-4000-8000-000000000024",
+        "name": "GL Count",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4840,
+          -200
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "fsDQV3D9bINmYCrD",
+            "name": "GetLeads"
+          }
+        },
+        "notes": "One free count per domain with the titles, 400 ms apart (GetLeads tolerates about 3 calls a second; the one-off measured it). A 429 is retried three times 5 s apart, then carried as an error on the domain."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Count Results: the count answers (aligned to Make Asks by index; the node hands a failure over as\n// {error}) -> one verdict per domain: a number, or an error. A zero with Titles is ambiguous: no\n// such people, or a company GetLeads has never heard of. Those domains go to one more free call\n// with no titles (Coverage Asks); a zero with no Titles is already that call, and means unknown.\n// Emits one item carrying every verdict plus the coverage list; never throws.\nconst p=$('Params').first().json;\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nlet asks=[]; try{ asks=$('Make Asks').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('GL Count').all(); }catch(e){}\nconst verdicts={}; const coverage=[]; const st={ called:0, counted:0, errors:0, credits:0, firstError:'', failReasons:[], noKey:0 };\nconst note=(r)=>{ if(!st.firstError) st.firstError=r; if(st.failReasons.length<12) st.failReasons.push(r); };\nanswers.forEach((it,i)=>{\n  const ask=asks[i]; if(!ask) return;\n  st.called++;\n  const j=it.json||{};\n  if(j.error&&j.total_matching===undefined&&j.body===undefined){\n    const msg=errMsg(j.error);\n    if(/credential/i.test(msg)){ st.noKey++; verdicts[ask.domain]={ error:'no credential on the GetLeads node' }; return; }\n    st.errors++; verdicts[ask.domain]={ error:msg.slice(0,160) }; note('GetLeads count '+ask.domain+': '+msg.slice(0,160)); return;\n  }\n  const b=(j.body!==undefined&&typeof j.body==='object')?j.body:j;\n  if(typeof b.total_matching!=='number'){ st.errors++; const r='GetLeads count '+ask.domain+': no total_matching in '+JSON.stringify(b).slice(0,120); verdicts[ask.domain]={ error:r }; note(r); return; }\n  st.credits+=Number(b.credits_used)||0;\n  st.counted++;\n  const n=b.total_matching;\n  if(n===0){ if(p.titles.length){ coverage.push(ask.domain); verdicts[ask.domain]={ pending:true }; } else verdicts[ask.domain]={ value:null, unknown:true }; return; }\n  verdicts[ask.domain]={ value:n };\n});\nreturn [{ json:{ verdicts, coverage, stats:st } }];\n"
+        },
+        "id": "ecc1-0025-4000-8000-000000000025",
+        "name": "Count Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5060,
+          -200
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ ($json.coverage || []).length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0026-4000-8000-000000000026",
+        "name": "Any Coverage?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5280,
+          -200
+        ],
+        "notes": "Zeros with Titles get one more free call with no titles: unknown company, or a real zero."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Coverage Asks: the domains whose titled count was zero, asked once more with no titles. If\n// GetLeads holds nobody at the domain the cell stays blank (unknown, never lean: the one-off's law,\n// 274 companies were once dialed as \"no infra owner\" on that mistake); if it holds people, the\n// zero was real and is written.\nconst c=$('Count Results').first().json||{};\nconst out=(c.coverage||[]).map(d=>({ json:{ domain:d, body:{ domains:[d] } } }));\nif(!out.length) return [{ json:{ _none:true } }];\nreturn out;\n"
+        },
+        "id": "ecc1-0027-4000-8000-000000000027",
+        "name": "Coverage Asks",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5500,
+          -300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.getleads.io/api/v1/contacts/search/count",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 400
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": false,
+                "neverError": false
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ecc1-0028-4000-8000-000000000028",
+        "name": "GL Coverage",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5720,
+          -300
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "fsDQV3D9bINmYCrD",
+            "name": "GetLeads"
+          }
+        },
+        "notes": "The coverage check on every titled zero: everyone at the domain. 0 means GetLeads does not know the company and the cell stays blank."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Results: the verdicts settled (the coverage answers close every pending zero) and turned into\n// write rows: {id, <Output Field>: number or null}. A blank is written on purpose for a company\n// GetLeads does not know, so a stale number never survives a recount. A domain whose call errored\n// is not written at all. One item per row, the first carrying _stats; {_empty} when nothing.\nconst p=$('Params').first().json;\nconst pick=$('Pick Rows').first().json||{};\nconst cr=$('Count Results').first().json||{ verdicts:{}, coverage:[], stats:{} };\nconst verdicts=Object.assign({}, cr.verdicts||{});\nconst st=Object.assign({ called:0, counted:0, errors:0, credits:0, firstError:'', failReasons:[], noKey:0 }, cr.stats||{});\nst.coverageCalled=0; st.coverageUnknown=0; st.coverageZero=0;\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst note=(r)=>{ if(!st.firstError) st.firstError=r; if(st.failReasons.length<12) st.failReasons.push(r); };\nlet asks=[]; try{ asks=$('Coverage Asks').all().map(i=>i.json||{}).filter(j=>!j._none); }catch(e){}\nlet answers=[]; try{ answers=$('GL Coverage').all(); }catch(e){}\nanswers.forEach((it,i)=>{\n  const ask=asks[i]; if(!ask) return;\n  st.coverageCalled++;\n  const j=it.json||{};\n  if(j.error&&j.total_matching===undefined&&j.body===undefined){ st.errors++; const r='GetLeads coverage '+ask.domain+': '+errMsg(j.error).slice(0,160); verdicts[ask.domain]={ error:r }; note(r); return; }\n  const b=(j.body!==undefined&&typeof j.body==='object')?j.body:j;\n  if(typeof b.total_matching!=='number'){ st.errors++; const r='GetLeads coverage '+ask.domain+': no total_matching'; verdicts[ask.domain]={ error:r }; note(r); return; }\n  st.credits+=Number(b.credits_used)||0;\n  if(b.total_matching===0){ st.coverageUnknown++; verdicts[ask.domain]={ value:null, unknown:true }; } else { st.coverageZero++; verdicts[ask.domain]={ value:0 }; }\n});\n// A pending verdict with no coverage answer (the call never ran) is an error, not a blank.\nfor(const d of Object.keys(verdicts)){ if(verdicts[d].pending){ st.errors++; verdicts[d]={ error:'coverage call missing' }; note('GetLeads coverage '+d+': no answer'); } }\nst.unknown=0; st.zero=0; st.positive=0; st.sum=0; st.rows=0; st.notWritten=0;\nconst out=[];\nfor(const d of Object.keys(pick.byDomain||{})){\n  const v=verdicts[d];\n  if(!v||v.error){ st.notWritten+=(pick.byDomain[d]||[]).length; continue; }\n  if(v.value===null) st.unknown++; else if(v.value===0) st.zero++; else { st.positive++; st.sum+=v.value; }\n  for(const id of pick.byDomain[d]){ const row={ id }; row[p.outputField]=v.value; out.push({ json:row }); st.rows++; }\n}\nif(!out.length) return [{ json:{ _empty:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
+        },
+        "id": "ecc1-0029-4000-8000-000000000029",
+        "name": "Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5940,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.id || '' }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ecc1-0030-4000-8000-000000000030",
+        "name": "Any Writes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          6160,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Chunk Rows: the write rows in tens, one item per Airtable request, PATCHed as {records:[{id,\n// fields}], typecast:true} 200 ms apart. A null value clears the cell (blank means unknown). Ids\n// and size ride on the item for the count-back; carriers are stripped.\nconst rows=$input.all().map(i=>i.json).filter(j=>j&&j.id&&!j._empty);\nconst out=[];\nfor(let i=0;i<rows.length;i+=10){\n  const part=rows.slice(i,i+10);\n  out.push({ json:{ body:{ records:part.map(r=>{ const f={}; for(const k of Object.keys(r)){ if(k!=='id'&&k.charAt(0)!=='_') f[k]=r[k]; } return { id:String(r.id), fields:f }; }), typecast:true }, ids:part.map(r=>String(r.id)), size:part.length } });\n}\nif(!out.length) return [{ json:{ _none:true, size:0, ids:[] } }];\nreturn out;\n"
+        },
+        "id": "ecc1-0031-4000-8000-000000000031",
+        "name": "Chunk Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6380,
+          -200
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://api.airtable.com/v0/{{ $('Params').first().json.base }}/{{ $('Resolve Table').first().json.tableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "ecc1-0032-4000-8000-000000000032",
+        "name": "Write Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          6600,
+          -200
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "notes": "Ten rows per PATCH, 200 ms apart, typecast on. Verified by the count-back, never by the status."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Write Check: the writer's count-back. Written rows are counted from every 2xx answer's records[];\n// a request that was not 2xx counts every row it carried as a write error and names the ids. Exactly\n// one item out.\nconst n=(v)=>Number(v)||0;\nconst parse=(b)=>{ if(typeof b!=='string') return b; try{ return JSON.parse(b); }catch(e){ return null; } };\nlet chunks=[], resps=[];\ntry{ chunks=$('Chunk Rows').all().map(i=>i.json).filter(j=>!j._none); }catch(e){}\ntry{ resps=$('Write Rows').all(); }catch(e){}\nlet written=0, writeErrors=0; const failed=[], reasons=[];\nconst note=(ids,why)=>{ for(const id of (ids||[])){ if(failed.length<200) failed.push(id); } const w=String(why||'').replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim().slice(0,180); if(w&&reasons.length<10) reasons.push(w); };\nresps.forEach((it,i)=>{\n  const c=chunks[i]||{ size:0, ids:[] }; const j=it.json||{};\n  if(!c.size) return;\n  if(j.error&&j.statusCode===undefined){ writeErrors+=n(c.size); note(c.ids,'row writer: '+String((j.error&&j.error.message)||j.error||'call failed')); return; }\n  const status=n(j.statusCode); const b=parse(j.body===undefined?null:j.body);\n  if(status>=200&&status<300&&b&&Array.isArray(b.records)){ written+=b.records.length; if(b.records.length<n(c.size)){ const back={}; for(const r of b.records) back[String((r||{}).id||'')]=1; writeErrors+=n(c.size)-b.records.length; note((c.ids||[]).filter(id=>!back[id]),(n(c.size)-b.records.length)+' of '+c.size+' records missing from a 2xx answer'); } return; }\n  const e=b&&b.error; const why=e?(typeof e==='object'?(e.message||e.type||JSON.stringify(e)):String(e)):((j.error&&j.error.message)||(typeof j.body==='string'?j.body:''));\n  writeErrors+=n(c.size); note(c.ids,'HTTP '+status+' '+String(why||'')+(status===429?' (rate limited; never retried)':''));\n});\nreturn [{ json:{ written, writeErrors, writeRequests:resps.length, failed, writeReasons:reasons } }];\n"
+        },
+        "id": "ecc1-0033-4000-8000-000000000033",
+        "name": "Write Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6820,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Log: the run's one row. Reads the pick, the counts and the writer's count-back, and writes\n// the verdict on Execution ID (the launch row when the Hub fired it, a new row on an event call).\n// Status is computed: count errors and refused writes are errors; no-domain rows are skips.\nconst p=$('Params').first().json;\nlet t={}; try{ t=$('Resolve Table').first().json||{}; }catch(e){}\nlet c={}; try{ c=$('Check Columns').first().json||{}; }catch(e){}\nlet pick={}; try{ pick=$('Pick Rows').first().json||{}; }catch(e){}\nconst ps=pick.stats||{ inView:0, noDomain:0, asked:0, domains:0 };\nlet rs=null; try{ const first=$('Results').first().json||{}; rs=first._stats||null; }catch(e){}\nrs=rs||{ called:0, counted:0, errors:0, credits:0, firstError:'', failReasons:[], noKey:0, coverageCalled:0, coverageUnknown:0, coverageZero:0, unknown:0, zero:0, positive:0, sum:0, rows:0, notWritten:0 };\nlet w={ written:0, writeErrors:0, writeRequests:0, failed:[], writeReasons:[] }; try{ w=Object.assign(w,$('Write Check').first().json||{}); }catch(e){}\nconst n=(v)=>Number(v)||0;\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst failedCount=n(rs.errors)+n(w.writeErrors)+(n(rs.noKey)?1:0);\nconst created=(c.toCreate||[]);\nconst what=p.titles.length?('people titled '+p.titles.join(', ')+(p.excludeTitles.length?' (excluding '+p.excludeTitles.join(', ')+')':'')):'everyone GetLeads holds at the domain';\nconst lines=[\n  '**'+(n(rs.positive)+n(rs.zero))+' of '+n(ps.domains)+' companies counted into \"'+p.outputField+'\", '+n(rs.unknown)+' unknown to GetLeads (blank), '+n(w.written)+' rows written'+(failedCount?', '+failedCount+' errors':'')+'**',\n  '',\n  '**Scope:** one client, Companies view \"'+(t.viewName||p.view)+'\", '+n(ps.inView)+' rows in the view, '+n(ps.domains)+' distinct domains asked',\n  '**Counting:** '+what+'. Every row in the view is recounted and overwritten; a company GetLeads does not know stays blank, never zero',\n  '**Cost:** '+n(rs.credits)+' credits (the count endpoint is free)',\n  '',\n  '**Results**',\n  '- **Counts:** '+n(rs.positive)+' companies with people ('+n(rs.sum)+' in total), '+n(rs.zero)+' with none, '+n(rs.unknown)+' unknown to GetLeads',\n  '- **Calls:** '+n(rs.called)+' counts'+(n(rs.coverageCalled)?', '+n(rs.coverageCalled)+' coverage checks on zeros ('+n(rs.coverageZero)+' real zeros, '+n(rs.coverageUnknown)+' unknown)':''),\n  '- **Rows written (confirmed by Airtable):** '+n(w.written)+(n(w.writeErrors)?', '+n(w.writeErrors)+' refused':''),\n  '- **Column created on first use:** '+(created.length?created.join(', '):'none (already there)')\n];\nconst skips=[];\nif(n(ps.noDomain)) skips.push(n(ps.noDomain)+' rows with no Domain');\nif(!n(ps.inView)) skips.push('the view had no rows');\nif(skips.length) lines.push('', '**Skipped ('+skips.join('; ')+')**');\nconst fails=[].concat(n(rs.noKey)?['no credential on the GetLeads node ('+n(rs.noKey)+' calls)']:[], (rs.failReasons||[]).map(x=>'count: '+x), (w.writeReasons||[]).map(x=>'write: '+x));\nif(fails.length){ lines.push('', '**Failures ('+failedCount+')**'); for(const x of fails.slice(0,12)) lines.push('- '+x); if(n(rs.notWritten)) lines.push('- '+n(rs.notWritten)+' rows left untouched because their count errored'); }\nconst log={\n  'Execution ID': String($execution.id),\n  'Automation': 'Enrich Contact Counts',\n  'Status': failedCount?'Succeeded with errors':'Succeeded',\n  'Trigger': p.trigger||'form',\n  'Errors': failedCount,\n  'Run at': p.startedAt,\n  'Target': (t.tableName||'Companies')+' ('+(t.tableId||'')+')',\n  'View': t.viewName||p.view,\n  'Records In': n(ps.inView),\n  'Records Out': n(w.written),\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Tally': JSON.stringify({ execId:String($execution.id), pick:ps, counts:rs, written:n(w.written), writeErrors:n(w.writeErrors) }).slice(0,90000),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id\n};\nif(p.clientRecId) log['Client']=[p.clientRecId];\nreturn [{ json:log }];\n"
+        },
+        "id": "ecc1-0034-4000-8000-000000000034",
+        "name": "Build Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7040,
+          -100
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Build Refusal: the row a refused launch writes. A refusal is an expected outcome, not a crash:\n// Launch Params, Resolve Table or Check Columns named the reason instead of throwing, and this\n// closes the row (already stamped Running with this Execution ID on a Hub launch) as Failed with\n// the reason and the link. Nothing was asked and nothing was written.\nconst p=$('Params').first().json||{};\nconst reasonOf=(name)=>{ try{ const j=$(name).first().json||{}; return String(j.refused||''); }catch(e){ return ''; } };\nconst reason=reasonOf('Check Columns')||reasonOf('Resolve Table')||String(p.refused||'')||'the launch was refused and no reason was recorded';\nconst show=(v)=>(v===''||v===null||v===undefined||v===0)?'(empty)':String(v);\nconst lines=[\n  '**Refused before anything ran: '+reason+'**',\n  '',\n  '**Scope:** '+(p.clientRecId?('one client ('+p.clientRecId+')'):'no client resolved')+', launch '+(p._launchRecordId||'(event call, no launch row)'),\n  '',\n  '**The launch row as this machine read it**',\n  '- **Client:** '+show(p.clientRecId),\n  '- **Clayroots Base ID:** '+(p.base||'(empty, or the Clients row could not be read)'),\n  '- **Table:** '+show(p.table)+' (only \"Companies\" is accepted)',\n  '- **View:** '+show(p.view),\n  '- **Output Field:** '+show(p.outputField),\n  '- **Titles:** '+((p.titles||[]).length?p.titles.join(', '):'(empty: everyone at the domain)'),\n  '- **Exclude Titles:** '+((p.excludeTitles||[]).length?p.excludeTitles.join(', '):'(empty)'),\n  '',\n  '**Failures (1)**',\n  '- Launch guard: '+reason,\n  '',\n  'No GetLeads call was made and nothing was written to the client base.',\n  'Fix the named field on the launch row, clear Execution ID, and the Airtable door will fire it again.'\n];\nlet dur=0; try{ dur=Math.max(0,Math.round(($now.toMillis()-new Date(p.startedAt).getTime())/1000)); }catch(e){}\nconst log={\n  'Automation':'Enrich Contact Counts',\n  'Status':'Failed',\n  'Trigger': p.trigger||'form',\n  'Errors': 1,\n  'Run at': $now.toISO(),\n  'Records In': 0,\n  'Records Out': 0,\n  'Duration s': dur,\n  'Description': lines.join('\\n'),\n  'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n  'Execution ID': String($execution.id)\n};\nif(p.view) log['View']=p.view;\nif(p.clientRecId) log['Client']=[p.clientRecId];\nreturn [{ json: log }];\n"
+        },
+        "id": "ecc1-0035-4000-8000-000000000035",
+        "name": "Build Refusal",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7040,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "ecc1-0036-4000-8000-000000000036",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          7260,
+          100
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      }
+    ],
+    "connections": {
+      "Door": {
+        "main": [
+          [
+            {
+              "node": "Launch Row?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Row?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Event Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Resolve Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Base": {
+        "main": [
+          [
+            {
+              "node": "Launch Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Params": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Params": {
+        "main": [
+          [
+            {
+              "node": "Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Params": {
+        "main": [
+          [
+            {
+              "node": "Launch OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch OK?": {
+        "main": [
+          [
+            {
+              "node": "Check Table",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Table": {
+        "main": [
+          [
+            {
+              "node": "Resolve Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resolve Table": {
+        "main": [
+          [
+            {
+              "node": "Table OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Table OK?": {
+        "main": [
+          [
+            {
+              "node": "Check Columns",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Columns": {
+        "main": [
+          [
+            {
+              "node": "Columns OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Columns OK?": {
+        "main": [
+          [
+            {
+              "node": "Any Columns?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Refusal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Columns?": {
+        "main": [
+          [
+            {
+              "node": "Plan Columns",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fetch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Columns": {
+        "main": [
+          [
+            {
+              "node": "Create Columns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Columns": {
+        "main": [
+          [
+            {
+              "node": "Reread Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Reread Meta": {
+        "main": [
+          [
+            {
+              "node": "Verify Columns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verify Columns": {
+        "main": [
+          [
+            {
+              "node": "Fetch Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Rows": {
+        "main": [
+          [
+            {
+              "node": "Pick Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pick Rows": {
+        "main": [
+          [
+            {
+              "node": "Make Asks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Make Asks": {
+        "main": [
+          [
+            {
+              "node": "Any Asks?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Asks?": {
+        "main": [
+          [
+            {
+              "node": "GL Count",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Count": {
+        "main": [
+          [
+            {
+              "node": "Count Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Count Results": {
+        "main": [
+          [
+            {
+              "node": "Any Coverage?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Coverage?": {
+        "main": [
+          [
+            {
+              "node": "Coverage Asks",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Coverage Asks": {
+        "main": [
+          [
+            {
+              "node": "GL Coverage",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GL Coverage": {
+        "main": [
+          [
+            {
+              "node": "Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Results": {
+        "main": [
+          [
+            {
+              "node": "Any Writes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Writes?": {
+        "main": [
+          [
+            {
+              "node": "Chunk Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Write Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk Rows": {
+        "main": [
+          [
+            {
+              "node": "Write Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Rows": {
+        "main": [
+          [
+            {
+              "node": "Write Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Check": {
+        "main": [
+          [
+            {
+              "node": "Build Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Refusal": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-14T15:43:26.304Z",
+        "id": 2798,
+        "workflowId": "hkO27n2idhK6HfWS",
+        "versionId": "56cd3565-5a87-404b-a781-974ea9f77756",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
+}

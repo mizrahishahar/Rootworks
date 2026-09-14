@@ -2,7 +2,7 @@
 
 The infrastructure is what a client's cold email is sent from: inboxes, and the domains they sit on.
 
-An inbox provider creates the inbox on a domain we registered. The sender, the platform that runs campaigns, connects to it and sends through it. Everything below is a decision about those inboxes: how many a client holds, what each is set to, and what gets flagged when one goes wrong.
+An inbox provider creates the inbox on a domain we registered. The sender, the platform that runs campaigns, connects to it and sends through it. Everything below is a decision about those inboxes: how many a client holds, what each is set to, what gets flagged when one goes wrong, and what is corrected without asking.
 
 ## Where inboxes live
 
@@ -14,7 +14,8 @@ An inbox provider creates the inbox on a domain we registered. The sender, the p
 
 - **active** is a tag. An inbox carrying the `active` tag is one the client's campaigns send from today
 - **not active** is every inbox in the client's workspace without that tag: warming up, resting, or waiting as reserve
-- an inbox is put into `active` only by the Operator (Shahar), never by a machine
+- an inbox is put into `active` or taken out of it only by the Operator (Shahar), never by a machine
+- every running campaign sends from all of the client's active inboxes. A campaign that must not reach companies behind a secure email gateway is kept from them by its own sender setting, which the campaigns standard holds
 
 ## Capacity
 
@@ -63,7 +64,7 @@ Microsoft inboxes:
 - warmup randomize on, 30%
 
 Every inbox:
-- warmup never turns off, before or after the inbox starts sending
+- warmup is on, and never turns off, before or after the inbox starts sending
 - warmup runs every day, weekends included
 - the signature is not added to warmup emails
 - no custom tracking domain, and warmup does not warm one
@@ -99,28 +100,64 @@ No job title.
 ## Tags
 
 - **`active`:** the inboxes sending today, as above
-- **`gateway`:** the client's inboxes whose domain is clean on SURBL, a public blocklist of domains seen in spam. Some companies filter mail through a secure email gateway that checks that list, so campaigns aimed at them send only from inboxes tagged both `active` and `gateway`. The tag is recalculated every week and never set by hand
 - **`{client}-{n}`:** the batch tag, such as `acme-3` for Acme's third batch. Kept for history
 - **`English`, `Hebrew`:** only for a client whose campaigns are written in two languages. Each inbox carries exactly one
 - **`internal`:** the one tag used on campaigns rather than inboxes, marking our own campaigns
 - tag names are lowercase, except the language tags
 - two tags holding exactly the same inboxes are one too many: one is deleted
-- a campaign keeps its own list of inboxes to send from, and tags do not change that list. When `active` changes, every running campaign's list is rewritten to match
 
 ## Flags
 
-Once a week, and whenever asked, the Inbox Manager machine reads every client's inboxes and posts a report. A flag is a line in that report naming a domain and the problem. It never changes anything; the Operator reads it and decides.
+A flag is a line in the Inbox Manager's report naming a domain and the problem. It never kills, never moves an inbox, never buys; the Operator reads it and decides. Every domain is checked, active or not, with its inboxes counted together.
 
-Every domain is checked, active or not, with its inboxes counted together.
+A reply always means a reply from a person. Out-of-office and other automatic replies never count.
 
-- **Never landed:** 0 replies from people in the domain's first 500 cold emails
-- **Gone quiet:** 0 replies from people in the domain's last 500 cold emails
-- **Warmup:** the sender's warmup score (0 to 100) is under 90, and the domain's oldest inbox is more than 21 days old
-- **Listed:** the domain is on SURBL. This only decides the `gateway` tag
 - **Disconnected:** the sender cannot connect to one of the domain's inboxes
-- **Drift:** any setting on this page is off
+- **Drift:** one of the domain's inboxes is off one of these settings:
+  - daily limit
+  - minutes between sends
+  - sending ramp on, its start and its daily step
+  - warmup on
+  - warmup daily, its start and its daily step
+  - warmup reply rate
+  - warmup randomize on, and its share
+  - warmup weekday only off
+  - warmup on the tracking domain off
+  - signature not added to warmup
+  - no custom tracking domain
+  - no reply-to
+  - a signature present, whose company name is not written as a live domain
+- **Warmup:** the sender's warmup score (0 to 100) is under 90, and the domain's oldest inbox is more than 21 days old
+- **Never landed:** 0 replies in the domain's first 500 cold emails
+- **Gone quiet:** once the domain has sent 750 cold emails, its latest 250 got fewer than half the replies of the 250 before them. At 750 sends that is sends 500 to 750 against sends 250 to 500; after that the two latest batches of 250 are compared each time
+- **Listed:** the domain is on SURBL, a public blocklist of domains seen in spam. Reported only; it decides nothing
+- **Reserve short:** the client's not active capacity is under 50% of its active capacity
 
-Out-of-office and automatic replies are not replies from people. A flag with no domains under it still appears in the report, as none.
+## The daily and weekly read
+
+**Every day:**
+- Disconnected, Drift, Warmup and Reserve short are read for every client
+- an **emergency** is an active inbox that is disconnected
+- emergencies are reported the same morning; a day with no emergency is reported to no one
+
+**Every Monday:**
+- every flag is read, Never landed, Gone quiet and Listed included
+- every client gets the full report: active and not active inboxes and capacity, reserve, and every flag. A flag with no domains under it still appears, as none
+
+**To the client:**
+- only for a client the Operator has switched on
+- the client gets the day's emergencies and the Monday report, in client wording: counts, dates and what we are doing. Never other clients, the pool, providers, costs or flag names
+- every client message is a draft, sent only when the Operator approves it
+
+## Corrected without asking
+
+The Inbox Manager corrects these by itself, every day, and every correction is one line in its report:
+
+- an inbox off a setting in the Drift list is set back to standard, inside its jitter range, and read back. The custom tracking domain is the exception: the sender cannot clear it, so it is only reported
+- warmup switched off is switched back on
+- every running campaign's sender list is set to the client's active inboxes, and read back
+
+Nothing else changes without the Operator.
 
 ## Kills
 
@@ -139,9 +176,9 @@ To kill a domain is to stop using it for good.
 
 ## The record
 
-The Hub, our Airtable database, holds the infrastructure as of the last weekly read:
+The Hub, our Airtable database, holds the infrastructure as of the last read:
 
-- one row per domain: its batch, whether it is active, its flags with the numbers behind them, and the day it was killed
+- one row per domain: its batch, whether it is active, its SURBL result, its reply counts behind Never landed and Gone quiet, its flags with the numbers behind them, and the day it was killed
 - one row per inbox: which settings are off
 - on each client row: active and not active inboxes, active and not active capacity, and the reserve ratio
 
@@ -171,7 +208,9 @@ The Hub, our Airtable database, holds the infrastructure as of the last weekly r
       "warm_tracking_domain": false,
       "signature_in_warmup": false,
       "custom_tracking_domain": "",
-      "reply_to": ""
+      "reply_to": "",
+      "signature_present": true,
+      "signature_live_domain": false
     }
   },
   "jitter": {
@@ -190,18 +229,31 @@ The Hub, our Airtable database, holds the infrastructure as of the last weekly r
   },
   "tags": {
     "active": "active",
-    "gateway": "gateway",
     "batch": "{client}-{n}",
     "languages": ["English", "Hebrew"],
     "internal_campaign": "internal"
   },
+  "replies": "people only, never automatic replies",
   "flags": {
-    "never_landed": { "window": "first", "sends": 500, "human_replies": 0 },
-    "gone_quiet": { "window": "last", "sends": 500, "human_replies": 0 },
-    "warmup": { "score_below": 90, "oldest_inbox_days_over": 21 },
-    "listed": { "list": "multi.surbl.org" },
     "disconnected": { "status_not": "ACTIVE" },
-    "drift": "any setting outside settings and jitter"
+    "drift": "any setting in settings, outside its jitter range",
+    "warmup": { "score_below": 90, "oldest_inbox_days_over": 21 },
+    "never_landed": { "first_sends": 500, "replies": 0 },
+    "gone_quiet": { "from_sends": 750, "batch": 250, "below_share_of_previous": 0.5 },
+    "listed": { "list": "multi.surbl.org", "report_only": true },
+    "reserve_short": { "reserve_ratio_below": 0.5 }
+  },
+  "read": {
+    "daily": ["disconnected", "drift", "warmup", "reserve_short"],
+    "monday": ["disconnected", "drift", "warmup", "reserve_short", "never_landed", "gone_quiet", "listed"],
+    "emergency": "an active inbox disconnected",
+    "quiet_day": "nothing is posted",
+    "client": { "opt_in": true, "gets": ["emergencies", "monday"], "every_message_a_draft": true }
+  },
+  "corrected_without_asking": {
+    "drift": "set back to standard inside jitter, except the custom tracking domain",
+    "warmup_off": "switched back on",
+    "campaign_senders": "every running campaign's senders are the client's active inboxes"
   }
 }
 ```

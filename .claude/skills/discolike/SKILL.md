@@ -209,3 +209,18 @@ companies = client.discover(DiscoverParams(domain=["stripe.com", "adyen.com"], e
 - API page with examples: https://discolike.com/api.md
 - Pricing for agents: https://discolike.com/pricing.md
 - Everything: https://discolike.com/llms.txt
+
+
+
+## The ICP paragraph, for a pull that becomes a list
+
+The one deliverable per list when a scoped list becomes companies: a detailed ICP paragraph, pasted into the builder, which reads it and proposes the structured filters. Paragraph in, filters out, the filters reviewed in the builder.
+
+- **Describe what these companies visibly ARE and DO**, because the search reads websites: what they sell, to whom, on what model, in which market. Innovative customer-centric brands gives it nothing; DTC apparel brands on Shopify selling to UK consumers and running their own webstore gives it something to hold.
+- **Name the observable markers** when the ICP has them: the platform, the product types on the site, the kind of pages such a company has (a careers page hiring platform engineers, developer docs, a store locator).
+- **Include the edges** as plain sentences (resellers, agencies, marketplaces, enterprises), so the builder can fence them out.
+- **One paragraph per list.** Two audiences means two paragraphs, two pulls.
+
+Reading what comes back: the Count a query claims is not a TAM; the variance auto-stop is the real read, and a pull that stops early is information, so the move is a second centre or a wider fence, not a re-run.
+
+How to show it: one block per list, paste-ready, the list's name as a heading, the paragraph as a blockquote, then any disqualifiers or markers worth an eye as short labeled lines.

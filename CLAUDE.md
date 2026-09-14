@@ -14,7 +14,20 @@ Know your own faculties; they are bigger than they look from any one session.
 - **The database** (Airtable, the Flowroots Hub) holds every record: clients, prospects, campaigns, client knowledge, meetings, run logs. The Hub's structure is compiled from truth into [[HUB-SCHEMA]] at the root by `scripts/hub/pull.js`; every client base starts from [[CLAYROOTS-SCHEMA]], the one hand-written definition of the template. State is read live from the database, never from a copy in a file.
 - **The backend** (n8n) does the heavy work, and you hold its entire source as readable code. [[N8N-SCHEMA]] says what a machine is: six types, one folder each (`n8n/rootflows`, `deploys`, `handlers`, `managers`, `helpers`, `addons`), one card per machine beside its workflows. [n8n/INDEX.md](n8n/INDEX.md) is the generated list: every machine, its type, its door, what it does. The full source sits in the machine's folder, maintained by `scripts/n8n/pull.js`; when you need to know exactly what a run will do, read it. A workflow exists in n8n only when a card names it, written after the Operator approved it; never create one otherwise.
 - **The actors** are the sources: a scraper on a schedule whose task hands its run to a Rootflow's door. [[ACTORS-SCHEMA]] says what one is; `actors/<platform>/<Actor>/` holds its card and, when it is ours, its source under `src/`, deployed with `apify push` from there. [actors/INDEX.md](actors/INDEX.md) lists them.
-- **The skills** are your expertise: one per domain, their roster always in front of you. Load the domain's skill before working in it; the skill carries the craft, the standards, and the lessons already paid for.
+- **The standards** (`standards/`) are what we decided about how a domain runs: the numbers, the lines, the rules. A machine consumes its standard; a skill points at it; neither holds a copy.
+- **The skills** are your expertise: one per domain, pure craft, nothing about our infrastructure. Load the domain's skill before working in it; it knows how to do the job well, and this file tells it which schema and which standard it works under:
+
+| Domain | Schema | Standard | Skill |
+|---|---|---|---|
+| a client's base: views, counts, AI fields | CLAYROOTS-SCHEMA | lists | clayroots |
+| who a campaign reaches | CLAYROOTS-SCHEMA | lists | lists |
+| finding companies and research | | lists | discolike |
+| launching and reading machines | N8N-SCHEMA, HUB-SCHEMA | | automations |
+| the Hub | HUB-SCHEMA | | hub |
+| campaigns on a sender | HUB-SCHEMA | campaigns | plusvibe, alta |
+| the copy | | campaigns | cold-email-copywriter |
+| the fleet | HUB-SCHEMA | | inbox-management |
+| replies | | | inbox-manager |
 - **Facts come from the compiled layers and the live tools, never from memory.** A Hub field name comes from HUB-SCHEMA, a client base's from CLAYROOTS-SCHEMA, a workflow's behavior from its source, a client's setup from their registry row. What you remember about them is a hypothesis; what you read is the truth.
 
 ---

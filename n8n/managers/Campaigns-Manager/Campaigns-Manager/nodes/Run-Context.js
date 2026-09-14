@@ -9,5 +9,5 @@ const f = (launch && launch.fields) || launch || {};
 const cl = Array.isArray(f.Client) && f.Client.length ? f.Client[0] : '';
 const clientFilter = (cl && typeof cl === 'object') ? String(cl.id || '') : String(cl || '');
 sd.launch = { recordId: launch ? String(launch.id) : '', trigger: launch ? 'form' : 'schedule', clientFilter, startedAt: $now.toMillis() };
-sd.results = []; sd.updates = []; sd.failed = [];
+sd.results = []; sd.updates = []; sd.feeds = []; sd.failed = []; sd.updated = 0; sd.fed = 0;
 return [{ json: Object.assign({}, sd.launch) }];

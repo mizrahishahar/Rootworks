@@ -36,16 +36,20 @@ for (const j of items('Get Deploy Rows')) {
   }
 }
 
-// Campaigns with a Stage, scoped by the client filter on a launched run.
-const camps = [];
+sd.newestDeploy = newestDeploy;
+
+// Every campaign that is not DRAFT or STOPPED, scoped by the client filter on a launched run.
+// A campaign with a Stage is managed; Killed is out of the report; a campaign without a Stage is
+// unmanaged and shown as such, so the board is complete and every gap is one decision away.
+const camps = []; const unmanaged = [];
 for (const j of items('Get Campaigns')) {
   const f = j.fields || j;
   const clientIds = (Array.isArray(f['Client']) ? f['Client'] : []).map(c => (c && typeof c === 'object') ? String(c.id || '') : String(c || '')).filter(Boolean);
   if (cf && !clientIds.includes(cf)) continue;
   const stage = nm(f['Stage']);
-  if (!stage || stage === 'Killed') continue;
+  if (stage === 'Killed') continue;
   const channel = nm(f['Channel']);
-  camps.push({
+  const c = {
     rid: j.id,
     name: String(f['Campaign'] || j.id),
     campaignId: String(f['Campaign ID'] || '').trim(),
@@ -53,16 +57,19 @@ for (const j of items('Get Campaigns')) {
     lane: channel === 'Email' ? 'Email' : 'LinkedIn',
     status: nm(f['Status']),
     stage,
+    table: nm(f['Table']) || 'People',
     leads: num(f['Leads']),
     contacted: num(f['Contacted']),
     positives: num(f['Positive Replies (PV)']),
     liveView: String(f['Live View ID'] || '').trim(),
     clientId: clientIds[0] || '',
     lastSent: f['Last Sent'] || '',
-  });
+  };
+  if (stage) camps.push(c); else unmanaged.push(c);
 }
-sd.scope = cf ? (camps.length ? 'one client (on demand)' : 'client filter matched no managed campaign') : 'all clients';
+sd.scope = cf ? ((camps.length || unmanaged.length) ? 'one client (on demand)' : 'client filter matched no campaign') : 'all clients';
 sd.managed = camps.length;
+sd.unmanaged = unmanaged.length;
 
 // Shared views: two in-play campaigns drinking from one Live View ID.
 const inPlay = c => STANDARD.inPlayStages.includes(c.stage) && !STANDARD.notInPlayStatus.includes(c.status);
@@ -71,9 +78,10 @@ for (const c of camps) if (inPlay(c) && c.liveView) viewUse[c.liveView] = (viewU
 
 const byClient = {};
 const updates = [];
+const bucket = c => { const key = c.clientId || '(no client)'; return byClient[key] || (byClient[key] = { clientRecId: c.clientId, client: clientName[c.clientId] || (c.clientId ? c.clientId : '(no client)'), pvWorkspace: clientWs[c.clientId] || '', testProgress: [], testReady: [], scaleProgress: [], scaleReady: [], run: [], paused: [], unmanaged: [], fed: [], moved: [], failed: [] }); };
+for (const c of unmanaged) { c.perPositive = c.positives ? Math.round(c.contacted / c.positives) : null; c.tags = []; bucket(c).unmanaged.push(c); }
 for (const c of camps) {
-  const key = c.clientId || '(no client)';
-  const R = byClient[key] || (byClient[key] = { clientRecId: c.clientId, client: clientName[c.clientId] || (c.clientId ? c.clientId : '(no client)'), pvWorkspace: clientWs[c.clientId] || '', testProgress: [], testReady: [], scaleProgress: [], scaleReady: [], run: [], paused: [], moved: [], failed: [] });
+  const R = bucket(c);
   c.perPositive = c.positives ? Math.round(c.contacted / c.positives) : null;
   c.tags = [];
   if (!inPlay(c)) {

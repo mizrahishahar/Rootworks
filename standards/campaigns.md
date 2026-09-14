@@ -43,9 +43,11 @@ Test to Scale and Test to Killed are automatic. Every other move is a decision.
 - **In play:** Stage is Test, Scale or Run, and sender status is not PAUSED, DRAFT or STOPPED. COMPLETED is in play, because a view-fed campaign completes whenever its view runs dry and must start again when it fills
 - **Fed:** in play, with a Live View ID, once a day
 
-A run sends the stage total minus the leads the campaign already holds.
-- at most 1,000 rows on email
-- at most 150 on LinkedIn
+A run sends the stage total minus the leads the campaign already holds, and never more than the day's cap.
+- Test: 1,000 a day on email
+- Scale: 500 a day on email
+- Run: 500 a day on email
+- 150 a day on LinkedIn, in every stage
 
 A view is dry when the last run left nothing in it.
 

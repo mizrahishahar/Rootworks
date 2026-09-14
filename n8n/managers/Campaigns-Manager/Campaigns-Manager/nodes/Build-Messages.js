@@ -36,8 +36,9 @@ const today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'n
 const out = [];
 for (const R of sd.results || []) {
   const inPlay = R.testProgress.length + R.testReady.length + R.scaleProgress.length + R.scaleReady.length + R.run.length;
-  if (!inPlay && !R.paused.length) continue;
-  const parts = ['*' + R.client.toUpperCase() + '*  ·  ' + today + '  ·  ' + inPlay + ' in play'];
+  if (!inPlay && !R.paused.length && !R.unmanaged.length) continue;
+  for (const c of R.fed || []) if (!c.tags.includes('FED')) c.tags.push('FED');
+  const parts = ['*' + R.client.toUpperCase() + '*  ·  ' + today + '  ·  ' + inPlay + ' in play  ·  ' + (R.fed || []).length + ' fed today'];
   parts.push('', ':test_tube: *TEST*');
   parts.push(...phase('in progress', R.testProgress.map(c => card(c, S.line.Test))));
   parts.push(...phase('ready', R.testReady.map(c => card(c, null, c.verdict === 'killed' ? 'KILLED' : 'MOVED TO SCALE'))));
@@ -48,7 +49,11 @@ for (const R of sd.results || []) {
   parts.push(...(R.run.length ? R.run.map(c => runCard(c) + '\n') : ['_none_']));
   parts.push('', ':double_vertical_bar: *PAUSED BY HAND*', '');
   parts.push(...(R.paused.length ? R.paused.map(c => card(c, null, 'set Killed or unpause') + '\n') : ['_none_']));
-  out.push({ json: { channel: CHANNEL, text: parts.join('\n'), client: R.client } });
+  if (R.unmanaged.length) {
+    parts.push('', ':white_circle: *NO STAGE*', '_sending or paused on the sender, not managed until a Stage is set_', '');
+    parts.push(...R.unmanaged.map(c => card(c, null, c.status === 'PAUSED' || c.status === 'COMPLETED' ? c.status.toLowerCase() + ', set a Stage or leave it' : 'set a Stage') + '\n'));
+  }
+  out.push({ json: { channel: CHANNEL, text: parts.join('\n').replace(/\n{3,}/g, '\n\n'), client: R.client } });
 }
 sd.messages = out.length;
 if (!out.length) return [{ json: { _none: true } }];

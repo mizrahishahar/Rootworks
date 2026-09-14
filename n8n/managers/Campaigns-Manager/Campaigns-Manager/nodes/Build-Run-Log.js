@@ -15,12 +15,13 @@ const lines = results.map(R => {
   const inPlay = R.testProgress.length + R.testReady.length + R.scaleProgress.length + R.scaleReady.length + R.run.length;
   const moved = R.moved.map(c => '"' + c.name + '" ' + c.verdict).join(', ');
   const dry = [].concat(R.testProgress, R.scaleProgress, R.run).filter(c => (c.tags || []).some(t => t.indexOf('DRY') === 0 || t === 'NO VIEW' || t === 'SHARED VIEW')).map(c => '"' + c.name + '" ' + c.tags.filter(t => t !== 'LINKEDIN').join(', ')).join('; ');
-  return '- **' + R.client + ':** ' + inPlay + ' in play (Test ' + (R.testProgress.length + R.testReady.length) + ', Scale ' + (R.scaleProgress.length + R.scaleReady.length) + ', Run ' + R.run.length + '), ' + R.scaleReady.length + ' ready to judge, ' + R.paused.length + ' paused by hand' + (moved ? '. Moved: ' + moved : '') + (dry ? '. Flags: ' + dry : '');
+  const fed = (R.fed || []).map(c => '"' + c.name + '"').join(', ');
+  return '- **' + R.client + ':** ' + inPlay + ' in play (Test ' + (R.testProgress.length + R.testReady.length) + ', Scale ' + (R.scaleProgress.length + R.scaleReady.length) + ', Run ' + R.run.length + '), ' + R.scaleReady.length + ' ready to judge, ' + R.paused.length + ' paused by hand, ' + (R.unmanaged || []).length + ' without a Stage' + (moved ? '. Moved: ' + moved : '') + (fed ? '. Fed: ' + fed : '') + (dry ? '. Flags: ' + dry : '');
 });
 
 const parts = [
-  '**' + (sd.managed || 0) + ' managed campaign(s) across ' + results.length + ' client(s), ' + (sd.updated || 0) + ' stage move(s), ' + posted + ' message(s) posted**',
-  '**Scope:** ' + (sd.scope || 'all clients'),
+  '**' + (sd.managed || 0) + ' managed campaign(s) across ' + results.length + ' client(s), ' + (sd.updated || 0) + ' stage move(s), ' + (sd.fed || 0) + ' deploy row(s) created, ' + posted + ' message(s) posted**',
+  '**Scope:** ' + (sd.scope || 'all clients') + '; ' + (sd.unmanaged || 0) + ' campaign(s) without a Stage shown as NO STAGE',
   '**Slack:** ' + (posted ? posted + ' message(s) to #flowroots-campaigns' : 'nothing posted'),
 ].concat(lines);
 if (!results.length) parts.push('**Skipped (1, ' + (launch.clientFilter ? 'client filter matched no managed campaign' : 'no campaign carries a Stage') + ')**');
@@ -31,7 +32,7 @@ const row = {
   'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',
   'Run at': $now.toISO(),
   'Records In': sd.managed || 0,
-  'Records Out': sd.updated || 0,
+  'Records Out': (sd.updated || 0) + (sd.fed || 0),
   'Errors': failed.length,
   'Target': 'Campaigns',
   'Trigger': launch.trigger || 'schedule',

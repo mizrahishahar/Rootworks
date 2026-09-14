@@ -88,14 +88,29 @@ Microsoft:
 
 ## Signature
 
-Every inbox of a client carries the same signature:
+The signature lives on the inbox, and it is spun, so the close of an email changes from one send to the next.
 
-- `Thanks,`
-- the sender's first and last name, as the sender's name variables, so one signature fits every inbox
-- the company name, written so it cannot become a link: `Acme(.)io`, never `Acme.io`, because a link in every email hurts delivery
-- the company's mailing address
+- a campaign body calls it with `{{sender_signature}}` and never writes its own
+- every inbox of one sender carries the same signature. A client whose inboxes send under more than one name has one signature per name
+- the signature is not added to warmup emails
 
-No job title.
+It is four lines, each one spin slot, `{{random|...|...}}`, with five options wherever five natural ones exist. Lines are separated by `<br>` in the stored signature.
+
+- **sign-off:** `Thanks,` `Cheers,` `Best,` `Thanks for reading,` `Either way, thanks,`
+- **name:** the sender's first name alone, or first and last. Written as text, never as the sender's name variables: a variable inside `{{random}}` has never run on our sender
+- **identity:** the company written so it cannot become a link (`Acme(.)io`, never `Acme.io`, because a link in every email hurts delivery), the bare brand (`Acme`), or the company with the sender's title or background (`CRO, Acme(.)io`, `CRO at Acme`, `ex-Google, now building Acme`). A title or background goes in only when it is true of that sender and the Operator confirmed it. A sender name that came from the pool carries the company only
+- **address:** the company's mailing address, one real address written five ways: as written, the street word shortened, the state spelled out, a comma dropped, the country added. Every option is still a complete address a letter would reach
+
+Nothing else: no link, no phone, no image.
+
+One sender, as stored:
+
+```
+{{random|Thanks,|Cheers,|Best,|Thanks for reading,|Either way, thanks,}}
+{{random|Sam|Sam Levi}}
+{{random|Acme(.)io|Acme|CRO, Acme(.)io|CRO at Acme|ex-Google, now building Acme}}
+{{random|1 Main Street, Austin, TX 78701|1 Main St, Austin, TX 78701|1 Main Street, Austin, Texas 78701|1 Main St., Austin TX 78701|1 Main Street, Austin, TX 78701, USA}}
+```
 
 ## Tags
 
@@ -130,18 +145,17 @@ A reply always means a reply from a person. Out-of-office and other automatic re
 - **Warmup:** the sender's warmup score (0 to 100) is under 90, and the domain's oldest inbox is more than 21 days old
 - **Never landed:** 0 replies in the domain's first 500 cold emails
 - **Gone quiet:** once the domain has sent 750 cold emails, its latest 250 got fewer than half the replies of the 250 before them. At 750 sends that is sends 500 to 750 against sends 250 to 500; after that the two latest batches of 250 are compared each time
-- **Listed:** the domain is on SURBL, a public blocklist of domains seen in spam. Reported only; it decides nothing
 - **Reserve short:** the client's not active capacity is under 50% of its active capacity
 
 ## The daily and weekly read
 
 **Every day:**
 - Disconnected, Drift, Warmup and Reserve short are read for every client
-- an **emergency** is an active inbox that is disconnected
+- an **emergency** is an active inbox still disconnected after its reconnect try
 - emergencies are reported the same morning; a day with no emergency is reported to no one
 
 **Every Monday:**
-- every flag is read, Never landed, Gone quiet and Listed included
+- every flag is read, Never landed and Gone quiet included
 - every client gets the full report: active and not active inboxes and capacity, reserve, and every flag. A flag with no domains under it still appears, as none
 
 **To the client:**
@@ -155,6 +169,7 @@ The Inbox Manager corrects these by itself, every day, and every correction is o
 
 - an inbox off a setting in the Drift list is set back to standard, inside its jitter range, and read back. The custom tracking domain is the exception: the sender cannot clear it, so it is only reported
 - warmup switched off is switched back on
+- a disconnected inbox gets one reconnect try, and its status is read back. Still disconnected afterwards, it is flagged; on an active inbox it is an emergency
 - every running campaign's sender list is set to the client's active inboxes, and read back
 
 Nothing else changes without the Operator.
@@ -178,7 +193,7 @@ To kill a domain is to stop using it for good.
 
 The Hub, our Airtable database, holds the infrastructure as of the last read:
 
-- one row per domain: its batch, whether it is active, its SURBL result, its reply counts behind Never landed and Gone quiet, its flags with the numbers behind them, and the day it was killed
+- one row per domain: its batch, whether it is active, its reply counts behind Never landed and Gone quiet, its flags with the numbers behind them, and the day it was killed
 - one row per inbox: which settings are off
 - on each client row: active and not active inboxes, active and not active capacity, and the reserve ratio
 
@@ -189,6 +204,20 @@ The Hub, our Airtable database, holds the infrastructure as of the last read:
     "inboxes_per_domain": { "google": 2, "microsoft": 49 }
   },
   "new_inbox": { "warmup_days_before_cold": 14 },
+  "signature": {
+    "lives_on": "inbox",
+    "body_calls": "{{sender_signature}}",
+    "one_per_sender_name": true,
+    "in_warmup": false,
+    "slots": ["sign_off", "name", "identity", "address"],
+    "options_per_slot": 5,
+    "sign_off": ["Thanks,", "Cheers,", "Best,", "Thanks for reading,", "Either way, thanks,"],
+    "name_as_variable": false,
+    "identity": ["company written unlinkable", "bare brand", "company with title or background, only if true and Operator-confirmed"],
+    "pool_sender": "company only, no title or background",
+    "address": "one real address written five ways, every option deliverable",
+    "extras": "none"
+  },
   "settings": {
     "google": {
       "daily_limit": 25,
@@ -235,24 +264,24 @@ The Hub, our Airtable database, holds the infrastructure as of the last read:
   },
   "replies": "people only, never automatic replies",
   "flags": {
-    "disconnected": { "status_not": "ACTIVE" },
+    "disconnected": { "status_in": ["ERROR", "ALERT"] },
     "drift": "any setting in settings, outside its jitter range",
     "warmup": { "score_below": 90, "oldest_inbox_days_over": 21 },
     "never_landed": { "first_sends": 500, "replies": 0 },
     "gone_quiet": { "from_sends": 750, "batch": 250, "below_share_of_previous": 0.5 },
-    "listed": { "list": "multi.surbl.org", "report_only": true },
     "reserve_short": { "reserve_ratio_below": 0.5 }
   },
   "read": {
     "daily": ["disconnected", "drift", "warmup", "reserve_short"],
-    "monday": ["disconnected", "drift", "warmup", "reserve_short", "never_landed", "gone_quiet", "listed"],
-    "emergency": "an active inbox disconnected",
+    "monday": ["disconnected", "drift", "warmup", "reserve_short", "never_landed", "gone_quiet"],
+    "emergency": "an active inbox still disconnected after its reconnect try",
     "quiet_day": "nothing is posted",
     "client": { "opt_in": true, "gets": ["emergencies", "monday"], "every_message_a_draft": true }
   },
   "corrected_without_asking": {
     "drift": "set back to standard inside jitter, except the custom tracking domain",
     "warmup_off": "switched back on",
+    "disconnected": "one reconnect try, status read back",
     "campaign_senders": "every running campaign's senders are the client's active inboxes"
   }
 }

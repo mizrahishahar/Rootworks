@@ -1,0 +1,4885 @@
+{
+  "updatedAt": "2026-09-14T08:29:10.791Z",
+  "createdAt": "2026-09-06T14:48:01.455Z",
+  "id": "ZiFFAMPpt62Amata",
+  "name": "Inbox Manager",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "083f6e90-9284-446d-a6bd-92dbf68ea53d",
+      "name": "Daily 08:00 IL",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000002",
+      "name": "Launch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "launch-inbox-health",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "b2000000-0000-4000-8000-0000000000ff"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000003",
+      "name": "Fetch Launch Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        180
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "id": "={{ $json.body.recordId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000004",
+      "name": "Stamp Running",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Status": "Running",
+            "Trigger": "form",
+            "Run at": "={{ $now.toISO() }}",
+            "Execution ID": "={{ $execution.id }}",
+            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000005",
+      "name": "Run Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Run-Context.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000006",
+      "name": "Get PV Clients",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "filterByFormula": "{PlusVibe Workspace ID} != ''",
+        "options": {
+          "fields": [
+            "Client",
+            "PlusVibe Workspace ID",
+            "Slack Channel ID",
+            "Infra Reports to Client"
+          ]
+        },
+        "returnAll": true
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000007",
+      "name": "Prep Client Loop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Client-Loop.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000008",
+      "name": "Any Clients?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._empty === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000009",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000a",
+      "name": "Start Client Work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Start-Client-Work.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000b",
+      "name": "List Email Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/account/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000c",
+      "name": "List Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2400,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/tags/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000d",
+      "name": "Get Hub Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbltRqDRQm0YQy3tQ"
+        },
+        "returnAll": true,
+        "options": {
+          "fields": [
+            "Domain",
+            "Flagged On",
+            "Killed On",
+            "Flags",
+            "Flag Reason",
+            "First 500 Replies"
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Plan-Fixes.js"
+      },
+      "id": "4904e53c-913b-4d94-9e53-d87712e20a0a",
+      "name": "Plan Fixes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        0
+      ]
+    },
+    {
+      "id": "e1e91e74-c359-491e-9788-b3dbf8fe9afd",
+      "name": "Any Fixes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3120,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._noop === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8189988d-ecea-4e61-9c56-b9f0d6f2050b",
+      "name": "Apply Fixes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Fixes.js"
+      },
+      "id": "abfc23cb-489a-43f0-9a90-d571e6fa31d5",
+      "name": "Collect Fixes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "505600cc-4558-432c-9eee-609a5d21fb23",
+      "name": "Wait for Reconnect",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3840,
+        0
+      ],
+      "webhookId": "285e528a-ca0c-4cd1-8bd5-c04c1fb56c49"
+    },
+    {
+      "id": "40ce4505-7ce7-411f-ab95-ac63763dae32",
+      "name": "Read Back Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4080,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.plusvibe.ai/api/v1/account/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "workspace_id",
+              "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "skip",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "skip",
+                    "value": "={{ $pageCount * 100 }}"
+                  },
+                  {
+                    "type": "qs",
+                    "name": "limit",
+                    "value": "100"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20,
+              "requestInterval": 1200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Read-Back.js"
+      },
+      "id": "bc554ad0-1f59-41fd-85c3-d52cb5a54561",
+      "name": "Collect Read Back",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        0
+      ]
+    },
+    {
+      "id": "cb424cfc-706e-41f8-a085-9b452f70f7a0",
+      "name": "Full Read?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4560,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Run Context').first().json.full === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000e",
+      "name": "Prep Stat Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Stat-Calls.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000000f",
+      "name": "Account Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5040,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Stats.js"
+      },
+      "id": "868afc58-dd34-47dd-8a24-bf899920bee9",
+      "name": "Collect Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Decide.js"
+      },
+      "id": "4ecbc2d0-4f50-4faf-9d49-24080629801d",
+      "name": "Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5520,
+        0
+      ]
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000013",
+      "name": "Any Inboxes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5760,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000014",
+      "name": "Upsert Inbox Drift",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6000,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblgdmibPyC2dRlVK"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Account ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000015",
+      "name": "Prep Domain Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6240,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Domain-Rows.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000016",
+      "name": "Upsert Domains",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6480,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbltRqDRQm0YQy3tQ"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Domain"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000017",
+      "name": "Prep Client Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6720,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Client-Row.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000018",
+      "name": "Update Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6960,
+        0
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblK0nCoNVvFf5SPa"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001c",
+      "name": "Record Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Record-Outcome.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001f",
+      "name": "Prep Allocate Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Allocate-Calls.js"
+      }
+    },
+    {
+      "id": "b7f97c8e-ad3c-4272-9d03-ebd85f95ae77",
+      "name": "Any Allocations?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000020",
+      "name": "Fire Allocate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2400,
+        180
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 600000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Messages.js"
+      },
+      "id": "72a8adb7-6380-4b1b-a9ed-2fe9e07473c1",
+      "name": "Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        180
+      ]
+    },
+    {
+      "id": "79c4ed54-a79c-4626-a39b-c248be77826a",
+      "name": "Any Messages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-00000000001e",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        3120,
+        180
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.channel }}"
+        },
+        "messageType": "text",
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "wKyNA7ehabgRwkIc",
+          "name": "Marvin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "webhookId": "c05374ca-3637-491f-bd28-63cc34ff6d10"
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000021",
+      "name": "Build Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Run-Log.js"
+      }
+    },
+    {
+      "id": "b2000000-0000-4000-8000-000000000022",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3600,
+        180
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Execution ID"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Daily 08:00 IL": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Launch Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Launch Record": {
+      "main": [
+        [
+          {
+            "node": "Stamp Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stamp Running": {
+      "main": [
+        [
+          {
+            "node": "Run Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Context": {
+      "main": [
+        [
+          {
+            "node": "Get PV Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PV Clients": {
+      "main": [
+        [
+          {
+            "node": "Prep Client Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Client Loop": {
+      "main": [
+        [
+          {
+            "node": "Any Clients?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Clients?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "Prep Allocate Calls",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Client Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Client Work": {
+      "main": [
+        [
+          {
+            "node": "List Email Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Email Accounts": {
+      "main": [
+        [
+          {
+            "node": "List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags": {
+      "main": [
+        [
+          {
+            "node": "Get Hub Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hub Domains": {
+      "main": [
+        [
+          {
+            "node": "Plan Fixes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Fixes": {
+      "main": [
+        [
+          {
+            "node": "Any Fixes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Fixes?": {
+      "main": [
+        [
+          {
+            "node": "Apply Fixes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Full Read?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Fixes": {
+      "main": [
+        [
+          {
+            "node": "Collect Fixes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Fixes": {
+      "main": [
+        [
+          {
+            "node": "Wait for Reconnect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Reconnect": {
+      "main": [
+        [
+          {
+            "node": "Read Back Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Back Accounts": {
+      "main": [
+        [
+          {
+            "node": "Collect Read Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Read Back": {
+      "main": [
+        [
+          {
+            "node": "Full Read?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Full Read?": {
+      "main": [
+        [
+          {
+            "node": "Prep Stat Calls",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Stat Calls": {
+      "main": [
+        [
+          {
+            "node": "Account Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Account Stats": {
+      "main": [
+        [
+          {
+            "node": "Collect Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Stats": {
+      "main": [
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide": {
+      "main": [
+        [
+          {
+            "node": "Any Inboxes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Inboxes?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Inbox Drift",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Inbox Drift": {
+      "main": [
+        [
+          {
+            "node": "Prep Domain Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Domain Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Domains": {
+      "main": [
+        [
+          {
+            "node": "Prep Client Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Client Row": {
+      "main": [
+        [
+          {
+            "node": "Update Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client": {
+      "main": [
+        [
+          {
+            "node": "Record Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Outcome": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Allocate Calls": {
+      "main": [
+        [
+          {
+            "node": "Any Allocations?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Allocations?": {
+      "main": [
+        [
+          {
+            "node": "Fire Allocate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Allocate": {
+      "main": [
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          {
+            "node": "Any Messages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Messages?": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Slack": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Log": {
+      "main": [
+        [
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Weekly Mon 07:00 IL": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "launch": {
+        "recordId": "recsXf0NnjzQcbrOa",
+        "trigger": "form",
+        "clientFilter": "",
+        "startedAt": 1789374574398,
+        "full": true,
+        "live": false
+      },
+      "results": [
+        {
+          "client": "Adelante",
+          "clientRecId": "recN79He6wwPKogUR",
+          "isPool": false,
+          "clientChannel": "C0BFHMGUHT3",
+          "clientReports": false,
+          "full": true,
+          "live": false,
+          "twoLanguage": true,
+          "inboxes": 462,
+          "rollup": {
+            "activeInboxes": 60,
+            "activeCapacity": 1382,
+            "notActiveInboxes": 402,
+            "notActiveCapacity": 1262,
+            "reserveRatio": 0.9131693198263386,
+            "reserveShort": false,
+            "shortInboxes": 0
+          },
+          "domains": [
+            {
+              "domain": "adelanteagentdesk.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteaicx.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteaidesk.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 275 sends, against 1 in the 250 before"
+              ]
+            },
+            {
+              "domain": "adelanteaihelp.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteanswers.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteassist.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantecare.com",
+              "active": true,
+              "flags": [
+                "Never landed"
+              ],
+              "reasons": [
+                "Never landed: 0 replies in the first 516 sends"
+              ]
+            },
+            {
+              "domain": "adelantecarehq.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 283 sends, against 2 in the 250 before"
+              ]
+            },
+            {
+              "domain": "adelantechat.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantecommerce.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantecxdesk.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantecxhq.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantecxlabs.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantedesk.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantedeskhq.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteflow.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantehelp.com",
+              "active": true,
+              "flags": [
+                "Never landed"
+              ],
+              "reasons": [
+                "Never landed: 0 replies in the first 512 sends"
+              ]
+            },
+            {
+              "domain": "adelantehelpdesk.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantehero.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantehq.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 270 sends, against 1 in the 250 before"
+              ]
+            },
+            {
+              "domain": "adelantehub.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteinbox.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteops.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantereplies.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteservice.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteservicehq.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantestack.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantesuite.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelantesupport.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "adelanteteam.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 276 sends, against 1 in the 250 before"
+              ]
+            },
+            {
+              "domain": "adelanteworks.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "easyadelante.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getadelanteagent.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getadelantehub.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "helloadelante.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "helloadelanteagent.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "hiadelante.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "joinadelante.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "meetadelante.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "startadelante.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "tryadelante.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "useadelante.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "withadelante.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            }
+          ],
+          "emergencies": [],
+          "changes": {
+            "live": false,
+            "reconnect": {
+              "planned": 0,
+              "tried": 0,
+              "held": 0
+            },
+            "warmup": {
+              "planned": 0,
+              "tried": 0,
+              "on": 0
+            },
+            "settings": {
+              "planned": 0,
+              "tried": 0,
+              "fixed": 0
+            }
+          },
+          "failed": [],
+          "allocation": {
+            "skipped": "dry run, campaign senders not checked"
+          }
+        },
+        {
+          "client": "Dave.io",
+          "clientRecId": "reclCOYRBgMowJd8G",
+          "isPool": false,
+          "clientChannel": "C0BF4G4M90D",
+          "clientReports": false,
+          "full": true,
+          "live": false,
+          "twoLanguage": false,
+          "inboxes": 64,
+          "rollup": {
+            "activeInboxes": 40,
+            "activeCapacity": 1000,
+            "notActiveInboxes": 24,
+            "notActiveCapacity": 600,
+            "reserveRatio": 0.6,
+            "reserveShort": false,
+            "shortInboxes": 0
+          },
+          "domains": [
+            {
+              "domain": "coldpipeline.biz",
+              "active": true,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "davecloudhq.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davecloudops.com",
+              "active": false,
+              "flags": [
+                "Drift",
+                "Never landed"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Never landed: 0 replies in the first 508 sends"
+              ]
+            },
+            {
+              "domain": "davecloudteam.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davedeploy.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davedevops.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davedevopshq.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "daveinfra.com",
+              "active": true,
+              "flags": [
+                "Never landed"
+              ],
+              "reasons": [
+                "Never landed: 0 replies in the first 540 sends"
+              ]
+            },
+            {
+              "domain": "daveinfrahq.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: warmup ramp off"
+              ]
+            },
+            {
+              "domain": "daveinfralabs.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "daveinfraops.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "daveiocloud.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "daveiodeploy.com",
+              "active": false,
+              "flags": [
+                "Drift",
+                "Never landed"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Never landed: 0 replies in the first 540 sends"
+              ]
+            },
+            {
+              "domain": "daveiodev.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "daveiolabs.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 250 sends, against 1 in the 250 before"
+              ]
+            },
+            {
+              "domain": "daveioops.com",
+              "active": true,
+              "flags": [
+                "Never landed",
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Never landed: 0 replies in the first 540 sends",
+                "Gone quiet: 0 replies in the latest 297 sends, against 2 in the 250 before"
+              ]
+            },
+            {
+              "domain": "daveioworks.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "daveopshq.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 0 replies in the latest 275 sends, against 1 in the 250 before"
+              ]
+            },
+            {
+              "domain": "daveopslabs.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davesre.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "davesreteam.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "dealflowhq.biz",
+              "active": true,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "demandmotion.org",
+              "active": true,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "getdaveops.com",
+              "active": true,
+              "flags": [
+                "Gone quiet"
+              ],
+              "reasons": [
+                "Gone quiet: 1 replies in the latest 277 sends, against 3 in the 250 before"
+              ]
+            },
+            {
+              "domain": "getdaveteam.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "godaveio.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "joindaveio.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "outboundsignalhq.com",
+              "active": true,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outreachlabs.pro",
+              "active": true,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "rundaveio.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "usedaveio.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "withdaveio.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            }
+          ],
+          "emergencies": [],
+          "changes": {
+            "live": false,
+            "reconnect": {
+              "planned": 0,
+              "tried": 0,
+              "held": 0
+            },
+            "warmup": {
+              "planned": 0,
+              "tried": 0,
+              "on": 0
+            },
+            "settings": {
+              "planned": 1,
+              "tried": 0,
+              "fixed": 0
+            }
+          },
+          "failed": [],
+          "allocation": {
+            "skipped": "dry run, campaign senders not checked"
+          }
+        },
+        {
+          "client": "Move PLNR",
+          "clientRecId": "recyZTRr7Hb5S6Ozr",
+          "isPool": false,
+          "clientChannel": "C0B4HECTU3A",
+          "clientReports": false,
+          "full": true,
+          "live": false,
+          "twoLanguage": false,
+          "inboxes": 343,
+          "rollup": {
+            "activeInboxes": 196,
+            "activeCapacity": 588,
+            "notActiveInboxes": 147,
+            "notActiveCapacity": 441,
+            "reserveRatio": 0.75,
+            "reserveShort": false,
+            "shortInboxes": 0
+          },
+          "domains": [
+            {
+              "domain": "gotmoveplnr.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "hellomoveplnr.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "livemoveplnr.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "moveplnrhub.com",
+              "active": true,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "moveplnrsolutions.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "moveplnrworks.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "runmoveplnr.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            }
+          ],
+          "emergencies": [],
+          "changes": {
+            "live": false,
+            "reconnect": {
+              "planned": 0,
+              "tried": 0,
+              "held": 0
+            },
+            "warmup": {
+              "planned": 0,
+              "tried": 0,
+              "on": 0
+            },
+            "settings": {
+              "planned": 0,
+              "tried": 0,
+              "fixed": 0
+            }
+          },
+          "failed": [],
+          "allocation": {
+            "skipped": "dry run, campaign senders not checked"
+          }
+        },
+        {
+          "client": "Flowroots",
+          "clientRecId": "recl27rmyOlVg7fxb",
+          "isPool": true,
+          "clientChannel": "C0B8KTG38JX",
+          "clientReports": false,
+          "full": true,
+          "live": false,
+          "twoLanguage": false,
+          "inboxes": 156,
+          "rollup": {
+            "activeInboxes": 0,
+            "activeCapacity": 0,
+            "notActiveInboxes": 156,
+            "notActiveCapacity": 3752,
+            "reserveRatio": null,
+            "reserveShort": false,
+            "shortInboxes": 0
+          },
+          "domains": [
+            {
+              "domain": "bookedcalls.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "bookedcallspipeline.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "caabcloudhq.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabcloudtech.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabhosting.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabhq.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabhub.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabpro.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabsolutions.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabsystems.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "caabworks.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "demandpartners.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "demandsignal.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "getcaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getcaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getflowroots.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getflowrootsservices.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "getoutboundleads.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "getoutboundrevenue.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "gocaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "gocaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "goflowroots.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "gtmcollective.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "gtmengine.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "gtmpartners.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "hellocaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "hellocaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "joincaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "joincaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "leadgengrowthlabs.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "leadgenlabs.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "leadgenpartners.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "leadgenpartners.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "meetcaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "meetcaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "meetingmachine.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "meetingsflow.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "oncaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "oncaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "outboundcollective.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundgroup.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundgrowthlabs.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundleads.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundmotion.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundpartners.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundpipelinehq.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outboundsignal.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "outreachgroup.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelineflow.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinegrowth.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinemotion.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinepro.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinesignal.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinevelocity.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "pipelinevelocitylabs.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "prospectflowoutbound.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "prospectgroup.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "prospectlabs.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "reachoutlabs.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "revenuemotion.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "revenuereach.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "revenuereachoutbound.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "revenuevelocity.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "runcaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "runcaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "runoutboundmotion.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "salescollective.org",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "salesoutreach.pro",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "salesreachout.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "scaleoutbound.biz",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "startcaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "trycaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "trycaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "tryleadgenpartners.com",
+              "active": false,
+              "flags": [
+                "Drift"
+              ],
+              "reasons": [
+                "Drift: custom tracking domain set (2 inboxes)",
+                "Drift: no signature (2 inboxes)"
+              ]
+            },
+            {
+              "domain": "usecaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "usecaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "withcaab.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            },
+            {
+              "domain": "withcaabcloud.com",
+              "active": false,
+              "flags": [],
+              "reasons": []
+            }
+          ],
+          "emergencies": [],
+          "changes": {
+            "live": false,
+            "reconnect": {
+              "planned": 0,
+              "tried": 0,
+              "held": 0
+            },
+            "warmup": {
+              "planned": 0,
+              "tried": 0,
+              "on": 0
+            },
+            "settings": {
+              "planned": 0,
+              "tried": 0,
+              "fixed": 0
+            }
+          },
+          "failed": [],
+          "allocation": {
+            "skipped": "dry run, campaign senders not checked"
+          }
+        }
+      ],
+      "scope": "all clients",
+      "messages": 4
+    },
+    "node:Daily 08:00 IL": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+  "activeVersionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+  "versionCounter": 3,
+  "triggerCount": 2,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-09-06T14:48:01.462Z",
+      "createdAt": "2026-09-06T14:48:01.462Z",
+      "role": "workflow:owner",
+      "workflowId": "ZiFFAMPpt62Amata",
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-09-10T09:13:47.021Z",
+      "createdAt": "2026-09-10T09:13:47.021Z",
+      "id": "cwPHUKuW9zW2bTX8",
+      "name": "rootworks"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-14T08:29:10.799Z",
+    "createdAt": "2026-09-14T08:29:10.799Z",
+    "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+    "workflowId": "ZiFFAMPpt62Amata",
+    "nodes": [
+      {
+        "id": "083f6e90-9284-446d-a6bd-92dbf68ea53d",
+        "name": "Daily 08:00 IL",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "days",
+                "daysInterval": 1,
+                "triggerAtHour": 8,
+                "triggerAtMinute": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000002",
+        "name": "Launch Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "launch-inbox-health",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "webhookId": "b2000000-0000-4000-8000-0000000000ff"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000003",
+        "name": "Fetch Launch Record",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          240,
+          180
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "id": "={{ $json.body.recordId }}",
+          "options": {}
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000004",
+        "name": "Stamp Running",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.id }}",
+              "Status": "Running",
+              "Trigger": "form",
+              "Run at": "={{ $now.toISO() }}",
+              "Execution ID": "={{ $execution.id }}",
+              "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000005",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Run Context: one shape for every run, launched or scheduled.\n// sd.launch.recordId     the Hub Automations row this run was launched from ('' on a schedule)\n// sd.launch.trigger      'form' when launched from the Hub, 'schedule' otherwise\n// sd.launch.clientFilter the launch row's Client link (one record id) to scope the run to one client; '' = all clients\n// sd.launch.full         true on Mondays (Asia/Jerusalem) and on every launched run: every flag is read and every\n//                        client gets the full report. False on the other days: only the daily flags, and only\n//                        emergencies are posted (standards/infrastructure.md, The daily and weekly read)\n// sd.launch.live         LIVE_CORRECTIONS below. False = the corrections are planned and reported as \"would\n//                        change\", never applied. Flipped to true by a push once the Operator approved a dry report.\nconst LIVE_CORRECTIONS = false;\n\nconst sd = $getWorkflowStaticData('global');\nlet launch = null;\ntry { const r = $('Fetch Launch Record').first().json; if (r && r.id) launch = r; } catch (e) {}\nconst f = (launch && launch.fields) || launch || {};\nconst cl = Array.isArray(f.Client) && f.Client.length ? f.Client[0] : '';\nconst clientFilter = (cl && typeof cl === 'object') ? String(cl.id || '') : String(cl || '');\nconst full = !!launch || $now.setZone('Asia/Jerusalem').weekday === 1;\nsd.launch = { recordId: launch ? String(launch.id) : '', trigger: launch ? 'form' : 'schedule', clientFilter, startedAt: $now.toMillis(), full, live: LIVE_CORRECTIONS };\nsd.results = [];\ndelete sd.cw;\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000006",
+        "name": "Get PV Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          960,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "{PlusVibe Workspace ID} != ''",
+          "options": {
+            "fields": [
+              "Client",
+              "PlusVibe Workspace ID",
+              "Slack Channel ID",
+              "Infra Reports to Client"
+            ]
+          },
+          "returnAll": true
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000007",
+        "name": "Prep Client Loop",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1200,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Every client with a sender workspace, the Flowroots pool last so its block closes the report.\nconst sd = $getWorkflowStaticData('global');\nsd.results = [];\nconst launch = sd.launch || {};\nconst cf = String(launch.clientFilter || '');\nconst all = $('Get PV Clients').all().filter(it => it.json && it.json.id);\nconst picked = cf ? all.filter(it => it.json.id === cf) : all;\nsd.scope = cf ? (picked.length ? 'one client (on demand)' : 'client filter matched no client with a sender workspace') : 'all clients';\n// A loop node that receives nothing never runs, so an empty pick still has to reach the close.\nif (!picked.length) return [{ json: { _empty: true } }];\nconst rows = picked.map(it => {\n  const j = it.json; const f = j.fields || j;\n  const name = String(f['Client'] || '');\n  return {\n    clientRecId: j.id,\n    clientName: name,\n    isPool: name.toLowerCase() === 'flowroots',\n    pvWorkspace: String(f['PlusVibe Workspace ID'] || '').trim(),\n    clientChannel: String(f['Slack Channel ID'] || '').trim(),\n    clientReports: f['Infra Reports to Client'] === true,\n  };\n}).filter(r => r.pvWorkspace);\nif (!rows.length) return [{ json: { _empty: true } }];\nrows.sort((a, b) => (a.isPool === b.isPool ? a.clientName.localeCompare(b.clientName) : (a.isPool ? 1 : -1)));\nreturn rows.map(r => ({ json: r }));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000008",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1440,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000009",
+        "name": "Loop Over Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          1680,
+          0
+        ],
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000a",
+        "name": "Start Client Work",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1920,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// A fresh scratch space for this client. The nodes that only run on some days or some clients (the\n// corrections, the read-back, the stats) write into sd.cw; Decide reads only sd.cw for them. So a node\n// that did not run for this client can never hand Decide the previous client's data, which a plain\n// node reference inside a loop would. Record Outcome deletes it before the next client.\nconst sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nsd.cw = { client: String(cw.clientName || ''), plan: null, fixes: null, readback: null, stats: null };\nreturn $input.all();\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000b",
+        "name": "List Email Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2160,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/account/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1200
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000c",
+        "name": "List Tags",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2400,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/tags/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000d",
+        "name": "Get Hub Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbltRqDRQm0YQy3tQ"
+          },
+          "returnAll": true,
+          "options": {
+            "fields": [
+              "Domain",
+              "Flagged On",
+              "Killed On",
+              "Flags",
+              "Flag Reason",
+              "First 500 Replies"
+            ]
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const STANDARD = /* @@standard:infrastructure */ {\"capacity\":{\"reserve_ratio_min\":0.5,\"inboxes_per_domain\":{\"google\":2,\"microsoft\":49}},\"new_inbox\":{\"warmup_days_before_cold\":14},\"signature\":{\"lives_on\":\"inbox\",\"body_calls\":\"{{sender_signature}}\",\"one_per_sender_name\":true,\"in_warmup\":false,\"slots\":[\"sign_off\",\"name\",\"identity\",\"address\"],\"options_per_slot\":5,\"sign_off\":[\"Thanks,\",\"Cheers,\",\"Best,\",\"Thanks for reading,\",\"Either way, thanks,\"],\"name_as_variable\":false,\"identity\":[\"company written unlinkable\",\"bare brand\",\"company with title or background, only if true and Operator-confirmed\"],\"pool_sender\":\"company only, no title or background\",\"address\":\"one real address written five ways, every option deliverable\",\"extras\":\"none\"},\"settings\":{\"google\":{\"daily_limit\":25,\"sending_gap_min\":13,\"sending_ramp\":{\"on\":true,\"start\":5,\"increment\":5},\"warmup\":{\"daily\":25,\"ramp_start\":5,\"increment\":3,\"reply_rate\":35,\"randomize\":30}},\"microsoft\":{\"daily_limit\":3,\"sending_gap_min\":60,\"sending_ramp\":{\"on\":true,\"start\":1,\"increment\":1},\"warmup\":{\"daily\":8,\"ramp_start\":1,\"increment\":1,\"reply_rate\":90,\"randomize\":30}},\"every\":{\"warmup_on\":true,\"weekday_only\":false,\"warm_tracking_domain\":false,\"signature_in_warmup\":false,\"custom_tracking_domain\":\"\",\"reply_to\":\"\",\"signature_present\":true,\"signature_live_domain\":false}},\"jitter\":{\"google\":{\"sending_gap_min\":[11,15],\"sending_ramp_start\":[4,6],\"warmup_daily\":[20,30],\"warmup_reply_rate\":[30,40],\"warmup_randomize\":[25,40]},\"microsoft\":{\"warmup_daily\":[7,9],\"warmup_reply_rate\":[88,92],\"warmup_randomize\":[25,40]}},\"tags\":{\"active\":\"active\",\"batch\":\"{client}-{n}\",\"languages\":[\"English\",\"Hebrew\"],\"internal_campaign\":\"internal\"},\"replies\":\"people only, never automatic replies\",\"flags\":{\"disconnected\":{\"status_in\":[\"ERROR\",\"ALERT\"]},\"drift\":\"any setting in settings, outside its jitter range\",\"warmup\":{\"score_below\":90,\"oldest_inbox_days_over\":21},\"never_landed\":{\"first_sends\":500,\"replies\":0},\"gone_quiet\":{\"from_sends\":750,\"batch\":250,\"below_share_of_previous\":0.5},\"reserve_short\":{\"reserve_ratio_below\":0.5}},\"read\":{\"daily\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\"],\"monday\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\",\"never_landed\",\"gone_quiet\"],\"emergency\":\"an active inbox still disconnected after its reconnect try\",\"quiet_day\":\"nothing is posted\",\"client\":{\"opt_in\":true,\"gets\":[\"emergencies\",\"monday\"],\"every_message_a_draft\":true}},\"corrected_without_asking\":{\"drift\":\"set back to standard inside jitter, except the custom tracking domain\",\"warmup_off\":\"switched back on\",\"disconnected\":\"one reconnect try, status read back\",\"campaign_senders\":\"every running campaign's senders are the client's active inboxes\"}};\n// Plan Fixes: today's corrections for one client, per standards/infrastructure.md, Corrected without asking.\n// - one reconnect try for every inbox whose status is a disconnected one\n// - warmup switched back on for every connected Google or Microsoft inbox where it is off\n// - every connected Google or Microsoft inbox off a setting this machine can set goes back to standard, inside\n//   its jitter range: the numbers of each inbox come from its domain and its place on the domain, so two inboxes\n//   on one domain never get the same numbers, and a second run lands on the same numbers\n// The custom tracking domain, weekday-only warmup, warming the tracking domain and the signature cannot be set\n// here; Decide reports them. One item per API call. On a dry run, or with nothing to do, one _noop item: the\n// plan is still recorded in sd.cw.plan so the report can say what would change.\nconst sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nconst live = !!(sd.launch && sd.launch.live);\nconst BASE = 'https://api.plusvibe.ai/api/v1';\nconst DISC = STANDARD.flags.disconnected.status_in;\n\nconst pages = $('List Email Accounts').all().map(i => i && i.json).filter(Boolean);\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\n\n// ---------- the standard, per inbox (the same functions as Decide) ----------\nconst providerOf = (p) => {\n  const s = String(p || '').toUpperCase();\n  if (s.includes('GOOGLE')) return 'google';\n  if (s.includes('MICROSOFT') || s.includes('OUTLOOK') || s.includes('OFFICE')) return 'microsoft';\n  return '';\n};\nconst domainOf = (a) => (String(a.email || '').split('@')[1] || '').toLowerCase();\nconst num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : NaN; };\nconst within = (v, r) => Number.isFinite(v) && v >= r[0] && v <= r[1];\nconst LIVE_DOMAIN = /\\b[a-z0-9-]+\\.(com|io|ai|co|net|org|biz|pro|info|app|dev|us|uk)\\b/i;\n\nfunction driftOf(a) {\n  const prov = providerOf(a.provider);\n  if (!prov) return [];\n  const S = STANDARD.settings[prov]; const J = STANDARD.jitter[prov] || {}; const E = STANDARD.settings.every;\n  const p = a.payload || {}; const w = p.warmup || {}; const adv = w.advanced || {};\n  const wr = p.warmup_rampup || {}; const sr = p.sending_rampup || {};\n  const out = [];\n  const exact = (v, want) => num(v) === want;\n  const ok = (v, key, want) => (J[key] ? within(num(v), J[key]) : exact(v, want));\n  const std = (key, want) => (J[key] ? J[key][0] + ' to ' + J[key][1] : String(want));\n  if (!exact(p.daily_limit, S.daily_limit)) out.push({ text: 'daily limit ' + p.daily_limit + ', standard ' + S.daily_limit, fix: true });\n  if (!ok(p.sending_gap, 'sending_gap_min', S.sending_gap_min)) out.push({ text: 'minutes between sends ' + p.sending_gap + ', standard ' + std('sending_gap_min', S.sending_gap_min), fix: true });\n  if (sr.is_slow_rampup !== true) out.push({ text: 'sending ramp off', fix: true });\n  else {\n    if (!ok(sr.rampup_daily_limit, 'sending_ramp_start', S.sending_ramp.start)) out.push({ text: 'sending ramp start ' + sr.rampup_daily_limit + ', standard ' + std('sending_ramp_start', S.sending_ramp.start), fix: true });\n    if (!exact(sr.rampup_daily_inc, S.sending_ramp.increment)) out.push({ text: 'sending ramp step ' + sr.rampup_daily_inc + ', standard ' + S.sending_ramp.increment, fix: true });\n  }\n  // A disconnected inbox has its warmup stopped by the disconnection itself: that is Disconnected, not a second flag.\n  const disconnectedNow = STANDARD.flags.disconnected.status_in.includes(String(a.status || '').toUpperCase());\n  if (E.warmup_on && !disconnectedNow && String(a.warmup_status || '').toUpperCase() !== 'ACTIVE') out.push({ text: 'warmup off', fix: false, warmupOff: true });\n  if (!ok(w.limit, 'warmup_daily', S.warmup.daily)) out.push({ text: 'warmup daily ' + w.limit + ', standard ' + std('warmup_daily', S.warmup.daily), fix: true });\n  if (wr.is_slow_rampup !== true) out.push({ text: 'warmup ramp off', fix: true });\n  else if (!exact(wr.initial_daily_limit, S.warmup.ramp_start)) out.push({ text: 'warmup ramp start ' + wr.initial_daily_limit + ', standard ' + S.warmup.ramp_start, fix: true });\n  if (!exact(w.increment, S.warmup.increment)) out.push({ text: 'warmup ramp step ' + w.increment + ', standard ' + S.warmup.increment, fix: true });\n  if (!ok(w.reply_rate, 'warmup_reply_rate', S.warmup.reply_rate)) out.push({ text: 'warmup reply rate ' + w.reply_rate + '%, standard ' + std('warmup_reply_rate', S.warmup.reply_rate) + '%', fix: true });\n  if (wr.randomize !== true) out.push({ text: 'warmup randomize off', fix: true });\n  else if (!ok(wr.randomize_num, 'warmup_randomize', S.warmup.randomize)) out.push({ text: 'warmup randomize ' + wr.randomize_num + '%, standard ' + std('warmup_randomize', S.warmup.randomize) + '%', fix: true });\n  if (!!adv.weekday_only !== E.weekday_only) out.push({ text: 'warmup weekday only on', fix: false });\n  if (!!adv.warm_ctd !== E.warm_tracking_domain) out.push({ text: 'warmup on the tracking domain on', fix: false });\n  if (!!Number(w.warmup_signature) !== E.signature_in_warmup) out.push({ text: 'signature added to warmup', fix: true });\n  if (String(p.custom_domain || '').trim() !== E.custom_tracking_domain) out.push({ text: 'custom tracking domain set', fix: false });\n  if (String(p.reply_to || '').trim() !== E.reply_to) out.push({ text: 'reply-to set', fix: true });\n  const sig = String(p.signature || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();\n  if (E.signature_present && !sig) out.push({ text: 'no signature', fix: false });\n  else if (!E.signature_live_domain && LIVE_DOMAIN.test(sig)) out.push({ text: 'signature company name is a live domain', fix: false });\n  return out;\n}\n\n// ---------- the numbers a corrected inbox gets ----------\nconst hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };\n// A value inside the range, moved by a different step per setting, so neighbours on a domain differ.\nconst pick = (range, fixed, seed, step) => (range ? range[0] + ((seed * step) % (range[1] - range[0] + 1)) : fixed);\nfunction profileFor(a, position) {\n  const prov = providerOf(a.provider);\n  const S = STANDARD.settings[prov]; const J = STANDARD.jitter[prov] || {}; const E = STANDARD.settings.every;\n  const seed = (hash(domainOf(a)) % 997) + position;\n  return {\n    daily_limit: S.daily_limit,\n    interval_limit_in_min: pick(J.sending_gap_min, S.sending_gap_min, seed, 1),\n    bulk_is_slow_rampup: S.sending_ramp.on ? 'yes' : 'no',\n    bulk_rampup_daily_limit: pick(J.sending_ramp_start, S.sending_ramp.start, seed, 2),\n    bulk_rampup_daily_inc: S.sending_ramp.increment,\n    bulk_warmup_is_slow_rampup: 'yes',\n    warmup_initial_daily_limit: S.warmup.ramp_start,\n    warmup_pace_increment: S.warmup.increment,\n    warmup_max_daily_limit: pick(J.warmup_daily, S.warmup.daily, seed, 7),\n    // The bulk update takes the reply rate as a fraction; the account reads it back as a percent.\n    warmup_reply_rate: pick(J.warmup_reply_rate, S.warmup.reply_rate, seed, 3) / 100,\n    warmup_randomize: 'yes',\n    warmup_randomize_num: pick(J.warmup_randomize, S.warmup.randomize, seed, 5),\n    warmup_signature: E.signature_in_warmup ? 'yes' : 'no',\n    clear_reply_to: E.reply_to === '' ? 'yes' : 'no',\n  };\n}\n\n// ---------- the plan ----------\nconst up = (s) => String(s || '').toUpperCase();\nconst reconnect = accounts.filter(a => DISC.includes(up(a.status))).map(a => String(a.id));\nconst managed = accounts.filter(a => providerOf(a.provider));\nconst warmup = managed.filter(a => up(a.status) === 'ACTIVE' && up(a.warmup_status) !== 'ACTIVE').map(a => String(a.id));\n\nconst byDomain = {};\nfor (const a of managed) (byDomain[domainOf(a)] = byDomain[domainOf(a)] || []).push(a);\nconst groups = {};\nconst settings = [];\nfor (const members of Object.values(byDomain)) {\n  members.sort((x, y) => String(x.email).localeCompare(String(y.email)));\n  members.forEach((a, position) => {\n    if (up(a.status) !== 'ACTIVE') return;\n    if (!driftOf(a).some(x => x.fix)) return;\n    const body = profileFor(a, position);\n    const key = JSON.stringify(body);\n    (groups[key] = groups[key] || { body, ids: [] }).ids.push(String(a.id));\n    settings.push(String(a.id));\n  });\n}\n\nconst chunk = (ids) => { const out = []; for (let i = 0; i < ids.length; i += 100) out.push(ids.slice(i, i + 100)); return out; };\nconst calls = [];\nfor (const ids of chunk(reconnect)) calls.push({ kind: 'reconnect', method: 'POST', url: BASE + '/account/bulk-reconnect', body: { workspace_id: cw.pvWorkspace, ids } });\nfor (const ids of chunk(warmup)) calls.push({ kind: 'warmup', method: 'PATCH', url: BASE + '/account/bulk-update-warmup', body: { workspace_id: cw.pvWorkspace, ids, warmup_status: 'ACTIVE' } });\nfor (const g of Object.values(groups)) for (const ids of chunk(g.ids)) calls.push({ kind: 'settings', method: 'PUT', url: BASE + '/account/bulk-update', body: Object.assign({ workspace_id: cw.pvWorkspace, ids }, g.body) });\n\nsd.cw.plan = { live, reconnect, warmup, settings, calls: calls.length };\nif (!live || !calls.length) return [{ json: { _noop: true } }];\nreturn calls.map(c => ({ json: c }));\n"
+        },
+        "id": "4904e53c-913b-4d94-9e53-d87712e20a0a",
+        "name": "Plan Fixes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2880,
+          0
+        ]
+      },
+      {
+        "id": "e1e91e74-c359-491e-9788-b3dbf8fe9afd",
+        "name": "Any Fixes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3120,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._noop === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "8189988d-ecea-4e61-9c56-b9f0d6f2050b",
+        "name": "Apply Fixes",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3360,
+          0
+        ],
+        "parameters": {
+          "method": "={{ $json.method }}",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// What each correction call returned, one entry per call, paired with the plan in order (the call node runs one\n// item at a time). A success status is not proof: Decide measures every correction from the read-back.\nconst sd = $getWorkflowStaticData('global');\nconst plan = $('Plan Fixes').all().map(i => i.json);\nconst res = $input.all().map(i => (i && i.json) || {});\nsd.cw.fixes = plan.map((c, i) => {\n  const r = res[i] || {};\n  const st = r.statusCode;\n  const body = r.body;\n  const bodyError = body && typeof body === 'object' && (body.status === 'error' || body.success === false);\n  const ok = st !== undefined && st >= 200 && st < 300 && !bodyError && !r.error;\n  const why = ok ? '' : String((body && (body.message || body.error)) || (r.error && (r.error.message || r.error)) || 'no response').slice(0, 200);\n  return { kind: c.kind, ids: (c.body && c.body.ids) || [], ok, status: st === undefined ? null : st, error: why };\n});\nreturn [{ json: { calls: sd.cw.fixes.length, failed: sd.cw.fixes.filter(f => !f.ok).length } }];\n"
+        },
+        "id": "abfc23cb-489a-43f0-9a90-d571e6fa31d5",
+        "name": "Collect Fixes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3600,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": 60,
+          "unit": "seconds"
+        },
+        "id": "505600cc-4558-432c-9eee-609a5d21fb23",
+        "name": "Wait for Reconnect",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          3840,
+          0
+        ],
+        "webhookId": "285e528a-ca0c-4cd1-8bd5-c04c1fb56c49"
+      },
+      {
+        "id": "40ce4505-7ce7-411f-ab95-ac63763dae32",
+        "name": "Read Back Accounts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          4080,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.plusvibe.ai/api/v1/account/list",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "specifyQuery": "keypair",
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workspace_id",
+                "value": "={{ $('Loop Over Clients').first().json.pvWorkspace }}"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              },
+              {
+                "name": "skip",
+                "value": "0"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": false
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "paginationMode": "updateAParameterInEachRequest",
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "qs",
+                      "name": "skip",
+                      "value": "={{ $pageCount * 100 }}"
+                    },
+                    {
+                      "type": "qs",
+                      "name": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !($response.body.accounts || []).length || ($response.body.accounts || []).length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 1200
+              }
+            },
+            "timeout": 30000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "executeOnce": true,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// The fleet as it stands after the corrections, read a minute later: a reconnect can flip to connected and fall\n// back when the inbox provider side is not live, so the read waits before it counts.\nconst sd = $getWorkflowStaticData('global');\nconst pages = $input.all().map(i => i && i.json).filter(Boolean);\nconst accounts = [];\nfor (const p of pages) { if (Array.isArray(p.accounts)) accounts.push(...p.accounts); }\nsd.cw.readback = accounts.length ? accounts : null;\nreturn [{ json: { readBack: accounts.length } }];\n"
+        },
+        "id": "bc554ad0-1f59-41fd-85c3-d52cb5a54561",
+        "name": "Collect Read Back",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4320,
+          0
+        ]
+      },
+      {
+        "id": "cb424cfc-706e-41f8-a085-9b452f70f7a0",
+        "name": "Full Read?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4560,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $('Run Context').first().json.full === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000e",
+        "name": "Prep Stat Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4800,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Monday and launched runs only: the sender's per-inbox stats with a daily breakdown, for the 90 days ending\n// yesterday (today is still arriving), 100 inboxes per page: a handful of calls per workspace. Replies are the\n// sender's reply count, which never includes out-of-office replies.\nconst cw = $('Loop Over Clients').first().json;\nconst pages = $('List Email Accounts').all().map(i => i && i.json).filter(Boolean);\nlet count = 0;\nfor (const p of pages) { if (Array.isArray(p.accounts)) count += p.accounts.length; }\nif (!count) return [{ json: { _none: true } }];\nconst end = $now.setZone('Asia/Jerusalem').minus({ days: 1 }).startOf('day');\nconst start = end.minus({ days: 89 });\nconst s = start.toFormat('yyyy-MM-dd'); const e = end.toFormat('yyyy-MM-dd');\nconst n = Math.ceil(count / 100);\nreturn Array.from({ length: n }, (_, i) => ({\n  json: {\n    page: i + 1, start: s, end: e,\n    url: 'https://api.plusvibe.ai/api/v1/account/email-stats/bulk?workspace_id=' + cw.pvWorkspace +\n      '&start_date=' + s + '&end_date=' + e + '&page=' + (i + 1) + '&limit=100&include_chart=true',\n  },\n}));\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000000f",
+        "name": "Account Stats",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          5040,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.url }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 1200
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Reduce the stats pages to what the reply flags need: per inbox, per day, [sent, replies from people]. A page\n// that failed marks the read incomplete, and Decide then keeps Never landed and Gone quiet as the last full read\n// left them rather than judge a domain on half its days.\nconst sd = $getWorkflowStaticData('global');\nconst prep = $('Prep Stat Calls').all().map(i => i.json);\nconst res = $input.all().map(i => (i && i.json) || {});\nconst out = { ok: true, failedPages: 0, start: (prep[0] && prep[0].start) || '', end: (prep[0] && prep[0].end) || '', byInbox: {} };\nif (prep.length === 1 && prep[0]._none) { sd.cw.stats = out; return [{ json: { pages: 0 } }]; }\nprep.forEach((p, i) => {\n  const r = res[i] || {};\n  const st = r.statusCode;\n  const body = r.body;\n  if (!(st >= 200 && st < 300) || !body || !Array.isArray(body.accounts)) { out.ok = false; out.failedPages++; return; }\n  for (const acc of body.accounts) {\n    const days = {};\n    for (const c of (Array.isArray(acc.chart) ? acc.chart : [])) {\n      const sent = Number(c.total_sent_count) || 0;\n      const replies = Number(c.total_reply_count) || 0;\n      if (sent || replies) days[String(c.date || '').slice(0, 10)] = [sent, replies];\n    }\n    out.byInbox[String(acc.email_acc_id)] = days;\n  }\n});\nsd.cw.stats = out;\nreturn [{ json: { pages: prep.length, failedPages: out.failedPages } }];\n"
+        },
+        "id": "868afc58-dd34-47dd-8a24-bf899920bee9",
+        "name": "Collect Stats",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5280,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const STANDARD = /* @@standard:infrastructure */ {\"capacity\":{\"reserve_ratio_min\":0.5,\"inboxes_per_domain\":{\"google\":2,\"microsoft\":49}},\"new_inbox\":{\"warmup_days_before_cold\":14},\"signature\":{\"lives_on\":\"inbox\",\"body_calls\":\"{{sender_signature}}\",\"one_per_sender_name\":true,\"in_warmup\":false,\"slots\":[\"sign_off\",\"name\",\"identity\",\"address\"],\"options_per_slot\":5,\"sign_off\":[\"Thanks,\",\"Cheers,\",\"Best,\",\"Thanks for reading,\",\"Either way, thanks,\"],\"name_as_variable\":false,\"identity\":[\"company written unlinkable\",\"bare brand\",\"company with title or background, only if true and Operator-confirmed\"],\"pool_sender\":\"company only, no title or background\",\"address\":\"one real address written five ways, every option deliverable\",\"extras\":\"none\"},\"settings\":{\"google\":{\"daily_limit\":25,\"sending_gap_min\":13,\"sending_ramp\":{\"on\":true,\"start\":5,\"increment\":5},\"warmup\":{\"daily\":25,\"ramp_start\":5,\"increment\":3,\"reply_rate\":35,\"randomize\":30}},\"microsoft\":{\"daily_limit\":3,\"sending_gap_min\":60,\"sending_ramp\":{\"on\":true,\"start\":1,\"increment\":1},\"warmup\":{\"daily\":8,\"ramp_start\":1,\"increment\":1,\"reply_rate\":90,\"randomize\":30}},\"every\":{\"warmup_on\":true,\"weekday_only\":false,\"warm_tracking_domain\":false,\"signature_in_warmup\":false,\"custom_tracking_domain\":\"\",\"reply_to\":\"\",\"signature_present\":true,\"signature_live_domain\":false}},\"jitter\":{\"google\":{\"sending_gap_min\":[11,15],\"sending_ramp_start\":[4,6],\"warmup_daily\":[20,30],\"warmup_reply_rate\":[30,40],\"warmup_randomize\":[25,40]},\"microsoft\":{\"warmup_daily\":[7,9],\"warmup_reply_rate\":[88,92],\"warmup_randomize\":[25,40]}},\"tags\":{\"active\":\"active\",\"batch\":\"{client}-{n}\",\"languages\":[\"English\",\"Hebrew\"],\"internal_campaign\":\"internal\"},\"replies\":\"people only, never automatic replies\",\"flags\":{\"disconnected\":{\"status_in\":[\"ERROR\",\"ALERT\"]},\"drift\":\"any setting in settings, outside its jitter range\",\"warmup\":{\"score_below\":90,\"oldest_inbox_days_over\":21},\"never_landed\":{\"first_sends\":500,\"replies\":0},\"gone_quiet\":{\"from_sends\":750,\"batch\":250,\"below_share_of_previous\":0.5},\"reserve_short\":{\"reserve_ratio_below\":0.5}},\"read\":{\"daily\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\"],\"monday\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\",\"never_landed\",\"gone_quiet\"],\"emergency\":\"an active inbox still disconnected after its reconnect try\",\"quiet_day\":\"nothing is posted\",\"client\":{\"opt_in\":true,\"gets\":[\"emergencies\",\"monday\"],\"every_message_a_draft\":true}},\"corrected_without_asking\":{\"drift\":\"set back to standard inside jitter, except the custom tracking domain\",\"warmup_off\":\"switched back on\",\"disconnected\":\"one reconnect try, status read back\",\"campaign_senders\":\"every running campaign's senders are the client's active inboxes\"}};\n// Decide: standards/infrastructure.md applied once to one client. Reads the fleet as it stands after today's\n// corrections (the read-back when they ran, the first read otherwise), the Monday stats read when this is a full\n// run, and the Hub's domain rows for what a daily run does not re-read. Measures every correction from\n// the read-back, never from a call's success. Writes nothing itself: it emits the Hub inbox rows, and leaves the\n// domain rows, the client row and the report facts for the nodes after it.\nconst sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nconst scratch = sd.cw || {};\nconst full = !!(sd.launch && sd.launch.full);\nconst live = !!(sd.launch && sd.launch.live);\nconst nowIL = $now.setZone('Asia/Jerusalem');\nconst today = nowIL.startOf('day');\nconst DISC = STANDARD.flags.disconnected.status_in;\nconst up = (s) => String(s || '').toUpperCase();\n\n// ---------- the standard, per inbox (the same functions as Plan Fixes) ----------\nconst providerOf = (p) => {\n  const s = String(p || '').toUpperCase();\n  if (s.includes('GOOGLE')) return 'google';\n  if (s.includes('MICROSOFT') || s.includes('OUTLOOK') || s.includes('OFFICE')) return 'microsoft';\n  return '';\n};\nconst domainOf = (a) => (String(a.email || '').split('@')[1] || '').toLowerCase();\nconst num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : NaN; };\nconst within = (v, r) => Number.isFinite(v) && v >= r[0] && v <= r[1];\nconst LIVE_DOMAIN = /\\b[a-z0-9-]+\\.(com|io|ai|co|net|org|biz|pro|info|app|dev|us|uk)\\b/i;\n\nfunction driftOf(a) {\n  const prov = providerOf(a.provider);\n  if (!prov) return [];\n  const S = STANDARD.settings[prov]; const J = STANDARD.jitter[prov] || {}; const E = STANDARD.settings.every;\n  const p = a.payload || {}; const w = p.warmup || {}; const adv = w.advanced || {};\n  const wr = p.warmup_rampup || {}; const sr = p.sending_rampup || {};\n  const out = [];\n  const exact = (v, want) => num(v) === want;\n  const ok = (v, key, want) => (J[key] ? within(num(v), J[key]) : exact(v, want));\n  const std = (key, want) => (J[key] ? J[key][0] + ' to ' + J[key][1] : String(want));\n  if (!exact(p.daily_limit, S.daily_limit)) out.push({ text: 'daily limit ' + p.daily_limit + ', standard ' + S.daily_limit, fix: true });\n  if (!ok(p.sending_gap, 'sending_gap_min', S.sending_gap_min)) out.push({ text: 'minutes between sends ' + p.sending_gap + ', standard ' + std('sending_gap_min', S.sending_gap_min), fix: true });\n  if (sr.is_slow_rampup !== true) out.push({ text: 'sending ramp off', fix: true });\n  else {\n    if (!ok(sr.rampup_daily_limit, 'sending_ramp_start', S.sending_ramp.start)) out.push({ text: 'sending ramp start ' + sr.rampup_daily_limit + ', standard ' + std('sending_ramp_start', S.sending_ramp.start), fix: true });\n    if (!exact(sr.rampup_daily_inc, S.sending_ramp.increment)) out.push({ text: 'sending ramp step ' + sr.rampup_daily_inc + ', standard ' + S.sending_ramp.increment, fix: true });\n  }\n  // A disconnected inbox has its warmup stopped by the disconnection itself: that is Disconnected, not a second flag.\n  const disconnectedNow = STANDARD.flags.disconnected.status_in.includes(String(a.status || '').toUpperCase());\n  if (E.warmup_on && !disconnectedNow && String(a.warmup_status || '').toUpperCase() !== 'ACTIVE') out.push({ text: 'warmup off', fix: false, warmupOff: true });\n  if (!ok(w.limit, 'warmup_daily', S.warmup.daily)) out.push({ text: 'warmup daily ' + w.limit + ', standard ' + std('warmup_daily', S.warmup.daily), fix: true });\n  if (wr.is_slow_rampup !== true) out.push({ text: 'warmup ramp off', fix: true });\n  else if (!exact(wr.initial_daily_limit, S.warmup.ramp_start)) out.push({ text: 'warmup ramp start ' + wr.initial_daily_limit + ', standard ' + S.warmup.ramp_start, fix: true });\n  if (!exact(w.increment, S.warmup.increment)) out.push({ text: 'warmup ramp step ' + w.increment + ', standard ' + S.warmup.increment, fix: true });\n  if (!ok(w.reply_rate, 'warmup_reply_rate', S.warmup.reply_rate)) out.push({ text: 'warmup reply rate ' + w.reply_rate + '%, standard ' + std('warmup_reply_rate', S.warmup.reply_rate) + '%', fix: true });\n  if (wr.randomize !== true) out.push({ text: 'warmup randomize off', fix: true });\n  else if (!ok(wr.randomize_num, 'warmup_randomize', S.warmup.randomize)) out.push({ text: 'warmup randomize ' + wr.randomize_num + '%, standard ' + std('warmup_randomize', S.warmup.randomize) + '%', fix: true });\n  if (!!adv.weekday_only !== E.weekday_only) out.push({ text: 'warmup weekday only on', fix: false });\n  if (!!adv.warm_ctd !== E.warm_tracking_domain) out.push({ text: 'warmup on the tracking domain on', fix: false });\n  if (!!Number(w.warmup_signature) !== E.signature_in_warmup) out.push({ text: 'signature added to warmup', fix: true });\n  if (String(p.custom_domain || '').trim() !== E.custom_tracking_domain) out.push({ text: 'custom tracking domain set', fix: false });\n  if (String(p.reply_to || '').trim() !== E.reply_to) out.push({ text: 'reply-to set', fix: true });\n  const sig = String(p.signature || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();\n  if (E.signature_present && !sig) out.push({ text: 'no signature', fix: false });\n  else if (!E.signature_live_domain && LIVE_DOMAIN.test(sig)) out.push({ text: 'signature company name is a live domain', fix: false });\n  return out;\n}\n\n// ---------- inputs ----------\nconst listPages = $('List Email Accounts').all().map(i => i && i.json).filter(Boolean);\nconst before = [];\nfor (const p of listPages) { if (Array.isArray(p.accounts)) before.push(...p.accounts); }\nconst readback = Array.isArray(scratch.readback) ? scratch.readback : null;\nconst afterById = {};\nif (readback) for (const a of readback) afterById[String(a.id)] = a;\nconst accounts = before.map(a => afterById[String(a.id)] || a);\n\nlet tagItems = [];\ntry { tagItems = $('List Tags').all().map(i => i && i.json).filter(Boolean); } catch (e) {}\nconst tagList = [];\nfor (const t of tagItems) {\n  if (Array.isArray(t)) tagList.push(...t);\n  else if (Array.isArray(t.tags)) tagList.push(...t.tags);\n  else if (t && t._id) tagList.push(t);\n}\nconst tagName = {};\nfor (const t of tagList) if (t && t._id) tagName[String(t._id)] = String(t.name || t._id);\n\nlet hubRows = [];\ntry { hubRows = $('Get Hub Domains').all().map(i => i && i.json).filter(r => r && r.id); } catch (e) {}\nconst hubBy = {};\nfor (const r of hubRows) {\n  const f = r.fields || r;\n  const d = String(f['Domain'] || '').toLowerCase();\n  if (!d) continue;\n  hubBy[d] = {\n    flaggedOn: String(f['Flagged On'] || ''),\n    flags: Array.isArray(f['Flags']) ? f['Flags'].map(String) : [],\n    reasons: String(f['Flag Reason'] || '').split('\\n').filter(Boolean),\n    first500: typeof f['First 500 Replies'] === 'number' ? f['First 500 Replies'] : null,\n  };\n}\n\nconst plan = scratch.plan || { reconnect: [], warmup: [], settings: [] };\nconst fixes = Array.isArray(scratch.fixes) ? scratch.fixes : [];\nconst failed = [];\nfor (const f of fixes) if (!f.ok) failed.push(f.kind + ' call for ' + f.ids.length + ' inbox(es) failed' + (f.status ? ' (HTTP ' + f.status + ')' : '') + (f.error ? ': ' + f.error : ''));\nconst planned = plan.reconnect.length + plan.warmup.length + plan.settings.length;\nif (live && planned && !readback) failed.push('the read-back after the corrections returned nothing; corrections could not be measured');\n\n// ---------- per inbox ----------\nconst lowerLanguages = STANDARD.tags.languages.map(String);\nconst inboxes = accounts.map(a => {\n  const p = a.payload || {};\n  const hs = (p.analytics && p.analytics.health_scores) || {};\n  const names = (Array.isArray(p.tags) ? p.tags : []).map(id => tagName[String(id)] || String(id));\n  const created = a.timestamp_created ? DateTime.fromISO(String(a.timestamp_created)).setZone('Asia/Jerusalem') : null;\n  return {\n    id: String(a.id),\n    email: String(a.email || ''),\n    domain: domainOf(a),\n    status: up(a.status),\n    warmupStatus: up(a.warmup_status),\n    managed: !!providerOf(a.provider),\n    dailyLimit: Number(p.daily_limit) || 0,\n    warmupHealth: hs['7d_overall_warmup_health'] == null ? null : Number(hs['7d_overall_warmup_health']),\n    createdDate: created && created.isValid ? created.toFormat('yyyy-MM-dd') : '',\n    ageDays: created && created.isValid ? Math.floor(today.diff(created.startOf('day'), 'days').days) : 0,\n    tagNames: names,\n    isActive: names.map(n => n.toLowerCase()).includes(String(STANDARD.tags.active).toLowerCase()),\n    hasLanguage: names.some(n => lowerLanguages.includes(n)),\n    batch: names.filter(n => /^[a-z0-9.]+-\\d+$/i.test(n)).sort().join(', '),\n    drift: driftOf(a),\n  };\n});\nconst byId = {};\nfor (const i of inboxes) byId[i.id] = i;\n\n// ---------- the corrections, measured ----------\nconst tried = (ids) => (live ? ids.filter(id => byId[id]) : []);\nconst reconnectTried = tried(plan.reconnect);\nconst warmupTried = tried(plan.warmup);\nconst settingsTried = tried(plan.settings);\nconst changes = {\n  live,\n  reconnect: { planned: plan.reconnect.length, tried: reconnectTried.length, held: reconnectTried.filter(id => !DISC.includes(byId[id].status)).length },\n  warmup: { planned: plan.warmup.length, tried: warmupTried.length, on: warmupTried.filter(id => byId[id].warmupStatus === 'ACTIVE').length },\n  settings: { planned: plan.settings.length, tried: settingsTried.length, fixed: settingsTried.filter(id => !byId[id].drift.some(x => x.fix)).length },\n};\n\n// ---------- the Monday read ----------\nconst stats = full ? scratch.stats : null;\nif (full && stats && !stats.ok) failed.push(stats.failedPages + ' stats page(s) failed; Never landed and Gone quiet kept from the last full read');\nif (full && !stats) failed.push('the stats read did not run; Never landed and Gone quiet kept from the last full read');\n\nconst G = STANDARD.flags.gone_quiet; const N = STANDARD.flags.never_landed; const W = STANDARD.flags.warmup;\nfunction replyReads(members) {\n  if (!stats || !stats.ok) return null;\n  const days = {};\n  for (const m of members) {\n    const d = stats.byInbox[m.id] || {};\n    for (const [date, pair] of Object.entries(d)) {\n      const x = days[date] || (days[date] = [0, 0]);\n      x[0] += pair[0]; x[1] += pair[1];\n    }\n  }\n  const dates = Object.keys(days).sort();\n  const total = dates.reduce((s, d) => s + days[d][0], 0);\n  const created = members.map(m => m.createdDate).filter(Boolean).sort()[0] || '';\n  // Only a domain born inside the 90-day window has its first sends in the window.\n  const bornInWindow = !!created && !!stats.start && created >= stats.start;\n  let first = null;\n  if (bornInWindow) {\n    let s = 0; let r = 0;\n    for (const d of dates) { s += days[d][0]; r += days[d][1]; if (s >= N.first_sends) { first = { sent: s, replies: r }; break; } }\n  }\n  // Gone quiet reads the two latest batches, never a domain's first 250: a domain born in the window needs the\n  // standard's total; one born before it already sent its first 250 outside the window.\n  let latest = null; let previous = null;\n  const eligible = bornInWindow ? total >= G.from_sends : total >= 2 * G.batch;\n  if (eligible) {\n    let i = dates.length - 1; let s = 0; let r = 0;\n    for (; i >= 0; i--) { s += days[dates[i]][0]; r += days[dates[i]][1]; if (s >= G.batch) break; }\n    if (s >= G.batch) {\n      let s2 = 0; let r2 = 0;\n      for (i = i - 1; i >= 0; i--) { s2 += days[dates[i]][0]; r2 += days[dates[i]][1]; if (s2 >= G.batch) break; }\n      if (s2 >= G.batch) { latest = { sent: s, replies: r }; previous = { sent: s2, replies: r2 }; }\n    }\n  }\n  return { total, first, latest, previous };\n}\n\n// ---------- per domain ----------\nconst domainNames = [...new Set(inboxes.map(i => i.domain).filter(Boolean))].sort();\nconst domains = domainNames.map(d => {\n  const members = inboxes.filter(i => i.domain === d);\n  const hub = hubBy[d] || { flaggedOn: '', flags: [], reasons: [], first500: null };\n  const active = members.some(m => m.isActive);\n  const disconnected = members.filter(m => DISC.includes(m.status));\n  const drifting = members.filter(m => m.drift.length);\n  const scores = members.map(m => m.warmupHealth).filter(v => v != null && Number.isFinite(v));\n  const warmupMin = scores.length ? Math.min(...scores) : null;\n  const oldestDays = members.length ? Math.max(...members.map(m => m.ageDays)) : 0;\n  const flags = []; const reasons = [];\n  const keep = (flag) => { if (hub.flags.includes(flag)) { flags.push(flag); reasons.push(...hub.reasons.filter(l => l.startsWith(flag + ':'))); } };\n\n  if (disconnected.length) {\n    flags.push('Disconnected');\n    const statuses = [...new Set(disconnected.map(m => m.status))].join(', ');\n    reasons.push('Disconnected: ' + disconnected.length + ' of ' + members.length + ' inbox(es) ' + statuses + (live && disconnected.some(m => plan.reconnect.includes(m.id)) ? ' after a reconnect try' : ''));\n  }\n  if (drifting.length) {\n    flags.push('Drift');\n    const count = {};\n    for (const m of drifting) for (const x of m.drift) count[x.text] = (count[x.text] || 0) + 1;\n    for (const [t, n] of Object.entries(count)) reasons.push('Drift: ' + t + (n > 1 ? ' (' + n + ' inboxes)' : ''));\n  }\n  if (warmupMin != null && warmupMin < W.score_below && oldestDays > W.oldest_inbox_days_over) {\n    flags.push('Warmup');\n    reasons.push('Warmup: score ' + warmupMin + ', oldest inbox ' + oldestDays + ' days');\n  }\n\n  const row = { domain: d, active, batch: [...new Set(members.map(m => m.batch).filter(Boolean))].join(', '), warmupMin, oldestDays, flags, reasons };\n  const reads = full ? replyReads(members) : null;\n  if (reads) {\n    const firstReplies = reads.first ? reads.first.replies : hub.first500;\n    if (typeof firstReplies === 'number') row.first500 = firstReplies;\n    if (firstReplies === N.replies) {\n      flags.push('Never landed');\n      reasons.push('Never landed: ' + firstReplies + ' replies in the first ' + (reads.first ? reads.first.sent : N.first_sends) + ' sends');\n    }\n    if (reads.latest && reads.previous) {\n      row.latest250 = reads.latest.replies;\n      row.previous250 = reads.previous.replies;\n      if (reads.latest.replies < G.below_share_of_previous * reads.previous.replies) {\n        flags.push('Gone quiet');\n        reasons.push('Gone quiet: ' + reads.latest.replies + ' replies in the latest ' + reads.latest.sent + ' sends, against ' + reads.previous.replies + ' in the ' + reads.previous.sent + ' before');\n      }\n    }\n  } else {\n    // A daily run, or a Monday whose stats failed: these flags stand as the last full read left them.\n    keep('Never landed');\n    keep('Gone quiet');\n  }\n  row.flaggedOn = hub.flaggedOn || (flags.length ? today.toFormat('yyyy-MM-dd') : '');\n  row.emergency = disconnected.filter(m => m.isActive).map(m => ({ email: m.email, status: m.status }));\n  return row;\n});\n\n// ---------- the client ----------\nconst activeInboxes = inboxes.filter(i => i.isActive && i.status === 'ACTIVE');\nconst notActiveInboxes = inboxes.filter(i => !i.isActive);\nconst activeCapacity = activeInboxes.reduce((s, i) => s + i.dailyLimit, 0);\nconst notActiveCapacity = notActiveInboxes.reduce((s, i) => s + i.dailyLimit, 0);\nconst minRatio = STANDARD.flags.reserve_short.reserve_ratio_below;\nconst reserveRatio = activeCapacity ? notActiveCapacity / activeCapacity : null;\n// A client with nothing active yet is still warming its first inboxes: exempt.\nconst reserveShort = activeCapacity > 0 && reserveRatio < minRatio;\nconst avgLimit = activeInboxes.length ? activeCapacity / activeInboxes.length : 0;\nconst shortInboxes = reserveShort && avgLimit ? Math.ceil((activeCapacity * minRatio - notActiveCapacity) / avgLimit) : 0;\nconst rollup = { activeInboxes: activeInboxes.length, activeCapacity, notActiveInboxes: notActiveInboxes.length, notActiveCapacity, reserveRatio, reserveShort, shortInboxes };\n\nsd.cw.domainRows = domains;\nsd.cw.clientRow = rollup;\nsd.results.push({\n  client: String(cw.clientName || ''),\n  clientRecId: String(cw.clientRecId || ''),\n  isPool: !!cw.isPool,\n  clientChannel: String(cw.clientChannel || ''),\n  clientReports: !!cw.clientReports,\n  full, live,\n  twoLanguage: inboxes.some(i => i.hasLanguage),\n  inboxes: inboxes.length,\n  rollup,\n  domains: domains.map(d => ({ domain: d.domain, active: d.active, flags: d.flags, reasons: d.reasons })),\n  emergencies: domains.reduce((a, d) => a.concat(d.emergency), []),\n  changes,\n  failed,\n});\n\nif (!inboxes.length) return [{ json: { _none: true } }];\nreturn inboxes.map(i => ({ json: { 'Account ID': i.id, 'Drift': i.drift.map(x => x.text).join('\\n') } }));\n"
+        },
+        "id": "4ecbc2d0-4f50-4faf-9d49-24080629801d",
+        "name": "Decide",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5520,
+          0
+        ]
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000013",
+        "name": "Any Inboxes?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          5760,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000014",
+        "name": "Upsert Inbox Drift",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6000,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblgdmibPyC2dRlVK"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Account ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000015",
+        "name": "Prep Domain Rows",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6240,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// One row per domain, only the fields this machine owns. Killed On is never touched. Flagged On keeps the date\n// already on the row and is left out when there is none, so a first flag date is never overwritten or cleared.\n// The Monday numbers are written only when a full read produced them, so a daily run never blanks them.\nconst sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nconst rows = (sd.cw && sd.cw.domainRows) || [];\nif (!rows.length) return [{ json: { _none: true } }];\nreturn rows.map(d => {\n  const row = {\n    'Domain': d.domain,\n    'Client': [String(cw.clientRecId)],\n    'Batch': d.batch,\n    'Active': !!d.active,\n    'Oldest Inbox Days': d.oldestDays,\n    'Flags': d.flags,\n    'Flag Reason': d.reasons.join('\\n'),\n    'Last Reviewed': $now.toISO(),\n  };\n  if (d.warmupMin != null) row['Warmup Min'] = d.warmupMin;\n  if (d.flaggedOn) row['Flagged On'] = d.flaggedOn;\n  if (typeof d.first500 === 'number') row['First 500 Replies'] = d.first500;\n  if (typeof d.latest250 === 'number') row['Latest 250 Replies'] = d.latest250;\n  if (typeof d.previous250 === 'number') row['Previous 250 Replies'] = d.previous250;\n  return { json: row };\n});\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000016",
+        "name": "Upsert Domains",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6480,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbltRqDRQm0YQy3tQ"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Domain"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000017",
+        "name": "Prep Client Row",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          6720,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nconst r = sd.cw.clientRow;\nreturn [{\n  json: {\n    id: String(cw.clientRecId),\n    'Active Mailboxes': r.activeInboxes,\n    'Active Capacity': r.activeCapacity,\n    'Not Active Mailboxes': r.notActiveInboxes,\n    'Not Active Capacity': r.notActiveCapacity,\n    // A percent field stores the fraction; 0.5 renders as 50%. No active capacity has no ratio: 0.\n    'Reserve Ratio': r.reserveRatio == null ? 0 : r.reserveRatio,\n    'Last Inbox Review': $now.toISO(),\n  },\n}];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000018",
+        "name": "Update Client",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          6960,
+          0
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001c",
+        "name": "Record Outcome",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          7200,
+          0
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Close one client: the Hub writes' failures join the client's entry, and the scratch space is dropped before the\n// next client (it can hold the whole read-back, which must never be saved with the workflow).\nconst sd = $getWorkflowStaticData('global');\nconst cw = $('Loop Over Clients').first().json;\nconst res = (sd.results || [])[(sd.results || []).length - 1];\nif (res && res.client === String(cw.clientName || '') && res.inboxes > 0) {\n  // These three ran for this client: the write chain only runs when Decide emitted inbox rows.\n  const items = (n) => { try { return $(n).all().map(i => (i && i.json) || {}); } catch (e) { return []; } };\n  for (const [node, what] of [['Upsert Inbox Drift', 'inbox rows'], ['Upsert Domains', 'domain rows'], ['Update Client', 'client row']]) {\n    const out = items(node);\n    const errors = out.filter(j => j.error).length;\n    if (!out.length) res.failed.push(what + ': the write returned nothing');\n    else if (errors) res.failed.push(what + ': ' + errors + ' write(s) failed');\n  }\n}\ndelete sd.cw;\nreturn [{ json: { done: true } }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001f",
+        "name": "Prep Allocate Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1920,
+          180
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const STANDARD = /* @@standard:infrastructure */ {\"capacity\":{\"reserve_ratio_min\":0.5,\"inboxes_per_domain\":{\"google\":2,\"microsoft\":49}},\"new_inbox\":{\"warmup_days_before_cold\":14},\"signature\":{\"lives_on\":\"inbox\",\"body_calls\":\"{{sender_signature}}\",\"one_per_sender_name\":true,\"in_warmup\":false,\"slots\":[\"sign_off\",\"name\",\"identity\",\"address\"],\"options_per_slot\":5,\"sign_off\":[\"Thanks,\",\"Cheers,\",\"Best,\",\"Thanks for reading,\",\"Either way, thanks,\"],\"name_as_variable\":false,\"identity\":[\"company written unlinkable\",\"bare brand\",\"company with title or background, only if true and Operator-confirmed\"],\"pool_sender\":\"company only, no title or background\",\"address\":\"one real address written five ways, every option deliverable\",\"extras\":\"none\"},\"settings\":{\"google\":{\"daily_limit\":25,\"sending_gap_min\":13,\"sending_ramp\":{\"on\":true,\"start\":5,\"increment\":5},\"warmup\":{\"daily\":25,\"ramp_start\":5,\"increment\":3,\"reply_rate\":35,\"randomize\":30}},\"microsoft\":{\"daily_limit\":3,\"sending_gap_min\":60,\"sending_ramp\":{\"on\":true,\"start\":1,\"increment\":1},\"warmup\":{\"daily\":8,\"ramp_start\":1,\"increment\":1,\"reply_rate\":90,\"randomize\":30}},\"every\":{\"warmup_on\":true,\"weekday_only\":false,\"warm_tracking_domain\":false,\"signature_in_warmup\":false,\"custom_tracking_domain\":\"\",\"reply_to\":\"\",\"signature_present\":true,\"signature_live_domain\":false}},\"jitter\":{\"google\":{\"sending_gap_min\":[11,15],\"sending_ramp_start\":[4,6],\"warmup_daily\":[20,30],\"warmup_reply_rate\":[30,40],\"warmup_randomize\":[25,40]},\"microsoft\":{\"warmup_daily\":[7,9],\"warmup_reply_rate\":[88,92],\"warmup_randomize\":[25,40]}},\"tags\":{\"active\":\"active\",\"batch\":\"{client}-{n}\",\"languages\":[\"English\",\"Hebrew\"],\"internal_campaign\":\"internal\"},\"replies\":\"people only, never automatic replies\",\"flags\":{\"disconnected\":{\"status_in\":[\"ERROR\",\"ALERT\"]},\"drift\":\"any setting in settings, outside its jitter range\",\"warmup\":{\"score_below\":90,\"oldest_inbox_days_over\":21},\"never_landed\":{\"first_sends\":500,\"replies\":0},\"gone_quiet\":{\"from_sends\":750,\"batch\":250,\"below_share_of_previous\":0.5},\"reserve_short\":{\"reserve_ratio_below\":0.5}},\"read\":{\"daily\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\"],\"monday\":[\"disconnected\",\"drift\",\"warmup\",\"reserve_short\",\"never_landed\",\"gone_quiet\"],\"emergency\":\"an active inbox still disconnected after its reconnect try\",\"quiet_day\":\"nothing is posted\",\"client\":{\"opt_in\":true,\"gets\":[\"emergencies\",\"monday\"],\"every_message_a_draft\":true}},\"corrected_without_asking\":{\"drift\":\"set back to standard inside jitter, except the custom tracking domain\",\"warmup_off\":\"switched back on\",\"disconnected\":\"one reconnect try, status read back\",\"campaign_senders\":\"every running campaign's senders are the client's active inboxes\"}};\n// Every running campaign's senders are set to the client's active inboxes (standards/infrastructure.md,\n// Corrected without asking), through Allocate inboxes in PlusVibe by tags, which adds, removes and reads back.\n// Left alone, and said so in the report: a dry run; a client whose inboxes carry language tags, whose campaigns\n// send from one language pool each, so one list for every campaign would mix the languages.\nconst sd = $getWorkflowStaticData('global');\nconst live = !!(sd.launch && sd.launch.live);\nconst calls = [];\nfor (const r of (sd.results || [])) {\n  if (!r.inboxes) continue;\n  if (!live) { r.allocation = { skipped: 'dry run, campaign senders not checked' }; continue; }\n  if (r.twoLanguage) { r.allocation = { skipped: 'two-language client, campaign senders left as they are' }; continue; }\n  calls.push({ client: r.client, body: { client: r.client, tag: STANDARD.tags.active } });\n}\nif (!calls.length) return [{ json: { _none: true } }];\nreturn calls.map(c => ({ json: c }));\n"
+        }
+      },
+      {
+        "id": "b7f97c8e-ad3c-4272-9d03-ebd85f95ae77",
+        "name": "Any Allocations?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2160,
+          180
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000020",
+        "name": "Fire Allocate",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2400,
+          180
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.flowroots.com/webhook/allocate-inboxes-by-tag",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2000
+              }
+            },
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "neverError": true
+              }
+            },
+            "timeout": 600000
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build Messages: the report, in the Campaigns Manager's shape. One message per client to #flowroots-infra: every\n// client on a full run (Monday or launched), only clients with an emergency on the other days; a quiet day posts\n// nothing. Bold section headers, code blocks with aligned columns, tags in brackets. Every change the run made is\n// one line. For a client switched on (Infra Reports to Client), a second message in client wording, marked as a\n// draft for the client's channel: it reaches the client only when the Operator sends it.\nconst sd = $getWorkflowStaticData('global');\nconst INFRA = 'C0B8KTGV603'; // #flowroots-infra\nconst results = sd.results || [];\n\n// The allocation's own read-back, per client.\ntry {\n  const calls = $('Prep Allocate Calls').all().map(i => i.json).filter(c => !c._none);\n  const res = $('Fire Allocate').all().map(i => (i && i.json) || {});\n  calls.forEach((c, i) => {\n    const r = results.find(x => x.client === c.client);\n    if (!r) return;\n    const x = res[i] || {};\n    const body = x.body === undefined ? x : x.body;\n    if (body && body.ok === true) {\n      const camps = Array.isArray(body.campaigns) ? body.campaigns : [];\n      const added = camps.reduce((s, k) => s + (k.added || []).length, 0);\n      const removed = camps.reduce((s, k) => s + (k.removed || []).length, 0);\n      const failedOps = camps.reduce((s, k) => s + (k.failed || []).length, 0);\n      const mismatched = camps.filter(k => k.matches_tag === false).length;\n      r.allocation = { campaigns: camps.length, changed: camps.filter(k => (k.added || []).length || (k.removed || []).length).length, added, removed };\n      if (failedOps) r.failed.push('campaign senders: ' + failedOps + ' change(s) failed');\n      if (mismatched) r.failed.push('campaign senders: ' + mismatched + ' campaign(s) do not match the active inboxes after the change');\n    } else if (body && /no tag named/i.test(String(body.error || ''))) {\n      r.allocation = { skipped: 'no active tag in this workspace' };\n    } else {\n      r.allocation = { failed: true };\n      r.failed.push('campaign senders: the allocation call failed' + (body && body.error ? ': ' + String(body.error).slice(0, 150) : ''));\n    }\n  });\n} catch (e) {}\n\nconst fmt = v => Number(v || 0).toLocaleString('en-US');\nconst pad = (s, n) => { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s.padEnd(n); };\nconst rpad = (s, n) => String(s == null ? '' : s).padStart(n);\nconst block = rows => '```\\n' + rows.join('\\n') + '\\n```';\nconst cap = (rows, n = 25) => (rows.length > n ? rows.slice(0, n).concat(['… and ' + (rows.length - n) + ' more']) : rows);\nconst today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });\nconst ORDER = ['Disconnected', 'Drift', 'Warmup', 'Never landed', 'Gone quiet'];\n\nconst out = [];\nfor (const r of results) {\n  if (!r.inboxes) continue;\n  const R = r.rollup;\n  const emergencies = r.emergencies || [];\n  if (r.full || emergencies.length) {\n    const title = r.isPool ? 'FLOWROOTS POOL' : r.client.toUpperCase();\n    const parts = ['*' + title + ' · inboxes · ' + today + (r.full ? '' : ' · emergency') + (r.live ? '' : ' · dry run') + '*'];\n    if (emergencies.length) {\n      const byDomain = {};\n      for (const e of emergencies) { const d = String(e.email).split('@')[1] || ''; (byDomain[d] = byDomain[d] || []).push(e); }\n      const rows = Object.keys(byDomain).sort().map(d => pad(d, 30) + rpad(byDomain[d].length, 3) + ' inbox(es)  ' + [...new Set(byDomain[d].map(e => e.status))].join(', '));\n      parts.push('*EMERGENCY · ' + emergencies.length + ' active inbox(es) disconnected' + (r.live ? ' after a reconnect try' : '') + '*', block(cap(rows)));\n    }\n    if (r.full) {\n      parts.push('*CAPACITY*', block([\n        pad('active', 12) + rpad(fmt(R.activeInboxes), 6) + ' inboxes' + rpad(fmt(R.activeCapacity), 9) + ' a day',\n        pad('not active', 12) + rpad(fmt(R.notActiveInboxes), 6) + ' inboxes' + rpad(fmt(R.notActiveCapacity), 9) + ' a day',\n        pad('reserve', 12) + rpad(R.reserveRatio == null ? 'n/a' : Math.round(R.reserveRatio * 100) + '%', 6) + (R.reserveShort ? '  [SHORT by ' + R.shortInboxes + ' inboxes]' : ''),\n      ]));\n      for (const f of ORDER) {\n        const lines = r.domains.filter(d => d.flags.includes(f)).map(d =>\n          pad(d.domain, 30) + '  ' + pad(d.active ? 'active' : 'not active', 10) + '  ' +\n          d.reasons.filter(l => l.startsWith(f + ':')).map(l => l.slice(f.length + 2)).join('; '));\n        parts.push('*' + f.toUpperCase() + '*', block(lines.length ? cap(lines) : ['none']));\n      }\n    }\n    const ch = r.changes;\n    const lines = [];\n    const would = r.live ? '' : 'would ';\n    if (ch.reconnect.planned) lines.push(pad(would + 'reconnect', 26) + (r.live ? ch.reconnect.held + ' of ' + ch.reconnect.tried + ' inbox(es) connected after' : ch.reconnect.planned + ' inbox(es)'));\n    if (ch.warmup.planned) lines.push(pad(would + 'switch warmup on', 26) + (r.live ? ch.warmup.on + ' of ' + ch.warmup.tried + ' inbox(es) on after' : ch.warmup.planned + ' inbox(es)'));\n    if (ch.settings.planned) lines.push(pad(would + 'set settings back', 26) + (r.live ? ch.settings.fixed + ' of ' + ch.settings.tried + ' inbox(es) in standard after' : ch.settings.planned + ' inbox(es)'));\n    const a = r.allocation || {};\n    if (a.skipped) lines.push(pad('campaign senders', 26) + a.skipped);\n    else if (a.campaigns != null && a.changed) lines.push(pad('campaign senders', 26) + a.changed + ' of ' + a.campaigns + ' campaign(s), +' + a.added + ' -' + a.removed);\n    if (lines.length) parts.push('*' + (r.live ? 'CHANGED' : 'WOULD CHANGE') + '*', block(lines));\n    if (r.failed.length) parts.push('*COULD NOT COMPLETE*', block(cap(r.failed)));\n    out.push({ json: { channel: INFRA, text: parts.join('\\n'), client: r.client, kind: 'internal' } });\n  }\n\n  if (r.clientReports && r.clientChannel && !r.isPool && (r.full || emergencies.length)) {\n    const q = [];\n    if (emergencies.length) {\n      q.push('Quick heads-up on your email sending: ' + emergencies.length + ' of your ' + (R.activeInboxes + emergencies.length) +\n        ' active sending inboxes disconnected and are not sending right now. We tried reconnecting them this morning and are working on it now. We will update you as soon as they are back.');\n    }\n    if (r.full) {\n      const attention = r.domains.filter(d => d.flags.some(f => ['Disconnected', 'Warmup', 'Never landed', 'Gone quiet'].includes(f))).length;\n      q.push('Weekly sending infrastructure update, ' + today);\n      q.push('• ' + fmt(R.activeInboxes) + ' inboxes sending, up to ' + fmt(R.activeCapacity) + ' emails a day');\n      q.push('• ' + fmt(R.notActiveInboxes) + ' more inboxes warming up in reserve' + (R.reserveShort ? ', below our reserve target, so more are being added' : ''));\n      q.push(attention ? '• ' + attention + ' sending domain(s) need attention this week and are being handled' : '• All sending domains look healthy this week');\n    }\n    out.push({ json: {\n      channel: INFRA,\n      text: '*DRAFT FOR ' + r.client.toUpperCase() + '* · for <#' + r.clientChannel + '> · send it there only once approved\\n' + q.map(l => '> ' + l).join('\\n'),\n      client: r.client, kind: 'client draft',\n    } });\n  }\n}\nsd.messages = out.length;\nif (!out.length) return [{ json: { _none: true } }];\nreturn out;\n"
+        },
+        "id": "72a8adb7-6380-4b1b-a9ed-2fe9e07473c1",
+        "name": "Build Messages",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          180
+        ]
+      },
+      {
+        "id": "79c4ed54-a79c-4626-a39b-c248be77826a",
+        "name": "Any Messages?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2880,
+          180
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._none === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-00000000001e",
+        "name": "Post to Slack",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          3120,
+          180
+        ],
+        "parameters": {
+          "authentication": "accessToken",
+          "resource": "message",
+          "operation": "post",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.channel }}"
+          },
+          "messageType": "text",
+          "text": "={{ $json.text }}",
+          "otherOptions": {
+            "includeLinkToWorkflow": false,
+            "mrkdwn": true
+          }
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "wKyNA7ehabgRwkIc",
+            "name": "Marvin"
+          }
+        },
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "webhookId": "c05374ca-3637-491f-bd28-63cc34ff6d10"
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000021",
+        "name": "Build Run Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3360,
+          180
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst launch = sd.launch || {};\nconst results = sd.results || [];\nconst failed = results.reduce((a, r) => a.concat((r.failed || []).map(f => r.client + ': ' + f)), []);\nconst totalInboxes = results.reduce((s, r) => s + (r.inboxes || 0), 0);\nconst totalDomains = results.reduce((s, r) => s + (r.domains || []).length, 0);\nconst totalFlagged = results.reduce((s, r) => s + (r.domains || []).filter(d => d.flags.length).length, 0);\nconst totalEmergencies = results.reduce((s, r) => s + (r.emergencies || []).length, 0);\n\nconst expected = Number(sd.messages || 0);\nlet posted = 0;\nif (expected) {\n  let items = [];\n  try { items = $('Post to Slack').all().map(i => (i && i.json) || {}); } catch (e) {}\n  posted = items.filter(j => !j.error && (j.ok === true || (j.message && j.message.ts) || j.ts)).length;\n  if (posted < expected) failed.push('Slack: ' + (expected - posted) + ' of ' + expected + ' message(s) not posted to #flowroots-infra');\n}\n\nconst skipped = [];\nconst lines = results.map(r => {\n  const ch = r.changes || {};\n  const a = r.allocation || {};\n  if (a.skipped) skipped.push(r.client + ': campaign senders, ' + a.skipped);\n  const verb = r.live ? '' : 'would ';\n  const bits = [\n    r.inboxes + ' inbox(es)', (r.domains || []).length + ' domain(s)', (r.domains || []).filter(d => d.flags.length).length + ' flagged',\n    (r.emergencies || []).length + ' emergency inbox(es)',\n  ];\n  if (ch.reconnect && ch.reconnect.planned) bits.push(verb + 'reconnect ' + (r.live ? ch.reconnect.held + '/' + ch.reconnect.tried : ch.reconnect.planned));\n  if (ch.warmup && ch.warmup.planned) bits.push(verb + 'warmup on ' + (r.live ? ch.warmup.on + '/' + ch.warmup.tried : ch.warmup.planned));\n  if (ch.settings && ch.settings.planned) bits.push(verb + 'settings back ' + (r.live ? ch.settings.fixed + '/' + ch.settings.tried : ch.settings.planned));\n  if (a.campaigns != null) bits.push('senders ' + a.changed + ' campaign(s) changed, +' + a.added + ' -' + a.removed);\n  return '- **' + r.client + ':** ' + bits.join(', ');\n});\n\nconst parts = [\n  '**' + results.length + ' client(s), ' + totalInboxes + ' inbox(es), ' + totalDomains + ' domain(s), ' + totalFlagged + ' flagged, ' + totalEmergencies + ' emergency inbox(es)**',\n  '**Scope:** ' + (sd.scope || 'all clients'),\n  '**Read:** ' + (launch.full ? 'full (Monday or launched)' : 'daily'),\n  '**Corrections:** ' + (launch.live ? 'live' : 'dry run, planned and reported, nothing applied'),\n  '**Slack:** ' + (expected ? posted + ' of ' + expected + ' message(s) posted to #flowroots-infra' : 'nothing to post'),\n  '',\n].concat(lines);\nif (launch.clientFilter && !results.length) skipped.push('client filter matched no client with a sender workspace');\nif (skipped.length) parts.push('', '**Skipped (' + skipped.length + ')**', ...skipped.map(s => '- ' + s));\nif (failed.length) parts.push('', '**Errors**', ...failed.map(f => '- ' + f));\n\nconst row = {\n  'Automation': 'Inbox Manager',\n  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',\n  'Run at': $now.toISO(),\n  'Records In': totalInboxes,\n  'Records Out': totalDomains,\n  'Errors': failed.length,\n  'Target': 'Domains',\n  'Trigger': launch.trigger || 'schedule',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  'Duration s': Math.round(($now.toMillis() - (launch.startedAt || $now.toMillis())) / 1000),\n  'Description': parts.join('\\n'),\n};\n// Client is attached only when the run served exactly one client; never an empty link array.\nif (launch.clientFilter) row['Client'] = [launch.clientFilter];\nreturn [{ json: row }];\n"
+        }
+      },
+      {
+        "id": "b2000000-0000-4000-8000-000000000022",
+        "name": "Log Run",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3600,
+          180
+        ],
+        "parameters": {
+          "resource": "record",
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "Execution ID"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "stopWorkflow"
+      }
+    ],
+    "connections": {
+      "Daily 08:00 IL": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Launch Webhook": {
+        "main": [
+          [
+            {
+              "node": "Fetch Launch Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Launch Record": {
+        "main": [
+          [
+            {
+              "node": "Stamp Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stamp Running": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Get PV Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get PV Clients": {
+        "main": [
+          [
+            {
+              "node": "Prep Client Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Client Loop": {
+        "main": [
+          [
+            {
+              "node": "Any Clients?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Clients": {
+        "main": [
+          [
+            {
+              "node": "Prep Allocate Calls",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Start Client Work",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Start Client Work": {
+        "main": [
+          [
+            {
+              "node": "List Email Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Email Accounts": {
+        "main": [
+          [
+            {
+              "node": "List Tags",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "List Tags": {
+        "main": [
+          [
+            {
+              "node": "Get Hub Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Hub Domains": {
+        "main": [
+          [
+            {
+              "node": "Plan Fixes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Fixes": {
+        "main": [
+          [
+            {
+              "node": "Any Fixes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Fixes?": {
+        "main": [
+          [
+            {
+              "node": "Apply Fixes",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Full Read?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply Fixes": {
+        "main": [
+          [
+            {
+              "node": "Collect Fixes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Fixes": {
+        "main": [
+          [
+            {
+              "node": "Wait for Reconnect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait for Reconnect": {
+        "main": [
+          [
+            {
+              "node": "Read Back Accounts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Back Accounts": {
+        "main": [
+          [
+            {
+              "node": "Collect Read Back",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Read Back": {
+        "main": [
+          [
+            {
+              "node": "Full Read?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Full Read?": {
+        "main": [
+          [
+            {
+              "node": "Prep Stat Calls",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Decide",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Stat Calls": {
+        "main": [
+          [
+            {
+              "node": "Account Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Account Stats": {
+        "main": [
+          [
+            {
+              "node": "Collect Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Stats": {
+        "main": [
+          [
+            {
+              "node": "Decide",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Decide": {
+        "main": [
+          [
+            {
+              "node": "Any Inboxes?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Inboxes?": {
+        "main": [
+          [
+            {
+              "node": "Upsert Inbox Drift",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Inbox Drift": {
+        "main": [
+          [
+            {
+              "node": "Prep Domain Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Domain Rows": {
+        "main": [
+          [
+            {
+              "node": "Upsert Domains",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Domains": {
+        "main": [
+          [
+            {
+              "node": "Prep Client Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Client Row": {
+        "main": [
+          [
+            {
+              "node": "Update Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Client": {
+        "main": [
+          [
+            {
+              "node": "Record Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record Outcome": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Allocate Calls": {
+        "main": [
+          [
+            {
+              "node": "Any Allocations?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Allocations?": {
+        "main": [
+          [
+            {
+              "node": "Fire Allocate",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fire Allocate": {
+        "main": [
+          [
+            {
+              "node": "Build Messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Messages": {
+        "main": [
+          [
+            {
+              "node": "Any Messages?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Messages?": {
+        "main": [
+          [
+            {
+              "node": "Post to Slack",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Post to Slack": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Run Log": {
+        "main": [
+          [
+            {
+              "node": "Log Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-14T08:29:11.004Z",
+        "id": 2779,
+        "workflowId": "ZiFFAMPpt62Amata",
+        "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-14T08:29:24.669Z",
+        "id": 2781,
+        "workflowId": "ZiFFAMPpt62Amata",
+        "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-14T08:29:10.934Z",
+        "id": 2778,
+        "workflowId": "ZiFFAMPpt62Amata",
+        "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-14T08:29:19.630Z",
+        "id": 2780,
+        "workflowId": "ZiFFAMPpt62Amata",
+        "versionId": "0ede0838-1e33-4cbd-9f55-054b00f7ba25",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
+}

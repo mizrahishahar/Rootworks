@@ -19,9 +19,9 @@ const nm = v => (v && typeof v === 'object') ? String(v.name || '') : String(v |
 const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const items = name => { try { return $(name).all().map(i => i.json).filter(j => j && j.id); } catch (e) { return []; } };
 
-// Clients: id -> name
-const clientName = {};
-for (const j of items('Get Clients')) { const f = j.fields || j; clientName[j.id] = String(f['Client'] || j.id); }
+// Clients: id -> name, and the PlusVibe workspace the Run series is read from.
+const clientName = {}; const clientWs = {};
+for (const j of items('Get Clients')) { const f = j.fields || j; clientName[j.id] = String(f['Client'] || j.id); clientWs[j.id] = String(f['PlusVibe Workspace ID'] || '').trim(); }
 
 // Newest deploy row per campaign id (Target on a scheduled launch row is the campaign id).
 const newestDeploy = {};
@@ -73,7 +73,7 @@ const byClient = {};
 const updates = [];
 for (const c of camps) {
   const key = c.clientId || '(no client)';
-  const R = byClient[key] || (byClient[key] = { clientRecId: c.clientId, client: clientName[c.clientId] || (c.clientId ? c.clientId : '(no client)'), testProgress: [], testReady: [], scaleProgress: [], scaleReady: [], run: [], paused: [], moved: [], failed: [] });
+  const R = byClient[key] || (byClient[key] = { clientRecId: c.clientId, client: clientName[c.clientId] || (c.clientId ? c.clientId : '(no client)'), pvWorkspace: clientWs[c.clientId] || '', testProgress: [], testReady: [], scaleProgress: [], scaleReady: [], run: [], paused: [], moved: [], failed: [] });
   c.perPositive = c.positives ? Math.round(c.contacted / c.positives) : null;
   c.tags = [];
   if (!inPlay(c)) {

@@ -165,7 +165,8 @@
         "returnAll": true,
         "options": {
           "fields": [
-            "Client"
+            "Client",
+            "PlusVibe Workspace ID"
           ]
         }
       },
@@ -445,8 +446,8 @@
           "mode": "id",
           "value": "={{ $json.channel }}"
         },
-        "messageType": "block",
-        "blocksUi": "={{ JSON.stringify({ blocks: $json.blocks }) }}",
+        "messageType": "text",
+        "text": "={{ $json.text }}",
         "otherOptions": {
           "includeLinkToWorkflow": false,
           "mrkdwn": true
@@ -517,6 +518,105 @@
         }
       },
       "onError": "stopWorkflow"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000101",
+      "name": "Prep Run Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        668,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Prep-Run-Stats.js"
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000102",
+      "name": "Any Run Stats?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        893,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json._none === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000103",
+      "name": "Run Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1118,
+        100
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c3000000-0000-4000-8000-000000000104",
+      "name": "Collect Run Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1343,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Collect-Run-Stats.js"
+      }
     }
   ],
   "connections": {
@@ -652,7 +752,7 @@
       "main": [
         [
           {
-            "node": "Build Messages",
+            "node": "Prep Run Stats",
             "type": "main",
             "index": 0
           }
@@ -704,6 +804,57 @@
         [
           {
             "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Run Stats": {
+      "main": [
+        [
+          {
+            "node": "Any Run Stats?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Run Stats?": {
+      "main": [
+        [
+          {
+            "node": "Run Stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stats": {
+      "main": [
+        [
+          {
+            "node": "Collect Run Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Run Stats": {
+      "main": [
+        [
+          {
+            "node": "Build Messages",
             "type": "main",
             "index": 0
           }

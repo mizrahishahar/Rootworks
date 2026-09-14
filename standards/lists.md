@@ -5,12 +5,12 @@ A list is one segment of people, on one client's ClayRoots base, worth one campa
 ## The flow
 
 1. companies land in Companies, from a source, with the core filled
-2. people are found for every company in a view, once; Contacts Pulled At marks it
-3. emails are found and verified for every relevant person, once; Status marks it
+2. people are found for every company in a view.
+3. emails are found and verified for every relevant person.
 4. relevance is decided by the client's formula
 5. a segment is a view on People, fed to one campaign
 
-Every step is launched from a row. The Operator decides between steps; nothing runs the next step on its own except the hand-offs the cards declare. A domain on the client's DNC never lands.
+Each step is a Rootflow: a machine that adds to the ClayRoots base (rows or columns), launched from a Hub Automations row, declared on a card in `n8n/rootflows/`. Companies land through a Discover Rootflow, people and emails through an Enrich Rootflow; a Rootflow brings the columns it writes and creates them on first use. The Operator decides between steps; nothing runs the next step on its own except the hand-offs the cards declare. A domain on the client's DNC never lands.
 
 ## Companies
 

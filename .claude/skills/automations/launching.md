@@ -14,17 +14,13 @@ A launch row names the machine, the client, and the machine's own parameters, wh
 
 ## The preview, before anything fires
 
-Every launch is shown as a real table (never inside a code fence): the machine, what it will do in one sentence, the target, every parameter with its value, and a cost line when a paid provider is in the path. Approval, then the row. One launch, one preview.
+Every launch is shown as a real table (never inside a code fence), one row per launch, the launch row's own fields as the columns, in the order they sit on the row, and a Cost column when a paid provider is in the path. Under it, one sentence: what the run will do. Approval, then the row. One launch, one preview; several launches, several rows in the same table.
 
-| Machine | Will do | Target | Parameter | Value |
-|---|---|---|---|---|
-| the research machine | asks one question of every company in the view and writes the answer into a new column | Companies · Not Sourced | Client | Acme |
-| | | | View | Not Sourced |
-| | | | Prompt | Does this company sell mainly to other businesses, mainly to consumers, or both? Answer B2B, B2C, both or unknown |
-| | | | Output Field | Business Model |
-| | | | Output Type | Single select |
-| | | | Max companies | 500 |
-| | | | Cost | 500 companies on the account's model key |
+| Automation | Client | View | Tag | Prompt | Output Field | Output Type | Max companies | Cost |
+|---|---|---|---|---|---|---|---|---|
+| the research machine | Acme | Not Sourced | acme-q3 | Does this company sell mainly to other businesses, mainly to consumers, or both? Answer B2B, B2C, both or unknown | Business Model | Single select | 500 | 500 companies on the account's model key |
+
+Asks one question of every company in the view and writes the answer into a new column.
 
 ## Reruns
 

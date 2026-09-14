@@ -36,3 +36,29 @@ A filter that is subtly off silently drops the wrong rows, or zeroes a segment w
 - **Never use `isNotEmpty` on a select field.** A select whose choice list carries a blank-named choice reads as non-empty on every row that holds it, so `isNotEmpty` returns the whole table with no error; it has killed a segment axis across 29,000 rows. Gate on explicit choice ids with `isAnyOf` / `isNoneOf`.
 - **Never trust a stale table listing.** Re-read the schema before asserting a table or field does not exist.
 - **Reuse a verified layer's count** instead of re-querying it.
+
+## How a view is previewed
+
+Every view is previewed twice, every time: once as a table row a person reads, once as a prompt Airtable's AI view builder executes. The two say the same thing in the same words.
+
+**1. The table.** One row per view, the view's own parts as the columns, a real markdown table, never inside a code fence:
+
+| Table | View | Who is in it | Filter | Sort | Fields shown | Size |
+|---|---|---|---|---|---|---|
+| People | CTOs at funded SaaS | technical decision-makers at software companies that raised money, with a verified email, never contacted | Where ALL of the following are true: `relevance` = 1. `Status` is done. `Messages Sent` is empty OR `Messages Sent` = 0. `Employees` is any of 51-200, 201-500. And where ANY of the following are true: `Title` contains CTO. `Title` contains Chief Technology. `Title` contains VP Engineering | Build Date, newest first | Name, Title, Company, Employees, Final Email, LinkedIn URL, Tag, Campaigns, Messages Sent, Last Contacted | 412 |
+
+Under the table, one line per view when something needs saying: what it deliberately excludes (blanks in `Employees` are out), what it does not do yet.
+
+- **Who is in it** is one plain sentence, so the reader knows what the view means without reading the filter.
+- **Filter** is the tree as it is: "Where ALL of the following are true: A. B. And where ANY of the following are true: C. D." Subgroups in nesting order, exactly as the builder will hold them; never flattened into a comma list. Every row complete and standalone, never "same as above, plus".
+- **Size** is the exact count from the method above.
+- A set that partitions a pool closes with its reconciliation line under the table: the sum of the views against the parent's exact count.
+
+**2. The prompt.** Under the table, one block per view, paste-ready, the view's name as its heading. It names the table, the view, the filter tree in the same words as the cell, the sort, and the fields to show:
+
+> Create a grid view on the People table named "CTOs at funded SaaS".
+> Show only records where ALL of the following are true: relevance is 1; Status is "done"; Messages Sent is empty or Messages Sent is 0; Employees is any of "51-200", "201-500"; and where ANY of the following are true: Title contains "CTO"; Title contains "Chief Technology"; Title contains "VP Engineering".
+> Sort by Build Date, newest first.
+> Show these fields: Name, Title, Company, Employees, Final Email, LinkedIn URL, Tag, Campaigns, Messages Sent, Last Contacted.
+
+The builder rewrites a whole filter roughly one time in three: after it applies, read the tree it produced against the table row before trusting the count.

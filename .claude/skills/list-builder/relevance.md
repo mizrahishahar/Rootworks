@@ -51,6 +51,32 @@ Exact complements: **Relevant** (the formula = 1) and **Cut Review** (the formul
 
 A formula edit is instant and total: every row reclassifies on save, including rows in live campaigns. State the delta first, how many flip in, how many out, and of those flipping out how many were already contacted; those sends cannot be recalled and reported numbers move. Narrowing a live list is a decision, named and waited on. Keep the previous formula in the field description before overwriting.
 
-## How to show it
+## How a relevance check is previewed
 
-The rule in plain words (who is in, who is out, why), then the conditions with their exact counts in the clayroots format, then what sits just outside the boundary, named. Wait for the yes before anything is written.
+Twice, every time: as a table row with the rule's own parts as the columns, and as the formula, paste-ready. They say the same thing.
+
+**1. The table.** One row per rule, a real markdown table, never inside a code fence:
+
+| Table | Who is in | Who is out | Conditions | Relevant | Cut Review | Just outside the line |
+|---|---|---|---|---|---|---|
+| People | founders, owners and C-level at the company, plus anyone the Operator ticks | everyone else, and any title carrying devops, designer, sales or recruit even at C-level | Where ANY of the following are true: `manually_approved` is checked. Or ALL of: `Title` matches a whole word among founder, founding, ceo, owner, president, AND `Title` does not match a whole word among devops, designer, sales, recruit | 1,842 | 6,207 | 38 rows titled "Managing Partner" are out; 12 titled "Chief of Staff" are out; "President" also admits "Vice President" unless excluded |
+
+- **Relevant** and **Cut Review** are exact counts, and they sum to the table exactly.
+- **Just outside the line** names what the rule barely keeps and barely cuts, with counts, so the decision is made on what is really there.
+
+**2. The formula.** Under the table, the field as it will be written, in a code block, ready to create or update through the API after the yes:
+
+    IF(
+      {manually_approved},
+      1,
+      IF(
+        AND(
+          REGEX_MATCH({Title}, "(?i)\b(founder|founding|ceo|owner|president)\b"),
+          NOT(REGEX_MATCH({Title}, "(?i)\b(devops|designer|sales|recruit)\b"))
+        ),
+        1,
+        0
+      )
+    )
+
+Wait for the yes before anything is written. After writing, read the field back, then the two views' counts against the table.

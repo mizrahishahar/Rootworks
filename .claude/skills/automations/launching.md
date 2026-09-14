@@ -18,14 +18,13 @@ Every launch is shown as a real table (never inside a code fence): the machine, 
 
 | Machine | Will do | Target | Parameter | Value |
 |---|---|---|---|---|
-| Enrich Discogen Research | asks one question of every company in the view and writes the answer into a new column | Companies · Not Sourced | Client | Adelante |
+| the research machine | asks one question of every company in the view and writes the answer into a new column | Companies · Not Sourced | Client | Acme |
 | | | | View | Not Sourced |
 | | | | Prompt | Does this company sell mainly to other businesses, mainly to consumers, or both? Answer B2B, B2C, both or unknown |
 | | | | Output Field | Business Model |
 | | | | Output Type | Single select |
-| | | | Evidence | on |
 | | | | Max companies | 500 |
-| | | | Cost | about 500 companies on the account's LLM key |
+| | | | Cost | 500 companies on the account's model key |
 
 ## Reruns
 

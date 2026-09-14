@@ -1,34 +1,31 @@
-Teaches: how each type of machine starts, the launch row and the preview shown before anything fires, reruns, and what done means.
+Teaches: previewing a launch from the machine's card and the launch fields, creating the row on approval, reruns, and what done means.
 
 # Launching
 
-## How a machine starts, by type
+## Where to read before launching
 
-| Type | Starts from |
-|---|---|
-| Rootflow, Deploy | a launch row on the Automations table; the row is the launch |
-| Handler | an event from outside (a reply, a booking); never launched by hand except through its manual door |
-| Manager | its schedule; on demand through its door with `{recordId}` of a launch row |
-| Helper | never directly; it is called |
-| Add-on | its hook |
-
-The card's type tells you which. The machine's description and the launch fields' own descriptions on the Automations table say what a launch row carries for it; fill only those. When a payload goes beyond the row, the trigger node and the nodes right after it are the source.
+How a machine starts is not this skill's knowledge. The machine schema you are handed says how each type starts; the machine's card says what it is for and what it needs; the launch fields' own descriptions on the Automations table say what a row carries for it. Read those three, in that order, before every launch. When a payload goes beyond the row, the trigger node and the nodes right after it are the source.
 
 ## The launch row
 
-A launch row names the machine (the Automation field), the Client, and the machine's own parameters (a View, a Tag, a Prompt, whatever its card and the field descriptions call for). Creating the row is the launch: a watching automation fires the door on its own. Never fire the door by hand for a row the watcher will also fire; a run launched twice spends twice.
+A launch row names the machine, the client, and the machine's own parameters, whatever its card and the field descriptions call for, nothing more. Creating the row is the launch: a watching automation fires the door on its own. Never fire a door by hand for a row the watcher will also fire; a run launched twice spends twice.
 
 **Status mechanics.** A row created with Status = Waiting is a held launch; clearing the Status fires it. The hold exists for machines that take a file: the API cannot write attachments, so the row is created complete except for the file, the Operator attaches it and clears the Status.
 
 ## The preview, before anything fires
 
-Every launch is shown as a real table (never inside a code fence): the machine, the target, every parameter with its value, and a cost line when a paid provider is in the path. Approval, then the row.
+Every launch is shown as a real table (never inside a code fence): the machine, what it will do in one sentence, the target, every parameter with its value, and a cost line when a paid provider is in the path. Approval, then the row. One launch, one preview.
 
-| Machine | Target | Parameter | Value |
-|---|---|---|---|
-| ... | table · view | Client | ... |
-| | | View | ... |
-| | | Tag | ... |
+| Machine | Will do | Target | Parameter | Value |
+|---|---|---|---|---|
+| Enrich Discogen Research | asks one question of every company in the view and writes the answer into a new column | Companies · Not Sourced | Client | Adelante |
+| | | | View | Not Sourced |
+| | | | Prompt | Does this company sell mainly to other businesses, mainly to consumers, or both? Answer B2B, B2C, both or unknown |
+| | | | Output Field | Business Model |
+| | | | Output Type | Single select |
+| | | | Evidence | on |
+| | | | Max companies | 500 |
+| | | | Cost | about 500 companies on the account's LLM key |
 
 ## Reruns
 

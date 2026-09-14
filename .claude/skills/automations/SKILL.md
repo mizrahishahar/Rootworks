@@ -11,9 +11,9 @@ The heavy work runs on machines that exist as code in this repo. This skill laun
 
 ## Where the truth is
 
-- **The machine schema** says what a machine is, its types and its card. Handed to you.
-- **The index** is the compiled list: every machine, its type, its door, what it does. A name missing from it is retired.
-- **The card** beside a machine's workflows says what it is for and, by type, what it writes, which sender it feeds, what event wakes it, what it may change.
+- **The machine schema** says what a machine is and how each kind starts. Handed to you; this skill knows nothing of it on its own.
+- **The index** is the compiled list: every machine, its door, what it does. A name missing from it is retired.
+- **The card** beside a machine's workflows says what it is for and what it needs.
 - **The source** in the machine's folder is what a run will actually do: the graph and every code node as a real file. Read it before firing; never remember it.
 
 Facts about a machine come from its card and its code, always.

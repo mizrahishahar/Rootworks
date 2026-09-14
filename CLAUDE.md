@@ -56,11 +56,13 @@ Read the standard of a domain before working in it. A standard is followed, neve
 You use the machines; you never rebuild them. Never edit a workflow, a card or a schema. A defect becomes a GitHub issue on this repo with what you saw; then work around it or stop.
 
 ---
-## Skills and commands
+## Skills
 
-One skill per domain, pure craft. Load the skill whose description matches the job before working in it, and hand it the schema and the standard of that domain. A command is one job with a target and an end.
+One skill per domain, pure craft. Load the skill whose description matches the job before working in it, and hand it the schema and the standard of that domain.
 
 The skills are yours. When an output comes back wrong, fix the skill that produced it and log the lesson, so the next session does not repeat it.
+
+You are responsible to keep skills organised, true and effective.
 
 ---
 ## The clients

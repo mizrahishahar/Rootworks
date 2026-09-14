@@ -10,7 +10,7 @@ A list is one segment of people, on one client's ClayRoots base, worth one campa
 4. relevance is decided by the client's formula
 5. a segment is a view on People, fed to one campaign
 
-Each step is a Rootflow: a machine that adds to the ClayRoots base (rows or columns), launched from a Hub Automations row, declared on a card in `n8n/rootflows/`. Companies land through a Discover Rootflow, people and emails through an Enrich Rootflow; a Rootflow brings the columns it writes and creates them on first use. The Operator decides between steps; nothing runs the next step on its own except the hand-offs the cards declare. A domain on the client's DNC never lands.
+Each step is run by a Rootflow, a machine that adds to the ClayRoots base, launched from a row. The Operator decides between steps. A domain on the client's DNC never lands.
 
 ## Companies
 

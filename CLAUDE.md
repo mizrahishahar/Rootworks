@@ -19,9 +19,9 @@ Every fact you use comes from the first three or from the live tools. What you r
 ---
 ## Two databases
 
-**The Hub** is one Airtable base, the database of the whole operation: the Clients table (the registry), Prospects (the CRM), Campaigns, KB Files (each client's knowledge), Meetings, Automations (every run's row), Tasks. Everything about every client that is not a lead list lives there.
+**The Hub** is one Airtable base: everything about the operation and every client, except their lead lists. What is in it is HUB-SCHEMA.
 
-**A ClayRoots base** is one Airtable base per client where that client's lists live: Companies, People, DNC, and two tables synced from the Hub. It is made by duplicating the template base and never changed by hand after; the machines add to it.
+**A ClayRoots base** is one Airtable base per client: that client's lead lists. Made by duplicating the template base; the machines add to it. What it starts with is CLAYROOTS-SCHEMA.
 
 ---
 ## Schemas
@@ -63,11 +63,11 @@ Load the skill whose description matches the job before working in it, and hand 
 ---
 ## The clients
 
-There are no client folders. A client is a row in the Hub's Clients table, and their documents are KB Files rows beside it: overrides, the onboarding intake, product knowledge, the assets we send, the qualification rubric the machines read live.
+There are no client folders. A client is a row in the Hub, and their documents are rows beside it.
 
-- **The registry row is the address book.** Every job starts by resolving the client there: base, workspace, channels, scheduler, documents. Nothing is hardcoded per client.
-- **Read the client's `overrides` row before touching their outbound.** It says how this client differs from the default.
-- **A number is usable in copy only if its KB row is marked Verified.**
+- **The client's row is the address book.** Every job starts by resolving the client there. Nothing is hardcoded per client.
+- **Read how the client differs from the default before touching their outbound.** Their overrides row says it.
+- **A number is usable in copy only if its row is marked Verified.**
 - Client-facing files live outside this repo; if a job needs one, the Operator provides it.
 
 ---

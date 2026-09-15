@@ -65,8 +65,9 @@ for (const j of items('Get Campaigns')) {
     clientId: clientIds[0] || '',
     lastSent: f['Last Sent'] || '',
   };
-  // Without a Stage only a campaign still sending or paused is a decision; COMPLETED is finished.
-  if (stage) camps.push(c); else if (c.clientId && (c.status === 'ACTIVE' || c.status === 'PAUSED')) unmanaged.push(c);
+  // Without a Stage every campaign that ever sent is a decision, COMPLETED included: a finished one
+  // may still want another run, and finished-for-good is spelled Killed, not blank.
+  if (stage) camps.push(c); else if (c.clientId) unmanaged.push(c);
 }
 sd.scope = cf ? ((camps.length || unmanaged.length) ? 'one client (on demand)' : 'client filter matched no campaign') : 'all clients';
 sd.managed = camps.length;
@@ -95,14 +96,17 @@ for (const c of camps) {
   if (d && d.leftInView === 0) c.tags.push('DRY since ' + String(d.runAt).slice(0, 10));
   if (c.lane === 'LinkedIn') c.tags.push('LINKEDIN');
   const need = STANDARD.positives[c.lane];
+  // At the line: the stage total contacted, or the stage total held and the sender finished with it.
+  // Status is the Hub's own vocabulary, every sync maps its sender into it, so this reads no platform.
+  const atLine = stage => c.contacted >= STANDARD.line[stage] || (c.leads >= STANDARD.stageTotal[stage] && c.status === 'COMPLETED');
   if (c.stage === 'Test') {
-    if (c.contacted >= STANDARD.line.Test) {
+    if (atLine('Test')) {
       if (c.positives >= need) { c.verdict = 'moved to Scale'; updates.push({ id: c.rid, Stage: 'Scale', name: c.name, client: R.client }); }
       else { c.verdict = 'killed'; updates.push({ id: c.rid, Stage: 'Killed', name: c.name, client: R.client }); }
       R.testReady.push(c); R.moved.push(c);
     } else R.testProgress.push(c);
   } else if (c.stage === 'Scale') {
-    if (c.contacted >= STANDARD.line.Scale) R.scaleReady.push(c); else R.scaleProgress.push(c);
+    if (atLine('Scale')) R.scaleReady.push(c); else R.scaleProgress.push(c);
   } else R.run.push(c);
 }
 for (const k of Object.keys(byClient)) byClient[k].scaleReady.sort((a, b) => (a.perPositive || 1e9) - (b.perPositive || 1e9));

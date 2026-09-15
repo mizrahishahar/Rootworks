@@ -13,12 +13,14 @@ Every campaign is in exactly one Stage.
 
 **Test**
 - holds 1,000 leads
-- passes at 1,000 contacted with at least 1 positive reply on email, 3 on LinkedIn. Then Scale
-- fails at 1,000 contacted with fewer. Then Killed
+- passes at its line with at least 1 positive reply on email, 3 on LinkedIn. Then Scale
+- fails at its line with fewer. Then Killed
 
 **Scale**
 - holds 3,000 leads
-- at 3,000 contacted it is judged against the client's other campaigns on contacts per positive. Then Run or Killed
+- at its line it is judged against the client's other campaigns on contacts per positive. Then Run or Killed
+
+A campaign reaches its line at the stage total contacted, or when it holds the stage total and the sender has finished sending it. Bounces and skips never count as contacted, so a full campaign that has finished is judged on what it did reach.
 
 **Run**
 - no total
@@ -39,7 +41,7 @@ Test to Scale and Test to Killed are automatic. Every other move is a decision.
 
 ## Feeding
 
-- **Managed:** carries a Stage
+- **Managed:** carries a Stage. A campaign without one is shown until it gets one; finished means Killed, not blank
 - **In play:** Stage is Test, Scale or Run, and sender status is not PAUSED, DRAFT or STOPPED. COMPLETED is in play, because a view-fed campaign completes whenever its view runs dry and must start again when it fills
 - **Fed:** in play, with a Live View ID, once a day
 

@@ -51,8 +51,10 @@ for (const R of sd.results || []) {
   parts.push('', ':double_vertical_bar: *PAUSED BY HAND*', '');
   parts.push(...(R.paused.length ? R.paused.map(c => card(c, null, 'set Killed or unpause') + '\n') : ['_none_']));
   if (R.unmanaged.length) {
-    parts.push('', ':white_circle: *NO STAGE*', '_sending or paused on the sender, not managed until a Stage is set_', '');
-    parts.push(...R.unmanaged.map(c => card(c, null, c.status === 'PAUSED' ? 'paused, set a Stage' : 'sending, set a Stage') + '\n'));
+    // One line each: the board is for decisions, and a campaign without a Stage is one decision,
+    // Test, Scale, Run or Killed. The numbers ride along so it can be made from the line.
+    parts.push('', ':white_circle: *NO STAGE*  ·  ' + R.unmanaged.length, '_set Test, Scale, Run or Killed on each_', '');
+    parts.push(block(R.unmanaged.map(c => pad(title(c), 44) + pad(c.status.toLowerCase(), 10) + rpad(fmt(c.contacted), 6) + ' contacted' + rpad(fmt(c.positives), 4) + ' pos' + (c.perPositive ? rpad('1 per ' + fmt(c.perPositive), 13) : ''))));
   }
   out.push({ json: { channel: CHANNEL, text: parts.join('\n').replace(/\n{3,}/g, '\n\n'), client: R.client } });
 }

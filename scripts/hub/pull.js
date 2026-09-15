@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Rootworks Hub schema puller.
 // Compiles the live Flowroots Hub schema (tables, fields, types, select choices,
-// field descriptions) into HUB-SCHEMA.md at the repo root. Generated from truth; never hand-edited.
+// field descriptions) into schemas/HUB-SCHEMA.md. Generated from truth; never hand-edited.
 // The client bases are not here: CLAYROOTS-SCHEMA.md is their one definition, hand-written, changed rarely.
 //
 // Usage: node scripts/hub/pull.js
@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_ID = 'appQG6dK0FIOhTxOl';
-const OUT = path.join(__dirname, '..', '..');
+const OUT = path.join(__dirname, '..', '..', 'schemas');
 
 function apiKey() {
   if (process.env.AIRTABLE_API_KEY) return process.env.AIRTABLE_API_KEY.trim();

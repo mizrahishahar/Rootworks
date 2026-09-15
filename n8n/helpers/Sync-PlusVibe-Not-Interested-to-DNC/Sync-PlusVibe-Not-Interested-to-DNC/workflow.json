@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-09-02T14:00:43.750Z",
+  "updatedAt": "2026-09-15T10:54:33.500Z",
   "createdAt": "2026-09-02T14:00:43.750Z",
   "id": "CXuj6jR6pmMvAEas",
   "name": "Sync PlusVibe Not Interested to DNC",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -1135,13 +1135,36 @@
     }
   },
   "settings": {
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
     "executionOrder": "v1"
   },
-  "staticData": null,
+  "staticData": {
+    "global": {
+      "launch": {
+        "recordId": "rec7UxxAtYWpAanXS",
+        "trigger": "form",
+        "clientFilter": "",
+        "startedAt": 1789470401999
+      },
+      "run": {
+        "start": "2026-09-15T14:06:42.029+03:00",
+        "startMs": 1789470402029,
+        "trigger": "form",
+        "clientFilter": "",
+        "watermark": "2026-09-14T08:01:10.905Z",
+        "watermarkMs": 1789372870905,
+        "watermarkMode": "since the last manager run at 2026-09-15T08:01:10.905Z (24 h overlap)"
+      },
+      "clients": {},
+      "currentClient": "",
+      "pull": null,
+      "block": null
+    }
+  },
   "meta": null,
   "pinData": null,
-  "versionId": "77ad3777-8731-42c5-b2b9-e95a12855a67",
-  "activeVersionId": null,
+  "versionId": "d52920e9-af20-4be6-9143-ff03bbcc3fef",
+  "activeVersionId": "d52920e9-af20-4be6-9143-ff03bbcc3fef",
   "triggerCount": 0,
   "shared": [
     {
@@ -1152,6 +1175,1146 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
+  "activeVersion": {
+    "updatedAt": "2026-09-15T10:54:33.508Z",
+    "createdAt": "2026-09-15T10:54:33.508Z",
+    "versionId": "d52920e9-af20-4be6-9143-ff03bbcc3fef",
+    "workflowId": "CXuj6jR6pmMvAEas",
+    "nodes": [
+      {
+        "id": "sync-trigger-dnc",
+        "name": "Sync Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -1904,
+          400
+        ],
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "notes": "Called by the Campaigns Manager, awaited. The item carries the run's launch shape: trigger and clientFilter."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Run Context: this helper runs inside the Campaigns Manager, which hands it the run's launch shape.\n// sd.launch.trigger      = the manager's trigger, 'schedule' or 'form'\n// sd.launch.clientFilter = the manager's client scope (one Clients record id) or '' for every client\nconst sd=$getWorkflowStaticData('global');\nconst inp=($input.first()||{}).json||{};\nsd.launch={ recordId:String(inp.recordId||''), trigger:String(inp.trigger||'schedule'), clientFilter:String(inp.clientFilter||''), startedAt:$now.toMillis() };\nreturn [{ json: Object.assign({}, sd.launch) }];\n"
+        },
+        "id": "8b9f95d6-c352-4c9d-a984-9db927104686",
+        "name": "Run Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1680,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Init Run: one run shape from either door. Run Context set sd.launch (recordId '' on a schedule).\n// A scheduled run serves every client; a launched run with a Client on its row serves that client only.\nconst sd=$getWorkflowStaticData('global');\nconst launch=sd.launch||{};\nconst clientFilter=String(launch.clientFilter||'').trim();\nsd.run={ start:$now.toISO(), startMs:$now.toMillis(), trigger:launch.recordId?'form':'schedule', clientFilter, watermark:null, watermarkMs:0, watermarkMode:'' };\nsd.clients={};\nsd.currentClient='';\nsd.pull=null;\nsd.block=null;\nreturn [{ json:{ trigger:sd.run.trigger, clientFilter } }];\n"
+        },
+        "id": "4ba400c0-f054-461e-9e7e-7ce3b1c7c619",
+        "name": "Init Run",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1456,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "filterByFormula": "=AND({Automation} = 'Campaigns Manager', OR({Status} = 'Succeeded', {Status} = 'Succeeded with errors'), {Client} = BLANK())",
+          "returnAll": false,
+          "limit": 1,
+          "options": {},
+          "sort": {
+            "property": [
+              {
+                "field": "Run at",
+                "direction": "desc"
+              }
+            ]
+          }
+        },
+        "id": "be20c0cd-c49b-43a6-9759-d26397850acf",
+        "name": "Get Watermark",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -1232,
+          520
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "notes": "The floor for \"since the last run\": the newest manager run that finished, all clients. This helper has no rows of its own."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Set Watermark: the floor for \"since the last run\". This helper writes no rows of its own, so Get\n// Watermark fetched the newest finished Campaigns Manager row (Succeeded or Succeeded with errors,\n// no Client on the row: a run that served everyone). Its Run at, minus a 24 h overlap, is the floor;\n// both writes this machine makes are idempotent, so the overlap costs nothing and covers clock skew.\n// No such row (first run): the last 30 days. Leads are compared on their modified_at.\nconst sd=$getWorkflowStaticData('global');\nconst R=sd.run;\nlet wm=null, mode='';\ntry{\n  const r=$input.first().json||{};\n  const f=r.fields||r;\n  const ra=f['Run at'];\n  if(r.id&&ra){ const d=new Date(ra); if(!isNaN(d.getTime())){ wm=new Date(d.getTime()-24*3600*1000); mode='since the last manager run at '+ra+' (24 h overlap)'; } }\n}catch(e){}\nif(!wm){ wm=new Date(R.startMs-30*86400000); mode='first run: the last 30 days'; }\nR.watermark=wm.toISOString();\nR.watermarkMs=wm.getTime();\nR.watermarkMode=mode;\nreturn [{ json:{ watermark:R.watermark, mode } }];\n"
+        },
+        "id": "3a0c80f8-0d35-495d-9879-73c4009e6181",
+        "name": "Set Watermark",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1008,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblK0nCoNVvFf5SPa"
+          },
+          "filterByFormula": "AND({PlusVibe Workspace ID} != '', {Clayroots Base ID} != '')",
+          "options": {}
+        },
+        "id": "ab3b4d68-4dd7-497f-83cc-74271517e04b",
+        "name": "Get Clients",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          -784,
+          520
+        ],
+        "executeOnce": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "jsCode": "// Map Clients: the client loop. Every Hub Clients row with a PlusVibe Workspace ID and a Clayroots\n// Base ID (the search already filtered on both); a launched run with a Client on its row keeps that\n// one only. The filter is applied here once, never deeper. An empty pick emits one placeholder so the\n// Any Clients? gate routes straight to the run log (a loop node fed nothing never runs).\nconst sd=$getWorkflowStaticData('global');\nconst cf=String((sd.run||{}).clientFilter||'').trim();\nconst out=[];\nfor(const it of $input.all()){\n  const r=it.json||{};\n  const f=r.fields||r;\n  const name=String(f['Client']||f['Client name']||'').trim();\n  const ws=String(f['PlusVibe Workspace ID']||'').trim();\n  const crBase=String(f['Clayroots Base ID']||'').trim();\n  if(!r.id||!name||!ws||!crBase) continue;\n  if(cf && r.id!==cf) continue;\n  out.push({ json:{ clientRecId:r.id, clientName:name, ws, crBase } });\n}\nif(!out.length) return [{ json:{ _empty:true } }];\nreturn out;\n"
+        },
+        "id": "74dddb48-320e-4be8-9cca-9272a1457e2c",
+        "name": "Map Clients",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -560,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json._empty === true }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "18b2cea7-1102-4dd6-bd02-161ac8841c28",
+        "name": "Any Clients?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -336,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "1a065e81-75e2-4470-bb16-c9288dba4ef7",
+        "name": "Loop Clients",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -112,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Client Context: opens one client's slot in static data. Every counter the run-log line needs\n// starts here; the leg nodes add to it; Close Client seals it.\nconst sd=$getWorkflowStaticData('global');\nconst c=$input.first().json;\nsd.currentClient=c.clientRecId;\nsd.pull=null;\nsd.block=null;\nsd.clients[c.clientRecId]={ name:c.clientName, ws:c.ws, crBase:c.crBase, dncTableId:'', dncTableName:'', leadsPulled:0, leadsRead:0, notInterested:0, unsubscribed:0, beforeWatermark:0, freeMail:0, noDomain:0, domains:{}, domainCount:0, blocked:0, alreadyBlocked:0, dncCreated:0, dncExisting:0, errors:[], warnings:[], skips:[] };\nreturn [{ json:c }];\n"
+        },
+        "id": "1e070376-2c03-432b-aa6c-c5fb4cd0c080",
+        "name": "Client Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          112,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.crBase }}/tables",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "610d198a-3c1b-43ee-8603-3d6ddcd1e0d0",
+        "name": "Get CR Schema",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          336,
+          640
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "jsCode": "// Check Columns: the client's DNC table, resolved by name from the base schema Get CR Schema just\n// fetched (never from the Hub), must carry the four register fields this machine writes: Domain,\n// Reason, Added, Notes. The names come from the field register the push inlines as REGISTER at the\n// @@register line. A base with no DNC table, or a DNC table missing a column, is this client's error\n// line; nothing of theirs is written and the loop serves the next client. Never creates a column\n// (Operator ruling 2026-09-02: a client base is set up once, by the scaffold).\nconst REGISTER = {\"tables\":[{\"name\":\"Companies\",\"primary\":\"Domain\",\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Company\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Description\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Industry Groups\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Business Model\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Employees\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]},\"company\":true},{\"name\":\"Revenue Range\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Keywords\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Country\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"State\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"City\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Street\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Zip\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Phones\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Public Emails\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Social URLs\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"public_emails_clean\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"MX Provider\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Redirect Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Domain Source\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Tag\",\"kind\":\"plain\",\"type\":\"singleLineText\",\"company\":true},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"Contacts Pulled At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Contacts Count\",\"kind\":\"count\",\"via\":\"People\"},{\"name\":\"Contact Sources\",\"kind\":\"rollup\",\"via\":\"People\",\"field\":\"Contact Source\",\"formula\":\"ARRAYUNIQUE(values)\"},{\"name\":\"Signals\",\"kind\":\"mirrorLink\",\"mirror\":\"Signals\",\"company\":true},{\"name\":\"Signal At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"},\"company\":true},{\"name\":\"ICP Reason\",\"kind\":\"plain\",\"type\":\"multilineText\",\"company\":true},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, {public_emails_clean} != \\\"\\\"), 1, 0)\",\"refs\":[\"manually_approved\",\"public_emails_clean\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped it passes manually_approved rows plus any row carrying a public email (public_emails_clean not blank). Until the client's rule replaces it, relevance-filtered views on this table (Not Waterfalled, Not Found, Found, Found : Campaigns) show only rows that happen to clear that default, not a configured buyer rule.\"}],\"views\":[{\"name\":\"Not Sourced\",\"filter\":{\"words\":\"Contacts Pulled At is empty\",\"formula\":\"NOT({Contacts Pulled At})\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Covered\",\"filter\":{\"words\":\"Contacts Pulled At is set and Contacts Count = 0\",\"formula\":\"AND({Contacts Pulled At}, {Contacts Count} = 0)\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Covered\",\"filter\":{\"words\":\"Contacts Count > 0\",\"formula\":\"{Contacts Count} > 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"Contacts Count\",\"Contact Sources\",\"Contacts Pulled At\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Tag\",\"public_emails_clean\",\"Email\",\"MV P0\",\"BB\",\"Final Email\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Domain\",\"Company\",\"Description\",\"Final Email\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}}]},{\"name\":\"People\",\"primary\":\"Name\",\"after\":[{\"table\":\"Companies\"}],\"fields\":[{\"name\":\"Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"first_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"last_name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Seniority\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"C-Suite\",\"color\":\"purpleLight2\"},{\"name\":\"Founder\",\"color\":\"purpleLight2\"},{\"name\":\"Owner\",\"color\":\"purpleLight2\"},{\"name\":\"President\",\"color\":\"purpleLight2\"},{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"VP\",\"color\":\"blueLight2\"},{\"name\":\"Head\",\"color\":\"cyanLight2\"},{\"name\":\"Director\",\"color\":\"cyanLight2\"},{\"name\":\"Manager\",\"color\":\"tealLight2\"},{\"name\":\"Senior\",\"color\":\"greenLight2\"},{\"name\":\"Partner\",\"color\":\"yellowLight2\"},{\"name\":\"EVP / SVP\",\"color\":\"blueLight2\"},{\"name\":\"Board / Chair\",\"color\":\"yellowLight2\"},{\"name\":\"Unclassified\",\"color\":\"grayLight2\"}]}},{\"name\":\"Department\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Executive\",\"color\":\"purpleLight2\"},{\"name\":\"Engineering\",\"color\":\"blueLight2\"},{\"name\":\"Technology\",\"color\":\"cyanLight2\"},{\"name\":\"R&D\",\"color\":\"tealLight2\"},{\"name\":\"Product\",\"color\":\"blueLight1\"},{\"name\":\"Data\",\"color\":\"cyanLight1\"},{\"name\":\"Security\",\"color\":\"tealLight1\"},{\"name\":\"Design\",\"color\":\"pinkLight2\"},{\"name\":\"Operations\",\"color\":\"orangeLight2\"},{\"name\":\"Sales\",\"color\":\"greenLight2\"},{\"name\":\"Marketing\",\"color\":\"greenLight1\"},{\"name\":\"Finance\",\"color\":\"redLight2\"},{\"name\":\"Human Resources\",\"color\":\"pinkLight1\"},{\"name\":\"Customer Success\",\"color\":\"yellowLight2\"},{\"name\":\"Project Management\",\"color\":\"orangeLight1\"},{\"name\":\"Strategy\",\"color\":\"purpleLight1\"},{\"name\":\"Legal\",\"color\":\"grayLight2\"},{\"name\":\"Supply Chain\",\"color\":\"redLight1\"},{\"name\":\"Communications\",\"color\":\"yellowLight1\"},{\"name\":\"Community & Social\",\"color\":\"pinkBright\"},{\"name\":\"Compliance & GRC\",\"color\":\"grayLight1\"}]}},{\"name\":\"Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"LinkedIn URL\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Phone\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Companies\",\"kind\":\"link\",\"table\":\"Companies\"},{\"name\":\"Contact Key\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Contact Source\",\"kind\":\"plain\",\"type\":\"multipleSelects\",\"options\":{\"choices\":[{\"name\":\"Blitz\",\"color\":\"cyanLight2\"},{\"name\":\"GetLeads\",\"color\":\"greenLight2\"},{\"name\":\"QuickEnrich\",\"color\":\"yellowLight2\"},{\"name\":\"Supersoniq\",\"color\":\"purpleLight2\"},{\"name\":\"ContaGen\",\"color\":\"blueLight2\"},{\"name\":\"AI-Ark\",\"color\":\"tealLight2\"}]}},{\"name\":\"Source ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Build Date\",\"kind\":\"formula\",\"formula\":\"CREATED_TIME()\",\"refs\":[]},{\"name\":\"MV P0\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P1 (Trykitt)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P1\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P2 (LeadMagic)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P2\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"P3 (Prospeo)\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"MV P3\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Email Source\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"P0\",\"color\":\"blueBright\"},{\"name\":\"P1\",\"color\":\"cyanBright\"},{\"name\":\"P2\",\"color\":\"tealBright\"},{\"name\":\"P3\",\"color\":\"purpleBright\"},{\"name\":\"none\",\"color\":\"grayBright\"}]}},{\"name\":\"Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"manually_approved\",\"kind\":\"plain\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}},{\"name\":\"relevance\",\"kind\":\"formula\",\"formula\":\"IF(OR({manually_approved}, FALSE()), 1, 0)\",\"refs\":[\"manually_approved\"],\"description\":\"Placeholder: every client must replace this with their own buyer rule. As shipped the OR's second half is always FALSE, so nothing passes except rows ticked manually_approved by hand. Until the client's rule replaces it, every relevance-filtered view on this table (Relevant, Not Waterfalled, Not Found, Found, Found : Campaigns, Found : Never Contacted, Signals) stays empty.\"},{\"name\":\"linkedin_name_match\",\"kind\":\"formula\",\"formula\":\"IF(AND({LinkedIn URL}, OR({first_name}, {last_name})), IF(OR(AND(LEN(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({first_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0), AND(LEN(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\")) > 0, FIND(REGEX_REPLACE(LOWER({last_name}), \\\"[^a-z]\\\", \\\"\\\"), REGEX_REPLACE(REGEX_REPLACE(REGEX_REPLACE(LOWER({LinkedIn URL}), \\\"^.*/in/\\\", \\\"\\\"), \\\"[/?#].*$\\\", \\\"\\\"), \\\"[^a-z]\\\", \\\"\\\")) > 0)), 1, 0), 0)\",\"refs\":[\"LinkedIn URL\",\"first_name\",\"last_name\"]},{\"name\":\"Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain\"},{\"name\":\"Company\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Company\"},{\"name\":\"Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Description\"},{\"name\":\"Industry Groups\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Industry Groups\"},{\"name\":\"Business Model\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Business Model\"},{\"name\":\"Employees\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Employees\"},{\"name\":\"Revenue Range\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Range\"},{\"name\":\"Keywords\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Keywords\"},{\"name\":\"Country\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Country\"},{\"name\":\"State\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"State\"},{\"name\":\"City\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"City\"},{\"name\":\"Street\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Street\"},{\"name\":\"Zip\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Zip\"},{\"name\":\"Phones\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Phones\"},{\"name\":\"Public Emails\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Public Emails\"},{\"name\":\"Social URLs\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social URLs\"},{\"name\":\"public_emails_clean\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"public_emails_clean\"},{\"name\":\"MX Provider\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"MX Provider\"},{\"name\":\"Redirect Domain\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Redirect Domain\"},{\"name\":\"Domain Source\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Domain Source\"},{\"name\":\"Tag\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tag\"},{\"name\":\"Signals\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signals\"},{\"name\":\"Signal At\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Signal At\"},{\"name\":\"ICP Reason\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"ICP Reason\"},{\"name\":\"Campaigns\",\"kind\":\"mirrorLink\",\"mirror\":\"Campaigns\"},{\"name\":\"Sequencers\",\"kind\":\"mirrorLookup\",\"mirror\":\"Campaigns\",\"field\":\"Sequencer\",\"description\":\"The senders that already hold this row, one per linked campaign. A campaign-feeding view excludes only its own sender with a does-not-contain test, so the same person can legitimately sit in campaigns on two different senders.\"},{\"name\":\"Messages Sent\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"kind\":\"plain\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"kind\":\"plain\",\"type\":\"singleLineText\"}],\"views\":[{\"name\":\"Relevant\",\"filter\":{\"words\":\"relevance = 1\",\"formula\":\"{relevance} = 1\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Cut Review\",\"filter\":{\"words\":\"relevance = 0\",\"formula\":\"{relevance} = 0\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Tag\",\"manually_approved\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Waterfalled\",\"filter\":{\"words\":\"relevance = 1 and Status is empty\",\"formula\":\"AND({relevance} = 1, NOT({Status}))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Not Found\",\"filter\":{\"words\":\"relevance = 1 and Status is no_email_found or error\",\"formula\":\"AND({relevance} = 1, OR({Status} = \\\"no_email_found\\\", {Status} = \\\"error\\\"))\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"Name\",\"Title\",\"Company\",\"Tag\",\"Email\",\"MV P0\",\"P1 (Trykitt)\",\"MV P1\",\"P2 (LeadMagic)\",\"MV P2\",\"P3 (Prospeo)\",\"MV P3\",\"BB\",\"Final Email\",\"Email Source\",\"Status\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Campaigns\",\"filter\":{\"words\":\"relevance = 1 and Status = done\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\")\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Found : Never Contacted\",\"filter\":{\"words\":\"relevance = 1 and Status = done and Messages Sent = 0\",\"formula\":\"AND({relevance} = 1, {Status} = \\\"done\\\", {Messages Sent} = 0)\"},\"fields\":[\"first_name\",\"last_name\",\"Title\",\"Company\",\"Description\",\"Domain\",\"Final Email\",\"LinkedIn URL\",\"Tag\",\"Campaigns\",\"Campaign Status\",\"Messages Sent\",\"Last Contacted\",\"Build Date\"],\"sort\":{\"field\":\"Build Date\",\"direction\":\"desc\"}},{\"name\":\"Signals\",\"filter\":{\"words\":\"relevance = 1 and Signals is not empty. Needs the synced Signals mirror: the filter reads a lookup of Companies.Signals, a mirrorLink, so a base without the mirror cannot carry this view\",\"formula\":\"AND({relevance} = 1, {Signals} != BLANK())\"},\"fields\":[\"Name\",\"Title\",\"Seniority\",\"Department\",\"Company\",\"Description\",\"Employees\",\"Email\",\"LinkedIn URL\",\"Contact Source\",\"Tag\",\"Signals\",\"Signal At\",\"Build Date\"],\"sort\":{\"field\":\"Signal At\",\"direction\":\"desc\"}}]},{\"name\":\"DNC\",\"primary\":\"Domain\",\"after\":[{\"table\":\"People\",\"field\":\"Companies\"}],\"fields\":[{\"name\":\"Domain\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Reason\",\"kind\":\"plain\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"Customer\",\"color\":\"greenLight2\"},{\"name\":\"Not interested\",\"color\":\"redLight2\"},{\"name\":\"Client request\",\"color\":\"orangeLight2\"},{\"name\":\"Active deal\",\"color\":\"blueLight2\"}]}},{\"name\":\"Notes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Added\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}}],\"views\":[{\"name\":\"Not Interested\",\"filter\":{\"words\":\"Reason = Not interested\",\"formula\":\"{Reason} = \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}},{\"name\":\"From Client\",\"filter\":{\"words\":\"Reason is not Not interested\",\"formula\":\"{Reason} != \\\"Not interested\\\"\"},\"fields\":[\"Domain\",\"Reason\",\"Notes\",\"Added\"],\"sort\":{\"field\":\"Added\",\"direction\":\"desc\"}}]}],\"extras\":[{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Store Age Years\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Product Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"App Spend Mo\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Key Apps\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Tech Stack\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Migrated From\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Social Followers\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Growth 90d\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Features\",\"kind\":\"plain\",\"type\":\"singleLineText\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Job Posted\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Job Description\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Job Seniority\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Function\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Employment Type\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Industries\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Applicants\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Job Salary\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Name\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster Title\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Existing In Role\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"Companies\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Review Latest\",\"kind\":\"plain\",\"type\":\"date\",\"options\":{\"dateFormat\":{\"name\":\"iso\"}}},{\"name\":\"Review Link\",\"kind\":\"plain\",\"type\":\"url\"},{\"name\":\"Review Titles\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Quotes\",\"kind\":\"plain\",\"type\":\"multilineText\"},{\"name\":\"Review Replied\",\"kind\":\"plain\",\"type\":\"singleLineText\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":1}},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"plain\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Trustpilot URL\",\"kind\":\"plain\",\"type\":\"url\"}]},{\"group\":\"Storeleads\",\"owner\":\"Insert Storeleads domains to Clayroots\",\"table\":\"People\",\"fields\":[{\"name\":\"Plan\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Plan\"},{\"name\":\"Revenue Est Monthly\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Revenue Est Monthly\"},{\"name\":\"Store Age Years\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Store Age Years\"},{\"name\":\"Product Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Product Count\"},{\"name\":\"App Spend Mo\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"App Spend Mo\"},{\"name\":\"Key Apps\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Key Apps\"},{\"name\":\"Tech Stack\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Tech Stack\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews\"},{\"name\":\"Migrated From\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Migrated From\"},{\"name\":\"Social Followers\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Social Followers\"},{\"name\":\"Growth 90d\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Growth 90d\"},{\"name\":\"Features\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Features\"}]},{\"group\":\"Hiring\",\"owner\":\"Handle Hiring Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Job ID\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job ID\"},{\"name\":\"Job Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Title\"},{\"name\":\"Job Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Link\"},{\"name\":\"Job Posted\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Posted\"},{\"name\":\"Job Description\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Description\"},{\"name\":\"Job Seniority\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Seniority\"},{\"name\":\"Job Function\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Function\"},{\"name\":\"Job Employment Type\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Employment Type\"},{\"name\":\"Job Industries\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Industries\"},{\"name\":\"Job Applicants\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Applicants\"},{\"name\":\"Job Salary\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Salary\"},{\"name\":\"Job Poster Name\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Name\"},{\"name\":\"Job Poster Title\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster Title\"},{\"name\":\"Job Poster LinkedIn\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Job Poster LinkedIn\"},{\"name\":\"Existing In Role\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Existing In Role\"}]},{\"group\":\"Reviews\",\"owner\":\"Handle Service Reviews Intent Signal\",\"table\":\"People\",\"fields\":[{\"name\":\"Review Count\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Count\"},{\"name\":\"Review Latest\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Latest\"},{\"name\":\"Review Link\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Link\"},{\"name\":\"Review Titles\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Titles\"},{\"name\":\"Review Quotes\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Quotes\"},{\"name\":\"Review Replied\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Review Replied\"},{\"name\":\"Trustpilot Rating\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Rating\"},{\"name\":\"Trustpilot Reviews Total\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot Reviews Total\"},{\"name\":\"Trustpilot URL\",\"kind\":\"lookup\",\"via\":\"Companies\",\"field\":\"Trustpilot URL\"}]}],\"palettes\":{\"verdict\":{\"ok\":\"greenBright\",\"done\":\"greenBright\",\"deliverable\":\"greenBright\",\"COMPLETED\":\"greenBright\",\"catch_all\":\"yellowBright\",\"risky\":\"yellowBright\",\"invalid\":\"redBright\",\"undeliverable\":\"redBright\",\"no_email_found\":\"redBright\",\"BOUNCED\":\"redBright\",\"error\":\"orangeBright\",\"UNSUBSCRIBED\":\"orangeBright\",\"verifying\":\"blueBright\",\"IN_SEQUENCE\":\"blueBright\",\"REPLIED\":\"purpleBright\",\"disposable\":\"orangeLight2\",\"unknown\":\"grayBright\",\"skipped\":\"grayLight2\",\"NEVER_CONTACTED\":\"grayLight2\"},\"source\":{\"Blitz\":\"cyanLight2\",\"GetLeads\":\"greenLight2\",\"QuickEnrich\":\"yellowLight2\",\"Supersoniq\":\"purpleLight2\",\"ContaGen\":\"blueLight2\",\"AI-Ark\":\"tealLight2\"},\"scale\":{\"1-10\":\"blueLight2\",\"11-50\":\"cyanLight2\",\"51-200\":\"tealLight2\",\"201-500\":\"greenLight2\",\"501-1000\":\"yellowLight2\",\"1001-5000\":\"orangeLight2\",\"5001-10000\":\"redLight2\",\"10001+\":\"purpleLight2\"},\"rank\":{\"C-Suite\":\"purpleLight2\",\"Founder\":\"purpleLight2\",\"Owner\":\"purpleLight2\",\"President\":\"purpleLight2\",\"Executive\":\"purpleLight2\",\"VP\":\"blueLight2\",\"EVP / SVP\":\"blueLight2\",\"Head\":\"cyanLight2\",\"Director\":\"cyanLight2\",\"Manager\":\"tealLight2\",\"Senior\":\"greenLight2\",\"Partner\":\"yellowLight2\",\"Board / Chair\":\"yellowLight2\",\"Unclassified\":\"grayLight2\"},\"tier\":{\"P0\":\"blueBright\",\"P1\":\"cyanBright\",\"P2\":\"tealBright\",\"P3\":\"purpleBright\",\"none\":\"grayBright\"},\"department\":{\"Executive\":\"purpleLight2\",\"Strategy\":\"purpleLight1\",\"Engineering\":\"blueLight2\",\"Product\":\"blueLight1\",\"Technology\":\"cyanLight2\",\"Data\":\"cyanLight1\",\"R&D\":\"tealLight2\",\"Security\":\"tealLight1\",\"Sales\":\"greenLight2\",\"Marketing\":\"greenLight1\",\"Customer Success\":\"yellowLight2\",\"Communications\":\"yellowLight1\",\"Operations\":\"orangeLight2\",\"Project Management\":\"orangeLight1\",\"Finance\":\"redLight2\",\"Supply Chain\":\"redLight1\",\"Design\":\"pinkLight2\",\"Human Resources\":\"pinkLight1\",\"Community & Social\":\"pinkBright\",\"Legal\":\"grayLight2\",\"Compliance & GRC\":\"grayLight1\"},\"dncReason\":{\"Customer\":\"greenLight2\",\"Not interested\":\"redLight2\",\"Client request\":\"orangeLight2\",\"Active deal\":\"blueLight2\"}},\"seed\":{\"name\":\"Companies\",\"fields\":[{\"name\":\"Domain\",\"type\":\"singleLineText\"},{\"name\":\"Company\",\"type\":\"singleLineText\"},{\"name\":\"Description\",\"type\":\"multilineText\"},{\"name\":\"Industry Groups\",\"type\":\"singleLineText\"},{\"name\":\"Business Model\",\"type\":\"singleLineText\"},{\"name\":\"Employees\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"1-10\",\"color\":\"blueLight2\"},{\"name\":\"11-50\",\"color\":\"cyanLight2\"},{\"name\":\"51-200\",\"color\":\"tealLight2\"},{\"name\":\"201-500\",\"color\":\"greenLight2\"},{\"name\":\"501-1000\",\"color\":\"yellowLight2\"},{\"name\":\"1001-5000\",\"color\":\"orangeLight2\"},{\"name\":\"5001-10000\",\"color\":\"redLight2\"},{\"name\":\"10001+\",\"color\":\"purpleLight2\"}]}},{\"name\":\"Revenue Range\",\"type\":\"singleLineText\"},{\"name\":\"Keywords\",\"type\":\"singleLineText\"},{\"name\":\"Country\",\"type\":\"singleLineText\"},{\"name\":\"State\",\"type\":\"singleLineText\"},{\"name\":\"City\",\"type\":\"singleLineText\"},{\"name\":\"Street\",\"type\":\"singleLineText\"},{\"name\":\"Zip\",\"type\":\"singleLineText\"},{\"name\":\"Phones\",\"type\":\"singleLineText\"},{\"name\":\"Public Emails\",\"type\":\"singleLineText\"},{\"name\":\"Social URLs\",\"type\":\"singleLineText\"},{\"name\":\"public_emails_clean\",\"type\":\"singleLineText\"},{\"name\":\"MX Provider\",\"type\":\"singleLineText\"},{\"name\":\"Redirect Domain\",\"type\":\"singleLineText\"},{\"name\":\"Domain Source\",\"type\":\"singleLineText\"},{\"name\":\"Tag\",\"type\":\"singleLineText\"},{\"name\":\"Contacts Pulled At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Signal At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"ICP Reason\",\"type\":\"multilineText\"},{\"name\":\"Email\",\"type\":\"singleLineText\"},{\"name\":\"MV P0\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"ok\",\"color\":\"greenBright\"},{\"name\":\"catch_all\",\"color\":\"yellowBright\"},{\"name\":\"invalid\",\"color\":\"redBright\"},{\"name\":\"disposable\",\"color\":\"orangeLight2\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"BB\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"deliverable\",\"color\":\"greenBright\"},{\"name\":\"undeliverable\",\"color\":\"redBright\"},{\"name\":\"risky\",\"color\":\"yellowBright\"},{\"name\":\"unknown\",\"color\":\"grayBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"},{\"name\":\"skipped\",\"color\":\"grayLight2\"}]}},{\"name\":\"Final Email\",\"type\":\"singleLineText\"},{\"name\":\"Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"done\",\"color\":\"greenBright\"},{\"name\":\"verifying\",\"color\":\"blueBright\"},{\"name\":\"no_email_found\",\"color\":\"redBright\"},{\"name\":\"error\",\"color\":\"orangeBright\"}]}},{\"name\":\"Messages Sent\",\"type\":\"number\",\"options\":{\"precision\":0}},{\"name\":\"Last Contacted\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Campaign Status\",\"type\":\"singleSelect\",\"options\":{\"choices\":[{\"name\":\"NEVER_CONTACTED\",\"color\":\"grayLight2\"},{\"name\":\"IN_SEQUENCE\",\"color\":\"blueBright\"},{\"name\":\"COMPLETED\",\"color\":\"greenBright\"},{\"name\":\"REPLIED\",\"color\":\"purpleBright\"},{\"name\":\"BOUNCED\",\"color\":\"redBright\"},{\"name\":\"UNSUBSCRIBED\",\"color\":\"orangeBright\"}]}},{\"name\":\"Bounce Reason\",\"type\":\"singleLineText\"},{\"name\":\"Synced At\",\"type\":\"dateTime\",\"options\":{\"dateFormat\":{\"name\":\"iso\"},\"timeFormat\":{\"name\":\"24hour\"},\"timeZone\":\"utc\"}},{\"name\":\"Deploy Error\",\"type\":\"singleLineText\"},{\"name\":\"manually_approved\",\"type\":\"checkbox\",\"options\":{\"color\":\"greenBright\",\"icon\":\"check\"}}]}};\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst j=($input.first()||{}).json||{};\nconst tables=Array.isArray(j.tables)?j.tables:[];\nconst T=REGISTER.tables.find(x=>x.name==='DNC');\nconst NEED=['Domain','Reason','Added','Notes'].map(n=>{ const f=T.fields.find(x=>x.name===n); if(!f) throw new Error('Check Columns: the register has no field \"'+n+'\" on DNC'); return f.name; });\nif(!tables.length){\n  c.errors.push('Base '+c.crBase+': schema fetch failed or the base has no tables: '+JSON.stringify(j).slice(0,200)+'. Nothing was written.');\n  return [{ json:{ _skip:true } }];\n}\nconst t=tables.find(x=>String(x.name||'').trim().toLowerCase()==='dnc');\nif(!t){\n  c.errors.push('Base '+c.crBase+' has no DNC table. Scaffold the base (Scaffold Client Base) first. Nothing was written.');\n  return [{ json:{ _skip:true } }];\n}\nconst have=new Set((t.fields||[]).map(f=>f.name));\nconst missing=NEED.filter(n=>!have.has(n));\nif(missing.length){\n  c.errors.push('Table \"'+t.name+'\" ('+t.id+') in base '+c.crBase+' is missing the columns Sync PlusVibe Not Interested to DNC writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was written.');\n  return [{ json:{ _skip:true } }];\n}\nc.dncTableId=t.id;\nc.dncTableName=t.name;\nreturn [{ json:{ clientRecId:sd.currentClient, ws:c.ws, crBase:c.crBase, dncTableId:t.id } }];\n"
+        },
+        "id": "d99b8788-7246-4f59-9ff8-4cec2b874e12",
+        "name": "Check Columns",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ck1",
+                "leftValue": "={{ $json._skip ? 'skip' : 'ok' }}",
+                "rightValue": "ok",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "0e9bfb45-9ece-45b8-8a8b-dea18c6de57a",
+        "name": "Client OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          784,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Init Lead Pull: two paged reads of the workspace's leads, the ones labeled NOT_INTERESTED and the\n// ones whose status is UNSUBSCRIBED (GET /api/v1/lead/workspace-leads has no date filter; the\n// watermark is applied on modified_at in Compute Domains). 1000 per page (the endpoint allows up to\n// 10000), pages from 1, until a short page. Emits the first request; Collect Leads drives the rest.\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst LIMIT=1000;\nsd.pull={ queue:[{ key:'label', value:'NOT_INTERESTED' },{ key:'status', value:'UNSUBSCRIBED' }], idx:0, page:1, attempts:0, limit:LIMIT, leads:[], started:Date.now() };\nconst q=sd.pull.queue[0];\nconst pvUrl='https://api.plusvibe.ai/api/v1/lead/workspace-leads?workspace_id='+encodeURIComponent(c.ws)+'&'+q.key+'='+q.value+'&limit='+LIMIT+'&page=1';\nreturn [{ json:{ pvUrl, wait:0 } }];\n"
+        },
+        "id": "930de67b-f8ef-4605-bee9-861a6c4a004a",
+        "name": "Init Lead Pull",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1008,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ $json.wait || 0 }}",
+          "unit": "seconds"
+        },
+        "id": "19ceddf7-1dbc-4a96-8744-ccf47e830db8",
+        "name": "Pace",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1232,
+          560
+        ],
+        "webhookId": "df6fab57-7888-47a3-80e0-dbab7585ecdc"
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $json.pvUrl }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "4d2f4e1c-aa57-43a3-a277-d7f35f7f4249",
+        "name": "Pull Leads",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1456,
+          560
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Leads: one page of workspace-leads in, the next request out. Keeps only what the machine\n// needs per lead (email, label, status, modified_at, campaign name). A failed page retries up to five\n// times with backoff (Retry-After honored); after that the pull is an error line and the next read\n// starts. A full page asks for the next page; a short page advances to the next read; the last read\n// emits done. A 15-minute time-box per client aborts the pull as an error.\nconst sd=$getWorkflowStaticData('global');\nconst P=sd.pull;\nconst c=sd.clients[sd.currentClient];\nconst j=($input.first()||{}).json||{};\nconst cur=P.queue[P.idx];\nconst url=(q,page)=>'https://api.plusvibe.ai/api/v1/lead/workspace-leads?workspace_id='+encodeURIComponent(c.ws)+'&'+q.key+'='+q.value+'&limit='+P.limit+'&page='+page;\nconst emit=o=>[{ json:o }];\nconst advance=()=>{ P.idx++; P.page=1; P.attempts=0; if(P.idx<P.queue.length) return emit({ pvUrl:url(P.queue[P.idx],1), wait:1 }); return emit({ done:true, wait:0 }); };\nif(Date.now()-(P.started||Date.now())>900000){\n  c.errors.push('time-box: the lead pull exceeded 15 minutes ('+cur.key+'='+cur.value+', page '+P.page+'), aborted');\n  return emit({ done:true, wait:0 });\n}\nconst hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\nconst body=hasWrap?j.body:j;\nconst status=Number(j.statusCode||0);\nlet arr=null;\nif(Array.isArray(body)) arr=body;\nelse if(body&&Array.isArray(body.data)) arr=body.data;\nelse if(body&&Array.isArray(body.leads)) arr=body.leads;\nif(status&&(status<200||status>=300)) arr=null;\nif(arr===null){\n  P.attempts++;\n  if(P.attempts<=5){\n    let w=Math.pow(2,P.attempts);\n    const h=j.headers||{};\n    const ra=Number(h['retry-after']||h['Retry-After']||0);\n    if(ra>0) w=Math.max(w,Math.min(ra,120));\n    return emit({ pvUrl:url(cur,P.page), wait:w });\n  }\n  c.errors.push('lead pull failed: '+cur.key+'='+cur.value+' page '+P.page+' after 5 retries (status '+(status||'?')+'): '+JSON.stringify(body).slice(0,200));\n  return advance();\n}\nP.attempts=0;\nfor(const l of arr){\n  if(!l||!(l.email||l.lead_email)) continue;\n  P.leads.push({ email:String(l.email||l.lead_email).toLowerCase().trim(), label:String(l.label||'').toUpperCase(), status:String(l.status||'').toUpperCase(), modified_at:l.modified_at||null, camp:String(l.camp_name||l.campaign_name||''), campaign_id:String(l.campaign_id||'') });\n}\nc.leadsPulled+=arr.length;\nif(arr.length>=P.limit){\n  P.page++;\n  if(P.page>100){ c.errors.push('lead pull aborted: '+cur.key+'='+cur.value+' exceeded 100 pages of '+P.limit); return advance(); }\n  return emit({ pvUrl:url(cur,P.page), wait:1 });\n}\nreturn advance();\n"
+        },
+        "id": "aafe553f-820a-4a4f-b933-7d6ea48c4966",
+        "name": "Collect Leads",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1680,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pd1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "done",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "07253228-b8df-45aa-bdfc-7afed531b503",
+        "name": "Pull Done?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1904,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Compute Domains: the pulled leads become the client's domain set. A lead counts when its label is\n// NOT_INTERESTED or its status is UNSUBSCRIBED and its modified_at is at or after the watermark (no\n// modified_at: kept). One lead per email+campaign. The domain is the part after @; free-mail\n// providers (gmail, yahoo, outlook, hotmail, icloud, aol, proton) are counted and skipped, never\n// blocked. Per domain the Notes lines are kept: campaign name, lead email, why. Domains are chunked\n// (200 per call) for the blocklist leg. Nothing to add: a counted skip and straight to Close Client.\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst R=sd.run||{};\nconst FREE=new Set(['gmail','googlemail','yahoo','outlook','hotmail','icloud','aol','proton','protonmail']);\nconst wm=Number(R.watermarkMs||0);\nconst seen={};\nfor(const l of ((sd.pull&&sd.pull.leads)||[])){\n  const isNI=l.label==='NOT_INTERESTED';\n  const isUn=l.status==='UNSUBSCRIBED';\n  if(!isNI&&!isUn) continue;\n  const t=l.modified_at?Date.parse(l.modified_at):NaN;\n  if(wm&&!isNaN(t)&&t<wm){ c.beforeWatermark++; continue; }\n  const key=l.email+'|'+l.campaign_id;\n  if(seen[key]) continue;\n  seen[key]=1;\n  c.leadsRead++;\n  if(isNI) c.notInterested++; else c.unsubscribed++;\n  const dom=String(l.email.split('@')[1]||'').toLowerCase().trim();\n  if(!dom||dom.indexOf('.')<0){ c.noDomain++; continue; }\n  if(FREE.has(dom.split('.')[0])){ c.freeMail++; continue; }\n  const d=c.domains[dom]=c.domains[dom]||{ emails:[], notes:[] };\n  if(d.emails.indexOf(l.email)<0) d.emails.push(l.email);\n  const line=(l.camp||'(no campaign name)')+' · '+l.email+' · '+(isNI?'Not interested':'Unsubscribed');\n  if(d.notes.indexOf(line)<0) d.notes.push(line);\n}\nsd.pull=null;\nconst domains=Object.keys(c.domains);\nc.domainCount=domains.length;\nif(!domains.length){\n  c.skips.push('nothing to add ('+c.leadsRead+' leads in scope, '+c.freeMail+' free-mail, '+c.beforeWatermark+' before the watermark)');\n  return [{ json:{ _none:true } }];\n}\nconst chunks=[];\nfor(let i=0;i<domains.length;i+=200) chunks.push(domains.slice(i,i+200));\nsd.block={ queue:chunks, idx:0, currentCount:0 };\nreturn [{ json:{ clientRecId:sd.currentClient, ws:c.ws, crBase:c.crBase, dncTableId:c.dncTableId, domains:domains.length } }];\n"
+        },
+        "id": "20452c4c-2f81-4c06-90fb-a9603905ea75",
+        "name": "Compute Domains",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2128,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ad1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "52567800-5851-440f-abd4-60ade3aef894",
+        "name": "Any Domains?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2352,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Next Block Chunk: hands the next 200 domains to the blocklist call as the request body\n// (POST /api/v1/blocklist/add/entries, {workspace_id, entries}), or done when the queue is drained.\n// The sender dedupes on its side and reports entries_added / already_in_blocklist, which is how\n// \"add if not there\" is honored without a read of the whole blocklist first.\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst B=sd.block||{ queue:[], idx:0, currentCount:0 };\nif(B.idx<B.queue.length){\n  const entries=B.queue[B.idx];\n  B.idx++;\n  B.currentCount=entries.length;\n  return [{ json:{ done:false, body:{ workspace_id:c.ws, entries }, count:entries.length } }];\n}\nB.currentCount=0;\nreturn [{ json:{ done:true, clientRecId:sd.currentClient, crBase:c.crBase, dncTableId:c.dncTableId } }];\n"
+        },
+        "id": "32b5ba35-a8af-4ed0-b37a-c5329f163cfd",
+        "name": "Next Block Chunk",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2576,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "bc1",
+                "leftValue": "={{ $json.done ? 'done' : 'more' }}",
+                "rightValue": "more",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1dab6e0a-fc5e-4628-8ba4-4f00a5ab563d",
+        "name": "Block Chunks Left?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2800,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.plusvibe.ai/api/v1/blocklist/add/entries",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 600
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "id": "8b93060a-c400-4ad9-861b-bfd4ec7cfb4e",
+        "name": "PV Block Domains",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3024,
+          400
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "mFWofPdYJXJU5ZwX",
+            "name": "Plusvibe Admin"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Collect Block: reads one blocklist call back. A 2xx with entries_added adds to the client's blocked\n// and already-in-blocklist counts; anything else is an error line naming how many domains the call\n// carried. The DNC write still happens either way: the suppression list is the client's record.\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst B=sd.block||{};\nconst j=($input.first()||{}).json||{};\nconst hasWrap=Object.prototype.hasOwnProperty.call(j,'body');\nconst body=hasWrap?j.body:j;\nconst status=Number(j.statusCode||0);\nconst ok=(!status||(status>=200&&status<300))&&body&&typeof body==='object'&&(body.entries_added!==undefined||body.status==='success');\nif(ok){\n  c.blocked+=Number(body.entries_added||0);\n  c.alreadyBlocked+=Number(body.already_in_blocklist||0);\n} else {\n  c.errors.push('blocklist add failed for '+Number(B.currentCount||0)+' domains (status '+(status||'?')+'): '+JSON.stringify(body).slice(0,200));\n}\nreturn [{ json:{ next:true } }];\n"
+        },
+        "id": "022dac87-3941-444c-8884-ded88116d342",
+        "name": "Collect Block",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3248,
+          400
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.dncTableId }}/listRecords",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "{\"pageSize\":100,\"fields\":[\"Domain\"]}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "type": "body",
+                      "name": "offset",
+                      "value": "={{ $response?.body?.offset ?? '' }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ !$response.body.offset }}",
+                "requestInterval": 250
+              }
+            }
+          }
+        },
+        "id": "4245863e-54e3-4ad9-844d-f71b25fe4b4f",
+        "name": "Read DNC",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3024,
+          720
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Build DNC Creates: Read DNC paged the client's DNC table (Domain only). A domain already there is\n// counted as already there and left untouched, its Reason and Notes included: an existing row is never\n// overwritten. The rest become create bodies, ten records per call, Reason = Not interested, Added =\n// today (Jerusalem, ISO date), Notes = the campaign name and lead email lines. An unreadable DNC table\n// is an error line and no create is attempted (a blind create could duplicate a domain).\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nconst existing={};\nlet readOk=true;\nfor(const it of $input.all()){\n  const j=it.json||{};\n  if(Array.isArray(j.records)){\n    for(const r of j.records){ const d=String((r.fields||{})['Domain']||'').toLowerCase().trim(); if(d) existing[d]=1; }\n  } else if(j.error||Number(j.statusCode||0)>=400){\n    readOk=false;\n    c.errors.push('DNC read failed on '+c.dncTableName+' ('+c.dncTableId+'): '+JSON.stringify(j.error||j).slice(0,200)+'; no DNC row was created');\n  }\n}\nif(!readOk){ c.domains={}; return [{ json:{ _none:true } }]; }\nconst today=$now.setZone('Asia/Jerusalem').toFormat('yyyy-MM-dd');\nconst recs=[];\nfor(const dom of Object.keys(c.domains)){\n  if(existing[dom]){ c.dncExisting++; continue; }\n  const d=c.domains[dom];\n  recs.push({ fields:{ 'Domain':dom, 'Reason':'Not interested', 'Added':today, 'Notes':d.notes.join('\\n').slice(0,5000) } });\n}\nc.domains={};\nif(!recs.length) return [{ json:{ _none:true } }];\nconst out=[];\nfor(let i=0;i<recs.length;i+=10){\n  const slice=recs.slice(i,i+10);\n  out.push({ json:{ crBase:c.crBase, dncTableId:c.dncTableId, body:{ records:slice, typecast:true }, count:slice.length } });\n}\nreturn out;\n"
+        },
+        "id": "be45ab8f-c907-4bbb-b9e2-9194025b3682",
+        "name": "Build DNC Creates",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3248,
+          720
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ac1",
+                "leftValue": "={{ $json._none ? 'none' : 'has' }}",
+                "rightValue": "has",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "cfa766d7-a4ce-471d-adac-bd11b33c3430",
+        "name": "Any Creates?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          3472,
+          720
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.airtable.com/v0/{{ $json.crBase }}/{{ $json.dncTableId }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "airtableTokenApi",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "id": "421bf872-18b2-4a33-b0dc-9698dd4d361c",
+        "name": "Create DNC Rows",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3696,
+          640
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Record DNC Writes: reads every create call back. Records returned are rows created; an error body\n// is an error line. Counted by what Airtable returned, never by what was sent.\nconst sd=$getWorkflowStaticData('global');\nconst c=sd.clients[sd.currentClient];\nfor(const it of $input.all()){\n  const j=it.json||{};\n  if(Array.isArray(j.records)) c.dncCreated+=j.records.length;\n  else c.errors.push('DNC create failed on '+c.dncTableName+': '+JSON.stringify(j.error||j).slice(0,200));\n}\nreturn [{ json:{ clientRecId:sd.currentClient } }];\n"
+        },
+        "id": "0aa69e64-64a8-48ae-ad16-48f9b7dd9063",
+        "name": "Record DNC Writes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3920,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Close Client: seals the client's slot (the domain map is dropped, the counters stay for the run\n// log) and frees the per-client static data before the loop takes the next client.\nconst sd=$getWorkflowStaticData('global');\nconst id=sd.currentClient;\nconst c=sd.clients[id];\nif(c){ delete c.domains; }\nsd.pull=null;\nsd.block=null;\nreturn [{ json:{ clientRecId:id } }];\n"
+        },
+        "id": "019347e0-861c-46a3-8367-54e0241ad8bd",
+        "name": "Close Client",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4144,
+          800
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Sync Summary: the last node. This helper runs inside the Campaigns Manager and writes no Hub row\n// of its own; this one item is what the manager reads and rolls into its row. problems[] is what\n// the manager counts as errors; skips are named separately and never counted.\nconst sd=$getWorkflowStaticData('global');\nconst run=sd.run||{};\nconst clients=Object.keys(sd.clients||{}).map(id=>sd.clients[id]);\nconst n=x=>Number(x||0);\nconst problems=[]; const skips=[];\nlet leads=0, notInterested=0, unsubscribed=0, domains=0, blocked=0, alreadyBlocked=0, created=0, existing=0, freeMail=0;\nfor(const c of clients){\n  leads+=n(c.leadsRead); notInterested+=n(c.notInterested); unsubscribed+=n(c.unsubscribed);\n  domains+=n(c.domainCount); blocked+=n(c.blocked); alreadyBlocked+=n(c.alreadyBlocked);\n  created+=n(c.dncCreated); existing+=n(c.dncExisting); freeMail+=n(c.freeMail);\n  for(const e of (c.errors||[])) problems.push(c.name+': '+e);\n  for(const s of (c.skips||[])) skips.push(c.name+': '+s);\n  for(const w of (c.warnings||[])) problems.push(c.name+': '+w);\n}\nif(!clients.length) skips.push(run.clientFilter ? 'the client filter matched no client with a PlusVibe workspace and a Clayroots base' : 'no Hub Clients row carries both a PlusVibe Workspace ID and a Clayroots Base ID');\nconst nf=x=>Number(x||0).toLocaleString('en-US');\nconst detail=nf(clients.length)+' client(s), '+nf(leads)+' lead(s) said no ('+nf(notInterested)+' not interested, '+nf(unsubscribed)+' unsubscribed), '+nf(domains)+' domain(s), '+nf(blocked)+' blocked on PlusVibe ('+nf(alreadyBlocked)+' already), '+nf(created)+' DNC row(s) created ('+nf(existing)+' already there), '+nf(freeMail)+' free-mail skipped; watermark '+String(run.watermarkMode||'');\nsd.clients={}; sd.currentClient=''; sd.pull=null; sd.block=null;\nreturn [{ json: {\n _sync: 'Sync PlusVibe Not Interested to DNC',\n scope: run.clientFilter ? 'one client' : 'all clients',\n clients: clients.length,\n in: leads,\n out: created,\n detail,\n problems,\n skips,\n seconds: Math.round((Date.now()-Number(run.startMs||Date.now()))/1000),\n}}];\n"
+        },
+        "id": "a18ddbfb-1b23-45d7-8b96-d3c4089decfe",
+        "name": "Sync Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          112,
+          240
+        ],
+        "notes": "The last node: its one item is what the manager reads. No Hub row here; the outcome rolls up into the manager's row."
+      }
+    ],
+    "connections": {
+      "Run Context": {
+        "main": [
+          [
+            {
+              "node": "Init Run",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Run": {
+        "main": [
+          [
+            {
+              "node": "Get Watermark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Watermark": {
+        "main": [
+          [
+            {
+              "node": "Set Watermark",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Watermark": {
+        "main": [
+          [
+            {
+              "node": "Get Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Clients": {
+        "main": [
+          [
+            {
+              "node": "Map Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map Clients": {
+        "main": [
+          [
+            {
+              "node": "Any Clients?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Clients?": {
+        "main": [
+          [
+            {
+              "node": "Loop Clients",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Sync Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Clients": {
+        "main": [
+          [
+            {
+              "node": "Sync Summary",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Client Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client Context": {
+        "main": [
+          [
+            {
+              "node": "Get CR Schema",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get CR Schema": {
+        "main": [
+          [
+            {
+              "node": "Check Columns",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Columns": {
+        "main": [
+          [
+            {
+              "node": "Client OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client OK?": {
+        "main": [
+          [
+            {
+              "node": "Init Lead Pull",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Init Lead Pull": {
+        "main": [
+          [
+            {
+              "node": "Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pace": {
+        "main": [
+          [
+            {
+              "node": "Pull Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Leads": {
+        "main": [
+          [
+            {
+              "node": "Collect Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Leads": {
+        "main": [
+          [
+            {
+              "node": "Pull Done?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pull Done?": {
+        "main": [
+          [
+            {
+              "node": "Compute Domains",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Pace",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Compute Domains": {
+        "main": [
+          [
+            {
+              "node": "Any Domains?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Domains?": {
+        "main": [
+          [
+            {
+              "node": "Next Block Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Next Block Chunk": {
+        "main": [
+          [
+            {
+              "node": "Block Chunks Left?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Block Chunks Left?": {
+        "main": [
+          [
+            {
+              "node": "PV Block Domains",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Read DNC",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PV Block Domains": {
+        "main": [
+          [
+            {
+              "node": "Collect Block",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Block": {
+        "main": [
+          [
+            {
+              "node": "Next Block Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read DNC": {
+        "main": [
+          [
+            {
+              "node": "Build DNC Creates",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build DNC Creates": {
+        "main": [
+          [
+            {
+              "node": "Any Creates?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Creates?": {
+        "main": [
+          [
+            {
+              "node": "Create DNC Rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Close Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create DNC Rows": {
+        "main": [
+          [
+            {
+              "node": "Record DNC Writes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Record DNC Writes": {
+        "main": [
+          [
+            {
+              "node": "Close Client",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Close Client": {
+        "main": [
+          [
+            {
+              "node": "Loop Clients",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sync Trigger": {
+        "main": [
+          [
+            {
+              "node": "Run Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sync Summary": {
+        "main": [
+          []
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
   "tags": [
     {
       "updatedAt": "2026-09-10T09:13:47.021Z",

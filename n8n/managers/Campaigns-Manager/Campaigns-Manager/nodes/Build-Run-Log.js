@@ -19,11 +19,17 @@ const lines = results.map(R => {
   return '- **' + R.client + ':** ' + inPlay + ' in play (Test ' + (R.testProgress.length + R.testReady.length) + ', Scale ' + (R.scaleProgress.length + R.scaleReady.length) + ', Run ' + R.run.length + '), ' + R.scaleReady.length + ' ready to judge, ' + R.paused.length + ' paused by hand, ' + (R.unmanaged || []).length + ' without a Stage' + (moved ? '. Moved: ' + moved : '') + (fed ? '. Fed: ' + fed : '') + (dry ? '. Flags: ' + dry : '');
 });
 
+// The syncs ran inside this run, first; their outcome is this row's, one line each.
+const nf = v => Number(v || 0).toLocaleString('en-US');
+const syncLines = (sd.syncs || []).map(s => s.ok
+  ? '- **' + s.sync + ':** ' + nf(s.clients) + ' client(s), ' + nf(s.in) + ' campaign(s) seen, ' + nf(s.out) + ' written' + (s.threadsChecked ? ', ' + nf(s.threadsChecked) + ' thread(s) checked, ' + nf(s.threadsUpdated) + ' refreshed' : '') + ', ' + (s.problems || []).length + ' problem(s), ' + nf(s.seconds) + ' s' + ((s.skips || []).length ? '. Skipped: ' + s.skips.join('; ') : '')
+  : '- **' + s.sync + ':** FAILED, ' + s.why);
+
 const parts = [
   '**' + (sd.managed || 0) + ' managed campaign(s) across ' + results.length + ' client(s), ' + (sd.updated || 0) + ' stage move(s), ' + (sd.fed || 0) + ' deploy row(s) created, ' + posted + ' message(s) posted**',
   '**Scope:** ' + (sd.scope || 'all clients') + '; ' + (sd.unmanaged || 0) + ' campaign(s) without a Stage shown as NO STAGE',
-  '**Slack:** ' + (posted ? posted + ' message(s) to #flowroots-campaigns' : 'nothing posted'),
-].concat(lines);
+  '**Syncs:** ' + (sd.syncs || []).filter(s => s.ok).length + ' of ' + (sd.syncs || []).length + ' finished',
+].concat(syncLines, ['**Slack:** ' + (posted ? posted + ' message(s) to #flowroots-campaigns' : 'nothing posted')], lines);
 if (!results.length) parts.push('**Skipped (1, ' + (launch.clientFilter ? 'client filter matched no managed campaign' : 'no campaign carries a Stage') + ')**');
 if (failed.length) parts.push('', '**Errors**', ...failed.map(f => '- ' + f));
 

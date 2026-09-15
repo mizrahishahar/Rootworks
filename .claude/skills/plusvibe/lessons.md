@@ -53,6 +53,7 @@ Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 - Deleted accounts come back with their old ids, tags and campaign memberships when a provider re-exports them, into whichever workspace the provider integration is bound to. Read back after every import.
 - `bulk_reconnect_email_accounts` holds only while the provider side is paid and live. *6 Sep 2026:* forty reconnects flipped to ACTIVE and fell back to ERROR within a minute.
 - `move_email_accounts_to_workspace` works within one organisation and carries tags across as foreign ids; unassign the source workspace's tags before moving back.
+- **An inactive workspace refuses every call, reads and moves out included.** *15 Sep 2026, CaaB:* Flowroots X Piper AI was deactivated to free a slot for the new CaaB workspace while CaaB's 60 inboxes still sat in it; the move and even `list_tags` answered "Workspace is inactive. Operation not allowed." Move every inbox out before a workspace is deactivated.
 - **Nothing on the platform tells you where mail landed.** No placement field, no dashboard. `7d_overall_warmup_health` is a blended, undocumented score. Every check is a proxy on one axis.
 - `total_reply_count` on the email-stats endpoint already excludes OOO; subtracting `total_ooo_reply_count` again goes negative. *6 Sep 2026.*
 

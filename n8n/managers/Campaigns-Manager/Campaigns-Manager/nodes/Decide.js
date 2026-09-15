@@ -1,6 +1,7 @@
 // Decide: the standard, applied once over every campaign that carries a Stage.
-// Reads only what the Hub already holds: the Campaigns rows the syncs wrote at 07:00, and the
-// newest deploy row per campaign (Left in View, written by the deploy doors). Never a platform.
+// Reads only what the Hub already holds: the Campaigns rows, which the syncs wrote at night and the
+// deploy doors stamp with Left in View and Last Fed; and the syncs' own run rows, to know the
+// numbers are fresh. Never a platform.
 // Writes nothing here: it plans the Stage moves (Test to Scale, Test to Killed, never Run) and
 // the per-client report blocks into static data; Update Stage and Build Messages consume them.
 // The numbers below are the card's standard block (managers/Campaigns-Manager/card.json); a change
@@ -23,20 +24,22 @@ const items = name => { try { return $(name).all().map(i => i.json).filter(j => 
 const clientName = {}; const clientWs = {};
 for (const j of items('Get Clients')) { const f = j.fields || j; clientName[j.id] = String(f['Client'] || j.id); clientWs[j.id] = String(f['PlusVibe Workspace ID'] || '').trim(); }
 
-// Newest deploy row per campaign id (Target on a scheduled launch row is the campaign id).
-const newestDeploy = {};
-for (const j of items('Get Deploy Rows')) {
+// The syncs are the manager's eyes. Each of the three must have finished within the last day,
+// Succeeded or Succeeded with errors; a sync that failed or never ran means the numbers are stale,
+// and the whole run stops here: no Stage move, no feed, one message saying why. A Failed run row
+// is the record.
+const SYNCS = ['Sync PlusVibe Campaigns to Hub', 'Sync Alta Campaigns to Hub', 'Sync Email Bison Campaigns to Hub'];
+const OK_STATUS = ['Succeeded', 'Succeeded with errors', 'Success'];
+const fresh = {};
+for (const j of items('Get Sync Runs')) {
   const f = j.fields || j;
-  const target = String(f['Target'] || '').trim();
-  if (!target) continue;
-  const at = Date.parse(f['Run at'] || '') || 0;
-  if (!newestDeploy[target] || at > newestDeploy[target].at) {
-    const liv = f['Left in View'];
-    newestDeploy[target] = { at, leftInView: (liv === undefined || liv === null || liv === '') ? null : num(liv), runAt: f['Run at'] || '' };
-  }
+  const name = nm(f['Automation']); const at = Date.parse(f['Run at'] || '') || 0;
+  if (!SYNCS.includes(name) || Date.now() - at > 26 * 3600 * 1000) continue;
+  if (OK_STATUS.includes(nm(f['Status']))) fresh[name] = true;
 }
-
-sd.newestDeploy = newestDeploy;
+const staleSyncs = SYNCS.filter(s => !fresh[s]);
+sd.abort = staleSyncs.length ? ('the numbers are stale: no successful run in the last 26 hours for ' + staleSyncs.join(', ')) : '';
+if (sd.abort) { sd.failed.push(sd.abort); sd.results = []; sd.updates = []; sd.managed = 0; sd.unmanaged = 0; sd.scope = 'aborted'; return [{ json: { _none: true } }]; }
 
 // Every campaign that is not DRAFT or STOPPED, scoped by the client filter on a launched run.
 // A campaign with a Stage is managed; Killed is out of the report; a campaign without a Stage is
@@ -64,6 +67,9 @@ for (const j of items('Get Campaigns')) {
     liveView: String(f['Live View ID'] || '').trim(),
     clientId: clientIds[0] || '',
     lastSent: f['Last Sent'] || '',
+    // Feeding state, written on this row by the deploy door at the end of every run.
+    leftInView: (f['Left in View'] === undefined || f['Left in View'] === null || f['Left in View'] === '') ? null : num(f['Left in View']),
+    lastFed: f['Last Fed'] || '',
   };
   // Without a Stage every campaign that ever sent is a decision, COMPLETED included: a finished one
   // may still want another run, and finished-for-good is spelled Killed, not blank.
@@ -92,8 +98,7 @@ for (const c of camps) {
   }
   if (!c.liveView) c.tags.push('NO VIEW');
   else if (viewUse[c.liveView] > 1) c.tags.push('SHARED VIEW');
-  const d = c.campaignId ? newestDeploy[c.campaignId] : null;
-  if (d && d.leftInView === 0) c.tags.push('DRY since ' + String(d.runAt).slice(0, 10));
+  if (c.leftInView === 0) c.tags.push('DRY since ' + String(c.lastFed).slice(0, 10));
   if (c.lane === 'LinkedIn') c.tags.push('LINKEDIN');
   const need = STANDARD.positives[c.lane];
   // At the line: the stage total contacted, or the stage total held and the sender finished with it.

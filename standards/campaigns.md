@@ -51,7 +51,9 @@ A run sends the stage total minus the leads the campaign already holds, and neve
 - Run: 500 a day on email
 - 150 a day on LinkedIn, in every stage
 
-A view is dry when the last run left nothing in it.
+A view is dry when the last run left nothing in it. The campaign's row carries what the last run left in its view and when it ran.
+
+The numbers a campaign is judged on are the sender's, brought to the row every night. On a night a sender's numbers did not arrive, nothing is judged and nothing is fed the next day.
 
 ## Segments
 

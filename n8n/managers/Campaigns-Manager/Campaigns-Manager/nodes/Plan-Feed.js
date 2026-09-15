@@ -8,6 +8,7 @@ const PLAN = { 'PlusVibe': { automation: 'Deploy View to PlusVibe Campaign', ded
 const sd = $getWorkflowStaticData('global');
 const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 const feeds = [];
+if (sd.abort) { sd.feeds = []; return [{ json: { _none: true } }]; }
 for (const R of sd.results || []) {
   const inPlay = [].concat(R.testProgress, R.scaleProgress, R.run, R.testReady.filter(c => c.verdict !== 'killed'));
   for (const c of inPlay) {
@@ -15,8 +16,8 @@ for (const R of sd.results || []) {
     const plan = PLAN[c.sender];
     if (!plan) { sd.failed.push(R.client + ': "' + c.name + '" is on ' + c.sender + ', which has no deploy door; not fed'); continue; }
     if (!c.campaignId) { sd.failed.push(R.client + ': "' + c.name + '" has no Campaign ID; not fed'); continue; }
-    const d = (sd.newestDeploy || {})[c.campaignId];
-    if (d && String(d.runAt).slice(0, 10) === today) { c.tags.push('FED TODAY'); continue; }
+    const fedOn = c.lastFed ? new Date(c.lastFed).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }) : '';
+    if (fedOn === today) { c.tags.push('FED TODAY'); continue; }
     const row = { 'Automation': plan.automation, 'Table': c.table || 'People', 'View': c.liveView, 'Target': c.campaignId, 'Trigger': 'schedule' };
     if (plan.dedupe) row['Dedupe Mode'] = plan.dedupe;
     if (c.clientId) row['Client'] = [c.clientId];

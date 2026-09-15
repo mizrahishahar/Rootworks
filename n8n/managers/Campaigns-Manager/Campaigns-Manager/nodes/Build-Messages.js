@@ -34,6 +34,8 @@ const phase = (label, cards) => cards.length ? ['_' + label + '_', ''].concat(ca
 
 const today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
 const out = [];
+// A stale sync stops everything: one message, no board, so nobody reads yesterday's numbers as today's.
+if (sd.abort) { sd.messages = 1; return [{ json: { channel: CHANNEL, text: ':red_circle: *CAMPAIGNS MANAGER DID NOT RUN*  ·  ' + today + '\n' + sd.abort + '\nNo Stage moved, nothing fed, no board today.', client: '' } }]; }
 for (const R of sd.results || []) {
   const inPlay = R.testProgress.length + R.testReady.length + R.scaleProgress.length + R.scaleReady.length + R.run.length;
   if (!inPlay && !R.paused.length && !R.unmanaged.length) continue;

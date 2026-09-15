@@ -1036,14 +1036,62 @@
       "notes": "The loud log write: no onError override, so a failed row write crashes this sub-workflow, which crashes the door, which is the run the Error Logger names."
     },
     {
+      "id": "dvpf-48-feedstamp",
+      "name": "Build Feed Stamp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 460],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "@@file:nodes/Build-Feed-Stamp.js"
+      }
+    },
+    {
+      "id": "dvpf-49-anystamp",
+      "name": "Any Feed Stamp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [800, 460],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 1 },
+          "conditions": [
+            { "leftValue": "={{ $json._none === true }}", "operator": { "type": "boolean", "operation": "false", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dvpf-50-stampcamp",
+      "name": "Stamp Campaign Feed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [1000, 360],
+      "parameters": {
+        "resource": "record",
+        "operation": "update",
+        "base": { "__rl": true, "mode": "id", "value": "appQG6dK0FIOhTxOl" },
+        "table": { "__rl": true, "mode": "id", "value": "tblbVPakE4n16ob7Y" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "id": "={{ $json.id }}", "Left in View": "={{ $json['Left in View'] }}", "Last Fed": "={{ $json['Last Fed'] }}" },
+          "matchingColumns": ["id"],
+          "schema": []
+        },
+        "options": { "typecast": true }
+      },
+      "credentials": { "airtableTokenApi": { "id": "RZ2SX89iUyF4aEWJ", "name": "Airtable" } },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
       "id": "dvpf-47-finishout",
       "name": "Finish Out",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        600,
-        460
-      ],
+      "position": [1200, 460],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "@@file:nodes/Finish-Out.js"
@@ -1051,6 +1099,9 @@
     }
   ],
   "connections": {
+    "Build Feed Stamp": { "main": [[{ "node": "Any Feed Stamp?", "type": "main", "index": 0 }]] },
+    "Any Feed Stamp?": { "main": [[{ "node": "Stamp Campaign Feed", "type": "main", "index": 0 }], [{ "node": "Finish Out", "type": "main", "index": 0 }]] },
+    "Stamp Campaign Feed": { "main": [[{ "node": "Finish Out", "type": "main", "index": 0 }]] },
     "Deploy Trigger": {
       "main": [
         [
@@ -1467,7 +1518,7 @@
       "main": [
         [
           {
-            "node": "Finish Out",
+            "node": "Build Feed Stamp",
             "type": "main",
             "index": 0
           }

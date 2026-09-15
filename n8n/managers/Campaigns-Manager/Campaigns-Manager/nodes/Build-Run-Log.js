@@ -29,7 +29,7 @@ if (failed.length) parts.push('', '**Errors**', ...failed.map(f => '- ' + f));
 
 const row = {
   'Automation': 'Campaigns Manager',
-  'Status': failed.length ? 'Succeeded with errors' : 'Succeeded',
+  'Status': sd.abort ? 'Failed' : (failed.length ? 'Succeeded with errors' : 'Succeeded'),
   'Run at': $now.toISO(),
   'Records In': sd.managed || 0,
   'Records Out': (sd.updated || 0) + (sd.fed || 0),

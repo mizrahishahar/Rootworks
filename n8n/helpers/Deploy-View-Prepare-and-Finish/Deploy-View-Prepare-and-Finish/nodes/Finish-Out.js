@@ -3,8 +3,8 @@
 const sd = $getWorkflowStaticData('global'); const dk = 'deploy_' + $execution.id;
 const D = sd[dk] || {};
 delete sd[dk];
-let rowId = '';
-try { const r = ($input.first() || {}).json || {}; rowId = r.id || ''; } catch (e) {}
+let rowId = D.runRowId || '';
+if (!rowId) { try { const r = ($('Log Run').first() || {}).json || {}; rowId = r.id || ''; } catch (e) {} }
 return [{ json: {
   ok: true,
   status: D.finalStatus || '',

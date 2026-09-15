@@ -22,7 +22,7 @@ const lines = results.map(R => {
 // The syncs ran inside this run, first; their outcome is this row's, one line each.
 const nf = v => Number(v || 0).toLocaleString('en-US');
 const syncLines = (sd.syncs || []).map(s => s.ok
-  ? '- **' + s.sync + ':** ' + nf(s.clients) + ' client(s), ' + nf(s.in) + ' campaign(s) seen, ' + nf(s.out) + ' written' + (s.threadsChecked ? ', ' + nf(s.threadsChecked) + ' thread(s) checked, ' + nf(s.threadsUpdated) + ' refreshed' : '') + ', ' + (s.problems || []).length + ' problem(s), ' + nf(s.seconds) + ' s' + ((s.skips || []).length ? '. Skipped: ' + s.skips.join('; ') : '')
+  ? '- **' + s.sync + ':** ' + (s.detail ? s.detail : nf(s.clients) + ' client(s), ' + nf(s.in) + ' campaign(s) seen, ' + nf(s.out) + ' written' + (s.threadsChecked ? ', ' + nf(s.threadsChecked) + ' thread(s) checked, ' + nf(s.threadsUpdated) + ' refreshed' : '')) + ', ' + (s.problems || []).length + ' problem(s), ' + nf(s.seconds) + ' s' + ((s.skips || []).length ? '. Skipped: ' + s.skips.join('; ') : '')
   : '- **' + s.sync + ':** FAILED, ' + s.why);
 
 const parts = [

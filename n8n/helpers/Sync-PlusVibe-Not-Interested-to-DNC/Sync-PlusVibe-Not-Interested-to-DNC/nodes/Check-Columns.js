@@ -23,7 +23,7 @@ if(!t){
 const have=new Set((t.fields||[]).map(f=>f.name));
 const missing=NEED.filter(n=>!have.has(n));
 if(missing.length){
-  c.errors.push('Table "'+t.name+'" ('+t.id+') in base '+c.crBase+' is missing the columns Sync Not Interested to DNC writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was written.');
+  c.errors.push('Table "'+t.name+'" ('+t.id+') in base '+c.crBase+' is missing the columns Sync PlusVibe Not Interested to DNC writes: '+missing.join(', ')+'. Scaffold the base (Scaffold Client Base) first. Nothing was written.');
   return [{ json:{ _skip:true } }];
 }
 c.dncTableId=t.id;

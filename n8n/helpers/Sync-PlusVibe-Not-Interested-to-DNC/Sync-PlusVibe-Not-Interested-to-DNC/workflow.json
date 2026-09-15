@@ -2,126 +2,23 @@
   "updatedAt": "2026-09-02T14:00:43.750Z",
   "createdAt": "2026-09-02T14:00:43.750Z",
   "id": "CXuj6jR6pmMvAEas",
-  "name": "Sync Not Interested to DNC",
+  "name": "Sync PlusVibe Not Interested to DNC",
   "active": false,
   "isArchived": false,
   "nodes": [
     {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "triggerAtHour": 2
-            }
-          ]
-        }
-      },
-      "id": "191d9d04-e06d-4f48-8d51-1c8e1bb68fe2",
-      "name": "Nightly 02:00 IL",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
+      "id": "sync-trigger-dnc",
+      "name": "Sync Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
       "position": [
         -1904,
         400
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "launch-sync-not-interested",
-        "responseMode": "onReceived",
-        "options": {}
-      },
-      "id": "a905df5b-53c4-42ec-b518-f6779f96596c",
-      "name": "Launch Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        -2352,
-        640
       ],
-      "webhookId": "bfa827a1-3fe0-49e6-ab74-7dbb68b8c0df"
-    },
-    {
       "parameters": {
-        "resource": "record",
-        "operation": "get",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tbli7rV6Qf3sLpV6R"
-        },
-        "id": "={{ $json.body.recordId }}",
-        "options": {}
+        "inputSource": "passthrough"
       },
-      "id": "b9ce2d22-6430-422a-bd20-2dc4da65752f",
-      "name": "Fetch Launch Record",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        -2128,
-        640
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "record",
-        "operation": "update",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tbli7rV6Qf3sLpV6R"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "id": "={{ $json.id }}",
-            "Status": "Running",
-            "Trigger": "form",
-            "Run at": "={{ $now.toISO() }}",
-            "Execution ID": "={{ $execution.id }}",
-            "Execution Link": "=https://n8n.flowroots.com/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
-          },
-          "matchingColumns": [
-            "id"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "id": "222df85c-40e6-4329-9044-ab9a2a34f1bc",
-      "name": "Stamp Running",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        -1904,
-        640
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "onError": "stopWorkflow"
+      "notes": "Called by the Campaigns Manager, awaited. The item carries the run's launch shape: trigger and clientFilter."
     },
     {
       "parameters": {
@@ -162,7 +59,7 @@
           "mode": "id",
           "value": "tbli7rV6Qf3sLpV6R"
         },
-        "filterByFormula": "=AND({Automation} = 'Sync Not Interested to DNC', {Status} = 'Succeeded', {Client} = BLANK())",
+        "filterByFormula": "=AND({Automation} = 'Campaigns Manager', OR({Status} = 'Succeeded', {Status} = 'Succeeded with errors'), {Client} = BLANK())",
         "returnAll": false,
         "limit": 1,
         "options": {},
@@ -194,7 +91,8 @@
       "onError": "continueRegularOutput",
       "retryOnFail": true,
       "maxTries": 3,
-      "waitBetweenTries": 2000
+      "waitBetweenTries": 2000,
+      "notes": "The floor for \"since the last run\": the newest manager run that finished, all clients. This helper has no rows of its own."
     },
     {
       "parameters": {
@@ -837,107 +735,20 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "@@file:nodes/Build-Run-Log.js"
+        "jsCode": "@@file:nodes/Sync-Summary.js"
       },
       "id": "a18ddbfb-1b23-45d7-8b96-d3c4089decfe",
-      "name": "Build Run Log",
+      "name": "Sync Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         112,
         240
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appQG6dK0FIOhTxOl"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tbli7rV6Qf3sLpV6R"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "Execution ID"
-          ],
-          "schema": []
-        },
-        "options": {
-          "typecast": true
-        }
-      },
-      "id": "b76910bb-d5be-4533-9fc0-a98b09b61bc0",
-      "name": "Log Run",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.2,
-      "position": [
-        336,
-        240
       ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "RZ2SX89iUyF4aEWJ",
-          "name": "Airtable"
-        }
-      },
-      "onError": "stopWorkflow",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000
+      "notes": "The last node: its one item is what the manager reads. No Hub row here; the outcome rolls up into the manager's row."
     }
   ],
   "connections": {
-    "Nightly 02:00 IL": {
-      "main": [
-        [
-          {
-            "node": "Run Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Launch Webhook": {
-      "main": [
-        [
-          {
-            "node": "Fetch Launch Record",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch Launch Record": {
-      "main": [
-        [
-          {
-            "node": "Stamp Running",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Stamp Running": {
-      "main": [
-        [
-          {
-            "node": "Run Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Run Context": {
       "main": [
         [
@@ -1015,7 +826,7 @@
         ],
         [
           {
-            "node": "Build Run Log",
+            "node": "Sync Summary",
             "type": "main",
             "index": 0
           }
@@ -1026,7 +837,7 @@
       "main": [
         [
           {
-            "node": "Build Run Log",
+            "node": "Sync Summary",
             "type": "main",
             "index": 0
           }
@@ -1306,20 +1117,24 @@
         ]
       ]
     },
-    "Build Run Log": {
+    "Sync Trigger": {
       "main": [
         [
           {
-            "node": "Log Run",
+            "node": "Run Context",
             "type": "main",
             "index": 0
           }
         ]
       ]
+    },
+    "Sync Summary": {
+      "main": [
+        []
+      ]
     }
   },
   "settings": {
-    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
     "executionOrder": "v1"
   },
   "staticData": null,
@@ -1337,7 +1152,6 @@
       "projectId": "pyoZAgnc0vv0Gq9W"
     }
   ],
-  "activeVersion": null,
   "tags": [
     {
       "updatedAt": "2026-09-10T09:13:47.021Z",

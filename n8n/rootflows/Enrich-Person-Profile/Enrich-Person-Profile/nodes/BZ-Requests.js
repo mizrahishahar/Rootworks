@@ -1,5 +1,7 @@
-// BZ Requests: Blitz for the people GetLeads did not answer, by email only (Blitz resolves a person
-// from a verified work email, not from a LinkedIn URL), one credit per answer. Only within the
+// BZ Requests: Blitz for the people who still have no location after GetLeads (GetLeads did not
+// answer, or answered without a country: its location is the job's, filled on a third of rows;
+// Blitz carries the person's own), by email only (Blitz resolves a person from a verified work
+// email, not from a LinkedIn URL), one credit per answer. Only within the
 // run's cap: Max Rows on the launch row, less what earlier batches already asked (the run row's
 // Tally is the accumulator, read by Read Cap Row just before). A person with no email at the
 // domain goes to nobody. Blank or 0 cap means Blitz is never asked.
@@ -13,9 +15,12 @@ const norm=(d)=>one(d).toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./
 const splitEmails=(s)=>one(s).split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
 const out=[]; const st={ candidates:0, noEmail:0, capped:0, cap, askedBefore:asked };
 for(const i of $('Read Held').all()){
-  const j=i.json||{}; if(!j.id||gl.profiles[j.id]) continue;
+  const j=i.json||{}; if(!j.id) continue;
+  const f=j.fields||{};
+  const glp=gl.profiles[j.id];
+  if(one(f['Person Country'])||(glp&&glp['Person Country'])) continue;
   st.candidates++;
-  const f=j.fields||{}; const domain=norm(f.Domain);
+  const domain=norm(f.Domain);
   const emails=[one(f['Final Email']).toLowerCase()].concat(splitEmails(f.Email)).filter(e=>e&&domain&&(e.endsWith('@'+domain)||e.slice(e.lastIndexOf('@')+1).endsWith('.'+domain)));
   if(!emails.length){ st.noEmail++; continue; }
   if(room<=0){ st.capped++; continue; }

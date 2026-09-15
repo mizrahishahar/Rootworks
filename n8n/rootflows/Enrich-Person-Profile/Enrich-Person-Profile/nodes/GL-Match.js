@@ -19,7 +19,8 @@ const pick=(row,cands)=>{ for(const c of cands){ const v=row[c]; if(v!==undefine
 const raw=(row,cands)=>{ for(const c of cands){ const v=row[c]; if(v!==undefined&&v!==null&&v!==''&&v!=='N/A') return v; } return null; };
 const flat=(r)=>{ const o={}; for(const k of Object.keys(r||{})){ const v=r[k]; if(v&&typeof v==='object'&&!Array.isArray(v)){ for(const k2 of Object.keys(v)) o[nk(k2)]=v[k2]; } o[nk(k)]=v; } return o; };
 const clip=(v,n)=>{ const t=String(v==null?'':v).trim(); return t.length>n?t.slice(0,n):t; };
-const isoDate=(v)=>{ const m=String(v==null?'':v).trim().match(/^(\d{4}-\d{2}-\d{2})/); return m?m[1]:''; };
+// GetLeads writes the epoch (1970-01-01) where it has no date; anything before 1971 is no date.
+const isoDate=(v)=>{ const m=String(v==null?'':v).trim().match(/^(\d{4}-\d{2}-\d{2})/); return (m&&Number(m[1].slice(0,4))>=1971)?m[1]:''; };
 const parseVariant=(v)=>{ if(v==null) return []; if(typeof v==='string'){ const t=v.trim(); if(!t||t==='N/A') return []; if(/^[\[{]/.test(t)){ try{ v=JSON.parse(t); }catch(e){ return t.split(/[;|]\s*|,\s*/).map(x=>x.trim()).filter(Boolean); } } else return t.split(/[;|]\s*|,\s*/).map(x=>x.trim()).filter(Boolean); } if(Array.isArray(v)) return v; if(typeof v==='object') return [v]; return [String(v)]; };
 const entry=(x,keys)=>{ if(x==null) return ''; if(typeof x!=='object') return String(x).trim(); const parts=[]; for(const k of keys){ const val=x[k]; if(val!=null&&String(val).trim()&&String(val).trim()!=='N/A') parts.push(String(val).trim()); } return parts.length?parts.join(', '):(x.name?String(x.name).trim():''); };
 const joinVariant=(v,keys,sep)=>parseVariant(v).map(x=>entry(x,keys)).filter(Boolean).join(sep);

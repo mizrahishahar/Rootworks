@@ -20,7 +20,7 @@ const lines=[
   '**'+n(st.rows)+' catch-all people, '+n(st.done)+' resolved by BounceBan, '+n(st.noEmail)+' no deliverable address, '+n(st.pending)+' still waiting, '+n(st.refusedRows)+' refused**',
   '',
   '**Scope:** one client, '+scope,
-  '**Rule:** each address in the row\'s Email field submitted to BounceBan once (the provider address, never a guess); the first deliverable in field order wins; undeliverable, risky and unknown settle as no_email_found. An address refused at submit, or without a verdict at the 4-hour cap, leaves its row verifying untouched; nothing is ever resubmitted by this machine on its own.',
+  '**Rule:** one submission per row, the first address in its Email field (the provider address, never a guess), to BounceBan once; deliverable is done, undeliverable, risky and unknown settle as no_email_found. An address refused at submit, or without a verdict at the 4-hour cap, leaves its row verifying untouched; nothing is ever resubmitted by this machine on its own.',
   '',
   '**Results**',
   '- **Submitted:** '+n(st.submitted)+' addresses'+(n(st.refused)?', '+n(st.refused)+' refused at submit (rows left verifying)':''),

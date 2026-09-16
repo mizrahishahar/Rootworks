@@ -20,7 +20,7 @@ const lines=[
   '**'+n(st.rows)+' catch-all people, '+n(st.done)+' resolved by BounceBan, '+n(st.noEmail)+' no deliverable address, '+n(st.pending)+' still waiting, '+n(st.refusedRows)+' refused**',
   '',
   '**Scope:** one client, '+scope,
-  '**Rule:** one submission per row, the first address in its Email field (the provider address, never a guess), to BounceBan once; deliverable is done, undeliverable, risky and unknown settle as no_email_found. An address refused at submit, or without a verdict at the 4-hour cap, leaves its row verifying untouched; nothing is ever resubmitted by this machine on its own.',
+  '**Rule:** one submission per row, the first address in its Email field (the provider address, never a guess), to BounceBan once, at most '+n(planned.cap||500)+' submissions per run; deliverable is done, undeliverable, risky and unknown settle as no_email_found. An address refused at submit, or without a verdict at the 4-hour cap, leaves its row verifying untouched; nothing is ever resubmitted by this machine on its own.',
   '',
   '**Results**',
   '- **Submitted:** '+n(st.submitted)+' addresses'+(n(st.refused)?', '+n(st.refused)+' refused at submit (rows left verifying)':''),
@@ -31,6 +31,7 @@ const lines=[
 ];
 if(!n(st.rows)) lines.push('', '**Skipped (no row with Status = verifying'+((p.rowIds&&p.rowIds.length)?' among the ids passed':'')+')**');
 if(n(st.pending)) lines.push('', '**Skipped ('+n(st.pending)+' rows still without a verdict at the cap; left verifying for a manual launch)**');
+if(n(planned.capped)) lines.push('', '**Skipped ('+n(planned.capped)+' rows beyond the hard cap of '+n(planned.cap)+' submissions per run; left verifying untouched, launch again to take them)**');
 if((wc.writeReasons||[]).length){ lines.push('', '**Write failures**'); for(const w of wc.writeReasons.slice(0,10)) lines.push('- '+w); }
 const key=p._launchRecordId?String($execution.id):((p.parentExecId||String($execution.id))+'-verify');
 const log={ 'Execution ID':key, 'Automation':'Verify Catch-alls', 'Status':failed?'Succeeded with errors':'Succeeded', 'Trigger':p.trigger||'event', 'Errors':failed, 'Run at':p.startedAt, 'Target':(t.tableName||'People')+' ('+(t.tableId||'')+')', 'View':t.viewName||'', 'Records In':n(st.rows), 'Records Out':n(wc.written), 'Duration s':dur, 'Description':lines.join('\n'), 'Tally':JSON.stringify(Object.assign({}, st, { planned, written:wc.written, writeErrors:wc.writeErrors })), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id };

@@ -43,12 +43,12 @@ This file is what the Hub tables ARE; what they mean lives in their own descript
 | Logs | `fldevnA1BWrHhvfal` | singleLineText |  |
 | Meetings | `fldx6yapArKEZki0L` | multipleRecordLinks |  |
 | Email Domains | `fldOm4uLCpBFvsgou` | multilineText | The client's own email domains, one per line (e.g. getadelante.com and adelantedesk.com for Adelante). The matcher key that lets the Fathom meeting sync tell a client meeting from a sales meeting. Keep current: a client adding a domain without this list updated leaks their meetings into the sales path. |
-| Inboxes | `fldQkOvy4b8YeUYkG` | multipleRecordLinks |  |
-| Domains | `fldJUAJFb6jzL7wxs` | multipleRecordLinks |  |
+| Inboxes | `fldQkOvy4b8YeUYkG` | singleLineText |  |
+| Domains | `fldJUAJFb6jzL7wxs` | singleLineText |  |
 | Credits | `fldAXROZdXATgpav5` | multipleRecordLinks |  |
 | Booking Keys | `fldNZ0p7IWzLBZ83X` | multilineText | The scheduler identities that belong to this client, one per line: the host email, the Cal.com username, an event-type title. Handle New Booking matches a booking's organizer against these lines to find the client. Empty = bookings cannot be attributed to this client. Set at onboarding. |
-| Task Templates | `fldoZrz4vQhf0K5j8` | multipleRecordLinks |  |
-| Tasks | `fld83ot47MF0FURDv` | multipleRecordLinks |  |
+| Task Templates | `fldoZrz4vQhf0K5j8` | singleLineText |  |
+| Tasks | `fld83ot47MF0FURDv` | singleLineText |  |
 | Signals | `fldX22tSP2fGWY4rY` | multipleRecordLinks |  |
 | ClayrootsCompaniesTableID | `fldHhhOlD6RSzYi3p` | singleLineText | The client's Companies table id (tbl...) in their ClayRoots base. Set at onboarding. |
 | ClayrootsPeopleTableID | `fldAkkVBD6fLBA9my` | singleLineText | The client's People table id (tbl...) in their ClayRoots base. Set at onboarding. |
@@ -142,7 +142,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Client | `fldw3B0DOFYnzGGRJ` | multipleRecordLinks | Set = this is a client meeting (check-in, onboarding, working session with a paying client). The client's meeting history hangs off their registry row. Mutually exclusive in practice with the Company prospect link. |
 | Meeting Type | `fldovXZY2n8RRdnkW` | singleSelect | sales = prospect-facing, pre-deal (the Company link points at the Prospects row). client = post-deal meeting with a paying client (the Client link points at the registry). Stamped by the Fathom sync and the backfill. - Choices: sales, client |
 | Transcript | `fld6GvkTVE47Pro74` | richText | Full meeting transcript text when it fits the cell (100k char cap); otherwise blank and the RecordingLink is the source. Filled by the backfill and, where the payload carries it, by the sync. |
-| Tasks | `fldffuARl0Vwe6T5x` | multipleRecordLinks |  |
+| Tasks | `fldffuARl0Vwe6T5x` | singleLineText |  |
 
 ## CONTROL PANEL (`tblLWcSxAPxB7BJzx`)
 
@@ -157,7 +157,7 @@ The client knowledge base. One row per document the machine reads: onboarding fo
 | Field | ID | Type | Notes |
 |---|---|---|---|
 | Execution ID | `fldBbgmbP8RqNRRcQ` | singleLineText |  |
-| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Enrich & Qualify new lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Enrich & Qualify new lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to PlusVibe Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Enrich & Qualify new lead from Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Enrich Contacts, Scaffold Client Base, Waterfall Contacts Batch, BounceBan Poller, Deploy View to Alta Campaign, Insert Storeleads domains to Clayroots, Sync Not Interested to DNC, Schedule Live View Deploys, Insert Hiring domains to Clayroots, Sync Email Bison Campaigns to Hub, Create Client Rootworks Infrastructure, Deploy View to Email Bison Campaign, Create health report for inboxes, Insert Reviews domains to Clayroots, Enrich & Qualify new lead from Email Bison, Enrich Contacts, Enrich Contacts Batch, HeyReach Ops (one-off), Waterfall Contacts, Enrich Emails, Verify Catch-alls, Enrich Contacts Blitz, Enrich Contacts GetLeads, Enrich Contacts QuickEnrich, Enrich Contacts Supersoniq, Discover Discolike Companies, Discover Hiring Companies, Discover Storeleads Companies, Discover Reviews Companies, Enrich Phones, Enrich Discogen Research, Campaigns Manager, Sync PlusVibe Leads Data, Inbox Manager, Enrich Contact Counts |
+| Automation | `fldRe2vzcg1UqYlVk` | singleSelect | Choices: Contagen -> Supersoniq -> Clayroots, Waterfall Emails, Storeleads Domains -> Clayroots, Storeleads Domains -> Supersoniq -> Clayroots, Verify Emails, Discolike Domains -> Clayroots, Qualify & Notify New Lead, Handle Intent, Handle New Lead, Sync Slack Logs to Vault, Sync Meeting Summaries to Vault, Handle New Discovery, Handle Another Meeting, Notify Subsequent Reply, Verify Catchalls Emails, Handle Intent Signal, Add Intent Leads to Alta, Enrich & Qualify new lead from Alta, Append fields to table, Sync PlusVibe Campaigns to Hub, Add Contact Key, Merge Tables, Add rank in company to table, Enrich & Qualify new lead from PlusVibe, Backfill Build Date, Sync Alta Campaigns to Hub, Log lead on BDR channel for moveplnr, Create PlusVibe Report, Pull campaign opens for adelante, Sync PlusVibe Leads to Clayroots, Sync BDR channel for moveplnr, Deploy View to PlusVibe Campaign, Sync Slack Logs, Sync PV Leads, Clean Company Names on table, Stamp Tag on table, Sync BDR Channel, Create PlusVibe Daily Infra Report, Sync PlusVibe Inboxes to Hub, AI-Ark Export -> Clayroots, Waterfall Phones, Add Intent Leads to PlusVibe, Sync Tool Credits to Hub, Enrich & Qualify new lead from Booking, Backfill Intent Fields (one-off), Add Fields to Table (one-off), Handle Hiring Intent Signal, Land Companies from DiscoLike, Insert Discolike domains to Clayroots, Enrich Contacts, Scaffold Client Base, Waterfall Contacts Batch, BounceBan Poller, Deploy View to Alta Campaign, Insert Storeleads domains to Clayroots, Sync Not Interested to DNC, Schedule Live View Deploys, Insert Hiring domains to Clayroots, Sync Email Bison Campaigns to Hub, Create Client Rootworks Infrastructure, Deploy View to Email Bison Campaign, Create health report for inboxes, Insert Reviews domains to Clayroots, Enrich & Qualify new lead from Email Bison, Enrich Contacts, Enrich Contacts Batch, HeyReach Ops (one-off), Waterfall Contacts, Enrich Emails, Verify Catch-alls, Enrich Contacts Blitz, Enrich Contacts GetLeads, Enrich Contacts QuickEnrich, Enrich Contacts Supersoniq, Discover Discolike Companies, Discover Hiring Companies, Discover Storeleads Companies, Discover Reviews Companies, Enrich Phones, Enrich Discogen Research, Campaigns Manager, Sync PlusVibe Leads Data, Inbox Manager, Enrich Contact Counts, Enrich Person Profile |
 | Automation Title | `fld8I8LWbDmJ0UkM0` | formula |  |
 | Client | `fldEAmAdxzBKeEyqy` | multipleRecordLinks |  |
 | Status | `fldD4aa7LKaGX2Hkk` | singleSelect | Choices: Waiting, Succeeded, Failed, Running, Success, Succeeded with errors |
@@ -451,67 +451,6 @@ One row per deployed final view: {table} - {view}. Created by the Deploy View to
 | View Link | `fldQSPR23nP39jXvl` | url | Deep link to the exact Airtable view this list was deployed from. Built by Deploy View to Campaign as <client Clayroots shareable link>/<tableId>/<viewId>. |
 | Deployed | `fldQkDnj1kE4U5jEj` | number | How many leads this deploy confirmed into the campaign at read-back. Written by Deploy View to Campaign. |
 
-## Inboxes (`tblgdmibPyC2dRlVK`)
-
-One row per PlusVibe sending inbox, upserted by Account ID. Mirrors Campaigns: current state + yesterday's activity, refreshed daily by Sync PlusVibe Inboxes to Hub.
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Inbox | `fldkANsKzUs8ikHrZ` | singleLineText |  |
-| Account ID | `fldSrSCkm5dgB91uh` | singleLineText | PlusVibe account _id. THE upsert key for all writers. |
-| Client | `fldpAz2N7oTNWScd3` | multipleRecordLinks |  |
-| Domain | `fldQgpTvyzirUaurs` | singleLineText |  |
-| Status | `fldsAbMUF6G1gnqIm` | singleSelect | Choices: ACTIVE, PAUSED, ERROR, ALERT |
-| Warmup Status | `fld94dAgNrjXGRJ9t` | singleSelect | Choices: ACTIVE, PAUSED, INACTIVE |
-| Provider | `fldI7wCBPUk2incqK` | singleLineText |  |
-| Daily Limit | `fld8bDsP2TRj8X4Gw` | number |  |
-| Sent (All-Time) | `flduqTfp0cSwAqSM3` | number |  |
-| Replies (All-Time) | `fld5mKbqv4YLF7HVO` | number |  |
-| OOO Replies (All-Time) | `fldrb82WuBpGRl5va` | number |  |
-| Positive (All-Time) | `fld1bxIBr6fYU7fX0` | number |  |
-| Bounced (All-Time) | `fldizmg1Fvj0SvfNW` | number |  |
-| Warmup Health (7d) | `fldLtS90bQ5SVDfdH` | number |  |
-| Miss Warmup Rate | `fldEc75p9zvsqz514` | number |  |
-| Bounce Rate (3d) | `fldLxHs5iim8UBB6O` | number |  |
-| Reply Rate (7d) | `flduTVHGuKc0yWqhe` | number |  |
-| Last Synced | `flddxE5wWm303pSVX` | dateTime |  |
-| Tags | `fldZjFfx5Nwk87pig` | singleLineText | PlusVibe tag names for this inbox, comma-separated. |
-| Domain Link | `fldyDd6rEmi9krZnd` | multipleRecordLinks |  |
-| Domain Replies (All-Time) | `fldD0coC7Xva5qRpG` | multipleLookupValues |  |
-| Drift | `fldfiWGg1Pu3XTwVm` | multilineText | Settings on this inbox still off standards/infrastructure.md after the Inbox Manager's correction, one per line (e.g. tracking domain set). Empty = on standard. Written by Inbox Manager. |
-
-## Domains (`tbltRqDRQm0YQy3tQ`)
-
-One row per sending domain per client, linked from Inboxes. Rollups aggregate all-time stats across every inbox on that domain. Upserted by Sync PlusVibe Inboxes to Hub.
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Domain | `fldMcitTB60CeAOCJ` | singleLineText |  |
-| Client | `fldz2S7gihalU2UMS` | multipleRecordLinks |  |
-| Last Synced | `fldEACG3axtny5k5y` | dateTime |  |
-| Inboxes | `fld172r5q92gtqgUM` | multipleRecordLinks |  |
-| Replies (All-Time) | `fldkS3gdaAhTEm20Z` | rollup |  |
-| Sent (All-Time) | `fldV1XP0bo8J0Eewi` | rollup |  |
-| Positive (All-Time) | `fldy4Wr3lDZ8WwumV` | rollup |  |
-| Bounced (All-Time) | `fld47mZufldUaz6vO` | rollup |  |
-| Inbox Count | `fldqTcJgXmMpco4dq` | count |  |
-| Tags | `fldN6oLszhN7LeXdb` | rollup |  |
-| OOO Replies (All-Time) | `fldX3AwY7fwORQs1D` | rollup |  |
-| Batch | `fldmUkA4FgyaJPljb` | singleLineText | The {client}-{n} batch tag this domain's inboxes carry on the sender platform. Written by Create health report for inboxes. |
-| Active | `fld53nz4xJsGB5Y4w` | checkbox | True when the domain's inboxes carry the active tag on the sender platform. Written by Create health report for inboxes. |
-| First 500 Replies | `fldVzrpBSdaKUFOuS` | number | Replies from people (never automatic replies) in the domain's first 500 cold emails, its inboxes together. The Never landed read: 0 fires the flag. Empty until the domain has sent 500. Written by Inbox Manager. |
-| Last 500 Replies | `fldHDXvX8rH79oLpx` | number | Retired 2026-09-14: no longer written. Gone quiet now reads Latest 250 Replies against Previous 250 Replies. Kept for history until deleted by hand. |
-| Warmup Min | `fldGKx55p0OONEuWE` | number | Lowest 7-day warmup health score across the domain's inboxes. Written by Create health report for inboxes. |
-| Oldest Inbox Days | `fldTZgaYfFCQ40t6H` | number | Age in days of the domain's oldest inbox on the sender platform. The warmup flag needs 21+. Written by Create health report for inboxes. |
-| SURBL | `fldqbbTo08B8c8cAc` | singleSelect | Retired 2026-09-14: SURBL is no longer checked (Operator ruling). No longer written; the last value stays for history until the field is deleted by hand. - Choices: clean, listed, unknown |
-| Flags | `fldMlpuSJSa1PoMYb` | multipleSelects | The flags raised on the last read, as defined in standards/infrastructure.md. Disconnected = an inbox the sender cannot connect to, after one reconnect try. Drift = an inbox off a setting in the Drift list. Warmup = score under 90 with the oldest inbox past 21 days. Never landed = 0 replies from people in the first 500 sends. Gone quiet = from 750 sends, the latest 250 got fewer than half the replies of the 250 before. Listed is retired (SURBL no longer checked) and is no longer set. Flags only; a kill is the Operator's decision. Written by Inbox Manager. - Choices: Never landed, Gone quiet, Warmup, Listed, Drift, Disconnected |
-| Flag Reason | `flddPfH5AjRU4UkYd` | multilineText | One line per flag with the exact number behind it, as shown in the Slack report. Written by Create health report for inboxes. |
-| Flagged On | `fldQAu3DdEwwlNEI5` | date | The first review that raised any flag on this domain. Set once, never overwritten; cleared by hand when the domain is cleared or killed. |
-| Killed On | `fldDWspb2uANhxcj9` | date | Set by the kill procedure in session, after forwarding is on and the inboxes are out of the sender platform. Killed is final. |
-| Last Reviewed | `fld2SeQn519iSm6PX` | dateTime | Last run of Create health report for inboxes that touched this row. |
-| Latest 250 Replies | `fldRvIN4BT8c0Ahyd` | number | Replies from people (never automatic replies) in the domain's latest 250 cold emails, its inboxes together. Empty until the domain has sent 750. With Previous 250 Replies it is the Gone quiet read: fewer than half of Previous fires the flag. Written by Inbox Manager. |
-| Previous 250 Replies | `fldoeo4K8KJwgzros` | number | Replies from people (never automatic replies) in the 250 cold emails before the domain's latest 250, its inboxes together. Empty until the domain has sent 750. Written by Inbox Manager. |
-
 ## Credits (`tblVhx3LWFm5Ot6Jg`)
 
 One row per paid tool, refreshed daily by Sync Tool Credits to Hub (06:00 IL, plus on demand). Credits is the balance as the tool's API reports it; a tool whose API has no balance endpoint keeps Checked At empty and says so in Note. Alert Below is Operator-set; Alert drives the Slack line in flowroots-pulse.
@@ -533,43 +472,3 @@ One row per paid tool, refreshed daily by Sync Tool Credits to Hub (06:00 IL, pl
 | Client | `fldajNLgMrDr8hijN` | multipleRecordLinks | Only for per-client-billed tools. |
 | Days Left | `fldKwU8hjW4raLXyJ` | formula | Credits divided by Daily Burn. Blank until two reads exist or when burn is zero. |
 | Alert | `fldkLhtm5XSEGs73b` | formula | Credits under the Operator-set floor. Read by the sync for the Slack line. |
-
-## Task Templates (`tbl8E4UHtmhFLNH5T`)
-
-Reusable task definitions. One row = one repeatable thing. Fires two ways: on a schedule (Active + Recurrence, spawned each morning by the Spawn Recurring Tasks automation) or on demand. The spawner NEVER creates a second task while one from this template is still open, so a missed occurrence stays a single overdue row instead of piling up. Editing a template does not touch tasks already created; the copy happens once, at spawn.
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Name | `fldO505hgf2a13IcK` | singleLineText |  |
-| Client | `fldbV93xajKQTUTaH` | multipleRecordLinks |  |
-| Area | `flds3rgSzepsqTsPU` | singleSelect | Choices: Sales, Marketing, Content, Fulfillment, Rootworks, Finance, Admin |
-| Steps | `fldLIBQd5i7BRWAxr` | richText |  |
-| Recurrence | `fldGsQ11kGJ57ccCr` | singleSelect | Choices: Daily, Weekly, Monthly, None |
-| Day | `fldbMt0ALgPaIGrZ4` | singleLineText | Weekly: one or more weekday names, e.g. Mon or Mon, Wed, Fri. Monthly: a number 1 to 28. Daily: leave empty. |
-| Active | `fldSoE5V6KKKr8HJZ` | checkbox |  |
-| Tasks | `fldWzrjY04DMSyidl` | multipleRecordLinks |  |
-| Open Tasks | `fld2Wpyi4h5Z5Atua` | rollup |  |
-| Due Today | `fldwibfsdRiSnusZr` | formula |  |
-| Spawn Now | `flduTYuTOQxZwhXk5` | formula |  |
-
-## Tasks (`tblpFK50lVGNVZgBU`)
-
-The task list. One row per thing to do. Due is the date it was meant to happen and never moves on its own: miss it and it sits overdue with its real date. Rows arrive two ways, typed in by hand (Template blank) or spawned from a Task Templates row (Template linked). No priority field by design.
-
-| Field | ID | Type | Notes |
-|---|---|---|---|
-| Task | `fld7frgFSmZl5vT4E` | singleLineText |  |
-| Status | `fldMe8ww2TFRNOcsD` | singleSelect | Choices: Todo, Doing, Done |
-| Area | `fldmLAl88SoVy0Ozu` | singleSelect | Choices: Sales, Marketing, Content, Fulfillment, Rootworks, Finance, Admin |
-| Due | `fldE8J5gr7MAnEWUN` | date |  |
-| Client | `fldbJi3ljg25on8fP` | multipleRecordLinks |  |
-| Client Name | `fldAc5TVVrFkxDRXl` | multipleLookupValues |  |
-| Steps | `fldVsBMTVdwaKNLf9` | richText |  |
-| Notes | `fld3cbiJCKPjTkfqf` | richText |  |
-| Template | `fldHg96af92T61wTx` | multipleRecordLinks |  |
-| Created | `fldIuWL5eZ5cLWUiZ` | formula |  |
-| Is Open | `fldzguefLM3Yd010o` | formula |  |
-| From Meeting | `fldXdeUUvrCosmtT7` | multipleRecordLinks |  |
-| Summary (Notes) | `fldVl9ghXZfXPqDSE` | aiText |  |
-| Headline (Notes) | `fldPWEqMFEgzIMTx5` | aiText |  |
-| Progress | `fldFDhquOrBqaVzBX` | formula |  |

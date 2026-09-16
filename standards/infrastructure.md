@@ -191,11 +191,7 @@ To kill a domain is to stop using it for good.
 
 ## The record
 
-The Hub, our Airtable database, holds the infrastructure as of the last read:
-
-- one row per domain: its batch, whether it is active, its reply counts behind Never landed and Gone quiet, its flags with the numbers behind them, and the day it was killed
-- one row per inbox: which settings are off
-- on each client row: active and not active inboxes, active and not active capacity, and the reserve ratio
+The sender is the record of the infrastructure. Domains and inboxes are never mirrored into the Hub: every flag is judged from the sender on the run it is reported, and nothing per domain or inbox is kept between runs. The Hub holds only, on each client row, as of the last read: active and not active inboxes, active and not active capacity, and the reserve ratio.
 
 ```json
 {

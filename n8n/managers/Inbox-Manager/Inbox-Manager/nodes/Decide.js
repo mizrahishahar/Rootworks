@@ -1,9 +1,9 @@
 // @@standard:infrastructure
 // Decide: standards/infrastructure.md applied once to one client. Reads the fleet as it stands after today's
-// corrections (the read-back when they ran, the first read otherwise), the Monday stats read when this is a full
-// run, and the Hub's domain rows for what a daily run does not re-read. Measures every correction from
-// the read-back, never from a call's success. Writes nothing itself: it emits the Hub inbox rows, and leaves the
-// domain rows, the client row and the report facts for the nodes after it.
+// corrections (the read-back when they ran, the first read otherwise) and the Monday stats read when this is a
+// full run. Measures every correction from the read-back, never from a call's success. Writes nothing itself:
+// it leaves the client row and the report facts for the nodes after it. Nothing is kept on the Hub between
+// runs: every flag is judged from the sender each run, and the Monday flags exist only on a full read.
 const sd = $getWorkflowStaticData('global');
 const cw = $('Loop Over Clients').first().json;
 const scratch = sd.cw || {};
@@ -83,21 +83,6 @@ for (const t of tagItems) {
 }
 const tagName = {};
 for (const t of tagList) if (t && t._id) tagName[String(t._id)] = String(t.name || t._id);
-
-let hubRows = [];
-try { hubRows = $('Get Hub Domains').all().map(i => i && i.json).filter(r => r && r.id); } catch (e) {}
-const hubBy = {};
-for (const r of hubRows) {
-  const f = r.fields || r;
-  const d = String(f['Domain'] || '').toLowerCase();
-  if (!d) continue;
-  hubBy[d] = {
-    flaggedOn: String(f['Flagged On'] || ''),
-    flags: Array.isArray(f['Flags']) ? f['Flags'].map(String) : [],
-    reasons: String(f['Flag Reason'] || '').split('\n').filter(Boolean),
-    first500: typeof f['First 500 Replies'] === 'number' ? f['First 500 Replies'] : null,
-  };
-}
 
 const plan = scratch.plan || { reconnect: [], warmup: [], settings: [] };
 const fixes = Array.isArray(scratch.fixes) ? scratch.fixes : [];
@@ -202,7 +187,6 @@ function replyReads(members) {
 const domainNames = [...new Set(inboxes.map(i => i.domain).filter(Boolean))].sort();
 const domains = domainNames.map(d => {
   const members = inboxes.filter(i => i.domain === d);
-  const hub = hubBy[d] || { flaggedOn: '', flags: [], reasons: [], first500: null };
   const active = members.some(m => m.isActive);
   const disconnected = members.filter(m => DISC.includes(m.status));
   const drifting = members.filter(m => m.drift.length);
@@ -210,7 +194,6 @@ const domains = domainNames.map(d => {
   const warmupMin = scores.length ? Math.min(...scores) : null;
   const oldestDays = members.length ? Math.max(...members.map(m => m.ageDays)) : 0;
   const flags = []; const reasons = [];
-  const keep = (flag) => { if (hub.flags.includes(flag)) { flags.push(flag); reasons.push(...hub.reasons.filter(l => l.startsWith(flag + ':'))); } };
 
   if (disconnected.length) {
     flags.push('Disconnected');
@@ -229,28 +212,19 @@ const domains = domainNames.map(d => {
   }
 
   const row = { domain: d, active, batch: [...new Set(members.map(m => m.batch).filter(Boolean))].join(', '), warmupMin, oldestDays, flags, reasons };
+  // Never landed and Gone quiet exist only on a full read with the stats in hand; a daily run, or a Monday whose
+  // stats failed, does not read them.
   const reads = full ? replyReads(members) : null;
   if (reads) {
-    const firstReplies = reads.first ? reads.first.replies : hub.first500;
-    if (typeof firstReplies === 'number') row.first500 = firstReplies;
-    if (firstReplies === N.replies) {
+    if (reads.first && reads.first.replies === N.replies) {
       flags.push('Never landed');
-      reasons.push('Never landed: ' + firstReplies + ' replies in the first ' + (reads.first ? reads.first.sent : N.first_sends) + ' sends');
+      reasons.push('Never landed: ' + reads.first.replies + ' replies in the first ' + reads.first.sent + ' sends');
     }
-    if (reads.latest && reads.previous) {
-      row.latest250 = reads.latest.replies;
-      row.previous250 = reads.previous.replies;
-      if (reads.latest.replies < G.below_share_of_previous * reads.previous.replies) {
-        flags.push('Gone quiet');
-        reasons.push('Gone quiet: ' + reads.latest.replies + ' replies in the latest ' + reads.latest.sent + ' sends, against ' + reads.previous.replies + ' in the ' + reads.previous.sent + ' before');
-      }
+    if (reads.latest && reads.previous && reads.latest.replies < G.below_share_of_previous * reads.previous.replies) {
+      flags.push('Gone quiet');
+      reasons.push('Gone quiet: ' + reads.latest.replies + ' replies in the latest ' + reads.latest.sent + ' sends, against ' + reads.previous.replies + ' in the ' + reads.previous.sent + ' before');
     }
-  } else {
-    // A daily run, or a Monday whose stats failed: these flags stand as the last full read left them.
-    keep('Never landed');
-    keep('Gone quiet');
   }
-  row.flaggedOn = hub.flaggedOn || (flags.length ? today.toFormat('yyyy-MM-dd') : '');
   row.emergency = disconnected.filter(m => m.isActive).map(m => ({ email: m.email, status: m.status }));
   return row;
 });
@@ -286,5 +260,4 @@ sd.results.push({
   failed,
 });
 
-if (!inboxes.length) return [{ json: { _none: true } }];
-return inboxes.map(i => ({ json: { 'Account ID': i.id, 'Drift': i.drift.map(x => x.text).join('\n') } }));
+return [{ json: { inboxes: inboxes.length, domains: domains.length } }];

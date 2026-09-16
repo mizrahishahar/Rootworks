@@ -2,7 +2,7 @@
 // #flowroots-infra: every client on a full run (Monday or launched), only clients with an emergency on the other
 // days; a quiet day posts nothing. Each section is a Slack heading with an emoji, detail sits in monospace blocks
 // kept under 80 columns, every section of the report shows even when empty. THIS RUN closes every message: what
-// was read, every correction and its measured result, the campaign senders, the Hub rows, the client draft. On a
+// was read, every correction and its measured result, the campaign senders, the client row, the client draft. On a
 // dry run a banner says nothing changed, and every correction a live run would make is marked not applied.
 // For a client switched on (Infra Reports to Client), a second message in client wording, marked as a draft for
 // the client's channel: it reaches the client only when the Operator sends it.
@@ -145,7 +145,7 @@ for (const r of results) {
       lines.push(row('senders', changed.length ? changed.length + ' of ' + many(a.campaigns, 'running campaign') + ' changed' : 'all ' + many(a.campaigns, 'running campaign') + ' already match'));
       for (const k of changed.slice(0, 5)) lines.push(sub(pad(campaignTitle(k.name), 44) + ' +' + k.added + ' -' + k.removed));
     }
-    if (r.hub) lines.push(row('hub', fmt(r.hub.inboxes) + ' inbox rows, ' + fmt(r.hub.domains) + ' domain rows, ' + (r.hub.client ? 'client row' : 'no client row')));
+    if (r.hub) lines.push(row('hub', r.hub.client ? 'client row updated' : 'client row not written'));
     lines.push(row('client draft', r.isPool ? 'not for the pool' : (r.clientReports ? (r.clientChannel ? 'below, for the client channel' : 'on, but no client channel on the Hub') : 'off for this client')));
     parts.push('', ':gear: *THIS RUN*', block(lines));
 

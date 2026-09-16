@@ -2,12 +2,12 @@
 name: hub
 type: skill
 vertical: [infrastructure]
-description: The one database. Reading and writing its records, the client knowledge base and its file types, the task list and how it is run (deadlines, priority, deferral, the cut), modifying fields safely. Use for anything touching the Hub base, its tables, a client's KB, or tasks.
+description: The one database. Reading and writing its records, the client knowledge base and its file types, modifying fields safely. Use for anything touching the Hub base, its tables, or a client's KB.
 ---
 
 # The Hub
 
-The one database of the application: the client registry, the CRM, the client knowledge base, the run log, the task list. State is read from it live, never from a copy in a file.
+The one database of the application: the client registry, the CRM, the client knowledge base, the run log. State is read from it live, never from a copy in a file.
 
 **Structure is never described in prose, here or anywhere.** The schema you are handed carries every table, field, description and select option; read it there. A field's own description in the schema is where its meaning lives.
 
@@ -21,4 +21,4 @@ The one database of the application: the client registry, the CRM, the client kn
 
 ## This folder
 
-`knowledge-base.md`: the client knowledge base, how every session knows a client; its quality is fulfillment quality. `tasks.md`: how a task is written, how templates recur, and how the list is run: deadlines, priority, deferral, the cut.
+`knowledge-base.md`: the client knowledge base, how every session knows a client; its quality is fulfillment quality.

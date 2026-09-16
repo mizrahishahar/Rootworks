@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-15T10:44:23.205Z",
+  "updatedAt": "2026-09-15T16:45:00.654Z",
   "createdAt": "2026-09-15T10:42:07.464Z",
   "id": "5qWnyscM5LneVAdC",
   "name": "Enrich Person Profile",
@@ -1905,8 +1905,8 @@
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "8073f75e-07c5-42f0-b3d2-65eda0e1bad8",
-  "activeVersionId": "8073f75e-07c5-42f0-b3d2-65eda0e1bad8",
+  "versionId": "41624789-1d4c-4e37-904b-8f6ff1fa3ef3",
+  "activeVersionId": "41624789-1d4c-4e37-904b-8f6ff1fa3ef3",
   "triggerCount": 1,
   "shared": [
     {
@@ -1918,9 +1918,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-15T10:44:23.210Z",
-    "createdAt": "2026-09-15T10:44:23.210Z",
-    "versionId": "8073f75e-07c5-42f0-b3d2-65eda0e1bad8",
+    "updatedAt": "2026-09-15T16:45:00.665Z",
+    "createdAt": "2026-09-15T16:45:00.665Z",
+    "versionId": "41624789-1d4c-4e37-904b-8f6ff1fa3ef3",
     "workflowId": "5qWnyscM5LneVAdC",
     "nodes": [
       {
@@ -2801,7 +2801,7 @@
             "batching": {
               "batch": {
                 "batchSize": 1,
-                "batchInterval": 700
+                "batchInterval": 1000
               }
             },
             "response": {
@@ -2822,8 +2822,8 @@
           700
         ],
         "retryOnFail": true,
-        "maxTries": 3,
-        "waitBetweenTries": 5000,
+        "maxTries": 5,
+        "waitBetweenTries": 20000,
         "onError": "continueRegularOutput",
         "credentials": {
           "httpHeaderAuth": {
@@ -2831,7 +2831,7 @@
             "name": "GetLeads"
           }
         },
-        "notes": "One search per person, 700 ms apart (the pace the contacts pull proved). Every returned row is one fair-use row, never cash; limit 5 per person."
+        "notes": "One search per person, one a second. Run 26424 at 700 ms drew 429s on 236 of 1,295 people even with three 5 s retries; the search endpoint holds about one call a second sustained, the same as the count endpoint. A 429 is retried five times 20 s apart, then the person is an error and the row is left untouched, so the next run asks again. Every returned row is one fair-use row, never cash; limit 5 per person."
       },
       {
         "parameters": {
@@ -2884,7 +2884,7 @@
       },
       {
         "parameters": {
-          "jsCode": "// BZ Requests: Blitz for the people GetLeads did not answer, by email only (Blitz resolves a person\n// from a verified work email, not from a LinkedIn URL), one credit per answer. Only within the\n// run's cap: Max Rows on the launch row, less what earlier batches already asked (the run row's\n// Tally is the accumulator, read by Read Cap Row just before). A person with no email at the\n// domain goes to nobody. Blank or 0 cap means Blitz is never asked.\nconst ctx=$('Read Records').first().json||{};\nconst gl=$('GL Match').first().json||{ profiles:{} };\nlet asked=0; try{ const prior=$('Read Cap Row').first().json; const raw=prior&&prior.fields?prior.fields.Tally:null; if(raw){ const t=JSON.parse(String(raw)); if(t&&String(t.execId)===String(ctx._execId)) asked=Number(t.blitzCalls)||0; } }catch(e){}\nconst cap=Math.max(0,Number(ctx._maxBlitz)||0);\nlet room=Math.max(0,cap-asked);\nconst one=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();\nconst norm=(d)=>one(d).toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst splitEmails=(s)=>one(s).split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(e));\nconst out=[]; const st={ candidates:0, noEmail:0, capped:0, cap, askedBefore:asked };\nfor(const i of $('Read Held').all()){\n  const j=i.json||{}; if(!j.id||gl.profiles[j.id]) continue;\n  st.candidates++;\n  const f=j.fields||{}; const domain=norm(f.Domain);\n  const emails=[one(f['Final Email']).toLowerCase()].concat(splitEmails(f.Email)).filter(e=>e&&domain&&(e.endsWith('@'+domain)||e.slice(e.lastIndexOf('@')+1).endsWith('.'+domain)));\n  if(!emails.length){ st.noEmail++; continue; }\n  if(room<=0){ st.capped++; continue; }\n  room--;\n  out.push({ json:{ id:j.id, domain, body:{ email:emails[0] } } });\n}\nif(!out.length) return [{ json:{ _none:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
+          "jsCode": "// BZ Requests: Blitz for the people who still have no location after GetLeads (GetLeads did not\n// answer, or answered without a country: its location is the job's, filled on a third of rows;\n// Blitz carries the person's own), by email only (Blitz resolves a person from a verified work\n// email, not from a LinkedIn URL), one credit per answer. Only within the\n// run's cap: Max Rows on the launch row, less what earlier batches already asked (the run row's\n// Tally is the accumulator, read by Read Cap Row just before). A person with no email at the\n// domain goes to nobody. Blank or 0 cap means Blitz is never asked.\nconst ctx=$('Read Records').first().json||{};\nconst gl=$('GL Match').first().json||{ profiles:{} };\nlet asked=0; try{ const prior=$('Read Cap Row').first().json; const raw=prior&&prior.fields?prior.fields.Tally:null; if(raw){ const t=JSON.parse(String(raw)); if(t&&String(t.execId)===String(ctx._execId)) asked=Number(t.blitzCalls)||0; } }catch(e){}\nconst cap=Math.max(0,Number(ctx._maxBlitz)||0);\nlet room=Math.max(0,cap-asked);\nconst one=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();\nconst norm=(d)=>one(d).toLowerCase().replace(/^https?:\\/\\//,'').replace(/^www\\./,'').replace(/\\/.*$/,'');\nconst splitEmails=(s)=>one(s).split(/[,;\\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(e));\nconst out=[]; const st={ candidates:0, noEmail:0, capped:0, cap, askedBefore:asked };\nfor(const i of $('Read Held').all()){\n  const j=i.json||{}; if(!j.id) continue;\n  const f=j.fields||{};\n  const glp=gl.profiles[j.id];\n  if(one(f['Person Country'])||(glp&&glp['Person Country'])) continue;\n  st.candidates++;\n  const domain=norm(f.Domain);\n  const emails=[one(f['Final Email']).toLowerCase()].concat(splitEmails(f.Email)).filter(e=>e&&domain&&(e.endsWith('@'+domain)||e.slice(e.lastIndexOf('@')+1).endsWith('.'+domain)));\n  if(!emails.length){ st.noEmail++; continue; }\n  if(room<=0){ st.capped++; continue; }\n  room--;\n  out.push({ json:{ id:j.id, domain, body:{ email:emails[0] } } });\n}\nif(!out.length) return [{ json:{ _none:true, _stats:st } }];\nout[0].json._stats=st;\nreturn out;\n"
         },
         "id": "epp1-0039-4000-8000-000000000039",
         "name": "BZ Requests",

@@ -83,7 +83,7 @@ People behind a secure email gateway are never mixed into a normal send. One of 
 
 **Sending**
 - only from the client's inboxes, chosen by tag, read live
-- Monday to Friday, 07:00 to 10:00 and 15:00 to 18:00 in the client's timezone, unless the client's overrides say otherwise
+- Monday to Friday, 07:00 to 14:00 in the client's timezone, unless the client's overrides say otherwise
 - limits live on the inbox, never on the campaign
 - one lead per domain per day
 

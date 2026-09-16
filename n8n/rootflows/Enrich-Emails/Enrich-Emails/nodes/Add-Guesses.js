@@ -3,8 +3,9 @@
 // domain (gated: only from Status = done rows there, majority shape), then the six most common
 // corporate shapes: first.last, first, flast, firstlast, first_last, f.last. A shape whose address
 // is already a candidate (delivered by a provider, or already tried) is not repeated. A row without
-// a first name gets no guess; shapes that need a last name are skipped when there is none.
-const state=$('MV Blitz Collect').first().json;
+// a first name gets no guess; shapes that need a last name are skipped when there is none. A row on
+// a catch-all domain gets no guess at all: a guess can never be sent to BounceBan.
+const state=$('MV Cand Collect').first().json;
 const SHAPES=['first.last','first','flast','firstlast','first_last','f.last'];
 const shape=(sh,f,l)=>{ if(!f) return ''; if(sh==='first') return f; if(!l) return ''; if(sh==='first.last') return f+'.'+l; if(sh==='flast') return f.charAt(0)+l; if(sh==='firstlast') return f+l; if(sh==='first_last') return f+'_'+l; if(sh==='f.last') return f.charAt(0)+'.'+l; return ''; };
 for(const id of state.order){

@@ -49,6 +49,10 @@ const PER = parseInt(arg('per-company', '1'), 10);
 // principal / lead / founding engineer". At depth 3 they filled 141 of 1,000
 // rows; they are reachable people, but not decision makers.
 const DMS_ONLY = args.includes('--dms-only');
+// Andy, 2026-09-16, after calling batch 1: companies under 10 employees are not
+// worth calling, "9 times out of 10". The 1-10 band is excluded by default from
+// now on; --allow-micro brings it back for a deliberate test only.
+const ALLOW_MICRO = args.includes('--allow-micro');
 const IC = /^(senior |sr\.? |staff |lead |principal |founding )?(software |full[- ]?stack |backend |back[- ]end |frontend |front[- ]end |data |ml |machine learning |ai |qa |quality assurance |mobile |ios |android )?(engineer|developer|programmer)\b/i;
 // Hands-on infra engineers (DevOps Engineer, SRE, Cloud Engineer, Platform
 // Engineer...) are people who DO infrastructure, not people who BUY it. In
@@ -225,6 +229,7 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
   let blockedByGuard = 0;
   let oversized = 0;
   let noName = 0;
+  let micro = 0;
   let icDropped = 0;
 
   const people = [];
@@ -235,6 +240,7 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
     if ((slug && guard.slugs.has(slug)) || (email && guard.emails.has(email))) { blockedByGuard++; continue; }
     const band = String(first(f[F.employees]) && first(f[F.employees]).name || first(f[F.employees]));
     const title = f[F.title] || '';
+    if (band === '1-10' && !ALLOW_MICRO) { micro++; continue; }
     if (!allowed(title, band)) continue;
     // FullEnrich matches on First Name + Last Name + Website + LinkedIn. A row
     // with one name ("Jiang", "Sanny") fails its matcher, so it never ships.
@@ -275,6 +281,7 @@ const first = (v) => Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
   console.log(`${blockedByGuard} blocked as already dialed (missed by the Dialed checkbox)`);
   console.log(`${oversized} dropped: company band says 1-50 but 75+ technical staff on record`);
   console.log(`${noName} dropped: missing first or last name (FullEnrich cannot match them)`);
+  console.log(ALLOW_MICRO ? '1-10 companies INCLUDED (--allow-micro)' : `${micro} dropped: company in the 1-10 band (Andy: under 10 employees is not worth a call)`);
   if (DMS_ONLY) console.log(`${icDropped} dropped: individual contributors (--dms-only)`);
   console.log(`${people.length} pass the per-band title rule`);
 

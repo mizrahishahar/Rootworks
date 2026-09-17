@@ -93,7 +93,7 @@ People behind a secure email gateway are never mixed into a normal send. One of 
 - a bounce rate above 5% pauses the campaign
 
 **Format**
-- plain text, always
+- plain text, always. The one exception is a campaign in a right-to-left language such as Hebrew: it is sent as HTML, with the body and the signature inside a right-to-left, right-aligned wrapper, because plain text drops the text direction
 - no open tracking, no link tracking
 - no links in the body
 - exactly one blank line between every part of the email: each paragraph, the signature and the P.S. No empty spacer lines

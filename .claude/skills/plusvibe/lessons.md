@@ -38,6 +38,7 @@ Teaches: the MCP surface by job, and every PlusVibe trap already paid for.
 
 ## Inbox and thread traps
 
+- **Hebrew campaigns must send as HTML.** *17 Sep 2026, Adelante:* a Hebrew campaign set to plain text (`send_as_txt` 1) went out left to right, because plain text drops the `dir` wrapper. The August Hebrew campaign that rendered correctly sent HTML (`is_text` 0) with every body and the signature inside `<div dir="rtl" style="text-align:right;">`. Check `send_as_txt` is 0 on any Hebrew campaign before it goes live.
 - Hebrew ships wrapped in a `dir='rtl'` container. The reply editor scrambles Hebrew: save Hebrew replies as `dir=rtl` drafts for the Operator to send.
 - The unibox lead list is workspace-wide by default; filter by campaign or a lead read belongs to a different campaign than assumed.
 - `reply_to_email` requires `reply_to_id`, `subject`, `from` (the thread's eaccount), `to`, and an HTML `body`. Read the thread back and find the returned message id; that is the proof.

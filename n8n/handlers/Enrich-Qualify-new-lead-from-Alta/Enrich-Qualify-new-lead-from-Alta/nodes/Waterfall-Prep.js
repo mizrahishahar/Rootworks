@@ -18,13 +18,10 @@ if (!contactId) {
 // own signature tier still reads the Conversation Thread on the prospect row.
 const sig = '', sigTf = '';
 const outOfIcp = f.custom_qualification_status === 'out_of_icp';
-// Every reply lands a row now (2026-09-17), but the paid tiers stay where they were: a positive reply only.
-let screen = 'INTERESTED';
-try { const o = $('Screen Reply').first().json.output; if (o && o.verdict) screen = o.verdict; } catch (e) {}
-const interested = screen !== 'PASS' && screen !== 'AUTO';
-const _call = (contactId && interested && (!outOfIcp || sig)) ? 1 : 0;
+// Every reply lands a row (2026-09-17) and every row gets its phone, Engaged included (Operator ruling
+// the same day): the screen never gates the waterfall. Out-of-ICP stays off the paid tiers, as it always was.
+const _call = (contactId && (!outOfIcp || sig)) ? 1 : 0;
 let reason = '';
 if (!contactId) reason = 'no contact row';
-else if (!interested) reason = 'not a positive reply';
 else if (outOfIcp && !sig) reason = 'out_of_icp';
 return [{ json: { _call, contactId, sig: sig || sigTf, sigIsTF: !sig && !!sigTf, reason } }];

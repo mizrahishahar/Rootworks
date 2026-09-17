@@ -1,30 +1,29 @@
-// Check Columns: the Rootflow's requirements and its own fields.
+// Check Columns: the Rootflow's requirements and its own fields (the view path only; the Hub
+// Contacts table is ours and carries its fields already).
 //
 // REQUIREMENTS (must exist, written by others, never touched here): first_name, last_name, Domain,
-// Email, LinkedIn URL, Phone. Each provider needs some of them (Supersoniq: domain + name;
-// AI-Ark: LinkedIn URL, else domain + name; LeadMagic: Email; Prospeo: Email, else name + domain),
-// and Phone is the core cell Enrich Contacts fills, read here as the first candidate. A missing
-// requirement is named and refused on the row, before any provider is called.
+// LinkedIn URL, Phone. FullEnrich is asked by LinkedIn URL when the row holds one, else by name +
+// domain; Phone is the core cell Enrich Contacts fills, and a row that already holds a number there is
+// answered from it for free. A missing requirement is named and refused on the row, before
+// FullEnrich is called.
 //
 // OWN FIELDS (created here on first use, the Rootflow rule; never renamed or retyped):
 //   Final Phone      singleLineText   the number that goes out, E.164
-//   Phone Provider   singleSelect     where Final Phone came from: database (the Phone cell),
-//                                     Supersoniq, AI-Ark, LeadMagic, Prospeo (typecast mints a new
-//                                     provider's name)
-//   Phone Type       singleSelect     direct or toll-free; a switchboard is the last resort and the
-//                                     lane says so instead of hiding it
+//   Phone Provider   singleSelect     where Final Phone came from: database (the Phone cell) or FullEnrich
+//   Phone Type       singleSelect     FullEnrich's own word for the line: mobile, landline, voip, unknown
 //   Phone Found At   dateTime
 //   Phone Status     singleSelect     done, no_phone_found, error (error is retryable)
-// The email lane's Status is not touched: the phone lane carries its own.
+// A base that ran the old four-provider lane keeps its old choices (direct, toll-free, Supersoniq...);
+// typecast mints the new ones beside them. The email lane's Status is not touched.
 const p=$('Params').first().json;
 const t=$('Resolve Table').first().json;
 const have=new Set(t.fieldNames||[]);
-const REQUIRED=['first_name','last_name','Domain','Email','LinkedIn URL','Phone'];
+const REQUIRED=['first_name','last_name','Domain','LinkedIn URL','Phone'];
 const missing=REQUIRED.filter(n=>!have.has(n));
 const OWN=[
   { name:'Final Phone', type:'singleLineText' },
-  { name:'Phone Provider', type:'singleSelect', options:{ choices:[{name:'database',color:'blueLight2'},{name:'Supersoniq',color:'purpleLight2'},{name:'AI-Ark',color:'tealLight2'},{name:'LeadMagic',color:'cyanLight2'},{name:'Prospeo',color:'orangeLight2'}] } },
-  { name:'Phone Type', type:'singleSelect', options:{ choices:[{name:'direct',color:'greenLight2'},{name:'toll-free',color:'yellowLight2'}] } },
+  { name:'Phone Provider', type:'singleSelect', options:{ choices:[{name:'database',color:'blueLight2'},{name:'FullEnrich',color:'purpleLight2'}] } },
+  { name:'Phone Type', type:'singleSelect', options:{ choices:[{name:'mobile',color:'greenLight2'},{name:'landline',color:'yellowLight2'},{name:'voip',color:'orangeLight2'},{name:'unknown',color:'grayLight2'}] } },
   { name:'Phone Found At', type:'dateTime', options:{ dateFormat:{name:'iso'}, timeFormat:{name:'24hour'}, timeZone:'utc' } },
   { name:'Phone Status', type:'singleSelect', options:{ choices:[{name:'done',color:'greenLight2'},{name:'no_phone_found',color:'grayLight2'},{name:'error',color:'redLight2'}] } }
 ];

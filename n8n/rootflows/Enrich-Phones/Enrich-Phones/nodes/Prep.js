@@ -1,40 +1,42 @@
-// Prep: the batch's state, one item, carried from stage to stage by name (the Enrich Emails shape).
-// Per row: the cleaned names, the domain, the LinkedIn URL, the best work email, and the Phone cell
-// the contact providers already delivered.
+// Prep: the batch's state and the one FullEnrich submission it makes, one item.
 //
-// The tiers, first hit wins, unchanged from the machine this Rootflow grew out of:
-//   database -> Supersoniq (resolve at the domain, then unlock by contact id) -> AI-Ark -> LeadMagic
-//   -> Prospeo
-// A person whose Phone cell is already filled is answered from the database and costs nothing: the
-// view is the spend cap, so feed this Rootflow a view where Phone is empty when a fresh lookup is
-// what you want. A direct number always beats a toll-free switchboard; a toll-free hit is held aside
-// and only written when no tier delivered a direct line.
+// The rule: FullEnrich is the only lookup. A person whose phone cell is already filled is answered
+// from it and never sent (the view is the spend cap: feed this Rootflow a view where Phone is empty
+// when a fresh lookup is what you want). Everyone else is asked once, by LinkedIn URL when the row
+// holds one, else by first name + last name + domain. A person with neither cannot be asked: the row
+// is marked error with the reason and costs nothing.
+//
+// One batch is at most 100 people, which is exactly FullEnrich's bulk maximum: one batch, one
+// submission, contact.phones only (10 credits a number found, nothing for a miss). The row id rides
+// in `custom` and comes back on the result, so the answer is matched by id, never by position.
 const rows=$('Read Records').all().map(i=>i.json||{}).filter(j=>j.id);
-const s=(v)=>String(Array.isArray(v)?(v[0]||''):(v==null?'':v)).trim();
-const clean=(v)=>String(v||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'');
+const first=rows[0]||{};
 const digits=(v)=>String(v||'').replace(/\D/g,'');
 const plausible=(v)=>{ const d=digits(v); return d.length>=7&&d.length<=15; };
-const isTollFree=(v)=>{ let x=digits(v); if(x.length===11&&x.charAt(0)==='1') x=x.slice(1); return x.length===10&&/^(?:800|833|844|855|866|877|888)/.test(x); };
-const emails=(v)=>Array.from(new Set(String(v||'').split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))));
-const state={ order:[], rows:{}, domains:{}, stats:{ rows:rows.length, fromDatabase:0, sqDomains:0, sqResolveCalls:0, sqMatched:0, sqUnlockCalls:0, sqFound:0, arkCalls:0, arkFound:0, lmCalls:0, lmFound:0, prCalls:0, prFound:0, tollFreeOnly:0, skips:{} } };
+const cut=(v)=>String(v||'').slice(0,100);
+const state={ mode:first._mode||'view', order:[], rows:{}, stats:{ rows:rows.length, fromDatabase:0, notAskable:0, asked:0 } };
+const data=[];
 for(const r of rows){
-  const f=r.fields||{};
-  const domain=s(f.Domain).toLowerCase();
-  const firstRaw=s(f.first_name), lastRaw=s(f.last_name);
-  // Email is the lane's candidate list; the address at the row's own domain is the work email the
-  // phone finders want, and a foreign-domain address is the fallback.
-  const list=emails(f.Email);
-  const own=list.filter(e=>domain&&(e.slice(e.lastIndexOf('@')+1)===domain||e.slice(e.lastIndexOf('@')+1).endsWith('.'+domain)));
-  const email=own[0]||list[0]||'';
-  const row={ id:r.id, firstRaw, lastRaw, first:clean(firstRaw), last:clean(lastRaw), fullName:(firstRaw+' '+lastRaw).trim(), domain, linkedin:s(f['LinkedIn URL']), email, resolved:null, tf:null, sqContactId:'', asked:{ sq:false, ark:false, lm:false, pr:false }, error:'' };
-  const held=s(f.Phone);
-  if(held&&plausible(held)){
-    row.resolved={ phone:held, provider:'database', type:isTollFree(held)?'toll-free':'direct' };
+  const p=r.person||{};
+  const row={ id:r.id, resolved:null, asked:false, error:'' };
+  if(p.held&&plausible(p.held)){
+    row.resolved={ phone:p.held, provider:'database', type:'unknown' };
     state.stats.fromDatabase++;
+  } else if(p.linkedin||(p.first&&p.last&&p.domain)){
+    const c={ enrich_fields:['contact.phones'], custom:{ row_id:String(r.id) } };
+    if(p.first&&p.last){ c.first_name=cut(p.first); c.last_name=cut(p.last); }
+    if(p.domain) c.domain=cut(p.domain);
+    if(p.linkedin) c.linkedin_url=p.linkedin;
+    data.push(c);
+    row.asked=true;
+    state.stats.asked++;
+  } else {
+    row.error='cannot be asked: no LinkedIn URL and no first name + last name + domain';
+    state.stats.notAskable++;
   }
   state.order.push(r.id);
   state.rows[r.id]=row;
-  if(!row.resolved&&domain){ (state.domains[domain]=state.domains[domain]||[]).push(r.id); }
 }
-state.stats.sqDomains=Object.keys(state.domains).length;
+state._none=!data.length;
+state.body={ name:'Enrich Phones '+String(first._execId||'')+' ('+(first._tableName||'People')+', '+data.length+')', data };
 return [{ json:state }];

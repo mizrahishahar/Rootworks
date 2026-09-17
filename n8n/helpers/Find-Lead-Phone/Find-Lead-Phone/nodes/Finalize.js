@@ -1,8 +1,8 @@
-// The verdict. Direct number wins; a toll-free switchboard is the last resort.
-// The response body is what the caller (Handle New Lead, a ClayRoots automation,
-// or a one-off curl) gets back synchronously.
+// The verdict. A direct number wins (the row's own phone, the reply signature, FullEnrich); a
+// toll-free signature is the last resort and says so in its source. The response body is what the
+// calling handler gets back synchronously and puts on its Slack card and in its own run row.
 const j0 = $input.first().json;
-const j = Object.assign({}, j0); delete j.callBody;
+const j = Object.assign({}, j0); delete j.body;
 const toE164 = (raw) => {
   const t = String(raw || '').trim();
   if (!t) return '';
@@ -22,6 +22,6 @@ let phone = acc.phone, source = acc.source;
 if (!phone && acc.tf) { phone = acc.tf; source = acc.tf_source; }
 if (!phone) source = 'none';
 phone = toE164(phone);
-j.result = { ok: true, phone, phone_source: source, tried: acc.tried, skipped: acc.skipped, failed: acc.failed, recordId: j.recordId || '' };
+j.result = { ok: true, phone, phone_source: source, line_type: acc.line_type || '', tried: acc.tried, skipped: acc.skipped, failed: acc.failed, recordId: j.recordId || '' };
 j._writeback = !!phone && source !== 'existing';
 return [{ json: j }];

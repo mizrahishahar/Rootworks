@@ -1,5 +1,4 @@
-// Builds the person and the waterfall accumulator from the Hub Prospects row (the contact door only;
-// the Rootflow's People pipeline builds its state in Prep).
+// Builds the person and the phone accumulator from the Hub Contacts row.
 const p0 = $('Contact Params').first().json;
 const s = (v) => { if (Array.isArray(v)) v = v[0]; return String(v == null ? '' : v).trim(); };
 let f = null;

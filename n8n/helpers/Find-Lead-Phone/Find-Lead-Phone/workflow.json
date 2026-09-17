@@ -1,0 +1,1768 @@
+{
+  "updatedAt": "2026-09-17T09:58:56.821Z",
+  "createdAt": "2026-09-17T09:58:56.821Z",
+  "id": "HxFgzxj3FwZgRF0h",
+  "name": "Find Lead Phone",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waterfall-phones",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f1p00001-0000-4000-8000-000000000001",
+      "name": "Contact Door",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "f1p0d00r-6d48-4b1e-9c05-2ab7de5140f3",
+      "notes": "POST /webhook/waterfall-phones {recordId, signature_phone?, force?, clientRecordId?}: the path the lead handlers already call, kept so they are untouched. Answered synchronously by Respond."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Contact-Params.js"
+      },
+      "id": "f1p00002-0000-4000-8000-000000000002",
+      "name": "Contact Params",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._invalid ? 'bad' : 'ok' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "ok"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00003-0000-4000-8000-000000000003",
+      "name": "Contact Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "id": "={{ $('Contact Params').first().json.recordId }}",
+        "options": {}
+      },
+      "id": "f1p00004-0000-4000-8000-000000000004",
+      "name": "Fetch Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        -120
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Person.js"
+      },
+      "id": "f1p00005-0000-4000-8000-000000000005",
+      "name": "Person",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00006-0000-4000-8000-000000000006",
+      "name": "Company Linked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "id": "={{ $('Person').first().json.companyId }}",
+        "options": {}
+      },
+      "id": "f1p00007-0000-4000-8000-000000000007",
+      "name": "Fetch Company",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        -240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "The company Prospect row carries the synced Conversation Thread, where the lead's own signature block (and its phone) survives."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Scrape-Signature.js"
+      },
+      "id": "f1p00008-0000-4000-8000-000000000008",
+      "name": "Scrape Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/FE-Prep.js"
+      },
+      "id": "f1p00009-0000-4000-8000-000000000009",
+      "name": "FE Prep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00010-0000-4000-8000-000000000010",
+      "name": "Call FE?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.fullenrich.com/api/v2/contact/enrich/bulk",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "fullEnrichApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "silentFail",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "f1p00011-0000-4000-8000-000000000011",
+      "name": "FE Submit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2200,
+        -240
+      ],
+      "credentials": {
+        "fullEnrichApi": {
+          "id": "BeyvkllfXzxiBLhb",
+          "name": "FullEnrich account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "FullEnrich bulk enrichment with one contact, contact.phones only, 10 credits when a number is found. Credential: FullEnrich account (the FullEnrich API credential, sent as a Bearer key). No credential, a refused key or no credits is named in the answer; the lead flows on without a phone."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Submit-Check.js"
+      },
+      "id": "f1p00012-0000-4000-8000-000000000012",
+      "name": "Submit Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.enrichmentId || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00013-0000-4000-8000-000000000013",
+      "name": "Submitted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Poll-Input.js"
+      },
+      "id": "f1p00014-0000-4000-8000-000000000014",
+      "name": "Poll Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://app.fullenrich.com/api/v2/contact/enrich/bulk/{{ $json.enrichmentId }}{{ $json._force ? '?forceResults=true' : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "fullEnrichApi",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "f1p00015-0000-4000-8000-000000000015",
+      "name": "FE Poll",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3080,
+        -360
+      ],
+      "credentials": {
+        "fullEnrichApi": {
+          "id": "BeyvkllfXzxiBLhb",
+          "name": "FullEnrich account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "GET the enrichment every 10 seconds; at 90 seconds one last read is forced, because the calling handler waits 120."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Poll-Gate.js"
+      },
+      "id": "f1p00016-0000-4000-8000-000000000016",
+      "name": "Poll Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._loop }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00017-0000-4000-8000-000000000017",
+      "name": "Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3520,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json._nextWaitSec }}",
+        "unit": "seconds"
+      },
+      "id": "f1p00018-0000-4000-8000-000000000018",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3740,
+        -480
+      ],
+      "webhookId": "abp00018-0000-4000-8000-000000000018",
+      "notes": "10 seconds between reads, in memory."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/FE-Parse.js"
+      },
+      "id": "f1p00019-0000-4000-8000-000000000019",
+      "name": "FE Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Finalize.js"
+      },
+      "id": "f1p00020-0000-4000-8000-000000000020",
+      "name": "Finalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._writeback ? 'yes' : 'no' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f1p00021-0000-4000-8000-000000000021",
+      "name": "Writeback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Once.js"
+      },
+      "id": "f1p00022-0000-4000-8000-000000000022",
+      "name": "Once",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "f1p00023-0000-4000-8000-000000000023",
+      "name": "Write Row",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        -120
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Finalize').first().json.result }}",
+        "options": {}
+      },
+      "id": "f1p00024-0000-4000-8000-000000000024",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5060,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Contact Door": {
+      "main": [
+        [
+          {
+            "node": "Contact Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Params": {
+      "main": [
+        [
+          {
+            "node": "Contact Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Valid?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Row": {
+      "main": [
+        [
+          {
+            "node": "Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Person": {
+      "main": [
+        [
+          {
+            "node": "Company Linked?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Linked?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Company",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FE Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Company": {
+      "main": [
+        [
+          {
+            "node": "Scrape Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Signature": {
+      "main": [
+        [
+          {
+            "node": "FE Prep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FE Prep": {
+      "main": [
+        [
+          {
+            "node": "Call FE?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call FE?": {
+      "main": [
+        [
+          {
+            "node": "FE Submit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FE Submit": {
+      "main": [
+        [
+          {
+            "node": "Submit Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit Check": {
+      "main": [
+        [
+          {
+            "node": "Submitted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submitted?": {
+      "main": [
+        [
+          {
+            "node": "Poll Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Input": {
+      "main": [
+        [
+          {
+            "node": "FE Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FE Poll": {
+      "main": [
+        [
+          {
+            "node": "Poll Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Gate": {
+      "main": [
+        [
+          {
+            "node": "Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending?": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FE Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Poll Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FE Parse": {
+      "main": [
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize": {
+      "main": [
+        [
+          {
+            "node": "Writeback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writeback?": {
+      "main": [
+        [
+          {
+            "node": "Once",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Once": {
+      "main": [
+        [
+          {
+            "node": "Write Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Row": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "94ba4e02-9b98-4685-a7d9-fa508d0d5f67",
+  "activeVersionId": "94ba4e02-9b98-4685-a7d9-fa508d0d5f67",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-09-17T09:58:56.829Z",
+      "createdAt": "2026-09-17T09:58:56.829Z",
+      "role": "workflow:owner",
+      "workflowId": "HxFgzxj3FwZgRF0h",
+      "projectId": "pyoZAgnc0vv0Gq9W"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-09-17T09:58:56.835Z",
+    "createdAt": "2026-09-17T09:58:56.835Z",
+    "versionId": "94ba4e02-9b98-4685-a7d9-fa508d0d5f67",
+    "workflowId": "HxFgzxj3FwZgRF0h",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "waterfall-phones",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "f1p00001-0000-4000-8000-000000000001",
+        "name": "Contact Door",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "f1p0d00r-6d48-4b1e-9c05-2ab7de5140f3",
+        "notes": "POST /webhook/waterfall-phones {recordId, signature_phone?, force?, clientRecordId?}: the path the lead handlers already call, kept so they are untouched. Answered synchronously by Respond."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Find Lead Phone: one Hub Contacts row, answered synchronously. POST /webhook/waterfall-phones with\n// { recordId, signature_phone?, force?, clientRecordId? }: Enrich Qualify new lead from PlusVibe,\n// Email Bison and Alta all call it this way and put the number on their Slack cards. The path keeps\n// its old name so the handlers are untouched.\n// signature_phone exists only here: only a caller holding the RAW reply has it. Everything else is\n// read off the Hub row itself. A helper writes no Hub Automations row: the handler's row carries the\n// phone and where it came from.\nconst s = (v) => String(v == null ? '' : v).trim();\nlet b = null;\ntry { const w = $('Contact Door').first().json; if (w) b = w.body || w; } catch (e) { b = null; }\nif (!b) b = {};\nconst recordId = s(b.recordId);\nreturn [{ json: {\n  startedAt: new Date().toISOString(),\n  recordId,\n  force: b.force === true || s(b.force) === 'true',\n  clientRecordId: s(b.clientRecordId),\n  signature_phone: s(b.signature_phone),\n  _invalid: !recordId,\n  _error: recordId ? '' : 'payload needs recordId',\n} }];\n"
+        },
+        "id": "f1p00002-0000-4000-8000-000000000002",
+        "name": "Contact Params",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json._invalid ? 'bad' : 'ok' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "ok"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00003-0000-4000-8000-000000000003",
+        "name": "Contact Valid?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          440,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "id": "={{ $('Contact Params').first().json.recordId }}",
+          "options": {}
+        },
+        "id": "f1p00004-0000-4000-8000-000000000004",
+        "name": "Fetch Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          -120
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "jsCode": "// Builds the person and the phone accumulator from the Hub Contacts row.\nconst p0 = $('Contact Params').first().json;\nconst s = (v) => { if (Array.isArray(v)) v = v[0]; return String(v == null ? '' : v).trim(); };\nlet f = null;\ntry { const r = $('Fetch Row').first().json || {}; f = r.fields || (r.id ? r : null); } catch (e) { f = null; }\nconst acc = { phone: '', source: 'none', tf: '', tf_source: '', tried: [], skipped: [], failed: [] };\nconst out = { recordId: p0.recordId, force: p0.force, clientRecordId: p0.clientRecordId, person: {}, companyId: '', acc, _invalid: p0._invalid, _error: p0._error };\nif (out._invalid) return [{ json: out }];\nif (!f) { out._invalid = true; out._error = 'contact ' + p0.recordId + ' not readable'; return [{ json: out }]; }\nconst FREEMAIL = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','aol.com','proton.me','protonmail.com','live.com','msn.com','gmx.com','mail.com','walla.co.il','walla.com']);\nconst email = s(f.email).toLowerCase();\nlet domain = s(f.domain).toLowerCase();\nif (!domain && email.includes('@')) { const d = email.split('@')[1]; if (d && !FREEMAIL.has(d)) domain = d; }\nout.person = {\n  email,\n  first_name: s(f.firstName),\n  last_name: s(f.lastName),\n  full_name: (s(f.firstName) + ' ' + s(f.lastName)).trim(),\n  domain,\n  linkedin: s(f.linkedin),\n};\n// The contact links to its company Prospect row, which carries the synced\n// Conversation Thread. The scrape step reads it for a signature phone.\nconst link = f.Company;\nif (Array.isArray(link) && link.length) out.companyId = String(link[0] && link[0].id ? link[0].id : link[0]);\nelse if (link && Array.isArray(link.linkedRecordIds) && link.linkedRecordIds.length) out.companyId = String(link.linkedRecordIds[0]);\nconst isTollFree = (p) => { let x = String(p || '').replace(/\\D/g, ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\nconst existingPhone = s(f.phone);\nif (existingPhone && !p0.force) { acc.phone = existingPhone; acc.source = 'existing'; return [{ json: out }]; }\nconst sig = p0.signature_phone;\nif (sig) {\n  acc.tried.push('signature');\n  if (isTollFree(sig)) { acc.tf = sig; acc.tf_source = 'signature-tollfree'; }\n  else { acc.phone = sig; acc.source = 'signature'; }\n}\nreturn [{ json: out }];\n"
+        },
+        "id": "f1p00005-0000-4000-8000-000000000005",
+        "name": "Person",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ ($json.companyId && !$json.acc.phone && !$json._invalid) ? 'yes' : 'no' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "yes"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00006-0000-4000-8000-000000000006",
+        "name": "Company Linked?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblEPFCO0kJn2tMyK"
+          },
+          "id": "={{ $('Person').first().json.companyId }}",
+          "options": {}
+        },
+        "id": "f1p00007-0000-4000-8000-000000000007",
+        "name": "Fetch Company",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          1320,
+          -240
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "The company Prospect row carries the synced Conversation Thread, where the lead's own signature block (and its phone) survives."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Tier 0b: the stored Conversation Thread on the company Prospect row.\n// The 12-hourly thread syncs keep signature blocks intact (proven live 2026-08-20:\n// Zeron, MX Wholesale, What A Move all carry the lead's number in THEM messages),\n// so a Hub contact fired by record id alone can still get the signature phone.\n// A signature_phone passed in the payload (Handle New Lead, raw reply in hand) wins.\nconst prev = $('Person').first().json;\nconst j = Object.assign({}, prev);\nconst acc = j.acc;\nif (acc.phone) return [{ json: j }];\nlet thread = '';\ntry { const r = $('Fetch Company').first().json || {}; const f = r.fields || {}; thread = String(f['Conversation Thread'] || f['Conversation Thread OLD'] || ''); } catch (e) { thread = ''; }\nif (!thread) return [{ json: j }];\nif (acc.tried.indexOf('signature') === -1) acc.tried.push('signature');\n// Collect THEM blocks only: the lead's own messages, where their signature lives.\nconst blocks = [];\nconst re = /\\*\\*\\[[^\\]]*\\]\\s*(THEM|US):\\*\\*/g;\nlet m, marks = [];\nwhile ((m = re.exec(thread)) !== null) marks.push({ dir: m[1], start: m.index, end: re.lastIndex });\nfor (let i = 0; i < marks.length; i++) {\n  if (marks[i].dir !== 'THEM') continue;\n  const bodyEnd = i + 1 < marks.length ? marks[i + 1].start : thread.length;\n  blocks.push(thread.slice(marks[i].end, bodyEnd));\n}\nif (!blocks.length) blocks.push(thread);\n// URLs, cid: refs, and bracketed asset tags carry long digit runs (upload timestamps,\n// uuids) that pattern-match as phones — proven by a live false positive (a Dropbox\n// filename's 20240212154056). Strip them, then accept only formatted numbers: a bare\n// unbroken 11+ digit run without a leading + is never a real signature phone.\nconst scrub = (txt) => String(txt || '')\n  .replace(/https?:\\/\\/\\S+/gi, ' ')\n  .replace(/\\bwww\\.\\S+/gi, ' ')\n  .replace(/\\bcid:\\S+/gi, ' ')\n  .replace(/\\[[^\\]\\n]*\\]/g, ' ');\nconst grabPhones = (txt) => { const out = []; const pre = /(?:\\+?\\d{1,3}[\\t .\\-]?)?(?:\\(?\\d{2,4}\\)?[\\t .\\-]?){2,4}\\d{2,4}/g; let mm; while ((mm = pre.exec(scrub(txt))) !== null) { const raw = mm[0].trim(); const dg = raw.replace(/\\D/g, ''); if (dg.length < 9 || dg.length > 15) continue; if (/^\\d{11,}$/.test(raw)) continue; out.push({ raw, dg }); } return out; };\nconst isTollFree = (dg) => { let x = String(dg || ''); if (x.length === 11 && x.charAt(0) === '1') x = x.slice(1); return x.length === 10 && /^(?:800|833|844|855|866|877|888)/.test(x); };\n// Latest reply first: the freshest signature is the most likely direct line.\nlet hit = '', tf = '';\nfor (let i = blocks.length - 1; i >= 0 && !hit; i--) {\n  for (const c of grabPhones(blocks[i])) {\n    if (isTollFree(c.dg)) { if (!tf) tf = c.raw; }\n    else { hit = c.raw; break; }\n  }\n}\nif (hit) { acc.phone = hit; acc.source = 'signature'; }\nelse if (tf && !acc.tf) { acc.tf = tf; acc.tf_source = 'signature-tollfree'; }\nreturn [{ json: j }];\n"
+        },
+        "id": "f1p00008-0000-4000-8000-000000000008",
+        "name": "Scrape Signature",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// FE Prep: decides whether FullEnrich is asked for this lead, and builds the one-contact submission.\n// A direct number already in hand (the row's own phone, or the reply signature) ends the search for\n// free. A toll-free signature does not: FullEnrich is still asked for a direct line, and the\n// switchboard stays the fallback. Asked by LinkedIn URL when the row holds one, else by first name +\n// last name + domain; a lead with neither cannot be asked and the skip is named in the answer.\nconst j = Object.assign({}, $input.first().json || {});\nconst acc = j.acc || { phone: '', source: 'none', tf: '', tf_source: '', tried: [], skipped: [], failed: [] };\nj.acc = acc;\nj._call = false;\nif (j._invalid || acc.phone) return [{ json: j }];\nconst p = j.person || {};\nconst cut = (v) => String(v || '').slice(0, 100);\nif (!(p.linkedin || (p.first_name && p.last_name && p.domain))) {\n  acc.skipped.push('FullEnrich: cannot be asked (no LinkedIn URL and no first name + last name + domain)');\n  return [{ json: j }];\n}\nconst c = { enrich_fields: ['contact.phones'], custom: { row_id: String(j.recordId) } };\nif (p.first_name && p.last_name) { c.first_name = cut(p.first_name); c.last_name = cut(p.last_name); }\nif (p.domain) c.domain = cut(p.domain);\nif (p.linkedin) c.linkedin_url = p.linkedin;\nj._call = true;\nj.body = { name: 'Find Lead Phone ' + String(j.recordId), data: [c] };\nacc.tried.push('FullEnrich');\nreturn [{ json: j }];\n"
+        },
+        "id": "f1p00009-0000-4000-8000-000000000009",
+        "name": "FE Prep",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json._call ? 'yes' : 'no' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "yes"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00010-0000-4000-8000-000000000010",
+        "name": "Call FE?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1980,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://app.fullenrich.com/api/v2/contact/enrich/bulk",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "fullEnrichApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "silentFail",
+                "value": "true"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.body) }}",
+          "options": {
+            "timeout": 120000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "f1p00011-0000-4000-8000-000000000011",
+        "name": "FE Submit",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2200,
+          -240
+        ],
+        "credentials": {
+          "fullEnrichApi": {
+            "id": "BeyvkllfXzxiBLhb",
+            "name": "FullEnrich account"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "FullEnrich bulk enrichment with one contact, contact.phones only, 10 credits when a number is found. Credential: FullEnrich account (the FullEnrich API credential, sent as a Bearer key). No credential, a refused key or no credits is named in the answer; the lead flows on without a phone."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Submit Check: FullEnrich's answer to the submission becomes the poll carrier: the enrichment id, or\n// the reason there is none. No credential on the node, a refused key, no credits, a rate limit or a\n// dead API are all a named skip on the batch, never a crash: the people it carried stay retryable.\n// n8n hands a node failure over as {error}: a plain string (\"Credentials not found\") or an object\n// with message and description. Read both shapes.\nconst errMsg=(e)=>{ if(!e) return 'call failed'; if(typeof e==='string') return e; return String((e.message||'')+' '+(e.description||'')).trim()||'call failed'; };\nconst j=$input.first().json||{};\nconst carrier={ enrichmentId:'', submitErr:'', status:'', polls:0, _force:false, _loop:false, _t0:Date.now() };\nif(j.error&&j.body===undefined&&j.enrichment_id===undefined){\n  const m=errMsg(j.error);\n  carrier.submitErr=(/credential/i.test(m)?'FullEnrich: no credential on the FullEnrich nodes':'FullEnrich: '+m).slice(0,200);\n  return [{ json:carrier }];\n}\nconst code=Number(j.statusCode)||200;\nlet b=(j.body!==undefined)?j.body:j;\nif(typeof b==='string'){ try{ b=JSON.parse(b); }catch(e){ b={ message:b }; } }\nb=b||{};\nif(code>=200&&code<300&&b.enrichment_id){ carrier.enrichmentId=String(b.enrichment_id); carrier.status='CREATED'; return [{ json:carrier }]; }\nconst why=String(b.code||'')+' '+String(b.message||'');\nif(code===401||/authorization|api\\.key/i.test(why)) carrier.submitErr='FullEnrich: the API key was refused (HTTP '+code+' '+why.trim()+')';\nelse if(code===402||/credit/i.test(why)) carrier.submitErr='FullEnrich: out of credits (HTTP '+code+' '+why.trim()+')';\nelse if(code===429) carrier.submitErr='FullEnrich: rate limited at submit (HTTP 429 '+why.trim()+')';\nelse carrier.submitErr=('FullEnrich: submit refused (HTTP '+code+' '+(why.trim()||JSON.stringify(b).slice(0,120))+')');\ncarrier.submitErr=carrier.submitErr.slice(0,200);\nreturn [{ json:carrier }];\n"
+        },
+        "id": "f1p00012-0000-4000-8000-000000000012",
+        "name": "Submit Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.enrichmentId || '' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00013-0000-4000-8000-000000000013",
+        "name": "Submitted?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2640,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Poll Input: the carrier of the open enrichment, re-emitted each round so FE Poll asks once and\n// Poll Gate folds the answer onto it. First round from Submit Check, later rounds from the Wait.\nconst c=Object.assign({}, $input.first().json||{});\ndelete c.found;\nreturn [{ json:c }];\n"
+        },
+        "id": "f1p00014-0000-4000-8000-000000000014",
+        "name": "Poll Input",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2860,
+          -360
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "=https://app.fullenrich.com/api/v2/contact/enrich/bulk/{{ $json.enrichmentId }}{{ $json._force ? '?forceResults=true' : '' }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "fullEnrichApi",
+          "options": {
+            "timeout": 60000,
+            "response": {
+              "response": {
+                "neverError": true,
+                "fullResponse": true
+              }
+            }
+          }
+        },
+        "id": "f1p00015-0000-4000-8000-000000000015",
+        "name": "FE Poll",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          3080,
+          -360
+        ],
+        "credentials": {
+          "fullEnrichApi": {
+            "id": "BeyvkllfXzxiBLhb",
+            "name": "FullEnrich account"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "notes": "GET the enrichment every 10 seconds; at 90 seconds one last read is forced, because the calling handler waits 120."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Poll Gate: one status answer folded onto the carrier. FullEnrich says CREATED or IN_PROGRESS while\n// it works (or answers 400 error.enrichment.in_progress), and FINISHED, CANCELED or\n// CREDITS_INSUFFICIENT when it has stopped. The loop asks every 10 seconds for up to 90 seconds (the calling handler waits 120); at\n// the cap one last read is forced (forceResults) so whatever FullEnrich found so far is kept, and the\n// people without an answer stay retryable. Only the phones ride on: the profile FullEnrich sends back\n// with a LinkedIn lookup is dropped here so the batch stays small.\nconst MAX=90*1000, WAIT=10;\nconst c=Object.assign({}, $('Poll Input').first().json||{});\nconst j=$input.first().json||{};\nconst code=Number(j.statusCode)||0;\nlet b=(j.body!==undefined)?j.body:j;\nif(typeof b==='string'){ try{ b=JSON.parse(b); }catch(e){ b={}; } }\nb=b||{};\nconst elapsed=Date.now()-(Number(c._t0)||Date.now());\nc.polls=(Number(c.polls)||0)+1;\nconst wasForced=!!c._force;\nconst pick=(list)=>(Array.isArray(list)?list:[]).map(d=>{\n  const ci=(d&&d.contact_info)||{};\n  const ph=ci.most_probable_phone||((Array.isArray(ci.phones)&&ci.phones[0])||null);\n  return { rowId:String(((d&&d.custom)||{}).row_id||''), number:ph?String(ph.number||''):'', lineType:ph?String(ph.line_type||''):'', region:ph?String(ph.region||''):'' };\n}).filter(x=>x.rowId);\nconst STOPPED=['FINISHED','CANCELED','CREDITS_INSUFFICIENT'];\nlet settled=false;\nif(j.error&&j.body===undefined&&b.status===undefined){\n  c.pollErr=String((j.error&&j.error.message)||j.error||'poll failed').slice(0,160);\n} else if(code===401||code===404){\n  c.pollErr='HTTP '+code+' '+String(b.code||'')+' '+String(b.message||''); c.status='UNREADABLE'; settled=true;\n} else if(b.status){\n  c.status=String(b.status); c.pollErr='';\n  if(STOPPED.indexOf(c.status)>-1||wasForced){ c.found=pick(b.data); c.credits=Number((b.cost||{}).credits)||0; settled=true; }\n} else {\n  // 400 error.enrichment.in_progress, 429, or an answer without a status: still open.\n  c.pollErr=(code&&code!==400)?('HTTP '+code+' '+String(b.code||'')):'';\n}\nif(!settled&&wasForced){ settled=true; }\nif(!settled&&elapsed>=MAX){ c._force=true; }\nc.timedOut=settled&&wasForced&&STOPPED.indexOf(c.status)<0;\nc._loop=!settled;\nc._nextWaitSec=c._force?1:WAIT;\nc._elapsedS=Math.round(elapsed/1000);\nreturn [{ json:c }];\n"
+        },
+        "id": "f1p00016-0000-4000-8000-000000000016",
+        "name": "Poll Gate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3300,
+          -360
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json._loop }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                },
+                "rightValue": ""
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00017-0000-4000-8000-000000000017",
+        "name": "Pending?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3520,
+          -360
+        ]
+      },
+      {
+        "parameters": {
+          "amount": "={{ $json._nextWaitSec }}",
+          "unit": "seconds"
+        },
+        "id": "f1p00018-0000-4000-8000-000000000018",
+        "name": "Wait",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          3740,
+          -480
+        ],
+        "webhookId": "abp00018-0000-4000-8000-000000000018",
+        "notes": "10 seconds between reads, in memory."
+      },
+      {
+        "parameters": {
+          "jsCode": "// FE Parse: FullEnrich's answer folded onto the lead. The carrier arrives on the input: from the poll\n// loop when it settled (or hit the 90-second cap, where one forced read keeps whatever was found),\n// from Submit Check when the submission was refused. A number found is the lead's phone; no\n// credential or no credits is a named skip; anything else that kept FullEnrich from answering is a\n// named failure. The lead flows on either way.\nconst j = Object.assign({}, $('FE Prep').first().json || {});\ndelete j.body;\nconst acc = j.acc;\nconst c = $input.first().json || {};\nconst x = (c.found || [])[0] || null;\nif (x && x.number) {\n  acc.phone = x.number;\n  acc.source = 'FullEnrich';\n  acc.line_type = String(x.lineType || '').toLowerCase() || 'unknown';\n} else if (c.submitErr) {\n  if (/no credential|out of credits/.test(c.submitErr)) acc.skipped.push(c.submitErr); else acc.failed.push(c.submitErr);\n} else if (c.status === 'CREDITS_INSUFFICIENT') {\n  acc.skipped.push('FullEnrich: out of credits');\n} else if (c.status === 'UNREADABLE' || c.status === 'CANCELED') {\n  acc.failed.push('FullEnrich: enrichment ' + (c.enrichmentId || '?') + ' ' + c.status.toLowerCase() + ' ' + (c.pollErr || ''));\n} else if (c.timedOut) {\n  acc.failed.push('FullEnrich: no answer inside 90 seconds (enrichment ' + (c.enrichmentId || '?') + ' may still finish and charge on their side)');\n}\nreturn [{ json: j }];\n"
+        },
+        "id": "f1p00019-0000-4000-8000-000000000019",
+        "name": "FE Parse",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3960,
+          -240
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// The verdict. A direct number wins (the row's own phone, the reply signature, FullEnrich); a\n// toll-free signature is the last resort and says so in its source. The response body is what the\n// calling handler gets back synchronously and puts on its Slack card and in its own run row.\nconst j0 = $input.first().json;\nconst j = Object.assign({}, j0); delete j.body;\nconst toE164 = (raw) => {\n  const t = String(raw || '').trim();\n  if (!t) return '';\n  const d = t.replace(/\\D/g, '');\n  if (t.charAt(0) === '+') return '+' + d;\n  if (d.length === 11 && d.charAt(0) === '1') return '+' + d;\n  if (d.length === 10 && d.charAt(0) !== '0') return '+1' + d;\n  return t;\n};\nif (j._invalid) {\n  j.result = { ok: false, error: j._error || 'invalid payload', phone: '', phone_source: 'none' };\n  j._writeback = false;\n  return [{ json: j }];\n}\nconst acc = j.acc;\nlet phone = acc.phone, source = acc.source;\nif (!phone && acc.tf) { phone = acc.tf; source = acc.tf_source; }\nif (!phone) source = 'none';\nphone = toE164(phone);\nj.result = { ok: true, phone, phone_source: source, line_type: acc.line_type || '', tried: acc.tried, skipped: acc.skipped, failed: acc.failed, recordId: j.recordId || '' };\nj._writeback = !!phone && source !== 'existing';\nreturn [{ json: j }];\n"
+        },
+        "id": "f1p00020-0000-4000-8000-000000000020",
+        "name": "Finalize",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4180,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json._writeback ? 'yes' : 'no' }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "yes"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f1p00021-0000-4000-8000-000000000021",
+        "name": "Writeback?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4400,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// The single update item for the Hub Contacts row.\nconst f = $('Finalize').first().json;\nreturn [{ json: { id: f.recordId, phone: f.result.phone, 'Phone Source': f.result.phone_source } }];\n"
+        },
+        "id": "f1p00022-0000-4000-8000-000000000022",
+        "name": "Once",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          4620,
+          -120
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "id": "f1p00023-0000-4000-8000-000000000023",
+        "name": "Write Row",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          4840,
+          -120
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $('Finalize').first().json.result }}",
+          "options": {}
+        },
+        "id": "f1p00024-0000-4000-8000-000000000024",
+        "name": "Respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          5060,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Contact Door": {
+        "main": [
+          [
+            {
+              "node": "Contact Params",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contact Params": {
+        "main": [
+          [
+            {
+              "node": "Contact Valid?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contact Valid?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Row": {
+        "main": [
+          [
+            {
+              "node": "Person",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Person": {
+        "main": [
+          [
+            {
+              "node": "Company Linked?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Company Linked?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Company",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "FE Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Company": {
+        "main": [
+          [
+            {
+              "node": "Scrape Signature",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Scrape Signature": {
+        "main": [
+          [
+            {
+              "node": "FE Prep",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FE Prep": {
+        "main": [
+          [
+            {
+              "node": "Call FE?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call FE?": {
+        "main": [
+          [
+            {
+              "node": "FE Submit",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FE Submit": {
+        "main": [
+          [
+            {
+              "node": "Submit Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Submit Check": {
+        "main": [
+          [
+            {
+              "node": "Submitted?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Submitted?": {
+        "main": [
+          [
+            {
+              "node": "Poll Input",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "FE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Poll Input": {
+        "main": [
+          [
+            {
+              "node": "FE Poll",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FE Poll": {
+        "main": [
+          [
+            {
+              "node": "Poll Gate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Poll Gate": {
+        "main": [
+          [
+            {
+              "node": "Pending?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pending?": {
+        "main": [
+          [
+            {
+              "node": "Wait",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "FE Parse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait": {
+        "main": [
+          [
+            {
+              "node": "Poll Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FE Parse": {
+        "main": [
+          [
+            {
+              "node": "Finalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Finalize": {
+        "main": [
+          [
+            {
+              "node": "Writeback?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Writeback?": {
+        "main": [
+          [
+            {
+              "node": "Once",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Once": {
+        "main": [
+          [
+            {
+              "node": "Write Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Row": {
+        "main": [
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": []
+}

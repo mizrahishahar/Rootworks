@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T22:02:13.983Z",
+  "updatedAt": "2026-09-17T09:33:15.659Z",
   "createdAt": "2026-07-28T08:55:27.839Z",
   "id": "AwlfoUuXzi86isEe",
   "name": "Enrich & Qualify new lead from Alta",
@@ -157,48 +157,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "s1",
-              "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
-              "operator": {
-                "type": "string",
-                "operation": "notEquals"
-              },
-              "rightValue": "PASS"
-            },
-            {
-              "id": "s2",
-              "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
-              "operator": {
-                "type": "string",
-                "operation": "notEquals"
-              },
-              "rightValue": "AUTO"
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "620f627b-bc37-49fd-a38e-08dcd2c5fb51",
-      "name": "Interested?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1472,
-        -144
-      ]
-    },
-    {
-      "parameters": {
         "operation": "search",
         "base": {
           "__rl": true,
@@ -286,7 +244,7 @@
           ],
           "schema": [],
           "value": {
-            "Name": "={{ $('Alta Normalize').item.json.company_name || $('Alta Normalize').item.json.full_name || $('Alta Normalize').item.json.lead_email }}",
+            "Name": "={{ $('Flatten').item.json.company_name || $('Alta Normalize').item.json.company_name || $('Alta Normalize').item.json.full_name || $('Alta Normalize').item.json.lead_email }}",
             "Website": "={{ ($('Alta Normalize').item.json.domain && !$('Alta Normalize').item.json.is_freemail) ? ('https://' + $('Alta Normalize').item.json.domain) : null }}",
             "Client": "={{ [ $('Client Vars').first().json.clientRecId ] }}",
             "Source": "={{ $('Alta Normalize').item.json.source_channel }}",
@@ -296,11 +254,11 @@
             "Headcount": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.employees && b.employees!=='N/A') ? b.employees : ($('Alta Normalize').item.json.company_size || null);})() }}",
             "ARR": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : ($('Alta Normalize').item.json.company_revenue || null);})() }}",
             "LinkedIn": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};const s=b.social_urls;if(Array.isArray(s)){const u=s.find(x=>String(x).toLowerCase().includes('linkedin'));if(u)return u;}else if(s&&typeof s==='object'&&(s.linkedin||s.LinkedIn)){return s.linkedin||s.LinkedIn;}return $('Alta Normalize').item.json.company_linkedin||null;})() }}",
-            "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+            "Campaigns": "={{ ((function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() && $('Resolve Campaign').first().json.campaignRowId) ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
             "Alta Prospect ID": "={{ $('Alta Normalize').item.json.alta_prospect_id || null }}",
             "Alta Msg ID": "={{ $('Capture Payload').first().json.body.reply ? $('Capture Payload').first().json.body.reply.messageId : null }}",
             "Last Engaged": "={{ $('Alta Normalize').item.json.first_engagement || $now.toISO() }}",
-            "Positive Reply Lead": "={{ true }}",
+            "Positive Reply Lead": "={{ (function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() }}",
             "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Alta Normalize').first().json.is_freemail ? String($('Alta Normalize').first().json.lead_email || '') : String($('Alta Normalize').first().json.domain || $('Alta Normalize').first().json.enrich_domain || String($('Alta Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
           }
         },
@@ -403,7 +361,7 @@
           "mappingMode": "defineBelow",
           "value": {
             "id": "={{ $('Create CRM Prospect').item.json.id }}",
-            "OutreachStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+            "OutreachStatus": "={{ !(function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() ? 'Engaged' : (({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply') }}",
             "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
             "Qualification Brief": "={{ (function(){const t=String($('Flatten').item.json.brief_plain||'');const lines=t.split('\\n').map(s=>s.trim()).filter(Boolean);if(!lines.length)return '';const out=['**'+lines[0]+'**',''];for(let i=1;i<lines.length;i++){out.push('- '+lines[i]);}return out.join('\\n');})() }}",
             "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied via Alta outreach (' + ($('Alta Normalize').item.json.reply_channel || 'reply') + ($('Alta Normalize').item.json.campaign_name ? ', campaign ' + $('Alta Normalize').item.json.campaign_name : ($('Alta Normalize').item.json.alta_campaign_id ? ', campaign ' + $('Alta Normalize').item.json.alta_campaign_id : '')) + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
@@ -1213,6 +1171,15 @@
                 "type": "string",
                 "operation": "notEquals"
               }
+            },
+            {
+              "id": "q2",
+              "leftValue": "={{ (function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -1783,7 +1750,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
+        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + (($('Resolve Prospect').isExecuted ? $('Resolve Prospect').first().json.prospect_id : $('Find CRM Prospect').first().json.id) || '') }) }}",
         "options": {}
       },
       "onError": "continueRegularOutput"
@@ -1897,7 +1864,7 @@
       "main": [
         [
           {
-            "node": "Interested?",
+            "node": "Search Campaign",
             "type": "main",
             "index": 0
           }
@@ -2062,6 +2029,11 @@
             "node": "Build Run Log",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Routine URL Set?",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -2122,24 +2094,6 @@
         [
           {
             "node": "Set CRM Verdict",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Interested?": {
-      "main": [
-        [
-          {
-            "node": "Search Campaign",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Build Run Log",
             "type": "main",
             "index": 0
           }
@@ -2270,6 +2224,11 @@
             "node": "Build Run Log",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Routine URL Set?",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -2371,7 +2330,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1789507488783
+      "runStartedAt": 1789637961154
     }
   },
   "meta": {
@@ -2444,8 +2403,8 @@
       }
     ]
   },
-  "versionId": "eacce04e-7509-4b67-aeb6-5c9a34a35bd3",
-  "activeVersionId": "eacce04e-7509-4b67-aeb6-5c9a34a35bd3",
+  "versionId": "227bb7e8-29d2-4215-b0e3-ff47dfb22e81",
+  "activeVersionId": "227bb7e8-29d2-4215-b0e3-ff47dfb22e81",
   "triggerCount": 1,
   "shared": [
     {
@@ -2457,9 +2416,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-02T22:02:13.988Z",
-    "createdAt": "2026-09-02T22:02:13.988Z",
-    "versionId": "eacce04e-7509-4b67-aeb6-5c9a34a35bd3",
+    "updatedAt": "2026-09-17T09:33:15.674Z",
+    "createdAt": "2026-09-17T09:33:15.674Z",
+    "versionId": "227bb7e8-29d2-4215-b0e3-ff47dfb22e81",
     "workflowId": "AwlfoUuXzi86isEe",
     "nodes": [
       {
@@ -2613,48 +2572,6 @@
       },
       {
         "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "s1",
-                "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
-                "operator": {
-                  "type": "string",
-                  "operation": "notEquals"
-                },
-                "rightValue": "PASS"
-              },
-              {
-                "id": "s2",
-                "leftValue": "={{ $json.output ? $json.output.verdict : 'INTERESTED' }}",
-                "operator": {
-                  "type": "string",
-                  "operation": "notEquals"
-                },
-                "rightValue": "AUTO"
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "620f627b-bc37-49fd-a38e-08dcd2c5fb51",
-        "name": "Interested?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          1472,
-          -144
-        ]
-      },
-      {
-        "parameters": {
           "operation": "search",
           "base": {
             "__rl": true,
@@ -2742,7 +2659,7 @@
             ],
             "schema": [],
             "value": {
-              "Name": "={{ $('Alta Normalize').item.json.company_name || $('Alta Normalize').item.json.full_name || $('Alta Normalize').item.json.lead_email }}",
+              "Name": "={{ $('Flatten').item.json.company_name || $('Alta Normalize').item.json.company_name || $('Alta Normalize').item.json.full_name || $('Alta Normalize').item.json.lead_email }}",
               "Website": "={{ ($('Alta Normalize').item.json.domain && !$('Alta Normalize').item.json.is_freemail) ? ('https://' + $('Alta Normalize').item.json.domain) : null }}",
               "Client": "={{ [ $('Client Vars').first().json.clientRecId ] }}",
               "Source": "={{ $('Alta Normalize').item.json.source_channel }}",
@@ -2752,11 +2669,11 @@
               "Headcount": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.employees && b.employees!=='N/A') ? b.employees : ($('Alta Normalize').item.json.company_size || null);})() }}",
               "ARR": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};return (b.revenue_range && b.revenue_range!=='N/A') ? b.revenue_range : ($('Alta Normalize').item.json.company_revenue || null);})() }}",
               "LinkedIn": "={{ (function(){const b=$('Flatten').item.json.bizdata||{};const s=b.social_urls;if(Array.isArray(s)){const u=s.find(x=>String(x).toLowerCase().includes('linkedin'));if(u)return u;}else if(s&&typeof s==='object'&&(s.linkedin||s.LinkedIn)){return s.linkedin||s.LinkedIn;}return $('Alta Normalize').item.json.company_linkedin||null;})() }}",
-              "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
+              "Campaigns": "={{ ((function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() && $('Resolve Campaign').first().json.campaignRowId) ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
               "Alta Prospect ID": "={{ $('Alta Normalize').item.json.alta_prospect_id || null }}",
               "Alta Msg ID": "={{ $('Capture Payload').first().json.body.reply ? $('Capture Payload').first().json.body.reply.messageId : null }}",
               "Last Engaged": "={{ $('Alta Normalize').item.json.first_engagement || $now.toISO() }}",
-              "Positive Reply Lead": "={{ true }}",
+              "Positive Reply Lead": "={{ (function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() }}",
               "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Alta Normalize').first().json.is_freemail ? String($('Alta Normalize').first().json.lead_email || '') : String($('Alta Normalize').first().json.domain || $('Alta Normalize').first().json.enrich_domain || String($('Alta Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
             }
           },
@@ -2859,7 +2776,7 @@
             "mappingMode": "defineBelow",
             "value": {
               "id": "={{ $('Create CRM Prospect').item.json.id }}",
-              "OutreachStatus": "={{ ({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply' }}",
+              "OutreachStatus": "={{ !(function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() ? 'Engaged' : (({strong:'Positive Reply',medium:'Positive Reply',weak:'Positive Reply',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Positive Reply') }}",
               "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
               "Qualification Brief": "={{ (function(){const t=String($('Flatten').item.json.brief_plain||'');const lines=t.split('\\n').map(s=>s.trim()).filter(Boolean);if(!lines.length)return '';const out=['**'+lines[0]+'**',''];for(let i=1;i<lines.length;i++){out.push('- '+lines[i]);}return out.join('\\n');})() }}",
               "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied via Alta outreach (' + ($('Alta Normalize').item.json.reply_channel || 'reply') + ($('Alta Normalize').item.json.campaign_name ? ', campaign ' + $('Alta Normalize').item.json.campaign_name : ($('Alta Normalize').item.json.alta_campaign_id ? ', campaign ' + $('Alta Normalize').item.json.alta_campaign_id : '')) + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
@@ -3565,7 +3482,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst n=$('Alta Normalize').first().json;\nconst cv=$('Client Vars').first().json;\nconst name=(n.full_name||'').trim();\nconst base={\n 'Automation':'Enrich & Qualify new lead from Alta',\n 'Client': cv.clientRecId?[cv.clientRecId]:[cv.clientName||''],\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Target': n.lead_email||n.linkedin_url||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)\n};\nconst leadLine='- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||n.linkedin_url||'')+'>'+(n.job_title?', '+n.job_title:'');\nconst companyLine='- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':'');\nlet f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f){\n // Reached from an early exit: either Lead in CRM? yes (thread appended) or Interested? no.\n let threadRow=null; try{ threadRow=$('Update Prospect Thread').first().json||null; }catch(e){}\n if(threadRow){\n  let exId=threadRow.id||'';\n  if(!exId){ try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){} }\n  const failed=[];\n  if(!threadRow.id) failed.push('thread not appended');\n  let desc=[\n  '**Existing prospect, thread appended**',\n  '',\n  leadLine,\n  companyLine,\n  '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; re-qualification and Slack post skipped'\n  ].join('\\n');\n  if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n  return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n }\n let screenVerdict='';\n try{ const s=$('Screen Reply').first().json; screenVerdict=(s&&s.output&&s.output.verdict)||''; }catch(e){}\n const desc=[\n '**Not interested, skipped**',\n '',\n leadLine,\n companyLine,\n '- **Outcome:** not interested, skipped (screen verdict: '+(screenVerdict||'unknown')+'); no CRM writes, no Slack post'\n ].join('\\n');\n return [{json:Object.assign({'Status':'Succeeded','Errors':0,'Description':desc},base)}];\n}\nlet prospectId='';\ntry{prospectId=$('Create CRM Prospect').first().json.id||'';}catch(e){}\nlet verdictWritten=false;\ntry{const v=$('Set CRM Verdict').first().json; if(v&&v.id){verdictWritten=true;}}catch(e){}\nlet tsWritten=false;\ntry{const t=$('Set Thread TS').first().json; if(t&&t.id){tsWritten=true;}}catch(e){}\nlet phoneVal=''; let phoneSource='none';\ntry{ const rp=$('Resolve Phone').first().json; phoneVal=rp.phone||''; phoneSource=rp.phone_source||'none'; }catch(e){}\nconst verdict=f.custom_qualification_status||'unknown';\nconst qualified=verdict!=='out_of_icp';\nconst campaign=(n.campaign_name?n.campaign_name+(n.alta_campaign_id?' ('+n.alta_campaign_id+')':''):(n.alta_campaign_id||'unknown'));\nconst failed=[];\nif(!prospectId) failed.push('prospect not created');\nif(!verdictWritten) failed.push('verdict not written');\nif(qualified && !tsWritten) failed.push('thread ts not saved');\nlet desc=[\n'**'+(f.company_name||n.company_name||n.lead_email||'unknown')+' · '+verdict+'**',\n'',\nleadLine,\n'- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n'- **Channel:** Alta '+(n.source_channel||n.reply_channel||'reply')+' | Campaign: '+campaign,\n'- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),\n'- **Base:** '+(f.base_source||'unknown')+(f.base_match?' (matched on '+f.base_match+')':'')+(f.base_reason?' ('+f.base_reason+')':''),\n'- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')',\n'- **CRM:** Prospects row created'+(prospectId?' ('+prospectId+')':'')+', contact row + qualification brief + conversation thread written',\n'- **Pipeline:** '+(verdictWritten?('set from verdict \"'+verdict+'\" (Positive Reply / Disqualified)'):'not written'),\n'- **Slack:** qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];"
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst n=$('Alta Normalize').first().json;\nconst cv=$('Client Vars').first().json;\nconst name=(n.full_name||'').trim();\nconst base={\n 'Automation':'Enrich & Qualify new lead from Alta',\n 'Client': cv.clientRecId?[cv.clientRecId]:[cv.clientName||''],\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Target': n.lead_email||n.linkedin_url||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)\n};\nconst leadLine='- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||n.linkedin_url||'')+'>'+(n.job_title?', '+n.job_title:'');\nconst companyLine='- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':'');\n// Every reply lands a row (2026-09-17). The screen decides the status, never the insert.\nlet screenVerdict='';\ntry{ const s=$('Screen Reply').first().json; screenVerdict=(s&&s.output&&s.output.verdict)||''; }catch(e){}\nconst interested=screenVerdict!=='PASS'&&screenVerdict!=='AUTO';\nlet f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f){\n // Reached from Lead in CRM? yes: the company already has a row, the reply is appended to its thread.\n let threadRow=null; try{ threadRow=$('Update Prospect Thread').first().json||null; }catch(e){}\n let exId=(threadRow&&threadRow.id)||'';\n if(!exId){ try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){} }\n const failed=[];\n if(!threadRow||!threadRow.id) failed.push('thread not appended');\n let desc=[\n '**Existing prospect, thread appended**',\n '',\n leadLine,\n companyLine,\n '- **Screen:** '+(screenVerdict||'unknown'),\n '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; handed to the routine door'\n ].join('\\n');\n if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n}\nlet prospectId='';\ntry{prospectId=$('Create CRM Prospect').first().json.id||'';}catch(e){}\nlet verdictWritten=false;\ntry{const v=$('Set CRM Verdict').first().json; if(v&&v.id){verdictWritten=true;}}catch(e){}\nlet tsWritten=false;\ntry{const t=$('Set Thread TS').first().json; if(t&&t.id){tsWritten=true;}}catch(e){}\nlet phoneVal=''; let phoneSource='none';\ntry{ const rp=$('Resolve Phone').first().json; phoneVal=rp.phone||''; phoneSource=rp.phone_source||'none'; }catch(e){}\nconst verdict=f.custom_qualification_status||'unknown';\nconst qualified=verdict!=='out_of_icp';\nconst status=!interested?'Engaged':(qualified?'Positive Reply':'Disqualified');\nconst carded=interested&&qualified;\nconst campaign=(n.campaign_name?n.campaign_name+(n.alta_campaign_id?' ('+n.alta_campaign_id+')':''):(n.alta_campaign_id||'unknown'));\nconst failed=[];\nif(!prospectId) failed.push('prospect not created');\nif(!verdictWritten) failed.push('verdict not written');\nif(carded && !tsWritten) failed.push('thread ts not saved');\nlet desc=[\n'**'+(f.company_name||n.company_name||n.lead_email||'unknown')+' · '+status+' · '+verdict+'**',\n'',\nleadLine,\n'- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n'- **Channel:** Alta '+(n.source_channel||n.reply_channel||'reply')+' | Campaign: '+campaign,\n'- **Screen:** '+(screenVerdict||'unknown (fail-open, read as interested)'),\n'- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),\n'- **Base:** '+(f.base_source||'unknown')+(f.base_match?' (matched on '+f.base_match+')':'')+(f.base_reason?' ('+f.base_reason+')':''),\n'- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')'+(interested?'':', paid tiers skipped: not a positive reply'),\n'- **CRM:** Prospects row created'+(prospectId?' ('+prospectId+')':'')+', contact row + qualification brief + conversation thread written',\n'- **Pipeline:** '+(verdictWritten?('OutreachStatus '+status+' (screen '+(screenVerdict||'unknown')+', verdict \"'+verdict+'\")'):'not written'),\n'- **Slack:** '+(carded?('qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')):'no card ('+status+'); the card posts only for a positive reply that is not out_of_icp'),\n'- **Routine:** handed to the routine door (fires when the client row carries its URL)'\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n"
         },
         "id": "5c21e4ea-6969-4cca-a78f-ed21e87e0511",
         "name": "Build Run Log",
@@ -3669,6 +3586,15 @@
                   "type": "string",
                   "operation": "notEquals"
                 }
+              },
+              {
+                "id": "q2",
+                "leftValue": "={{ (function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() ? 'yes' : 'no' }}",
+                "rightValue": "yes",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
               }
             ],
             "combinator": "and"
@@ -3719,7 +3645,7 @@
       },
       {
         "parameters": {
-          "jsCode": "// Decides whether to fire the Waterfall Phones webhook for this lead.\n// The waterfall owns the phone write on the contact row; this run only needs\n// the resolved number back for the Slack cards and the run log.\n// Out-of-ICP leads never trigger paid tiers: they fire only when a direct\n// signature number is already in hand (free, instant hit inside the waterfall).\nconst f = $('Flatten').first().json;\nlet contactId = '';\ntry { contactId = $('Create CRM Contact').first().json.id || ''; } catch (e) {}\nif (!contactId) {\n  try {\n    const pf = $('Find CRM Prospect').first().json.fields || {};\n    const c = pf.Contacts;\n    if (Array.isArray(c) && c.length) contactId = String(c[0] && c[0].id ? c[0].id : c[0]);\n  } catch (e) {}\n}\n// This intake carries no signature scrape: the PlusVibe intake gets its number from its Format Thread node,\n// and this workflow has no such node (the old reference to it resolved to nothing, every run). The waterfall's\n// own signature tier still reads the Conversation Thread on the prospect row.\nconst sig = '', sigTf = '';\nconst outOfIcp = f.custom_qualification_status === 'out_of_icp';\nconst _call = (contactId && (!outOfIcp || sig)) ? 1 : 0;\nlet reason = '';\nif (!contactId) reason = 'no contact row';\nelse if (outOfIcp && !sig) reason = 'out_of_icp';\nreturn [{ json: { _call, contactId, sig: sig || sigTf, sigIsTF: !sig && !!sigTf, reason } }];\n"
+          "jsCode": "// Decides whether to fire the Waterfall Phones webhook for this lead.\n// The waterfall owns the phone write on the contact row; this run only needs\n// the resolved number back for the Slack cards and the run log.\n// Out-of-ICP leads never trigger paid tiers: they fire only when a direct\n// signature number is already in hand (free, instant hit inside the waterfall).\nconst f = $('Flatten').first().json;\nlet contactId = '';\ntry { contactId = $('Create CRM Contact').first().json.id || ''; } catch (e) {}\nif (!contactId) {\n  try {\n    const pf = $('Find CRM Prospect').first().json.fields || {};\n    const c = pf.Contacts;\n    if (Array.isArray(c) && c.length) contactId = String(c[0] && c[0].id ? c[0].id : c[0]);\n  } catch (e) {}\n}\n// This intake carries no signature scrape: the PlusVibe intake gets its number from its Format Thread node,\n// and this workflow has no such node (the old reference to it resolved to nothing, every run). The waterfall's\n// own signature tier still reads the Conversation Thread on the prospect row.\nconst sig = '', sigTf = '';\nconst outOfIcp = f.custom_qualification_status === 'out_of_icp';\n// Every reply lands a row now (2026-09-17), but the paid tiers stay where they were: a positive reply only.\nlet screen = 'INTERESTED';\ntry { const o = $('Screen Reply').first().json.output; if (o && o.verdict) screen = o.verdict; } catch (e) {}\nconst interested = screen !== 'PASS' && screen !== 'AUTO';\nconst _call = (contactId && interested && (!outOfIcp || sig)) ? 1 : 0;\nlet reason = '';\nif (!contactId) reason = 'no contact row';\nelse if (!interested) reason = 'not a positive reply';\nelse if (outOfIcp && !sig) reason = 'out_of_icp';\nreturn [{ json: { _call, contactId, sig: sig || sigTf, sigIsTF: !sig && !!sigTf, reason } }];\n"
         },
         "id": "7b3e2f19-4c8d-4a6e-9d21-5f0a8c7e1b42",
         "name": "Waterfall Prep",
@@ -4239,7 +4165,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
+          "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + (($('Resolve Prospect').isExecuted ? $('Resolve Prospect').first().json.prospect_id : $('Find CRM Prospect').first().json.id) || '') }) }}",
           "options": {}
         },
         "onError": "continueRegularOutput"
@@ -4353,7 +4279,7 @@
         "main": [
           [
             {
-              "node": "Interested?",
+              "node": "Search Campaign",
               "type": "main",
               "index": 0
             }
@@ -4518,6 +4444,11 @@
               "node": "Build Run Log",
               "type": "main",
               "index": 0
+            },
+            {
+              "node": "Routine URL Set?",
+              "type": "main",
+              "index": 0
             }
           ]
         ]
@@ -4578,24 +4509,6 @@
           [
             {
               "node": "Set CRM Verdict",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Interested?": {
-        "main": [
-          [
-            {
-              "node": "Search Campaign",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Build Run Log",
               "type": "main",
               "index": 0
             }
@@ -4724,6 +4637,11 @@
           [
             {
               "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Routine URL Set?",
               "type": "main",
               "index": 0
             }

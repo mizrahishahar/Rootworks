@@ -259,6 +259,7 @@
             "Alta Msg ID": "={{ $('Capture Payload').first().json.body.reply ? $('Capture Payload').first().json.body.reply.messageId : null }}",
             "Last Engaged": "={{ $('Alta Normalize').item.json.first_engagement || $now.toISO() }}",
             "Positive Reply Lead": "={{ (function(){const o=$('Screen Reply').first().json.output;const v=o?o.verdict:'INTERESTED';return v!=='PASS'&&v!=='AUTO';})() }}",
+            "Follow-ups": 0,
             "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Alta Normalize').first().json.is_freemail ? String($('Alta Normalize').first().json.lead_email || '') : String($('Alta Normalize').first().json.domain || $('Alta Normalize').first().json.enrich_domain || String($('Alta Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
           }
         },
@@ -365,7 +366,8 @@
             "QualificationStatus": "={{ ({strong:'Qualified',medium:'Needs Review',weak:'Needs Review',out_of_icp:'Disqualified'})[$('Flatten').item.json.custom_qualification_status] || 'Needs Review' }}",
             "Qualification Brief": "={{ (function(){const t=String($('Flatten').item.json.brief_plain||'');const lines=t.split('\\n').map(s=>s.trim()).filter(Boolean);if(!lines.length)return '';const out=['**'+lines[0]+'**',''];for(let i=1;i<lines.length;i++){out.push('- '+lines[i]);}return out.join('\\n');})() }}",
             "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied via Alta outreach (' + ($('Alta Normalize').item.json.reply_channel || 'reply') + ($('Alta Normalize').item.json.campaign_name ? ', campaign ' + $('Alta Normalize').item.json.campaign_name : ($('Alta Normalize').item.json.alta_campaign_id ? ', campaign ' + $('Alta Normalize').item.json.alta_campaign_id : '')) + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
-            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}"
+            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}",
+            "Timezone": "={{ $('Flatten').item.json.custom_timezone || 'America/New_York' }}"
           },
           "matchingColumns": [
             "id"
@@ -1450,7 +1452,9 @@
             "Campaigns": "={{ $json.campaigns }}",
             "Last Engaged": "={{ $json.lastEngaged }}",
             "Alta Prospect ID": "={{ $json.altaProspectId }}",
-            "Alta Msg ID": "={{ $json.altaMsgId }}"
+            "Alta Msg ID": "={{ $json.altaMsgId }}",
+            "Follow-ups": 0,
+            "NextTouchDate": null
           }
         },
         "options": {
@@ -1465,6 +1469,82 @@
         3264,
         -48
       ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1c2b3d4-0004-4000-8000-000000000301",
+      "name": "Was Lost?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3488,
+        -48
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $('Append Reply Thread').first().json.curStatus }}",
+              "rightValue": "Lost",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1c2b3d4-0004-4000-8000-000000000302",
+      "name": "Reopen Lost Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        -128
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "value": {
+            "id": "={{ $('Append Reply Thread').first().json.prospectId }}",
+            "OutreachStatus": "={{ $('Append Reply Thread').first().json.positiveLead ? 'Positive Reply' : 'Engaged' }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
       "credentials": {
         "airtableTokenApi": {
           "id": "RZ2SX89iUyF4aEWJ",
@@ -1688,72 +1768,92 @@
     },
     {
       "id": "d42b4304-2c91-4c7d-a7aa-aba3e7c9a6b5",
-      "name": "Routine URL Set?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "name": "Quiet Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
       "position": [
         7200,
         -496
       ],
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "leftValue": "={{ (($('Alta Normalize').first().json.source_channel === 'LinkedIn' ? $('Get Client Row').first().json.fields['LinkedIn Setter Routine URL'] : $('Get Client Row').first().json.fields['Inbox Manager Routine URL']) || '').trim() }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ]
-        },
-        "options": {}
-      }
+        "resume": "timeInterval",
+        "amount": 180,
+        "unit": "seconds"
+      },
+      "webhookId": "a1c2b3d4-0004-4000-8000-000000000201"
     },
     {
-      "id": "38530a5f-d23c-4e7d-a752-e4592e63ffe8",
-      "name": "Fire Routine",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "id": "a1c2b3d4-0004-4000-8000-000000000202",
+      "name": "Reread Prospect",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
       "position": [
         7424,
         -496
       ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ (($('Alta Normalize').first().json.source_channel === 'LinkedIn' ? $('Get Client Row').first().json.fields['LinkedIn Setter Routine URL'] : $('Get Client Row').first().json.fields['Inbox Manager Routine URL']) || '').trim() }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ (($('Alta Normalize').first().json.source_channel === 'LinkedIn' ? $('Get Client Row').first().json.fields['LinkedIn Setter API Key'] : $('Get Client Row').first().json.fields['Inbox Manager API Key']) || '').trim() }}"
-            },
-            {
-              "name": "anthropic-version",
-              "value": "2023-06-01"
-            },
-            {
-              "name": "anthropic-beta",
-              "value": "experimental-cc-routine-2026-04-01"
-            }
-          ]
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + (($('Resolve Prospect').isExecuted ? $('Resolve Prospect').first().json.prospect_id : $('Find CRM Prospect').first().json.id) || '') }) }}",
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "id": "={{ (function(){ try { const v = $('Create CRM Prospect').first().json.id; if (v) return v; } catch (e) {} try { const v = $('Update Prospect Thread').first().json.id; if (v) return v; } catch (e) {} try { return $('Find CRM Prospect').first().json.id; } catch (e) {} return ''; })() }}",
         "options": {}
       },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "38530a5f-d23c-4e7d-a752-e4592e63ffe8",
+      "name": "Still Latest?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7648,
+        -496
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Still-Latest.js"
+      }
+    },
+    {
+      "id": "a1c2b3d4-0004-4000-8000-000000000203",
+      "name": "Wake Operator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7872,
+        -496
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api2.cursor.sh/automations/webhook/ccbc5bad-24cc-514c-8c77-4f57d41d8b86",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recordId: $json.recordId, reason: $json.reason }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1W0t3RtiEr0u7oTV",
+          "name": "grokbot inbox"
+        }
+      }
     },
     {
       "id": "c0f1a17a-0000-4000-8000-000000000101",
@@ -2062,7 +2162,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
+            "node": "Quiet Wait",
             "type": "main",
             "index": 0
           }
@@ -2129,7 +2229,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
+            "node": "Quiet Wait",
             "type": "main",
             "index": 0
           }
@@ -2319,12 +2419,46 @@
       "main": [
         [
           {
+            "node": "Was Lost?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Was Lost?": {
+      "main": [
+        [
+          {
+            "node": "Reopen Lost Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "FU Find Contact",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
+            "node": "Quiet Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reopen Lost Prospect": {
+      "main": [
+        [
+          {
+            "node": "FU Find Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quiet Wait",
             "type": "main",
             "index": 0
           }
@@ -2364,11 +2498,33 @@
         ]
       ]
     },
-    "Routine URL Set?": {
+    "Quiet Wait": {
       "main": [
         [
           {
-            "node": "Fire Routine",
+            "node": "Reread Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reread Prospect": {
+      "main": [
+        [
+          {
+            "node": "Still Latest?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still Latest?": {
+      "main": [
+        [
+          {
+            "node": "Wake Operator",
             "type": "main",
             "index": 0
           }

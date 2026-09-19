@@ -43,7 +43,7 @@ if(!f){
  companyLine,
  '- **Screen:** '+(screenVerdict||'unknown'),
  contactLine,
- '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; handed to the routine door'
+ '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; the Operator wake was queued behind a 3 minute quiet wait'
  ].join('\n');
  if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');
  return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];
@@ -78,7 +78,7 @@ leadLine,
 '- **CRM:** Prospects row created'+(prospectId?' ('+prospectId+')':'')+', contact row + qualification brief + conversation thread written',
 '- **Pipeline:** '+(verdictWritten?('OutreachStatus '+status+' (screen '+(screenVerdict||'unknown')+', verdict "'+verdict+'")'):'not written'),
 '- **Slack:** '+(carded?('qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')):'no card ('+status+'); the card posts only for a positive reply that is not out_of_icp'),
-'- **Routine:** handed to the routine door (fires when the client row carries its URL)'
+'- **Routine:** the Operator wake was queued behind a 3 minute quiet wait'
 ].join('\n');
 if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');
 return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];

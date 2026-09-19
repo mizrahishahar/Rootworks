@@ -115,6 +115,7 @@ if (s(lead.company_context)) parts.push(s(lead.company_context));
 parts.push((base ? 'COMPANY FIRMOGRAPHICS (from the client\'s Companies table):\n' : 'COMPANY FIRMOGRAPHICS (DiscoLike, empty/ignore for freemail):\n') + JSON.stringify(biz));
 if (s(lead.context)) parts.push(s(lead.context));
 parts.push('Run the qualification. Output structured JSON. "situation_summary": ONE plain-English line (max 140 chars) stating ' + situationAsk + '. "verdict_reason": ONE plain-English line (max 120 chars) stating why this lead is or is not a fit, citing the deciding factor. Never paste the raw reply or notes verbatim; no names, signatures, or URLs.');
+parts.push('OVERRIDE, regardless of anything the rubric above says: "timezone" is the IANA zone name (e.g. America/New_York, Europe/London, Asia/Jerusalem) of the person\'s location, else of the company\'s headquarters; never an abbreviation like ET/CT/PT. When nothing is known, use America/New_York.');
 
 return [{ json: {
   systemPrompt, kbFound, promptText: parts.join('\n\n'), bizdata: biz,

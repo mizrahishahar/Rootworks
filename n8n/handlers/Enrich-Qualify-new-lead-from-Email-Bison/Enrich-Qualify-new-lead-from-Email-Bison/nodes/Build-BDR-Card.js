@@ -16,8 +16,9 @@ const tzRaw = String(f.custom_timezone || '').trim();
 const tz = clean(tzRaw);
 const city = clean(n.city);
 const zmap = {ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'};
+const zone = tzRaw.includes('/') ? tzRaw : (zmap[tzRaw] || 'UTC');
 let localTime = '';
-try { localTime = $now.setZone(zmap[tzRaw] || 'UTC').toFormat('HH:mm'); } catch(e) { localTime = ''; }
+try { localTime = $now.setZone(zone).toFormat('HH:mm'); } catch(e) { localTime = ''; }
 
 const full = clean(((n.first_name || '') + ' ' + (n.last_name || '')).trim());
 const title = clean(n.job_title);

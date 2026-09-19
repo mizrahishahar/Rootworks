@@ -9,4 +9,8 @@ let campaignRowId='';
 try{ campaignRowId=$('Resolve Campaign').first().json.campaignRowId||''; }catch(e){}
 const existing=Array.isArray(f.Campaigns)?f.Campaigns:[];
 const campaigns=existing.length?existing:(campaignRowId?[campaignRowId]:[]);
-return [{ json: { prospectId:p.id, thread:(prev?prev+'\n\n':'')+line, campaigns, lastEngaged:n.first_engagement||new Date().toISOString(), altaProspectId:n.alta_prospect_id||f['Alta Prospect ID']||'', altaMsgId:(b.reply&&b.reply.messageId)||f['Alta Msg ID']||'' } }];
+// A reply landing on a Lost row means the prospect came back; the Was Lost? branch downstream reopens the
+// status from curStatus/positiveLead. Any other current status is left alone by that branch.
+const curStatus=String(f['OutreachStatus']||'').trim();
+const positiveLead=!!f['Positive Reply Lead'];
+return [{ json: { prospectId:p.id, thread:(prev?prev+'\n\n':'')+line, campaigns, lastEngaged:n.first_engagement||new Date().toISOString(), altaProspectId:n.alta_prospect_id||f['Alta Prospect ID']||'', altaMsgId:(b.reply&&b.reply.messageId)||f['Alta Msg ID']||'', curStatus, positiveLead } }];

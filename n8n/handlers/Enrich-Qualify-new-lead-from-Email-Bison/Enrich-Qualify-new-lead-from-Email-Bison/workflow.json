@@ -21,7 +21,7 @@
         -416
       ],
       "webhookId": "c7a1e3b5-2d9f-4a6c-8b0e-5f1d3c7a9e21",
-      "notes": "Email Bison webhook, subscribed to lead_interested only (Operator ruling 2026-09-06). Payload: data.lead, data.campaign, data.reply, data.event."
+      "notes": "Email Bison webhook. lead_interested with no existing prospect runs the first-reply path; lead_interested/lead_replied on an existing prospect runs the later-reply branch (Lead in CRM? / First Reply Event?, Operator ruling 2026-09-19); any other event with no existing prospect exits silently. Payload: data.lead, data.campaign, data.reply, data.event."
     },
     {
       "parameters": {
@@ -98,6 +98,12 @@
               "name": "company",
               "type": "string",
               "value": "={{ (($json.body.data || {}).lead || {}).company || '' }}"
+            },
+            {
+              "id": "l13",
+              "name": "event_type",
+              "type": "string",
+              "value": "={{ (($json.body.event || {}).type || '').toUpperCase() }}"
             }
           ]
         },
@@ -454,6 +460,7 @@
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
             "Last Engaged": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
             "Positive Reply Lead": "={{ true }}",
+            "Follow-ups": 0,
             "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Normalize').first().json.is_freemail ? String($('Normalize').first().json.lead_email || '') : String($('Normalize').first().json.domain || $('Normalize').first().json.enrich_domain || String($('Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
           }
         },
@@ -568,7 +575,8 @@
             "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
             "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
-            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}"
+            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}",
+            "Timezone": "={{ $('Flatten').item.json.custom_timezone || 'America/New_York' }}"
           }
         },
         "options": {
@@ -1107,6 +1115,224 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "frg1",
+              "leftValue": "={{ $('Client Vars').first().json.manual }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "frg2",
+              "leftValue": "={{ $('Live Input').first().json.event_type }}",
+              "rightValue": "LEAD_INTERESTED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000201",
+      "name": "First Reply Event?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        -160
+      ],
+      "notes": "Not-found branch of Lead in CRM?: a manual run or a lead_interested webhook continues into the first-reply path unchanged. Anything else (lead_replied etc. on a lead with no prospect row yet) exits silently here: these are the majority of events and a run-log row each would flood the log."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Thread-URLs.js"
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000202",
+      "name": "Prep Thread URLs (Later)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        -16
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.bisonUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000203",
+      "name": "Bison Get Thread (Later)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2912,
+        -16
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1cjIE7eXqZZ4r1Pm",
+          "name": "Email Bison DuoDiv"
+        }
+      },
+      "notes": "Same two reads as Bison Get Thread, run for the later-reply branch (Lead in CRM? found the prospect already). Duplicated rather than shared: Lead in CRM? has already forked by the time this fires, and Format Thread's output needs to route differently here than on the first-reply path."
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000204",
+      "name": "Format Thread (Later)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Later-Reply-Guard.js"
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000205",
+      "name": "Later Reply Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000206",
+      "name": "Update Prospect Reply",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3584,
+        -16
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Writes exactly the keys Later Reply Guard built: Conversation Thread, Last Engaged, Follow-ups, NextTouchDate always; OutreachStatus only when the guard added it (current status was Lost). autoMapInputData so an omitted key is never written as empty."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lwg1",
+              "leftValue": "={{ (($('Find CRM Prospect').first().json.fields) || {})['OutreachStatus'] || '' }}",
+              "rightValue": "Disqualified",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000207",
+      "name": "Later Wake Gate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3808,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api2.cursor.sh/automations/webhook/ccbc5bad-24cc-514c-8c77-4f57d41d8b86",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recordId: $('Find CRM Prospect').first().json.id || '', reason: 'He wrote again on email. ' + ((((($('Find CRM Prospect').first().json.fields)||{})['OutreachStatus'])==='Lost') ? 'Positive Reply' : ((($('Find CRM Prospect').first().json.fields)||{})['OutreachStatus'] || 'Positive Reply')) + '. A response is owed.' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b1c2d3e4-0001-4000-8000-000000000208",
+      "name": "Wake Operator Later",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4032,
+        -80
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Second wake for the later-reply branch, same target and shape as Wake Operator but keyed off Find CRM Prospect instead of Resolve Prospect. Credentials attached operator-side.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1W0t3RtiEr0u7oTV",
+          "name": "grokbot inbox"
+        }
+      }
+    },
+    {
+      "parameters": {
         "jsCode": "@@file:nodes/Append-Record-Link.js"
       },
       "id": "a6be4e45-abf1-40ec-bf52-09a89bda20c8",
@@ -1206,7 +1432,7 @@
           "mode": "id",
           "value": "={{ $('Build BDR Card').first().json.bdr_channel }}"
         },
-        "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=zmap[tzRaw]||'Asia/Jerusalem'; let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
+        "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=tzRaw.includes('/')?tzRaw:(zmap[tzRaw]||'Asia/Jerusalem'); let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
         "otherOptions": {
           "includeLinkToWorkflow": false,
           "thread_ts": {
@@ -1279,72 +1505,33 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "leftValue": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
-      "name": "Routine URL Set?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        6832,
-        -128
-      ]
-    },
-    {
-      "parameters": {
         "method": "POST",
-        "url": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ ($('Find Client Row').first().json.fields['Inbox Manager API Key'] || '').trim() }}"
-            },
-            {
-              "name": "anthropic-version",
-              "value": "2023-06-01"
-            },
-            {
-              "name": "anthropic-beta",
-              "value": "experimental-cc-routine-2026-04-01"
-            }
-          ]
-        },
+        "url": "https://api2.cursor.sh/automations/webhook/ccbc5bad-24cc-514c-8c77-4f57d41d8b86",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify({ recordId: $('Resolve Prospect').first().json.prospect_id || '', reason: 'First reply on email. Positive Reply. The first response is owed.' }) }}",
+        "options": {
+          "timeout": 15000
+        }
       },
-      "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
-      "name": "Fire Inbox Routine",
+      "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
+      "name": "Wake Operator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        7120,
-        -160
+        6832,
+        -128
       ],
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "Replaces the Claude cloud routine (Operator ruling 2026-09-19): one wake call per positive reply instead of a full routine fire. Credentials attached operator-side.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1W0t3RtiEr0u7oTV",
+          "name": "grokbot inbox"
+        }
+      }
     },
     {
       "id": "c0f1a11e-0000-4000-8000-000000000101",
@@ -1758,18 +1945,30 @@
       "main": [
         [
           {
-            "node": "Build Run Log",
+            "node": "Prep Thread URLs (Later)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prep Thread URLs",
+            "node": "First Reply Event?",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "First Reply Event?": {
+      "main": [
+        [
+          {
+            "node": "Prep Thread URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Prep Thread URLs": {
@@ -1777,6 +1976,90 @@
         [
           {
             "node": "Bison Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Thread URLs (Later)": {
+      "main": [
+        [
+          {
+            "node": "Bison Get Thread (Later)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bison Get Thread (Later)": {
+      "main": [
+        [
+          {
+            "node": "Format Thread (Later)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread (Later)": {
+      "main": [
+        [
+          {
+            "node": "Later Reply Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Later Reply Guard": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect Reply": {
+      "main": [
+        [
+          {
+            "node": "Later Wake Gate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Later Wake Gate?": {
+      "main": [
+        [
+          {
+            "node": "Wake Operator Later",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake Operator Later": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
             "type": "main",
             "index": 0
           }
@@ -1832,7 +2115,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
+            "node": "Wake Operator",
             "type": "main",
             "index": 0
           }
@@ -1881,18 +2164,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Routine URL Set?": {
-      "main": [
-        [
-          {
-            "node": "Fire Inbox Routine",
+            "node": "Wake Operator",
             "type": "main",
             "index": 0
           }

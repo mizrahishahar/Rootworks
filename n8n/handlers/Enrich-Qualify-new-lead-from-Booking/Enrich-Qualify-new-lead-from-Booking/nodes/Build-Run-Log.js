@@ -1,5 +1,41 @@
 const sd=$getWorkflowStaticData('global'); const rs=sd.runStartedAt||0;
 let n={}; try{ n=$('Normalize Booking').first().json||{}; }catch(e){}
+const kind=n.kind||'created';
+if(!n._ignore && kind!=='created'){
+  // Cancel / reschedule: this branch never runs client resolution or attribution, the meeting was found
+  // directly by Booking UID. A separate, smaller description shape from the booked-path one below.
+  let mt=null; try{ mt=$('Read Meeting').first().json; }catch(e){}
+  let rp=null; try{ rp=$('Read Changed Prospect').first().json; }catch(e){}
+  let nudge=null; try{ nudge=$('Build Cancel Nudge').first().json; }catch(e){}
+  let posted=false; try{ const s=$('Post Cancel Nudge').first().json||{}; posted=!!(s.ts||(s.message&&s.message.ts)||s.ok===true); }catch(e){}
+  let woken=false; try{ const s=$('Wake Operator Changed').first().json||{}; woken=!(s&&s.error); }catch(e){}
+  const who=(n.fullName||'')+(n.email?' <'+n.email+'>':'');
+  const lines=['- **Source:** '+(n.source||'?')+' · '+kind, '- **Booking UID looked up:** '+(n.lookupUid||'?'), '- **Attendee:** '+(who||'?')];
+  let head=''; const skipped=[]; const failed=[];
+  if(!mt||!mt.found){
+    head='Cancel/reschedule for an unheld booking';
+    skipped.push('Booking UID '+(n.lookupUid||'?')+' has no Meetings row (not ours, or already gone)');
+  } else {
+    head=(kind==='cancelled'?'Meeting cancelled':'Meeting rescheduled');
+    lines.push('- **Meeting:** '+mt.meetingId);
+    lines.push('- **Prospect:** '+((rp&&rp.prospectId)?rp.prospectId:'?'));
+    if(kind==='cancelled'){
+      lines.push('- **Prospect stamped:** OutreachStatus = Positive Reply, Follow-ups = 0, NextTouchDate cleared');
+      lines.push('- **Call nudge:** '+((nudge&&nudge.post)?(posted?'posted to thread '+nudge.threadTs:'FAILED to post'):'not eligible (missing phone, BDR thread, or BDR channel)'));
+      if(nudge&&nudge.post&&!posted) failed.push('cancel nudge not posted');
+    } else {
+      lines.push('- **Meeting moved to:** '+(n.startTime||'?'));
+      lines.push('- **New Booking UID:** '+(n.newUid||'?'));
+      lines.push('- **NextTouchDate:** cleared');
+    }
+    lines.push('- **Operator woken:** '+(woken?'yes':'NOT woken')); if(!woken) failed.push('operator wake not sent');
+  }
+  let desc='**'+head+': '+(n.fullName||n.email||'?')+'**\n\n'+lines.join('\n');
+  if(skipped.length) desc+='\n\n**Skipped ('+skipped.length+')**\n'+skipped.map(x=>'- '+x).join('\n');
+  if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');
+  const row={ 'Automation':'Enrich & Qualify new lead from Booking', 'Status':failed.length?'Succeeded with errors':'Succeeded', 'Run at':$now.toISO(), 'Records In':1, 'Records Out':(mt&&mt.found?1:0), 'Errors':failed.length, 'Target':n.email||n.lookupUid||'', 'Trigger':'event', 'Execution ID':String($execution.id), 'Execution Link':'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id, 'Duration s':Math.round(($now.toMillis()-(rs||$now.toMillis()))/1000), 'Description':desc };
+  return [{ json: row }];
+}
 let c={}; try{ c=$('Resolve Client').first().json||{}; }catch(e){}
 let p=null; try{ p=$('Resolve Prospect').first().json; }catch(e){}
 let lists=null; try{ lists=$('Assess Lists').first().json; }catch(e){}

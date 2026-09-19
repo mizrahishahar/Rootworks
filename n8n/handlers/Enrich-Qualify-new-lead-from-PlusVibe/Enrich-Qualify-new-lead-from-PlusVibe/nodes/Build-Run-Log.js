@@ -17,8 +17,27 @@ const base={
  'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)
 };
 let f=null; try{ f=$('Flatten').first().json; }catch(e){}
+let laterGuard=null; try{ laterGuard=$('Later Reply Guard').first().json; }catch(e){}
+if(!f && laterGuard){
+ // Later-reply path: Lead in CRM? found an existing prospect on a live run, and the guard
+ // confirmed his latest message is strictly newer than the row's Last Engaged.
+ let updated=false; try{ updated=!!$('Update Prospect Reply').first().json.id; }catch(e){}
+ // Wake Operator Later runs with onError continueRegularOutput, so this run log always writes
+ // even when the bot is down; "woke" only true if the node ran AND came back without an error.
+ let woke=false; try{ const w=$('Wake Operator Later').first().json; woke=!!(w && !w.error); }catch(e){ woke=false; }
+ const desc=[
+ '**Later reply, prospect updated**',
+ '- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||'')+'>'+(n.job_title?', '+n.job_title:''),
+ '- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),
+ '- **Prospect:** '+(laterGuard.prospect_id||'unknown')+(updated?', updated (thread, Last Engaged, Follow-ups reset, NextTouchDate cleared)':', update failed'),
+ '- **Status:** '+(laterGuard.current_status||'unknown')+' -> '+(laterGuard.status_after||'unknown'),
+ '- **Operator:** '+(woke?'woken (Wake Operator Later fired)':(laterGuard.should_wake?'wake attempted but did not confirm':'not woken (Disqualified)'))
+ ].join('\n').replace('**\n','**\n\n');
+ return [{json:Object.assign({'Status':updated?'Succeeded':'Succeeded with errors','Errors':updated?0:1,'Description':desc},base)}];
+}
 if(!f){
- // Existing-prospect path: Lead in CRM? answered yes, run ended before qualification.
+ // Legacy/manual dead-end: Lead in CRM? answered yes but the run ended before qualification
+ // (kept as a fallback; the live path now always routes through the later-reply branch above).
  let exId=''; try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){}
  const desc=[
  '**Existing prospect, skipped**',

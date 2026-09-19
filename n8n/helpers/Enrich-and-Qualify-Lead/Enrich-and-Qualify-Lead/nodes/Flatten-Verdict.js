@@ -28,6 +28,13 @@ const briefMd = briefLines.length ? ['**' + briefLines[0] + '**', ''].concat(bri
 const qualifierPhone = stripCite(q.phone || '').replace(/[^\d+]/g, '').trim();
 const phone = s(person.phone) || qualifierPhone;
 
+// Safety net: the qualifier is told to return an IANA zone name, but a model can still hand back an
+// abbreviation, or nothing. Map the known abbreviations to IANA; anything with a "/" already is trusted
+// as-is; empty or unrecognized falls back to America/New_York.
+const tzMap = { ET: 'America/New_York', CT: 'America/Chicago', MT: 'America/Denver', PT: 'America/Los_Angeles', AKT: 'America/Anchorage', HT: 'Pacific/Honolulu', IL: 'Asia/Jerusalem', GMT: 'Europe/London', BST: 'Europe/London', CET: 'Europe/Berlin', CEST: 'Europe/Berlin', IST: 'Asia/Kolkata', AEST: 'Australia/Sydney' };
+const tzRaw = s(q.timezone);
+const timezone = tzRaw.includes('/') ? tzRaw : (tzMap[tzRaw.toUpperCase()] || 'America/New_York');
+
 return [{ json: Object.assign({}, lead, {
   qualification_status: status,
   qualification_label: qualificationLabel,
@@ -39,7 +46,7 @@ return [{ json: Object.assign({}, lead, {
   brief_md: briefMd,
   situation_summary: stripCite(q.situation_summary || '').slice(0, 200),
   recommended_action: stripCite(q.recommended_action || '').slice(0, 300),
-  timezone: String(q.timezone || ''),
+  timezone: timezone,
   phone: phone,
   company_name: String(q.company_name || lead.company_name || company.company || person.company || ''),
   job_title: s(lead.job_title) || s(person.title),

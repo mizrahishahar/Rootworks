@@ -49,6 +49,12 @@
               "name": "pv_campaign_name",
               "type": "string",
               "value": "={{ $json.body.campaign_name || '' }}"
+            },
+            {
+              "id": "l5",
+              "name": "webhook_event",
+              "type": "string",
+              "value": "={{ $json.body.webhook_event || '' }}"
             }
           ]
         },
@@ -402,6 +408,7 @@
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
             "Last Engaged": "={{ $('Format Thread').item.json.reply_at || $now.toISO() }}",
             "Positive Reply Lead": "={{ true }}",
+            "Follow-ups": "={{ 0 }}",
             "Dedup Key": "={{ String($('Client Vars').first().json.clientSlug || '').toLowerCase().trim() }}|{{ ($('Normalize').first().json.is_freemail ? String($('Normalize').first().json.lead_email || '') : String($('Normalize').first().json.domain || $('Normalize').first().json.enrich_domain || String($('Normalize').first().json.lead_email || '').split('@')[1] || '')).toLowerCase().trim().replace(/^www\\./, '') }}"
           }
         },
@@ -516,7 +523,8 @@
             "contextNotes": "={{ 'HOW WE GOT HERE\\nReplied positively to a cold email (campaign ' + ($('Normalize').item.json.campaign_id || 'unknown') + ').\\nLatest reply: ' + ($('Flatten').item.json.reply_text || '') + ($('Flatten').item.json.recommended_action ? '\\n\\nRecommended: ' + $('Flatten').item.json.recommended_action : '') }}",
             "Campaign": "={{ $('Normalize').item.json.campaign_name || $('Normalize').item.json.campaign_id || null }}",
             "Campaigns": "={{ $('Resolve Campaign').first().json.campaignRowId ? [ $('Resolve Campaign').first().json.campaignRowId ] : [] }}",
-            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}"
+            "Open in Pipeline": "={{ $('Resolve Prospect').item.json.pipeline_url }}",
+            "Timezone": "={{ $('Flatten').item.json.custom_timezone || 'America/New_York' }}"
           }
         },
         "options": {
@@ -1154,7 +1162,7 @@
           "mode": "id",
           "value": "={{ $('Build BDR Card').first().json.bdr_channel }}"
         },
-        "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=zmap[tzRaw]||'Asia/Jerusalem'; let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
+        "text": "={{ (function(){ const zmap={ET:'America/New_York',CT:'America/Chicago',MT:'America/Denver',PT:'America/Los_Angeles',AT:'America/Halifax',AKT:'America/Anchorage',HT:'Pacific/Honolulu',IL:'Asia/Jerusalem',GMT:'Europe/London',BST:'Europe/London','GMT/BST':'Europe/London',CET:'Europe/Berlin',CEST:'Europe/Berlin',AEST:'Australia/Sydney',IST:'Asia/Kolkata'}; let tzRaw=''; try{ tzRaw=String($('Flatten').first().json.custom_timezone||'').trim(); }catch(e){} const zone=tzRaw.includes('/')?tzRaw:(zmap[tzRaw]||'Asia/Jerusalem'); let t=''; try{ t=String($('Format Thread').first().json.thread_context||''); }catch(e){} if(!t) return 'No prior thread found.'; t=t.replace(/\\*\\*/g,'*'); t=t.replace(/\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) IL\\]/g, function(m,d,hm){ try{ const src=DateTime.fromISO(d+'T'+hm+':00',{zone:'Asia/Jerusalem'}); return '['+src.setZone(zone).toFormat('dd LLL HH:mm')+' '+(tzRaw||'IL')+']'; }catch(e){ return m; } }); const head='*The full exchange so far*\\n\\n'; if((head+t).length<=2900) return head+t; return head+'_(earlier messages trimmed)_\\n\\n'+t.slice(-(2900-head.length-40)); })() }}",
         "otherOptions": {
           "includeLinkToWorkflow": false,
           "thread_ts": {
@@ -1227,72 +1235,32 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "leftValue": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "97a29c04-ed01-4bbf-aa10-7fc3a1aa8cf4",
-      "name": "Routine URL Set?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        6832,
-        -128
-      ]
-    },
-    {
-      "parameters": {
         "method": "POST",
-        "url": "={{ ($('Find Client Row').first().json.fields['Inbox Manager Routine URL'] || '').trim() }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ ($('Find Client Row').first().json.fields['Inbox Manager API Key'] || '').trim() }}"
-            },
-            {
-              "name": "anthropic-version",
-              "value": "2023-06-01"
-            },
-            {
-              "name": "anthropic-beta",
-              "value": "experimental-cc-routine-2026-04-01"
-            }
-          ]
-        },
+        "url": "https://api2.cursor.sh/automations/webhook/ccbc5bad-24cc-514c-8c77-4f57d41d8b86",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: 'New positive reply. Lead: https://airtable.com/appQG6dK0FIOhTxOl/tblEPFCO0kJn2tMyK/' + ($('Resolve Prospect').first().json.prospect_id || '') }) }}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify({ recordId: $('Resolve Prospect').first().json.prospect_id, reason: 'First reply on email. Positive Reply. The first response is owed.' }) }}",
+        "options": {
+          "timeout": 15000
+        }
       },
-      "id": "b0f2a351-ff39-4dd9-8927-ed94ae661b98",
-      "name": "Fire Inbox Routine",
+      "id": "bd19d3dc-5bf4-4361-81cd-00008bec7a62",
+      "name": "Wake Operator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
         7120,
         -160
       ],
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1W0t3RtiEr0u7oTV",
+          "name": "grokbot inbox"
+        }
+      }
     },
     {
       "id": "c0f1a11e-0000-4000-8000-000000000101",
@@ -1340,6 +1308,243 @@
       ],
       "parameters": {
         "jsCode": "@@file:nodes/Contact-Fill.js"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fr1",
+              "leftValue": "={{ $('Client Vars').first().json.manual }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "fr2",
+              "leftValue": "={{ $('Client Vars').first().json.webhookEvent }}",
+              "rightValue": "LEAD_MARKED_AS_INTERESTED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "fr3",
+              "leftValue": "={{ $('Client Vars').first().json.webhookEvent }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "500a68ad-1074-454c-93ac-a12e8b5821ae",
+      "name": "First Reply Event Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Thread-URLs.js"
+      },
+      "id": "8a1c0007-ecfe-4106-82f1-54ae3a0c3fed",
+      "name": "Prep Thread URLs (Later)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        64
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pvUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "0f73f889-a383-4848-acfa-59f17663742f",
+      "name": "PV Get Thread (Later)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2784,
+        64
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mFWofPdYJXJU5ZwX",
+          "name": "Plusvibe Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Format-Thread.js"
+      },
+      "id": "eef0940d-e8bb-4c80-a742-9805e392e485",
+      "name": "Format Thread (Later)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Later-Reply-Guard.js"
+      },
+      "id": "83c2c70e-9810-4573-9a45-f82ad8fa8d07",
+      "name": "Later Reply Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3232,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "@@file:nodes/Reply-Write-Payload.js"
+      },
+      "id": "8146e3a3-6d16-430a-9d2b-b5f0c64361ce",
+      "name": "Reply Write Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3344,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblEPFCO0kJn2tMyK"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "34cf4479-0ea5-4bcc-a752-962afe13a2ac",
+      "name": "Update Prospect Reply",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3456,
+        64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lw1",
+              "leftValue": "={{ $('Later Reply Guard').item.json.should_wake }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4321016a-92b8-43b0-a001-2c9e7c2f6b3d",
+      "name": "Later Wake Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api2.cursor.sh/automations/webhook/ccbc5bad-24cc-514c-8c77-4f57d41d8b86",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recordId: $('Later Reply Guard').item.json.prospect_id, reason: 'He wrote again on email. ' + $('Later Reply Guard').item.json.status_after + '. A response is owed.' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "5ed03f6c-43ac-44d3-bdf4-fd3fd2c5bee2",
+      "name": "Wake Operator Later",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3904,
+        -16
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1W0t3RtiEr0u7oTV",
+          "name": "grokbot inbox"
+        }
       }
     }
   ],
@@ -1728,18 +1933,30 @@
       "main": [
         [
           {
-            "node": "Build Run Log",
+            "node": "Prep Thread URLs (Later)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prep Thread URLs",
+            "node": "First Reply Event Gate",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "First Reply Event Gate": {
+      "main": [
+        [
+          {
+            "node": "Prep Thread URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Prep Thread URLs": {
@@ -1747,6 +1964,101 @@
         [
           {
             "node": "PV Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Thread URLs (Later)": {
+      "main": [
+        [
+          {
+            "node": "PV Get Thread (Later)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV Get Thread (Later)": {
+      "main": [
+        [
+          {
+            "node": "Format Thread (Later)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Thread (Later)": {
+      "main": [
+        [
+          {
+            "node": "Later Reply Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Later Reply Guard": {
+      "main": [
+        [
+          {
+            "node": "Reply Write Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Write Payload": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect Reply": {
+      "main": [
+        [
+          {
+            "node": "Later Wake Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Later Wake Gate": {
+      "main": [
+        [
+          {
+            "node": "Wake Operator Later",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake Operator Later": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
             "type": "main",
             "index": 0
           }
@@ -1802,7 +2114,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
+            "node": "Wake Operator",
             "type": "main",
             "index": 0
           }
@@ -1851,18 +2163,7 @@
             "index": 0
           },
           {
-            "node": "Routine URL Set?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Routine URL Set?": {
-      "main": [
-        [
-          {
-            "node": "Fire Inbox Routine",
+            "node": "Wake Operator",
             "type": "main",
             "index": 0
           }

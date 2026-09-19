@@ -17,8 +17,28 @@ const base={
  'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)
 };
 let f=null; try{ f=$('Flatten').first().json; }catch(e){}
+let laterUpdate=null; try{ laterUpdate=$('Update Prospect Reply').first().json; }catch(e){}
+if(laterUpdate){
+ // Later-reply branch: Lead in CRM? found him already in the CRM on a live run, and Later Reply
+ // Guard confirmed his latest message is strictly newer than Last Engaged, so it was written.
+ let exId=''; try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){}
+ let currentStatus=''; try{ currentStatus=String((($('Find CRM Prospect').first().json.fields)||{})['OutreachStatus']||''); }catch(e){}
+ const statusAfter=(currentStatus==='Lost')?'Positive Reply':(currentStatus||'Positive Reply');
+ const disqualified=currentStatus==='Disqualified';
+ let woke=false; try{ woke=!!($('Wake Operator Later').first().json); }catch(e){}
+ const desc=[
+ '**Later reply, prospect already in CRM**',
+ '- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||'')+'>'+(n.job_title?', '+n.job_title:''),
+ '- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),
+ '- **Prospect:** '+(exId||laterUpdate.id||'unknown')+', status '+statusAfter,
+ '- **Outcome:** conversation thread and Last Engaged refreshed, Follow-ups reset, NextTouchDate cleared'+(disqualified?'; prospect is Disqualified, operator not woken':(woke?'; operator woken':'; wake not confirmed'))
+ ].join('\n').replace('**\n','**\n\n');
+ return [{json:Object.assign({'Status':'Succeeded','Errors':0,'Description':desc},base)}];
+}
 if(!f){
- // Existing-prospect path: Lead in CRM? answered yes, run ended before qualification.
+ // Legacy safety net: should no longer fire, since Lead in CRM? true now always routes through the
+ // later-reply branch above. Kept in case a run reaches here with neither Flatten nor a later-reply
+ // update (e.g. a future rewire), so the log still gets a row instead of the node erroring.
  let exId=''; try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){}
  const desc=[
  '**Existing prospect, skipped**',

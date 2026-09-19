@@ -28,12 +28,21 @@ if(!f){
  if(!exId){ try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){} }
  const failed=[];
  if(!threadRow||!threadRow.id) failed.push('thread not appended');
+ // The person behind the reply lands on the company's row as a contact (ruling 2026-09-19).
+ let plan=null; try{ plan=$('FU Contact Plan').first().json||null; }catch(e){}
+ let wrote=''; try{ const u=$('FU Upsert Contact').first().json; if(u&&u.id) wrote=u.id; }catch(e){}
+ let contactLine='- **Contact:** no email on the reply, nothing written (the Hub contact is keyed on email)';
+ if(plan){
+  contactLine='- **Contact:** '+(plan._contactExisted?'already on the Hub':'created')+' <'+(plan.email||'')+'>'+(wrote?' ('+wrote+')':'')+', '+(plan._linkedNow?'linked to this company row now':'already linked to this company row')+'; empty columns filled, held values untouched, other company links kept';
+  if(!wrote) failed.push('contact not written');
+ }
  let desc=[
  '**Existing prospect, thread appended**',
  '',
  leadLine,
  companyLine,
  '- **Screen:** '+(screenVerdict||'unknown'),
+ contactLine,
  '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; handed to the routine door'
  ].join('\n');
  if(failed.length) desc+='\n\n**FAILED ('+failed.length+')**\n'+failed.map(x=>'- '+x).join('\n');

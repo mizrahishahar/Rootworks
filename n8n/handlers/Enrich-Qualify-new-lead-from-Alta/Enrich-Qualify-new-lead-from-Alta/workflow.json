@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-17T09:47:39.983Z",
+  "updatedAt": "2026-09-19T14:48:06.953Z",
   "createdAt": "2026-07-28T08:55:27.839Z",
   "id": "AwlfoUuXzi86isEe",
   "name": "Enrich & Qualify new lead from Alta",
@@ -308,7 +308,7 @@
             "position": "={{ $('Contact Fill').first().json.position }}",
             "email": "={{ $('Alta Normalize').first().json.lead_email || $('Merge Person').first().json.personEmail || null }}",
             "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
-            "Company": "={{ [ $('Create CRM Prospect').first().json.id ] }}",
+            "Company": "={{ (function(){ var ex=[]; try{ var r=$('Find Hub Contact').first().json||{}; var c=(r.fields?r.fields.Company:r.Company)||[]; ex=(Array.isArray(c)?c:[]).map(function(x){return typeof x==='string'?x:((x&&x.id)||'');}).filter(Boolean); }catch(e){} var id=$('Create CRM Prospect').first().json.id; var out=ex.slice(); if(out.indexOf(id)<0) out.push(id); return out; })() }}",
             "phone": "={{ $('Contact Fill').first().json.phone }}"
           }
         },
@@ -1803,6 +1803,104 @@
       "parameters": {
         "jsCode": "@@file:nodes/Contact-Fill.js"
       }
+    },
+    {
+      "id": "c0f1a17a-0000-4000-8000-000000000245",
+      "name": "FU Find Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3264,
+        172
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "filterByFormula": "=AND(\"{{ ($('Alta Normalize').first().json.lead_email || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Alta Normalize').first().json.lead_email || '').toLowerCase() }}\")",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "c0f1a17a-0000-4000-8000-000000000246",
+      "name": "FU Contact Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3484,
+        172
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/FU-Contact-Plan.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c0f1a17a-0000-4000-8000-000000000247",
+      "name": "FU Upsert Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3704,
+        172
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblzexq9qzO9IRiYV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [],
+          "value": {
+            "firstName": "={{ $json.firstName }}",
+            "lastName": "={{ $json.lastName }}",
+            "position": "={{ $json.position }}",
+            "email": "={{ $json.email }}",
+            "linkedin": "={{ $json.linkedin }}",
+            "Company": "={{ $json.Company }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
     }
   ],
   "connections": {
@@ -2222,7 +2320,7 @@
       "main": [
         [
           {
-            "node": "Build Run Log",
+            "node": "FU Find Contact",
             "type": "main",
             "index": 0
           },
@@ -2321,6 +2419,39 @@
           }
         ]
       ]
+    },
+    "FU Find Contact": {
+      "main": [
+        [
+          {
+            "node": "FU Contact Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FU Contact Plan": {
+      "main": [
+        [
+          {
+            "node": "FU Upsert Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FU Upsert Contact": {
+      "main": [
+        [
+          {
+            "node": "Build Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -2331,7 +2462,7 @@
   },
   "staticData": {
     "global": {
-      "runStartedAt": 1789820109733
+      "runStartedAt": 1789829326690
     }
   },
   "meta": {
@@ -2405,9 +2536,9 @@
       }
     ]
   },
-  "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
-  "activeVersionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
-  "versionCounter": 50,
+  "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
+  "activeVersionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
+  "versionCounter": 52,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "shared": [
@@ -2439,9 +2570,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-09-17T09:47:39.990Z",
-    "createdAt": "2026-09-17T09:47:39.990Z",
-    "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
+    "updatedAt": "2026-09-19T14:48:06.957Z",
+    "createdAt": "2026-09-19T14:48:06.957Z",
+    "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
     "workflowId": "AwlfoUuXzi86isEe",
     "nodes": [
       {
@@ -2745,7 +2876,7 @@
               "position": "={{ $('Contact Fill').first().json.position }}",
               "email": "={{ $('Alta Normalize').first().json.lead_email || $('Merge Person').first().json.personEmail || null }}",
               "linkedin": "={{ $('Contact Fill').first().json.linkedin }}",
-              "Company": "={{ [ $('Create CRM Prospect').first().json.id ] }}",
+              "Company": "={{ (function(){ var ex=[]; try{ var r=$('Find Hub Contact').first().json||{}; var c=(r.fields?r.fields.Company:r.Company)||[]; ex=(Array.isArray(c)?c:[]).map(function(x){return typeof x==='string'?x:((x&&x.id)||'');}).filter(Boolean); }catch(e){} var id=$('Create CRM Prospect').first().json.id; var out=ex.slice(); if(out.indexOf(id)<0) out.push(id); return out; })() }}",
               "phone": "={{ $('Contact Fill').first().json.phone }}"
             }
           },
@@ -3505,7 +3636,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst n=$('Alta Normalize').first().json;\nconst cv=$('Client Vars').first().json;\nconst name=(n.full_name||'').trim();\nconst base={\n 'Automation':'Enrich & Qualify new lead from Alta',\n 'Client': cv.clientRecId?[cv.clientRecId]:[cv.clientName||''],\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Target': n.lead_email||n.linkedin_url||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)\n};\nconst leadLine='- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||n.linkedin_url||'')+'>'+(n.job_title?', '+n.job_title:'');\nconst companyLine='- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':'');\n// Every reply lands a row (2026-09-17). The screen decides the status, never the insert.\nlet screenVerdict='';\ntry{ const s=$('Screen Reply').first().json; screenVerdict=(s&&s.output&&s.output.verdict)||''; }catch(e){}\nconst interested=screenVerdict!=='PASS'&&screenVerdict!=='AUTO';\nlet f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f){\n // Reached from Lead in CRM? yes: the company already has a row, the reply is appended to its thread.\n let threadRow=null; try{ threadRow=$('Update Prospect Thread').first().json||null; }catch(e){}\n let exId=(threadRow&&threadRow.id)||'';\n if(!exId){ try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){} }\n const failed=[];\n if(!threadRow||!threadRow.id) failed.push('thread not appended');\n let desc=[\n '**Existing prospect, thread appended**',\n '',\n leadLine,\n companyLine,\n '- **Screen:** '+(screenVerdict||'unknown'),\n '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; handed to the routine door'\n ].join('\\n');\n if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n}\nlet prospectId='';\ntry{prospectId=$('Create CRM Prospect').first().json.id||'';}catch(e){}\nlet verdictWritten=false;\ntry{const v=$('Set CRM Verdict').first().json; if(v&&v.id){verdictWritten=true;}}catch(e){}\nlet tsWritten=false;\ntry{const t=$('Set Thread TS').first().json; if(t&&t.id){tsWritten=true;}}catch(e){}\nlet phoneVal=''; let phoneSource='none';\ntry{ const rp=$('Resolve Phone').first().json; phoneVal=rp.phone||''; phoneSource=rp.phone_source||'none'; }catch(e){}\nconst verdict=f.custom_qualification_status||'unknown';\nconst qualified=verdict!=='out_of_icp';\nconst status=!interested?'Engaged':(qualified?'Positive Reply':'Disqualified');\nconst carded=interested&&qualified;\nconst campaign=(n.campaign_name?n.campaign_name+(n.alta_campaign_id?' ('+n.alta_campaign_id+')':''):(n.alta_campaign_id||'unknown'));\nconst failed=[];\nif(!prospectId) failed.push('prospect not created');\nif(!verdictWritten) failed.push('verdict not written');\nif(carded && !tsWritten) failed.push('thread ts not saved');\nlet desc=[\n'**'+(f.company_name||n.company_name||n.lead_email||'unknown')+' · '+status+' · '+verdict+'**',\n'',\nleadLine,\n'- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n'- **Channel:** Alta '+(n.source_channel||n.reply_channel||'reply')+' | Campaign: '+campaign,\n'- **Screen:** '+(screenVerdict||'unknown (fail-open, read as interested)'),\n'- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),\n'- **Base:** '+(f.base_source||'unknown')+(f.base_match?' (matched on '+f.base_match+')':'')+(f.base_reason?' ('+f.base_reason+')':''),\n'- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')',\n'- **CRM:** Prospects row created'+(prospectId?' ('+prospectId+')':'')+', contact row + qualification brief + conversation thread written',\n'- **Pipeline:** '+(verdictWritten?('OutreachStatus '+status+' (screen '+(screenVerdict||'unknown')+', verdict \"'+verdict+'\")'):'not written'),\n'- **Slack:** '+(carded?('qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')):'no card ('+status+'); the card posts only for a positive reply that is not out_of_icp'),\n'- **Routine:** handed to the routine door (fires when the client row carries its URL)'\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n"
+          "jsCode": "const sd2=$getWorkflowStaticData('global'); const rs=sd2.runStartedAt||0;\nconst n=$('Alta Normalize').first().json;\nconst cv=$('Client Vars').first().json;\nconst name=(n.full_name||'').trim();\nconst base={\n 'Automation':'Enrich & Qualify new lead from Alta',\n 'Client': cv.clientRecId?[cv.clientRecId]:[cv.clientName||''],\n 'Run at': $now.toISO(),\n 'Records In': 1,\n 'Records Out': 1,\n 'Target': n.lead_email||n.linkedin_url||'',\n 'Trigger':'event',\n 'Execution ID': String($execution.id),\n 'Execution Link': 'https://n8n.flowroots.com/workflow/'+$workflow.id+'/executions/'+$execution.id,\n 'Duration s': Math.round(($now.toMillis() - (rs||$now.toMillis()))/1000)\n};\nconst leadLine='- **Lead:** '+(name?name+' ':'')+'<'+(n.lead_email||n.linkedin_url||'')+'>'+(n.job_title?', '+n.job_title:'');\nconst companyLine='- **Company:** '+(n.company_name||'unknown')+(n.domain?' ('+n.domain+')':'');\n// Every reply lands a row (2026-09-17). The screen decides the status, never the insert.\nlet screenVerdict='';\ntry{ const s=$('Screen Reply').first().json; screenVerdict=(s&&s.output&&s.output.verdict)||''; }catch(e){}\nconst interested=screenVerdict!=='PASS'&&screenVerdict!=='AUTO';\nlet f=null; try{ f=$('Flatten').first().json; }catch(e){}\nif(!f){\n // Reached from Lead in CRM? yes: the company already has a row, the reply is appended to its thread.\n let threadRow=null; try{ threadRow=$('Update Prospect Thread').first().json||null; }catch(e){}\n let exId=(threadRow&&threadRow.id)||'';\n if(!exId){ try{ exId=$('Find CRM Prospect').first().json.id||''; }catch(e){} }\n const failed=[];\n if(!threadRow||!threadRow.id) failed.push('thread not appended');\n // The person behind the reply lands on the company's row as a contact (ruling 2026-09-19).\n let plan=null; try{ plan=$('FU Contact Plan').first().json||null; }catch(e){}\n let wrote=''; try{ const u=$('FU Upsert Contact').first().json; if(u&&u.id) wrote=u.id; }catch(e){}\n let contactLine='- **Contact:** no email on the reply, nothing written (the Hub contact is keyed on email)';\n if(plan){\n  contactLine='- **Contact:** '+(plan._contactExisted?'already on the Hub':'created')+' <'+(plan.email||'')+'>'+(wrote?' ('+wrote+')':'')+', '+(plan._linkedNow?'linked to this company row now':'already linked to this company row')+'; empty columns filled, held values untouched, other company links kept';\n  if(!wrote) failed.push('contact not written');\n }\n let desc=[\n '**Existing prospect, thread appended**',\n '',\n leadLine,\n companyLine,\n '- **Screen:** '+(screenVerdict||'unknown'),\n contactLine,\n '- **Outcome:** existing prospect'+(exId?' ('+exId+')':'')+', conversation thread appended; status untouched, no re-qualification, no Slack post; handed to the routine door'\n ].join('\\n');\n if(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\n return [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n}\nlet prospectId='';\ntry{prospectId=$('Create CRM Prospect').first().json.id||'';}catch(e){}\nlet verdictWritten=false;\ntry{const v=$('Set CRM Verdict').first().json; if(v&&v.id){verdictWritten=true;}}catch(e){}\nlet tsWritten=false;\ntry{const t=$('Set Thread TS').first().json; if(t&&t.id){tsWritten=true;}}catch(e){}\nlet phoneVal=''; let phoneSource='none';\ntry{ const rp=$('Resolve Phone').first().json; phoneVal=rp.phone||''; phoneSource=rp.phone_source||'none'; }catch(e){}\nconst verdict=f.custom_qualification_status||'unknown';\nconst qualified=verdict!=='out_of_icp';\nconst status=!interested?'Engaged':(qualified?'Positive Reply':'Disqualified');\nconst carded=interested&&qualified;\nconst campaign=(n.campaign_name?n.campaign_name+(n.alta_campaign_id?' ('+n.alta_campaign_id+')':''):(n.alta_campaign_id||'unknown'));\nconst failed=[];\nif(!prospectId) failed.push('prospect not created');\nif(!verdictWritten) failed.push('verdict not written');\nif(carded && !tsWritten) failed.push('thread ts not saved');\nlet desc=[\n'**'+(f.company_name||n.company_name||n.lead_email||'unknown')+' · '+status+' · '+verdict+'**',\n'',\nleadLine,\n'- **Company:** '+(f.company_name||n.company_name||'unknown')+(n.domain?' ('+n.domain+')':''),\n'- **Channel:** Alta '+(n.source_channel||n.reply_channel||'reply')+' | Campaign: '+campaign,\n'- **Screen:** '+(screenVerdict||'unknown (fail-open, read as interested)'),\n'- **Verdict:** '+verdict+(f.verdict_reason?' ('+f.verdict_reason+')':'')+(f.recommended_action?' | Recommended: '+f.recommended_action:''),\n'- **Base:** '+(f.base_source||'unknown')+(f.base_match?' (matched on '+f.base_match+')':'')+(f.base_reason?' ('+f.base_reason+')':''),\n'- **Phone:** '+(phoneVal||'Not found')+' (source: '+phoneSource+')',\n'- **CRM:** Prospects row created'+(prospectId?' ('+prospectId+')':'')+', contact row + qualification brief + conversation thread written',\n'- **Pipeline:** '+(verdictWritten?('OutreachStatus '+status+' (screen '+(screenVerdict||'unknown')+', verdict \"'+verdict+'\")'):'not written'),\n'- **Slack:** '+(carded?('qualification brief posted to client channel '+(cv.slackChannel||'')+(tsWritten?', thread ts written to prospect':'')):'no card ('+status+'); the card posts only for a positive reply that is not out_of_icp'),\n'- **Routine:** handed to the routine door (fires when the client row carries its URL)'\n].join('\\n');\nif(failed.length) desc+='\\n\\n**FAILED ('+failed.length+')**\\n'+failed.map(x=>'- '+x).join('\\n');\nreturn [{json:Object.assign({'Status':failed.length?'Succeeded with errors':'Succeeded','Errors':failed.length,'Description':desc},base)}];\n"
         },
         "id": "5c21e4ea-6969-4cca-a78f-ed21e87e0511",
         "name": "Build Run Log",
@@ -4240,6 +4371,104 @@
         "parameters": {
           "jsCode": "// Contact Fill: the three person columns the Hub contact upsert writes, empty-only (ruling 2026-09-02).\n// A value already on the Hub Contacts row (Find Hub Contact, by email) is kept as is, never overwritten;\n// an empty column takes the caller's own value (Alta Normalize, then the Alta person read), else what the\n// client's People table held (base_person from Enrich and Qualify Lead), else stays empty.\n// Create CRM Contact reads this item.\nconst n = $('Alta Normalize').first().json || {};\nlet mp = {}; try { mp = $('Merge Person').first().json || {}; } catch (e) { mp = {}; }\nlet bp = {}; try { bp = $('Enrich and Qualify Lead').first().json.base_person || {}; } catch (e) { bp = {}; }\nlet ex = null; try { const r = $input.first().json || {}; if (r && r.id) ex = { id: r.id, f: r.fields || r }; } catch (e) { ex = null; }\nconst s = (v) => String(v == null ? '' : (Array.isArray(v) ? v[0] : v)).trim();\nconst held = (k) => (ex ? s(ex.f[k]) : '');\nconst pick = (k, own, base) => { const h = held(k); if (h) return { value: h, source: 'kept' }; const v = s(own) || s(base); return { value: v || null, source: v ? (s(own) ? 'caller' : 'base') : 'none' }; };\nconst position = pick('position', s(n.job_title) || s(mp.title), bp.title);\nconst linkedin = pick('linkedin', n.linkedin_url, bp.linkedin_url);\nconst phone = pick('phone', '', bp.phone);\nconst sources = { position: position.source, linkedin: linkedin.source, phone: phone.source };\nconst fill = Object.values(sources).some((x) => x === 'caller' || x === 'base');\nreturn [{ json: { contactExists: !!ex, contactId: ex ? ex.id : '', position: position.value, linkedin: linkedin.value, phone: phone.value, sources, fill }, pairedItem: { item: 0 } }];\n"
         }
+      },
+      {
+        "id": "c0f1a17a-0000-4000-8000-000000000245",
+        "name": "FU Find Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3264,
+          172
+        ],
+        "parameters": {
+          "operation": "search",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "filterByFormula": "=AND(\"{{ ($('Alta Normalize').first().json.lead_email || '').toLowerCase() }}\" != \"\", LOWER({email}) = \"{{ ($('Alta Normalize').first().json.lead_email || '').toLowerCase() }}\")",
+          "returnAll": false,
+          "limit": 1,
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "c0f1a17a-0000-4000-8000-000000000246",
+        "name": "FU Contact Plan",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3484,
+          172
+        ],
+        "parameters": {
+          "jsCode": "// FU Contact Plan: the follow-up exit's contact write (ruling 2026-09-19). A reply from a company that\n// already has a Prospects row never makes a second row and is never re-qualified; the person behind it\n// still belongs on the row, so this plans one Contacts upsert keyed on email.\n// Two rules:\n//   Company is APPENDED, never replaced. A contact already linked to another company keeps it and gains\n//   this one, so nobody is moved off their row by a reply.\n//   Person columns are empty-only, the same rule Contact Fill uses: a value already on the Hub contact\n//   is kept, an empty one takes what the Alta payload carries.\n// No email means no upsert: the match key is email, and a blank one would collide with every other\n// contact that has none. Returning no items leaves the Airtable node unexecuted, and the run log says so.\nconst n = $('Alta Normalize').first().json || {};\nconst email = String(n.lead_email || '').trim().toLowerCase();\nif (!email) return [];\n\nlet ex = null;\ntry { const r = $input.first().json || {}; if (r && r.id) ex = { id: r.id, f: r.fields || r }; } catch (e) { ex = null; }\nconst s = (v) => String(v == null ? '' : (Array.isArray(v) ? v[0] : v)).trim();\nconst held = (k) => (ex ? s(ex.f[k]) : '');\nconst keepOrTake = (k, own) => held(k) || s(own) || null;\n\n// The company row this reply landed on: the existing prospect the branch matched.\nlet rowId = '';\ntry { rowId = $('Find CRM Prospect').first().json.id || ''; } catch (e) {}\nconst links = [];\nif (ex) { const c = ex.f.Company || []; for (const x of (Array.isArray(c) ? c : [])) { const id = typeof x === 'string' ? x : ((x && x.id) || ''); if (id) links.push(id); } }\nconst already = rowId ? links.indexOf(rowId) >= 0 : true;\nif (rowId && !already) links.push(rowId);\n\nreturn [{ json: {\n  firstName: keepOrTake('firstName', n.first_name) || email,\n  lastName: keepOrTake('lastName', n.last_name),\n  position: keepOrTake('position', n.job_title),\n  linkedin: keepOrTake('linkedin', n.linkedin_url),\n  email,\n  Company: links,\n  _contactExisted: !!ex,\n  _linkedNow: !!(rowId && !already),\n  _rowId: rowId,\n} }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "c0f1a17a-0000-4000-8000-000000000247",
+        "name": "FU Upsert Contact",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3704,
+          172
+        ],
+        "parameters": {
+          "operation": "upsert",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tblzexq9qzO9IRiYV"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [
+              "email"
+            ],
+            "schema": [],
+            "value": {
+              "firstName": "={{ $json.firstName }}",
+              "lastName": "={{ $json.lastName }}",
+              "position": "={{ $json.position }}",
+              "email": "={{ $json.email }}",
+              "linkedin": "={{ $json.linkedin }}",
+              "Company": "={{ $json.Company }}"
+            }
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
       }
     ],
     "connections": {
@@ -4659,7 +4888,7 @@
         "main": [
           [
             {
-              "node": "Build Run Log",
+              "node": "FU Find Contact",
               "type": "main",
               "index": 0
             },
@@ -4758,6 +4987,39 @@
             }
           ]
         ]
+      },
+      "FU Find Contact": {
+        "main": [
+          [
+            {
+              "node": "FU Contact Plan",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FU Contact Plan": {
+        "main": [
+          [
+            {
+              "node": "FU Upsert Contact",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "FU Upsert Contact": {
+        "main": [
+          [
+            {
+              "node": "Build Run Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "nodeGroups": [],
@@ -4767,34 +5029,34 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-09-17T09:47:40.228Z",
-        "id": 2912,
+        "createdAt": "2026-09-19T14:48:07.183Z",
+        "id": 2921,
         "workflowId": "AwlfoUuXzi86isEe",
-        "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
+        "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-17T09:47:51.755Z",
-        "id": 2914,
+        "createdAt": "2026-09-19T14:48:25.430Z",
+        "id": 2923,
         "workflowId": "AwlfoUuXzi86isEe",
-        "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
+        "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
         "event": "activated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-17T09:47:40.164Z",
-        "id": 2911,
+        "createdAt": "2026-09-19T14:48:07.120Z",
+        "id": 2920,
         "workflowId": "AwlfoUuXzi86isEe",
-        "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
+        "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       },
       {
-        "createdAt": "2026-09-17T09:47:45.947Z",
-        "id": 2913,
+        "createdAt": "2026-09-19T14:48:14.531Z",
+        "id": 2922,
         "workflowId": "AwlfoUuXzi86isEe",
-        "versionId": "dfee6873-a8f6-4dde-9e33-42dfb9fa8061",
+        "versionId": "e6cfc9a3-096f-42cf-bb46-469e0a5623c6",
         "event": "deactivated",
         "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
       }

@@ -1,0 +1,1569 @@
+{
+  "updatedAt": "2026-09-19T14:58:19.385Z",
+  "createdAt": "2026-09-19T14:57:06.466Z",
+  "id": "0tzcfIoNj4CxQ1N5",
+  "name": "Alta LinkedIn Door",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000010",
+      "name": "Inbox Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alta-linkedin-door",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TTBmN04GirfEt8km",
+          "name": "Inbox Door Key"
+        }
+      },
+      "webhookId": "a17ad00f-0000-4000-8000-000000000001"
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000011",
+      "name": "Parse Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Parse-Request.js"
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000012",
+      "name": "Request OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "r1",
+              "leftValue": "={{ $json._ok ? \"y\" : \"n\" }}",
+              "rightValue": "y",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000013",
+      "name": "Alta Get Token",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ZHXXvRsdnOnoQEkx"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "alta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000014",
+      "name": "Alta Refresh Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "refresh_token"
+            },
+            {
+              "name": "refresh_token",
+              "value": "={{ $json.refresh_token }}"
+            },
+            {
+              "name": "client_id",
+              "value": "ZsOUl58K5kzcjWGMHhReiXkEezHN7CNM"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000015",
+      "name": "Alta Token Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Alta-Token-Gate.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000016",
+      "name": "Auth OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "a1",
+              "leftValue": "={{ $json._ok ? \"y\" : \"n\" }}",
+              "rightValue": "y",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000017",
+      "name": "Alta Store Token",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ZHXXvRsdnOnoQEkx"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "alta"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "key": "alta",
+            "access_token": "={{ $json.access_token }}",
+            "refresh_token": "={{ $json.refresh_token }}",
+            "expires_at": "={{ $json.expires_at }}"
+          }
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000018",
+      "name": "Plan Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Plan-Calls.js"
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000019",
+      "name": "MCP Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.callBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000020",
+      "name": "Dossier?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "d1",
+              "leftValue": "={{ $('Alta Token Gate').first().json.action }}",
+              "rightValue": "get_prospect",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000021",
+      "name": "Prep Person",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Prep-Person.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000022",
+      "name": "MCP Person",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2860,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.altahq.com/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.callBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000023",
+      "name": "Shape Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Shape-Answer.js"
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000024",
+      "name": "Sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "s1",
+              "leftValue": "={{ $('Alta Token Gate').first().json.action }}",
+              "rightValue": "send_reply",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000025",
+      "name": "Build Send Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "@@file:nodes/Build-Send-Log.js"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000026",
+      "name": "Log Send",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3740,
+        0
+      ],
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appQG6dK0FIOhTxOl"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbli7rV6Qf3sLpV6R"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RZ2SX89iUyF4aEWJ",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000027",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3960,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Shape Answer').first().json) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a17ad00f-0000-4000-8000-000000000028",
+      "name": "Respond Refused",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4180,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json._code || 400 }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inbox Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Request": {
+      "main": [
+        [
+          {
+            "node": "Request OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request OK?": {
+      "main": [
+        [
+          {
+            "node": "Alta Get Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Refused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Get Token": {
+      "main": [
+        [
+          {
+            "node": "Alta Refresh Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Refresh Token": {
+      "main": [
+        [
+          {
+            "node": "Alta Token Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Token Gate": {
+      "main": [
+        [
+          {
+            "node": "Auth OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth OK?": {
+      "main": [
+        [
+          {
+            "node": "Alta Store Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Refused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alta Store Token": {
+      "main": [
+        [
+          {
+            "node": "Plan Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Calls": {
+      "main": [
+        [
+          {
+            "node": "MCP Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Call": {
+      "main": [
+        [
+          {
+            "node": "Dossier?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dossier?": {
+      "main": [
+        [
+          {
+            "node": "Prep Person",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Shape Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Person": {
+      "main": [
+        [
+          {
+            "node": "MCP Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Person": {
+      "main": [
+        [
+          {
+            "node": "Shape Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape Answer": {
+      "main": [
+        [
+          {
+            "node": "Sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sent?": {
+      "main": [
+        [
+          {
+            "node": "Build Send Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Send Log": {
+      "main": [
+        [
+          {
+            "node": "Log Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Send": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "gqm6HzVNzEMQ8Ml0",
+    "timezone": "Asia/Jerusalem",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+  "activeVersionId": "c30165c1-673e-444d-8166-f53e57880018",
+  "versionCounter": 2,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-09-19T14:57:06.478Z",
+      "createdAt": "2026-09-19T14:57:06.478Z",
+      "role": "workflow:owner",
+      "workflowId": "0tzcfIoNj4CxQ1N5",
+      "projectId": "pyoZAgnc0vv0Gq9W",
+      "project": {
+        "updatedAt": "2026-06-09T20:31:42.148Z",
+        "createdAt": "2026-06-09T20:29:57.588Z",
+        "id": "pyoZAgnc0vv0Gq9W",
+        "name": "Shahar Mizrahi <shahar@flowroots.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-09-19T14:58:19.387Z",
+    "createdAt": "2026-09-19T14:58:19.387Z",
+    "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+    "workflowId": "0tzcfIoNj4CxQ1N5",
+    "nodes": [
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000010",
+        "name": "Inbox Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          220,
+          0
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "alta-linkedin-door",
+          "authentication": "headerAuth",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "TTBmN04GirfEt8km",
+            "name": "Inbox Door Key"
+          }
+        },
+        "webhookId": "a17ad00f-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000011",
+        "name": "Parse Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          440,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Parse Request: the contract, refused before anything is spent. Three actions, nothing else.\n//   get_thread    {prospectId, campaignId?, repId?}\n//   get_prospect  {prospectId}\n//   send_reply    {prospectId, body, campaignId?, repId?}\n// The door answers 200 with ok:false and a reason on a bad request; only the shapes below go further.\nconst b = ($input.first().json || {}).body || {};\nconst s = (v) => String(v == null ? '' : v).trim();\nconst action = s(b.action).toLowerCase();\nconst prospectId = s(b.prospectId);\nconst campaignId = s(b.campaignId);\nconst repId = s(b.repId);\nconst body = String(b.body == null ? '' : b.body);\nconst UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst bad = (why) => [{ json: { _ok: false, _code: 400, ok: false, error: why, action: action || null, prospectId: prospectId || null } }];\n\nif (['get_thread', 'get_prospect', 'send_reply'].indexOf(action) < 0) return bad('action must be one of get_thread, get_prospect, send_reply');\nif (!prospectId) return bad('prospectId is required');\nif (!UUID.test(prospectId)) return bad('prospectId must be an Alta prospect uuid');\nif (campaignId && !UUID.test(campaignId)) return bad('campaignId must be an Alta campaign uuid');\nif (repId && !UUID.test(repId)) return bad('repId must be an Alta rep uuid');\nif (action === 'send_reply') {\n  // 2,000 characters is Alta's own ceiling; a longer body is refused, never silently cut.\n  if (!body.trim()) return bad('body is required for send_reply');\n  if (body.length > 2000) return bad('body is ' + body.length + ' characters; Alta takes 2000');\n}\nreturn [{ json: { _ok: true, action, prospectId, campaignId, repId, body, startedAt: new Date().toISOString() } }];\n"
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000012",
+        "name": "Request OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "r1",
+                "leftValue": "={{ $json._ok ? \"y\" : \"n\" }}",
+                "rightValue": "y",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000013",
+        "name": "Alta Get Token",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          880,
+          0
+        ],
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "ZHXXvRsdnOnoQEkx"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "key",
+                "condition": "eq",
+                "keyValue": "alta"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000014",
+        "name": "Alta Refresh Token",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1100,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/token",
+          "sendBody": true,
+          "contentType": "form-urlencoded",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "grant_type",
+                "value": "refresh_token"
+              },
+              {
+                "name": "refresh_token",
+                "value": "={{ $json.refresh_token }}"
+              },
+              {
+                "name": "client_id",
+                "value": "ZsOUl58K5kzcjWGMHhReiXkEezHN7CNM"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000015",
+        "name": "Alta Token Gate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Alta Token Gate: the refreshed access token, or a refusal. Same shape the campaign sync uses:\n// the refresh token lives in the alta_oauth data table, the access token is minted per run and\n// never leaves n8n. A dead refresh token means the Operator re-authorizes through Alta OAuth Callback.\nconst t = $input.first().json || {};\nconst prev = $('Alta Get Token').first().json || {};\nconst req = $('Parse Request').first().json || {};\nconst access = t.access_token || '';\nif (!access) return [{ json: Object.assign({}, req, { _ok: false, _code: 502, ok: false, error: 'Alta OAuth refresh failed; the door cannot reach Alta until the refresh token is renewed', detail: JSON.stringify(t).slice(0, 300) }) }];\nreturn [{ json: Object.assign({}, req, { _ok: true, access_token: access, refresh_token: t.refresh_token || prev.refresh_token || '', expires_at: new Date(Date.now() + ((t.expires_in || 86400) * 1000)).toISOString() }) }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000016",
+        "name": "Auth OK?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1540,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "a1",
+                "leftValue": "={{ $json._ok ? \"y\" : \"n\" }}",
+                "rightValue": "y",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000017",
+        "name": "Alta Store Token",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          1760,
+          0
+        ],
+        "parameters": {
+          "resource": "row",
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "ZHXXvRsdnOnoQEkx"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "key",
+                "condition": "eq",
+                "keyValue": "alta"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "matchingColumns": [],
+            "schema": [],
+            "value": {
+              "key": "alta",
+              "access_token": "={{ $json.access_token }}",
+              "refresh_token": "={{ $json.refresh_token }}",
+              "expires_at": "={{ $json.expires_at }}"
+            }
+          },
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000018",
+        "name": "Plan Calls",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Plan Calls: the MCP calls this action needs, one item each. The MCP node runs them in order,\n// paced, and Shape Answer reads them all back.\n//   get_thread    four list_linkedin_messages calls, one per type, the same four the campaign sync\n//                 rebuilds a thread from (campaign, received, manual, reply_agent).\n//   get_prospect  get_prospect; the person read follows once its personId is known.\n//   send_reply    one send_linkedin_message. One call per message, never a loop.\n// The request is read off Alta Token Gate, not off $input: the node before this one is the token\n// store, whose output is the data table row (it planned a send on a get_thread until 2026-09-19).\n// A send is planned ONLY on an explicit send_reply; anything else falls through to the thread read,\n// so a mistake here can never put a message on LinkedIn.\n// campaignId and repId ride as null when the caller did not give them: the message tools accept\n// nulls and answer workspace-wide for the prospect, which is what the Inbox has to hand.\n// tag must be null, never an empty string: an empty tag silently answers nothing (paid for 2026-08-01).\nconst r = $('Alta Token Gate').first().json || {};\nconst nz = (v) => (v ? v : null);\nconst call = (id, name, args) => ({ json: { _id: id, callBody: { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } } } });\n\nif (r.action === 'send_reply') {\n  const args = { prospectId: r.prospectId, body: r.body };\n  if (r.campaignId) args.campaignId = r.campaignId;\n  if (r.repId) args.repId = r.repId;\n  if (!args.prospectId || !args.body) throw new Error('send_reply reached Plan Calls without a prospectId and a body; nothing was sent');\n  return [call(1, 'send_linkedin_message', args)];\n}\nif (r.action === 'get_prospect') return [call(1, 'get_prospect', { prospectId: r.prospectId })];\nconst out = [];\nlet i = 1;\nfor (const type of ['campaign', 'received', 'manual', 'reply_agent']) {\n  out.push(call(i++, 'list_linkedin_messages', { prospectId: r.prospectId, campaignId: nz(r.campaignId), repId: nz(r.repId), type, tag: null, unread: false }));\n}\nreturn out;\n"
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000019",
+        "name": "MCP Call",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2200,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/mcp",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.callBody }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 250
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000020",
+        "name": "Dossier?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2420,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "d1",
+                "leftValue": "={{ $('Alta Token Gate').first().json.action }}",
+                "rightValue": "get_prospect",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000021",
+        "name": "Prep Person",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2640,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Prep Person: the second read of a dossier. get_prospect answers ids only, so the person behind\n// the prospect is fetched by its personId. No personId means no second call and the door answers\n// what the prospect read gave.\nconst parse = (raw) => { try { let s = raw; if (typeof s === 'object' && s.data) s = s.data; if (typeof s !== 'string') s = JSON.stringify(s); const m = s.match(/data:\\s*(\\{[\\s\\S]*\\})/); const rpc = JSON.parse(m ? m[1] : s); const txt = rpc.result && rpc.result.content && rpc.result.content[0] && rpc.result.content[0].text; return txt ? (txt.startsWith('{') ? JSON.parse(txt) : txt) : null; } catch (e) { return null; } };\nconst p = parse($input.first().json) || {};\nconst personId = p.personId || '';\nif (!personId) return [];\nreturn [{ json: { callBody: { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'get_person', arguments: { personId } } } } }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000022",
+        "name": "MCP Person",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          2860,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.altahq.com/mcp",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Alta Token Gate').first().json.access_token }}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.callBody }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 60000
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000023",
+        "name": "Shape Answer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3080,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Shape Answer: the one JSON the Inbox reads, per action. Alta answers MCP over SSE, so every\n// body is unwrapped the same way the campaign sync unwraps it.\n// A tool error from Alta is an ok:false with Alta's own words, never a silent empty answer: a send\n// that did not land must never read like one that did.\nconst parse = (raw) => { try { let s = raw; if (typeof s === 'object' && s.data) s = s.data; if (typeof s !== 'string') s = JSON.stringify(s); const m = s.match(/data:\\s*(\\{[\\s\\S]*\\})/); const rpc = JSON.parse(m ? m[1] : s); if (rpc && rpc.error) return { _rpcError: rpc.error }; const c = rpc.result && rpc.result.content && rpc.result.content[0]; const txt = c && c.text; const isErr = !!(rpc.result && rpc.result.isError); if (!txt) return null; const val = txt.startsWith('{') || txt.startsWith('[') ? JSON.parse(txt) : txt; return isErr ? { _toolError: val } : val; } catch (e) { return null; } };\nconst r = $('Alta Token Gate').first().json || {};\nconst base = { ok: true, action: r.action, prospectId: r.prospectId };\nconst fail = (why, detail) => [{ json: Object.assign({}, base, { ok: false, _code: 502, error: why, detail: detail == null ? null : String(JSON.stringify(detail)).slice(0, 600) }) }];\n\nconst raws = [];\ntry { for (const it of $('MCP Call').all()) raws.push(parse(it.json)); } catch (e) {}\nconst errored = raws.find((x) => x && (x._toolError || x._rpcError));\n\nif (r.action === 'send_reply') {\n  if (errored) return fail('Alta refused the send', errored._toolError || errored._rpcError);\n  const receipt = raws.find((x) => x && !x._toolError) || null;\n  if (!receipt) return fail('Alta answered nothing readable on the send', raws[0]);\n  return [{ json: Object.assign({}, base, { sentAt: new Date().toISOString(), chars: String(r.body || '').length, receipt }) }];\n}\n\nif (r.action === 'get_prospect') {\n  if (errored) return fail('Alta refused the prospect read', errored._toolError || errored._rpcError);\n  const pr = raws[0] || {};\n  let person = {};\n  try { const pp = parse($('MCP Person').first().json); if (pp && !pp._toolError && !pp._rpcError) person = pp; } catch (e) {}\n  return [{ json: Object.assign({}, base, { prospect: {\n    prospectId: pr.id || r.prospectId, personId: pr.personId || null, campaignId: pr.campaignId || null, repId: pr.repId || null,\n    status: pr.status || null, sequenceStatus: pr.sequenceStatus || null, sourcedAt: pr.createdAt || null,\n    firstName: person.firstName || null, lastName: person.lastName || null,\n    name: [person.firstName, person.lastName].filter(Boolean).join(' ') || null,\n    title: person.title || null, email: person.email || null, linkedinUrl: person.linkedinUrl || null,\n    city: person.city || null, state: person.state || null, country: person.country || null,\n    companyId: person.companyId || null, customFields: person.customFields || null,\n  } }) }];\n}\n\n// get_thread: every message Alta holds for this prospect, merged, deduped, oldest first.\nconst msgs = [];\nfor (const x of raws) { if (!x || typeof x !== 'object' || x._toolError || x._rpcError) continue; for (const m of (x.linkedinMessages || [])) { if (m && m.id) msgs.push(m); } }\nif (!msgs.length && errored) return fail('Alta refused the thread read', errored._toolError || errored._rpcError);\nconst seen = new Set(); const uniq = [];\nfor (const m of msgs) { if (!seen.has(m.id)) { seen.add(m.id); uniq.push(m); } }\nuniq.sort((a, b) => new Date(a.happenedAt || a.createdAt || 0) - new Date(b.happenedAt || b.createdAt || 0));\nconst fmt = (ts) => { const d = new Date(ts); return isNaN(d.getTime()) ? '' : d.toLocaleString('sv-SE', { timeZone: 'Asia/Jerusalem' }).slice(0, 16); };\nconst iso = (t) => { const d = new Date(t); return isNaN(d.getTime()) ? null : d.toISOString(); };\nconst blocks = []; const them = []; const us = [];\nfor (const m of uniq) {\n  const txt = String(m.text || m.body || '').trim();\n  if (txt.length < 2) continue;\n  const dir = m.type === 'received' ? 'THEM' : 'US';\n  const t = m.happenedAt || m.createdAt || '';\n  if (t) (dir === 'THEM' ? them : us).push(t);\n  blocks.push('**[' + fmt(t) + '] ' + dir + ':**\\n' + txt);\n}\nreturn [{ json: Object.assign({}, base, {\n  messages: uniq.length,\n  thread: blocks.join('\\n\\n'),\n  lastEngaged: them.length ? iso(them[them.length - 1]) : null,\n  lastTouch: us.length ? iso(us[us.length - 1]) : null,\n  firstEngagement: them.length ? iso(them[0]) : null,\n  lastIsOurs: !!(us.length && (!them.length || new Date(us[us.length - 1]) > new Date(them[them.length - 1]))),\n}) }];\n"
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000024",
+        "name": "Sent?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3300,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "s1",
+                "leftValue": "={{ $('Alta Token Gate').first().json.action }}",
+                "rightValue": "send_reply",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000025",
+        "name": "Build Send Log",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          0
+        ],
+        "parameters": {
+          "jsCode": "// Build Send Log: one Hub Automations row per send, written before the door answers. Every message\n// this door puts on LinkedIn is on the record with who it went to, what it said and whether Alta took\n// it (Operator ruling 2026-09-19). Reads and refusals are not logged; only the sends.\nconst a = $input.first().json || {};\nconst r = $('Alta Token Gate').first().json || {};\nconst body = String(r.body || '');\nconst preview = body.length > 500 ? body.slice(0, 500) + ' [...]' : body;\nconst ok = a.ok !== false;\nconst desc = [\n  '**LinkedIn reply sent through the door**',\n  '',\n  '- **Prospect:** ' + (r.prospectId || ''),\n  '- **Campaign:** ' + (r.campaignId || 'not given'),\n  '- **Rep:** ' + (r.repId || 'resolved by Alta'),\n  '- **Chars:** ' + body.length + ' of 2000',\n  '- **Alta:** ' + (ok ? 'accepted the send' : 'refused: ' + String(a.error || '') + ' ' + String(a.detail || '').slice(0, 300)),\n  '',\n  '**THE MESSAGE**',\n  '',\n  preview,\n].join('\\n');\nreturn [{ json: {\n  Automation: 'Alta LinkedIn Door',\n  Status: ok ? 'Succeeded' : 'Failed',\n  Errors: ok ? 0 : 1,\n  'Run at': new Date().toISOString(),\n  'Records In': 1,\n  'Records Out': ok ? 1 : 0,\n  Target: r.prospectId || '',\n  Trigger: 'event',\n  'Execution ID': String($execution.id),\n  'Execution Link': 'https://n8n.flowroots.com/workflow/' + $workflow.id + '/executions/' + $execution.id,\n  Description: desc,\n} }];\n"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000026",
+        "name": "Log Send",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.2,
+        "position": [
+          3740,
+          0
+        ],
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "mode": "id",
+            "value": "appQG6dK0FIOhTxOl"
+          },
+          "table": {
+            "__rl": true,
+            "mode": "id",
+            "value": "tbli7rV6Qf3sLpV6R"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [],
+            "schema": []
+          },
+          "options": {
+            "typecast": true
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "RZ2SX89iUyF4aEWJ",
+            "name": "Airtable"
+          }
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000027",
+        "name": "Respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          3960,
+          0
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify($('Shape Answer').first().json) }}",
+          "options": {}
+        }
+      },
+      {
+        "id": "a17ad00f-0000-4000-8000-000000000028",
+        "name": "Respond Refused",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          4180,
+          0
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify($json) }}",
+          "options": {
+            "responseCode": "={{ $json._code || 400 }}"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Inbox Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Request": {
+        "main": [
+          [
+            {
+              "node": "Request OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Request OK?": {
+        "main": [
+          [
+            {
+              "node": "Alta Get Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Refused",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Get Token": {
+        "main": [
+          [
+            {
+              "node": "Alta Refresh Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Refresh Token": {
+        "main": [
+          [
+            {
+              "node": "Alta Token Gate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Token Gate": {
+        "main": [
+          [
+            {
+              "node": "Auth OK?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Auth OK?": {
+        "main": [
+          [
+            {
+              "node": "Alta Store Token",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Refused",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Alta Store Token": {
+        "main": [
+          [
+            {
+              "node": "Plan Calls",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Plan Calls": {
+        "main": [
+          [
+            {
+              "node": "MCP Call",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Call": {
+        "main": [
+          [
+            {
+              "node": "Dossier?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Dossier?": {
+        "main": [
+          [
+            {
+              "node": "Prep Person",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Shape Answer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prep Person": {
+        "main": [
+          [
+            {
+              "node": "MCP Person",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Person": {
+        "main": [
+          [
+            {
+              "node": "Shape Answer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Shape Answer": {
+        "main": [
+          [
+            {
+              "node": "Sent?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Sent?": {
+        "main": [
+          [
+            {
+              "node": "Build Send Log",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Send Log": {
+        "main": [
+          [
+            {
+              "node": "Log Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Send": {
+        "main": [
+          [
+            {
+              "node": "Respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Shahar Mizrahi",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-19T14:58:19.542Z",
+        "id": 2926,
+        "workflowId": "0tzcfIoNj4CxQ1N5",
+        "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-19T14:58:31.764Z",
+        "id": 2928,
+        "workflowId": "0tzcfIoNj4CxQ1N5",
+        "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+        "event": "activated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-19T14:58:19.495Z",
+        "id": 2925,
+        "workflowId": "0tzcfIoNj4CxQ1N5",
+        "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      },
+      {
+        "createdAt": "2026-09-19T14:58:25.037Z",
+        "id": 2927,
+        "workflowId": "0tzcfIoNj4CxQ1N5",
+        "versionId": "c30165c1-673e-444d-8166-f53e57880018",
+        "event": "deactivated",
+        "userId": "72ec2832-8e74-4610-ae9c-9cd5cf877c82"
+      }
+    ]
+  }
+}
